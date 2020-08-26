@@ -86,9 +86,29 @@ cp conf/client.conf /etc/fdir/
 mkdir /usr/local/faststore
 ```
 
-## Configuration
+## 6. Configuration
 
-Coming soon.
+In order to control FastCFS's performance, we provide highly configurable and tunable behavior for FastCFS via various settings.
+
+FastCFS's configuration comprise multiple subfiles, one entry file and others use to reference. The directory /etc/fstore is the default location for FastCFS's config files, but when install multiple FastCFS instances on a single server, you must specify distinct location for each one.
+
+FastCFS has the following config files:
+
+* cluster.conf - 
+* server.conf
+* servers.conf
+* storage.conf
+* client.conf - Use with client，need to reference cluster.conf
+
+### 6.1. Configure server.conf 
+
+### 6.2. cluster.conf configure
+
+### 6.3. servers.conf configure
+
+### 6.4. storage.conf configure
+
+### 6.5. client.conf configure
 
 ## Running
 
