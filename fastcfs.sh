@@ -99,10 +99,12 @@ sed_replace()
 {
     sed_cmd=$1
     filename=$2
+    echo "sed_cmd in sed_replace:{$sed_cmd}"
+    echo "filename in sed_replace:{$filename}"
     if [ "$uname" = "FreeBSD" ] || [ "$uname" = "Darwin" ]; then
-       sed -i "" "$sed_cmd" $filename
+       sed -i "" "$sed_cmd" "$filename"
     else
-       sed -i "$sed_cmd" $filename
+       sed -i "$sed_cmd" "$filename"
     fi
 }
 
@@ -111,7 +113,11 @@ split_to_array() {
 }
 
 placeholder_replace() {
-  sed_replace "s/\${$2}/$3/g" $1
+  filename=$1
+  placeholder=$2
+  value=$3
+  echo "arg 1 in placeholder_replace:$filename"
+  sed_replace "s#\${$placeholder}#$value#g" $filename
 }
 
 validate_fastdir_params() {
@@ -157,7 +163,7 @@ validate_fastdir_params() {
     echo "--dir-cluster-port not specified, would use default port: $FDIR_DEFAULT_CLUSTER_PORT,+1,+2..."
     for (( i=0; i < $dir_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        dir_cluster_ports[$i]=$FDIR_DEFAULT_CLUSTER_PORT+$i
+        dir_cluster_ports[$i]=$(( $FDIR_DEFAULT_CLUSTER_PORT + $i ))
       else
         dir_cluster_ports[$i]=$FDIR_DEFAULT_CLUSTER_PORT
       fi
@@ -180,7 +186,7 @@ validate_fastdir_params() {
     echo "--dir-service-port not specified, would use default port: $FDIR_DEFAULT_SERVICE_PORT,+1,+2..."
     for (( i=0; i < $dir_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        dir_service_ports[$i]=$FDIR_DEFAULT_SERVICE_PORT+$i
+        dir_service_ports[$i]=$(( $FDIR_DEFAULT_SERVICE_PORT + $i ))
       else
         dir_service_ports[$i]=$FDIR_DEFAULT_SERVICE_PORT
       fi
@@ -265,7 +271,7 @@ validate_faststore_params() {
     echo "--store-cluster-port not specified, would use default port: $FSTORE_DEFAULT_CLUSTER_PORT,+1,+2..."
     for (( i=0; i < $store_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        store_cluster_ports[$i]=$FSTORE_DEFAULT_CLUSTER_PORT+$i
+        store_cluster_ports[$i]=$(( $FSTORE_DEFAULT_CLUSTER_PORT + $i ))
       else
         store_cluster_ports[$i]=$FSTORE_DEFAULT_CLUSTER_PORT
       fi
@@ -288,7 +294,7 @@ validate_faststore_params() {
     echo "--store-service-port not specified, would use default port: $FSTORE_DEFAULT_SERVICE_PORT,+1,+2..."
     for (( i=0; i < $store_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        store_service_ports[$i]=$FSTORE_DEFAULT_SERVICE_PORT+$i
+        store_service_ports[$i]=$(( $FSTORE_DEFAULT_SERVICE_PORT + $i ))
       else
         store_service_ports[$i]=$FSTORE_DEFAULT_SERVICE_PORT
       fi
@@ -318,7 +324,7 @@ validate_faststore_params() {
     echo "--store-replica-port not specified, would use default port: $FSTORE_DEFAULT_REPLICA_PORT,+1,+2..."
     for (( i=0; i < $store_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        store_replica_ports[$i]=$FSTORE_DEFAULT_REPLICA_PORT+$i
+        store_replica_ports[$i]=$(( $FSTORE_DEFAULT_REPLICA_PORT + $i ))
       else
         store_replica_ports[$i]=$FSTORE_DEFAULT_REPLICA_PORT
       fi
@@ -394,7 +400,7 @@ parse_init_arguments() {
       --store-path=*)
         split_to_array ${arg#--store-path=} store_pathes
       ;;
-      --store-icluster-size=*)
+      --store-cluster-size=*)
         store_cluster_size=${arg#--store-cluster-size=}
       ;;
       --store-host=*)
@@ -464,7 +470,7 @@ init_fastdir_config() {
     fi
 
     t_server_conf=$target_dir/server.conf
-    if cp -f $SERVER_TPL $ts_server_conf; then
+    if cp -f $SERVER_TPL $t_server_conf; then
       # Replace placeholders with reality in server template
       echo "Begin config $t_server_conf..."
       placeholder_replace $t_server_conf BASE_PATH "${dir_pathes[$i]}"
@@ -682,19 +688,25 @@ case "$mode" in
 
   'init')
     # Config FastDIR and faststore cluster.
-    if [[ $# < 3 ]]; then 
+    echo "param count:$#"
+    if [[ $# -lt 3 ]]; then 
       basename=`basename "$0"`
       echo "Usage: $basename init \\"
       echo "	--dir-path=/usr/local/fastcfs2/fastdir \\"
       echo "	--dir-cluster-size=3 \\"
-      echo "	--dir-host-=192.168.142.137,192.168.142.137,192.168.142.137 \\"
+      echo "	--dir-host=192.168.142.137,192.168.142.137,192.168.142.137 \\"
       echo "	--dir-cluster-port=11011,11012,11013 \\"
       echo "	--dir-service-port=21011,21012,21013 \\"
+      echo "	--dir-bind-addr=192.168.142.137 \\"
       echo "	--store-path=/usr/local/fastcfs2/faststore \\"
       echo "	--store-cluster-size=3 \\"
-      echo "	--store-host-=192.168.142.137,192.168.142.137,192.168.142.137 \\"
+      echo "	--store-host=192.168.142.137,192.168.142.137,192.168.142.137 \\"
       echo "	--store-cluster-port=31011,31012,31013 \\"
-      echo "	--store-service-port=41011,41012,41013"
+      echo "	--store-service-port=41011,41012,41013 \\"
+      echo "	--store-replica-port=51011 \\"
+      echo "	--store-bind-addr=192.168.142.137 \\"
+      echo "	--fuse-path=/usr/local/fuse \\"
+      echo "	--fuse-mount-point=/usr/local/fuse/fuse1"
     else
       parse_init_arguments $*
       init_fastdir_config

@@ -210,3 +210,11 @@ allow_others = all
 # auto unmount on process termination
 # default value is false
 auto_unmount = false
+
+# cache time for file attribute in seconds
+# default value is 1.0s
+attribute_timeout = 1.0
+
+# cache time for file entry in seconds
+# default value is 1.0s
+entry_timeout = 1.0
