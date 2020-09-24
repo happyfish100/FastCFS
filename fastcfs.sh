@@ -46,6 +46,7 @@ BUILD_PATH="build"
 mode=$1    # pull, make, install or clean 
 make_shell=make.sh
 same_host=false
+uname=$(uname)
 
 pull_source_code() {
   if [ $# != 2 ]; then
@@ -99,12 +100,10 @@ sed_replace()
 {
     sed_cmd=$1
     filename=$2
-    echo "sed_cmd in sed_replace:{$sed_cmd}"
-    echo "filename in sed_replace:{$filename}"
     if [ "$uname" = "FreeBSD" ] || [ "$uname" = "Darwin" ]; then
-       sed -i "" "$sed_cmd" "$filename"
+       sed -i "" "$sed_cmd" $filename
     else
-       sed -i "$sed_cmd" "$filename"
+       sed -i "$sed_cmd" $filename
     fi
 }
 
@@ -116,7 +115,6 @@ placeholder_replace() {
   filename=$1
   placeholder=$2
   value=$3
-  echo "arg 1 in placeholder_replace:$filename"
   sed_replace "s#\${$placeholder}#$value#g" $filename
 }
 
@@ -172,7 +170,7 @@ validate_fastdir_params() {
     tmp_port=${dir_cluster_ports[0]}
     for (( i=0; i < $dir_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        dir_cluster_ports[$i]=$tmp_port+$i
+        dir_cluster_ports[$i]=$(( $tmp_port + $i ))
       else
         dir_cluster_ports[$i]=$tmp_port
       fi
@@ -195,7 +193,7 @@ validate_fastdir_params() {
     tmp_port=${dir_service_ports[0]}
     for (( i=0; i < $dir_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        dir_service_ports[$i]=$tmp_port+$i
+        dir_service_ports[$i]=$(( $tmp_port + $i ))
       else
         dir_service_ports[$i]=$tmp_port
       fi
@@ -280,7 +278,7 @@ validate_faststore_params() {
     tmp_port=${store_cluster_ports[0]}
     for (( i=0; i < $store_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        store_cluster_ports[$i]=$tmp_port+$i
+        store_cluster_ports[$i]=$(( $tmp_port + $i ))
       else
         store_cluster_ports[$i]=$tmp_port
       fi
@@ -303,7 +301,7 @@ validate_faststore_params() {
     tmp_port=${store_service_ports[0]}
     for (( i=0; i < $store_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        store_service_ports[$i]=$tmp_port+$i
+        store_service_ports[$i]=$(( $tmp_port + $i ))
       else
         store_service_ports[$i]=$tmp_port
       fi
@@ -333,7 +331,7 @@ validate_faststore_params() {
     tmp_port=${store_replica_ports[0]}
     for (( i=0; i < $store_cluster_size; i++ )); do
       if [[ $same_host = true ]]; then
-        store_replica_ports[$i]=$tmp_port+$i
+        store_replica_ports[$i]=$(( $tmp_port + $i ))
       else
         store_replica_ports[$i]=$tmp_port
       fi
@@ -513,10 +511,18 @@ init_fastdir_config() {
       #替换fastDIR服务器占位符
       #dir_server = 192.168.0.196:11012
       t_dir_servers=""
+      cr='\
+      '
       for (( j=0; j < $dir_cluster_size; j++ )); do
-        t_dir_servers=$t_dir_servers"dir_server = ${dir_hosts[$j]}:${dir_service_ports[$j]}\n"
+        t_dir_servers=$t_dir_servers'dir_server = '${dir_hosts[$j]}':'${dir_service_ports[$j]}'\
+'
       done
-      placeholder_replace $t_client_conf DIR_SERVERS "$t_dir_servers"
+      #placeholder_replace $t_client_conf DIR_SERVERS "$t_dir_servers"
+      if [ "$uname" = "FreeBSD" ] || [ "$uname" = "Darwin" ]; then
+        sed -i "" "s#\\\${DIR_SERVERS}#${t_dir_servers}#g" $t_client_conf
+      else
+        sed -i "s#\\\${DIR_SERVERS}#${t_dir_servers}#g" $t_client_conf
+      fi
     else
       echo "Create client.conf from $CLIENT_TPL failed!"
     fi
@@ -525,11 +531,11 @@ init_fastdir_config() {
 
 init_faststore_config() {
   # if [[ ${#store_pathes[*]} -le 0 ]] || [[ $store_cluster_size -le 0 ]]; then
-  #   echo "Parameters --store-path and store-cluster-size not specified, would not config $FSTORE_LIB"
+  #   echo "Parameters --store-path and store-cluster-size not specified, would not config $STORE_LIB"
   #   exit 1
   # fi
   # Init config faststore to target path.
-  echo "Will initialize $store_cluster_size instances for $FSTORE_LIB..."
+  echo "Will initialize $store_cluster_size instances for $STORE_LIB..."
 
   S_SERVER_TPL="./conf/faststore/server.template"
   S_CLUSTER_TPL="./conf/faststore/cluster.template"
@@ -548,7 +554,7 @@ init_faststore_config() {
   for (( i=0; i < $store_cluster_size; i++ )); do
     target_path=${store_pathes[$i]}/conf
     if [ -d $target_path ]; then
-      echo "The $ith $FSTORE_LIB instance conf path \"$target_path\" have existed, skip!"
+      echo "The $ith $STORE_LIB instance conf path \"$target_path\" have existed, skip!"
       echo "If you want to reconfig it, you must delete it first."
       continue
     fi
@@ -559,7 +565,7 @@ init_faststore_config() {
     fi
 
     t_server_conf=$target_path/server.conf
-    if cp -f $S_SERVER_TPL $ts_server_conf; then
+    if cp -f $S_SERVER_TPL $t_server_conf; then
       # Replace placeholders with reality in server template
       echo "Begin config $t_server_conf..."
       placeholder_replace $t_server_conf BASE_PATH "${store_pathes[$i]}"
@@ -611,11 +617,18 @@ init_faststore_config() {
     t_cluster_conf=$target_path/cluster.conf
     if cp -f $S_CLUSTER_TPL $t_cluster_conf; then
       # Replace placeholders with reality in cluster template
-      echo "Begin config $t_storage_conf..."
+      echo "Begin config $t_cluster_conf..."
       placeholder_replace $t_cluster_conf SERVER_GROUP_COUNT "1"
       placeholder_replace $t_cluster_conf DATA_GROUP_COUNT "16"
       placeholder_replace $t_cluster_conf SERVER_GROUP_1_SERVER_IDS "[1, 3]"
-      placeholder_replace $t_cluster_conf DATA_GROUP_IDS "data_group_ids = [1, 8]\ndata_group_ids = [9, 16]"
+
+      data_group_ids='data_group_ids = [1, 8]\
+data_group_ids = [9, 16]'
+      if [ "$uname" = "FreeBSD" ] || [ "$uname" = "Darwin" ]; then
+        sed -i "" "s#\\\${DATA_GROUP_IDS}#${data_group_ids}#g" $t_cluster_conf
+      else
+        sed -i "s#\\\${DATA_GROUP_IDS}#${data_group_ids}#g" $t_cluster_conf
+      fi
     fi
 
     t_storage_conf=$target_path/storage.conf
