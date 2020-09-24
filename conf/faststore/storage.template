@@ -1,0 +1,126 @@
+
+# the write thread count per disk (store path or write cache path)
+# the default value is 1
+write_threads_per_disk = 1
+
+# the read thread count per disk (store path or write cache path)
+# the default value is 1
+read_threads_per_disk = 1
+
+# usually one store path for one disk
+# each store path is configurated in the section as: [store-path-$id],
+# eg. [store-path-1] for the first store path, [store-path-2] for
+#     the second store path, and so on.
+store_path_count = 2
+
+# the write cache usually use the high-speed disk, such as NVMe SSD for
+# high write throughput (performance). the write cache must support
+# persistent storage, do NOT use the memory file system such as /dev/shm !!!
+#
+# usually one store path for one high-speed disk
+# each write cache path is configurated in the section as: [write-cache-path-$id],
+# eg. [write-cache-path-1] for the first write cache path, [write-cache-path-2] for
+#     the second write cache path, and so on.
+#
+# 0 for disable write cache
+# the default value is 0
+write_cache_path_count = 0
+
+# trigger write cache transferring to hard disk when cache disk usage > this ratio
+# the value format is XX%
+# the default value is 100% - reserved_space_per_disk
+write_cache_to_hd_on_usage = 65%
+
+# the start time for write cache transfer to hard disk
+# time format as hour:minute
+write_cache_to_hd_start_time = 00:00
+
+# the end time for write cache transfer to hard disk
+# time format as hour:minute
+write_cache_to_hd_end_time = 23:59
+
+# the trunk files are used for striped disk space management
+# the trunk file size from 256MB to 16GB
+# the default value is 1GB
+trunk_file_size = 1GB
+
+# max trunk files per subdir, this limit avoid too many files in a directory
+# the subdirs (such 001, 002, etc.) are auto created when necessary
+# the default value is 100
+max_trunk_files_per_subdir = 100
+
+# reserved space of each disk for system or other applications.
+# the value format is XX%
+# the default value is 10%
+reserved_space_per_disk = 10%
+
+# the disk space allocator discard the remain space when the remain size
+# of a trunk file less than this parameter
+# the value of this parameter from 256 to 256KB
+# the default value is 4KB
+discard_remain_space_size = 4KB
+
+# pre-alloc trunk count per write thread
+# the default value is 2
+prealloc_trunks_per_writer = 2
+
+# pre-alloc trunk thread count
+# the default value is 1
+prealloc_trunk_threads = 1
+
+# trigger reclaim trunks when the disk usage > this ratio
+# the value format is XX%
+# the default value is 50%
+reclaim_trunks_on_usage = 50%
+
+# the capacity of fd (file descriptor) cache per disk read thread
+# the fd cache uses LRU elimination algorithm
+# the default value is 256
+fd_cache_capacity_per_read_thread = 256
+
+# the capacity of the object block hashtable
+# the default value is 1403641
+object_block_hashtable_capacity = 11229331
+
+# the count of the shared locks for the buckets of the object block hashtable
+# the default value is 163
+object_block_shared_locks_count = 163
+
+#### store paths config #####
+[store-path-1]
+
+# the path to store the file
+#path = /path/to/faststore/data1
+path = ${DATA1_PATH}
+
+# overwrite the global config: reserved_space_per_disk
+reserved_space = 20%
+
+
+[store-path-2]
+#path = /path/to/faststore/data2
+path = ${DATA2_PATH}
+
+# overwrite the global config: write_threads_per_disk
+write_threads = 1
+
+# overwrite the global config: write_threads_per_disk
+read_threads = 2
+
+# overwrite the global config: prealloc_trunks_per_disk
+prealloc_trunks = 3
+
+#### write cache paths config (optional) #####
+[write-cache-path-1]
+# the store path of write cache
+#path = /path/to/faststore/cache
+path = ${CACHE_PATH}
+
+# overwrite the global config: reserved_space_per_disk
+reserved_space = 20%
+
+# overwrite the global config: write_threads_per_disk
+write_threads = 2
+
+# overwrite the global config: prealloc_trunks_per_disk
+prealloc_trunks = 5

@@ -1,0 +1,53 @@
+#
+# the server group is a physical concept, the data under the same server group
+# is the same (redundant or backup).
+#
+# the data group is a logical or virtual concept, its purpose is to facilitate
+# cluster expansion.
+#
+# cluster expansion: migrate one or more data group(s) to one or more new server group(s).
+# data migration: restart after the mappings from data group to server group modified,
+# the data replication will be completed automatically.
+#
+# in order to facilitate cluster expansion, there is a one to many relationship
+# between the server groups and the data groups.
+# 1 : 16 (server groups : data groups) is recommended.
+#
+# data is hashed to the server group according to hash code % the data groups.
+# once the number of data groups is set, it can NOT be changed, otherwise
+# the data access will be confused!
+#
+# if you want to change the number of data groups after the formal running of
+# the cluster, you MUST create a new cluster and migrate the data to it.
+
+# config the id, ip address and port of the servers
+server_config_filename = servers.conf
+
+# the group count of the servers
+#server_group_count = 1
+server_group_count = ${SERVER_GROUP_COUNT}
+
+# all data groups must be mapped to the server group(s) without omission.
+# once the number of data groups is set, it can NOT be changed, otherwise
+# the data access will be confused!
+#data_group_count = 16
+data_group_count = ${DATA_GROUP_COUNT}
+
+# the server group id based 1
+# the data under the same server group is the same (redundant or backup)
+[server-group-1]
+
+# config one or more server id(s) from store_servers.conf
+## multiple server ids separated by comma(s).
+## [start, end] for range, including start and end.
+# this parameter can occurs more than once.
+#server_ids = [1, 3]
+server_ids = ${SERVER_GROUP_1_SERVER_IDS}
+
+# the data group id based 1.
+## multiple data group ids separated by comma(s).
+## [start, end] for range, including start and end.
+# this parameter can occurs more than once.
+#data_group_ids = [1, 8]
+#data_group_ids = [9, 16]
+${DATA_GROUP_IDS}

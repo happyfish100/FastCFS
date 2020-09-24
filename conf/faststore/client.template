@@ -1,0 +1,63 @@
+# connect timeout in seconds
+# default value is 5s
+# Note: in the intranet network (LAN), 2 seconds is enough.
+connect_timeout = 5
+
+# network timeout in seconds
+# default value is 30s
+network_timeout = 60
+
+# the base path to store log files
+base_path = ${BASE_PATH}
+
+# config the cluster servers and groups
+cluster_config_filename = cluster.conf
+
+#standard log level as syslog, case insensitive, value list:
+### emerg for emergency
+### alert
+### crit for critical
+### error
+### warn for warning
+### notice
+### info
+### debug
+log_level = info
+
+# the rule of read data, value list:
+### any : any available server (default)
+### slave : slave first, access master when all slaves down or offline
+### master : master only
+read_rule = any
+
+# the mode of retry interval, value list:
+### fixed for fixed interval
+### multiple for multiplication (default)
+retry_interval_mode = multiple
+
+# the max retry interval in milliseconds
+# valid when retry_interval_mode set to multiple
+# default value is 5000 ms
+retry_max_interval_ms = 5000
+
+# retry times when connect to server fail
+###  0 for never retry
+### < 0 for infinite retry
+# default value is 10
+connect_retry_times = 10
+
+# retry interval when connect to server fail
+# unit: milliseconds
+# default value is 100 ms
+connect_retry_interval_ms = 100
+
+# retry times when communicate with server fail
+###  0 for never retry
+### < 0 for infinite retry
+# default value is 10
+network_retry_times = 10
+
+# retry interval when communicate with server fail
+# unit: milliseconds
+# default value is 100 ms
+network_retry_interval_ms = 100
