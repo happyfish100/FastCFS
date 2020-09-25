@@ -52,10 +52,17 @@ max_pkg_size = 256KB
 # default value is 64K
 binlog_buffer_size = 256KB
 
-# the last seconds binlog for consistency check when startup
-# <= 0 means no check for binlog consistency
+# the last seconds of the local replica and slice binlog
+# for consistency check when startup
+# <= 0 means no check for the local binlog consistency
 # default value is 3
-binlog_check_last_seconds = 3
+local_binlog_check_last_seconds = 3
+
+# the last binlog rows of the slave to check
+# consistency with the master
+# <= 0 means no check for the slave binlog consistency
+# default value is 3
+slave_binlog_check_last_rows = 3
 
 # config the cluster servers and groups
 cluster_config_filename = cluster.conf
