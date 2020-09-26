@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# ${CLUSTER_NAME} cluster operate shell, start, stop, restart
+
+mode=$1    # start, stop, or restart
+
+if [[ $mode = start ]] || [[ $mode = stop ]] || [[ $mode = restart ]]; then
+  echo "Begin $mode ${CLUSTER_NAME} cluster..."
+else
+  # usage
+  basename=`basename "$0"`
+  echo "Usage: $basename {start|stop|restart}"
+  exit 1
+fi
+
+# Instances command will be executed sequentially.
+ 
