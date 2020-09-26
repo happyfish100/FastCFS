@@ -457,6 +457,7 @@ init_fastdir_config() {
   dir_cluster_shell="$BUILD_PATH/shell/fastdir-cluster.sh"
   if [[ -f $CLUSTER_SHELL_TPL ]]; then
     if cp -f $CLUSTER_SHELL_TPL $dir_cluster_shell; then
+      chmod u+x $dir_cluster_shell
       placeholder_replace $dir_cluster_shell CLUSTER_NAME "$FDIR_LIB"
     else
       echo "WARNING:Create $dir_cluster_shell from $CLUSTER_SHELL_TPL failed!"
@@ -569,6 +570,7 @@ init_faststore_config() {
   store_cluster_shell="$BUILD_PATH/shell/faststore-cluster.sh"
   if [[ -f $CLUSTER_SHELL_TPL ]]; then
     if cp -f $CLUSTER_SHELL_TPL $store_cluster_shell; then
+      chmod u+x $store_cluster_shell
       placeholder_replace $store_cluster_shell CLUSTER_NAME "$STORE_LIB"
     else
       echo "WARNING:Create $store_cluster_shell from $CLUSTER_SHELL_TPL failed!"
@@ -688,6 +690,7 @@ data_group_ids = [9, 16]'
         fuse_shell="$BUILD_PATH/shell/fuse.sh"
         if [[ -f $CLUSTER_SHELL_TPL ]]; then
           if cp -f $CLUSTER_SHELL_TPL $fuse_shell; then
+            chmod u+x $fuse_shell
             placeholder_replace $fuse_shell CLUSTER_NAME "fuse"
             # Add fs_fused command to $fuse_shell
             echo "fs_fused $t_fuse_conf \$mode" >> $fuse_shell
