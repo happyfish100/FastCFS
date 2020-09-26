@@ -676,6 +676,16 @@ data_group_ids = [9, 16]'
       if cp -f $S_FUSE_TPL $t_fuse_conf; then
         # Replace placeholders with reality in fuse template
         echo "INFO:Begin config $t_fuse_conf..."
+        if ! [[ -d $fuse_path ]]; then
+          if ! mkdir -p $fuse_path; then
+            echo "WARNING:Create fuse base_path $fuse_path failed!"
+          fi
+        fi
+        if ! [[ -d $fuse_mount_point ]]; then
+          if ! mkdir -p $fuse_mount_point; then
+            echo "WARNING:Create fuse mount point $fuse_mount_point failed!"
+          fi
+        fi
         placeholder_replace $t_fuse_conf BASE_PATH "$fuse_path"
         placeholder_replace $t_fuse_conf FUSE_MOUNT_POINT "$fuse_mount_point"
         #替换fastDIR服务器占位符
