@@ -19,6 +19,12 @@ base_path = ${BASE_PATH}
 # default value is data
 data_path = data
 
+# the data thread count
+# these threads deal data update (write & delete) operations
+# dispatched by the block id (combined object id and offset)
+# default value is 8
+data_threads = 8
+
 # max concurrent connections this server support
 # you should set this parameter larger, eg. 10240
 # default value is 256
