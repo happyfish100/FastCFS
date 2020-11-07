@@ -64,11 +64,11 @@ connect_timeout = 2
 network_timeout = 10
 
 # the rule of read data, value list:
-### any : any available server (default)
+### any : any available server
 ### slave : slave first, access master when all slaves down or offline
-### master : master only
+### master : master only (default)
 # this parameter can be overriden / redefined in section [FastDIR] and [FastStore]
-read_rule = any
+read_rule = master
 
 # the mode of retry interval, value list:
 ### fixed for fixed interval

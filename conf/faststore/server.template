@@ -20,7 +20,7 @@ base_path = ${BASE_PATH}
 data_path = data
 
 # the data thread count
-# these threads deal data update (write & delete) operations
+# these threads deal data (write, read & delete) operations
 # dispatched by the block id (combined object id and offset)
 # default value is 8
 data_threads = 8

@@ -25,10 +25,10 @@ cluster_config_filename = cluster.conf
 log_level = info
 
 # the rule of read data, value list:
-### any : any available server (default)
+### any : any available server
 ### slave : slave first, access master when all slaves down or offline
-### master : master only
-read_rule = any
+### master : master only (default)
+read_rule = master
 
 # the mode of retry interval, value list:
 ### fixed for fixed interval
