@@ -21,7 +21,7 @@
 #include "fastcommon/sched_thread.h"
 #include "fcfs_api_util.h"
 
-int fsapi_remove_dentry_by_pname_ex(FSAPIContext *ctx,
+int fcfs_api_remove_dentry_by_pname_ex(FSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name)
 {
     FDIRDEntryPName pname;
@@ -49,7 +49,7 @@ int fsapi_remove_dentry_by_pname_ex(FSAPIContext *ctx,
     return result;
 }
 
-int fsapi_rename_dentry_by_pname_ex(FSAPIContext *ctx,
+int fcfs_api_rename_dentry_by_pname_ex(FSAPIContext *ctx,
         const int64_t src_parent_inode, const string_t *src_name,
         const int64_t dest_parent_inode, const string_t *dest_name,
         const int flags)

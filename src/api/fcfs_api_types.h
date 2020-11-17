@@ -21,8 +21,8 @@
 #include <sys/stat.h>
 #include "fastcommon/fast_mblock.h"
 #include "fastcommon/fast_buffer.h"
-#include "fastdir/fdir_client.h"
-#include "faststore/fs_client.h"
+#include "fastdir/client/fdir_client.h"
+#include "faststore/client/fs_client.h"
 
 typedef struct fcfs_api_opendir_session {
     FDIRClientDentryArray array;

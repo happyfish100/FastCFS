@@ -165,7 +165,7 @@ static int check_create_root_path()
     int64_t inode;
     FDIRClientOwnerModePair omp;
 
-    if ((result=fsapi_lookup_inode("/", &inode)) != 0) {
+    if ((result=fcfs_api_lookup_inode("/", &inode)) != 0) {
         if (result == ENOENT) {
             FDIRDEntryFullName fullname;
             FDIRDEntryInfo dentry;

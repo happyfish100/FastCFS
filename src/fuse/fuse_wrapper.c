@@ -66,7 +66,7 @@ static inline int fs_convert_inode(const fuse_ino_t ino, int64_t *new_inode)
 
     if (ino == FUSE_ROOT_ID) {
         if (root_inode == 0) {
-            if ((result=fsapi_lookup_inode("/", new_inode)) != 0) {
+            if ((result=fcfs_api_lookup_inode("/", new_inode)) != 0) {
                 return result;
             }
             root_inode = *new_inode;
@@ -98,7 +98,7 @@ static void fs_do_getattr(fuse_req_t req, fuse_ino_t ino,
         return;
     }
 
-    if (fsapi_stat_dentry_by_inode(new_inode, &dentry) == 0) {
+    if (fcfs_api_stat_dentry_by_inode(new_inode, &dentry) == 0) {
         do_reply_attr(req, &dentry);
     } else {
         fuse_reply_err(req, ENOENT);
@@ -153,7 +153,7 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
                 (int64_t)attr->st_size);
                 */
 
-        if ((result=fsapi_ftruncate(fh, attr->st_size)) != 0) {
+        if ((result=fcfs_api_ftruncate(fh, attr->st_size)) != 0) {
             fuse_reply_err(req, result);
             return;
         }
@@ -195,13 +195,13 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     if (options.flags == 0) {
         if (pe == NULL) {
             pe = &dentry;
-            result = fsapi_stat_dentry_by_inode(new_inode, &dentry);
+            result = fcfs_api_stat_dentry_by_inode(new_inode, &dentry);
         } else {
             result = 0;
         }
     } else {
         pe = &dentry;
-        result = fsapi_modify_dentry_stat(ino, attr, options.flags, &dentry);
+        result = fcfs_api_modify_dentry_stat(ino, attr, options.flags, &dentry);
     }
     if (result != 0) {
         fuse_reply_err(req, ENOENT);
@@ -226,7 +226,7 @@ static void fs_do_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
     }
 
     FC_SET_STRING(nm, (char *)name);
-    if ((result=fsapi_stat_dentry_by_pname(parent_inode, &nm, &dentry)) != 0) {
+    if ((result=fcfs_api_stat_dentry_by_pname(parent_inode, &nm, &dentry)) != 0) {
         /*
         logError("file: "__FILE__", line: %d, func: %s, "
                 "parent: %"PRId64", name: %s(%d), result: %d",
@@ -303,16 +303,16 @@ static void fs_do_opendir(fuse_req_t req, fuse_ino_t ino,
         fuse_reply_err(req, ENOENT);
         return;
     }
-    if ((session=fsapi_alloc_opendir_session()) == NULL) {
+    if ((session=fcfs_api_alloc_opendir_session()) == NULL) {
         fuse_reply_err(req, ENOMEM);
         return;
     }
 
     session->btype = FS_READDIR_BUFFER_INIT_NONE;
-    if ((result=fsapi_list_dentry_by_inode(new_inode,
+    if ((result=fcfs_api_list_dentry_by_inode(new_inode,
                     &session->array)) != 0)
     {
-        fsapi_free_opendir_session(session);
+        fcfs_api_free_opendir_session(session);
         fuse_reply_err(req, result);
         return;
     }
@@ -384,7 +384,7 @@ static void fs_do_releasedir(fuse_req_t req, fuse_ino_t ino,
 
     session = (FSAPIOpendirSession *)fi->fh;
     if (session != NULL) {
-        fsapi_free_opendir_session(session);
+        fcfs_api_free_opendir_session(session);
         fi->fh = 0;
     }
 
@@ -402,7 +402,7 @@ static int do_open(fuse_req_t req, FDIRDEntryInfo *dentry,
         return ENOMEM;
     }
 
-    if ((result=fsapi_open_by_dentry(fh, dentry, fi->flags, omp)) != 0) {
+    if ((result=fcfs_api_open_by_dentry(fh, dentry, fi->flags, omp)) != 0) {
         logError("file: "__FILE__", line: %d, func: %s, "
             "ino: %"PRId64", fh: %"PRId64", flags: %d, result: %d\n",
             __LINE__, __FUNCTION__, dentry->inode, fi->fh, fi->flags, result);
@@ -433,7 +433,7 @@ static void fs_do_access(fuse_req_t req, fuse_ino_t ino, int mask)
         return;
     }
 
-    if ((result=fsapi_stat_dentry_by_inode(new_inode, &dentry)) != 0) {
+    if ((result=fcfs_api_stat_dentry_by_inode(new_inode, &dentry)) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
@@ -483,7 +483,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
 
     FCFS_FUSE_SET_OMP_BY_REQ(omp, mode, req);
     FC_SET_STRING(nm, (char *)name);
-    if ((result=fsapi_create_dentry_by_pname(parent_inode, &nm,
+    if ((result=fcfs_api_create_dentry_by_pname(parent_inode, &nm,
                     &omp, &dentry)) != 0)
     {
         if (result != EEXIST) {
@@ -496,7 +496,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
             return;
         }
 
-        if ((result=fsapi_stat_dentry_by_pname(parent_inode,
+        if ((result=fcfs_api_stat_dentry_by_pname(parent_inode,
                         &nm, &dentry)) != 0)
         {
             fuse_reply_err(req, ENOENT);
@@ -537,7 +537,7 @@ static void do_mknod(fuse_req_t req, fuse_ino_t parent,
 
     FCFS_FUSE_SET_OMP_BY_REQ(omp, mode, req);
     FC_SET_STRING(nm, (char *)name);
-    if ((result=fsapi_create_dentry_by_pname(parent_inode, &nm,
+    if ((result=fcfs_api_create_dentry_by_pname(parent_inode, &nm,
                     &omp, &dentry)) != 0)
     {
         if (result == EEXIST || result == ENOENT) {
@@ -581,7 +581,7 @@ static int remove_dentry(fuse_ino_t parent, const char *name)
             */
 
     FC_SET_STRING(nm, (char *)name);
-    return fsapi_remove_dentry_by_pname(parent_inode, &nm);
+    return fcfs_api_remove_dentry_by_pname(parent_inode, &nm);
 }
 
 static void fs_do_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name)
@@ -629,7 +629,7 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
 
     FC_SET_STRING(old_nm, (char *)oldname);
     FC_SET_STRING(new_nm, (char *)newname);
-    result = fsapi_rename_dentry_by_pname(old_parent_inode, &old_nm,
+    result = fcfs_api_rename_dentry_by_pname(old_parent_inode, &old_nm,
             new_parent_inode, &new_nm, flags);
     fuse_reply_err(req, result);
 }
@@ -653,7 +653,7 @@ static void fs_do_link(fuse_req_t req, fuse_ino_t ino,
     fctx = fuse_req_ctx(req);
     FCFS_FUSE_SET_OMP(omp, (0777 & (~fctx->umask)), fctx->uid, fctx->gid);
     FC_SET_STRING(nm, (char *)name);
-    if ((result=fsapi_link_dentry_by_pname(ino, parent_inode,
+    if ((result=fcfs_api_link_dentry_by_pname(ino, parent_inode,
                     &nm, &omp, &dentry)) == 0)
     {
         fill_entry_param(&dentry, &param);
@@ -691,7 +691,7 @@ static void fs_do_symlink(fuse_req_t req, const char *link,
 
     FC_SET_STRING(lk, (char *)link);
     FC_SET_STRING(nm, (char *)name);
-    if ((result=fsapi_symlink_dentry_by_pname(&lk, parent_inode,
+    if ((result=fcfs_api_symlink_dentry_by_pname(&lk, parent_inode,
                     &nm, &omp, &dentry)) == 0)
     {
         fill_entry_param(&dentry, &param);
@@ -708,7 +708,7 @@ static void fs_do_readlink(fuse_req_t req, fuse_ino_t ino)
     string_t link;
 
     link.str = buff;
-    if ((result=fsapi_readlink_by_inode(ino, &link, PATH_MAX)) == 0) {
+    if ((result=fcfs_api_readlink_by_inode(ino, &link, PATH_MAX)) == 0) {
         fuse_reply_readlink(req, link.str);
     } else {
         fuse_reply_err(req, result);
@@ -748,7 +748,7 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
             __LINE__, __FUNCTION__, ino, fi->fh, (fi->flags & O_APPEND));
             */
 
-    if ((result=fsapi_stat_dentry_by_inode(ino, &dentry)) != 0) {
+    if ((result=fcfs_api_stat_dentry_by_inode(ino, &dentry)) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
@@ -801,7 +801,7 @@ static void fs_do_release(fuse_req_t req, fuse_ino_t ino,
 
     fh = (FSAPIFileInfo *)fi->fh;
     if (fh != NULL) {
-        result = fsapi_close(fh);
+        result = fcfs_api_close(fh);
         fast_mblock_free_object(&fh_allocator, fh);
     } else {
         result = EBADF;
@@ -837,7 +837,7 @@ static void fs_do_read(fuse_req_t req, fuse_ino_t ino, size_t size,
             __LINE__, __FUNCTION__, ino, fh, size, offset);
             */
 
-    if ((result=fsapi_pread(fh, buff, size, offset, &read_bytes)) != 0) {
+    if ((result=fcfs_api_pread(fh, buff, size, offset, &read_bytes)) != 0) {
         fuse_reply_err(req, result);
         return;
     }
@@ -867,7 +867,7 @@ void fs_do_write(fuse_req_t req, fuse_ino_t ino, const char *buff,
             __LINE__, __FUNCTION__, ino, size, offset);
             */
 
-    if ((result=fsapi_pwrite(fh, buff, size, offset, &written_bytes)) != 0) {
+    if ((result=fcfs_api_pwrite(fh, buff, size, offset, &written_bytes)) != 0) {
         fuse_reply_err(req, result);
         return;
     }
@@ -893,7 +893,7 @@ void fs_do_lseek(fuse_req_t req, fuse_ino_t ino, off_t offset,
         return;
     }
 
-    if ((result=fsapi_lseek(fh, offset, whence)) != 0) {
+    if ((result=fcfs_api_lseek(fh, offset, whence)) != 0) {
         fuse_reply_err(req, result);
         return;
     }
@@ -918,7 +918,7 @@ static void fs_do_getlk(fuse_req_t req, fuse_ino_t ino,
     if (fh == NULL) {
         result = EBADF;
     } else {
-        result = fsapi_getlk(fh, lock, &owner_id);
+        result = fcfs_api_getlk(fh, lock, &owner_id);
     }
 
     if (result == 0) {
@@ -944,7 +944,7 @@ static void fs_do_setlk(fuse_req_t req, fuse_ino_t ino,
     if (fh == NULL) {
         result = EBADF;
     } else {
-        result = fsapi_setlk(fh, lock, fi->lock_owner);
+        result = fcfs_api_setlk(fh, lock, fi->lock_owner);
     }
     fuse_reply_err(req, result);
 }
@@ -967,7 +967,7 @@ static void fs_do_flock(fuse_req_t req, fuse_ino_t ino,
     if (fh == NULL) {
         result = EBADF;
     } else {
-        result = fsapi_flock_ex(fh, op, fi->lock_owner);
+        result = fcfs_api_flock_ex(fh, op, fi->lock_owner);
     }
     fuse_reply_err(req, result);
 }
@@ -977,7 +977,7 @@ static void fs_do_statfs(fuse_req_t req, fuse_ino_t ino)
     int result;
     struct statvfs stbuf;
 
-    if ((result=fsapi_statvfs("/", &stbuf)) == 0) {
+    if ((result=fcfs_api_statvfs("/", &stbuf)) == 0) {
         fuse_reply_statfs(req, &stbuf);
     } else {
         fuse_reply_err(req, result);
@@ -999,7 +999,7 @@ static void fs_do_fallocate(fuse_req_t req, fuse_ino_t ino, int mode,
     if (fh == NULL) {
         result = EBADF;
     } else {
-        result = fsapi_fallocate(fh, mode, offset, length);
+        result = fcfs_api_fallocate(fh, mode, offset, length);
     }
 
     fuse_reply_err(req, result);

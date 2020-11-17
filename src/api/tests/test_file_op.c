@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
     /*
     {
         struct statvfs stbuf;
-        if (fsapi_statvfs(filename, &stbuf) == 0) {
+        if (fcfs_api_statvfs(filename, &stbuf) == 0) {
             printf("%s fs id: %ld, total: %"PRId64" MB, free: %"PRId64" MB, "
                     "avail: %"PRId64" MB, f_namemax: %ld, f_flag: %ld\n", filename,
                     stbuf.f_fsid, (int64_t)(stbuf.f_blocks * stbuf.f_frsize) / (1024 * 1024),
@@ -144,22 +144,22 @@ int main(int argc, char *argv[])
     }
     */
 
-    if ((result=fsapi_open(&fi, filename, O_CREAT |
+    if ((result=fcfs_api_open(&fi, filename, O_CREAT |
                     O_WRONLY | open_flags, &omp)) != 0)
     {
         return result;
     }
 
     if (file_size_to_set >= 0) {
-        if ((result=fsapi_ftruncate(&fi, file_size_to_set)) != 0) {
+        if ((result=fcfs_api_ftruncate(&fi, file_size_to_set)) != 0) {
             return result;
         }
     }
 
     if (offset == 0) {
-        result = fsapi_write(&fi, out_buff, length, &write_bytes);
+        result = fcfs_api_write(&fi, out_buff, length, &write_bytes);
     } else {
-        result = fsapi_pwrite(&fi, out_buff, length, offset, &write_bytes);
+        result = fcfs_api_pwrite(&fi, out_buff, length, offset, &write_bytes);
     }
     if (result != 0) {
         logError("file: "__FILE__", line: %d, "
@@ -169,9 +169,9 @@ int main(int argc, char *argv[])
                 result, STRERROR(result));
         return result;
     }
-    fsapi_close(&fi);
+    fcfs_api_close(&fi);
 
-    if ((result=fsapi_open(&fi, filename, O_RDONLY, &omp)) != 0) {
+    if ((result=fcfs_api_open(&fi, filename, O_RDONLY, &omp)) != 0) {
         return result;
     }
     in_buff = (char *)malloc(length);
@@ -181,15 +181,15 @@ int main(int argc, char *argv[])
         return ENOMEM;
     }
 
-    if ((result=fsapi_lseek(&fi, offset, SEEK_SET)) != 0) {
+    if ((result=fcfs_api_lseek(&fi, offset, SEEK_SET)) != 0) {
         return result;
     }
 
     if (offset == 0) {
-        result = fsapi_read(&fi, in_buff, length, &read_bytes);
+        result = fcfs_api_read(&fi, in_buff, length, &read_bytes);
     } else {
-        //result = fsapi_pread(&fi, in_buff, length, offset, &read_bytes);
-        result = fsapi_read(&fi, in_buff, length, &read_bytes);
+        //result = fcfs_api_pread(&fi, in_buff, length, offset, &read_bytes);
+        result = fcfs_api_read(&fi, in_buff, length, &read_bytes);
     }
 
     if (result != 0) {
@@ -214,6 +214,6 @@ int main(int argc, char *argv[])
         return EINVAL;
     }
 
-    fsapi_close(&fi);
+    fcfs_api_close(&fi);
     return 0;
 }

@@ -27,65 +27,65 @@ extern "C" {
     fullname.ns = ctx->ns;    \
     FC_SET_STRING(fullname.path, (char *)path_str)
 
-#define fsapi_lookup_inode(path, inode)  \
-    fsapi_lookup_inode_ex(&g_fcfs_api_ctx, path, LOG_DEBUG, inode)
+#define fcfs_api_lookup_inode(path, inode)  \
+    fcfs_api_lookup_inode_ex(&g_fcfs_api_ctx, path, LOG_DEBUG, inode)
 
-#define fsapi_stat_dentry_by_path(path, dentry)  \
-    fsapi_stat_dentry_by_path_ex(&g_fcfs_api_ctx, path, LOG_DEBUG, dentry)
+#define fcfs_api_stat_dentry_by_path(path, dentry)  \
+    fcfs_api_stat_dentry_by_path_ex(&g_fcfs_api_ctx, path, LOG_DEBUG, dentry)
 
-#define fsapi_stat_dentry_by_inode(inode, dentry)  \
-    fsapi_stat_dentry_by_inode_ex(&g_fcfs_api_ctx, inode, dentry)
+#define fcfs_api_stat_dentry_by_inode(inode, dentry)  \
+    fcfs_api_stat_dentry_by_inode_ex(&g_fcfs_api_ctx, inode, dentry)
 
-#define fsapi_stat_dentry_by_pname(parent_inode, name, dentry)  \
-    fsapi_stat_dentry_by_pname_ex(&g_fcfs_api_ctx, parent_inode, \
+#define fcfs_api_stat_dentry_by_pname(parent_inode, name, dentry)  \
+    fcfs_api_stat_dentry_by_pname_ex(&g_fcfs_api_ctx, parent_inode, \
             name, LOG_DEBUG, dentry)
 
-#define fsapi_create_dentry_by_pname(parent_inode, name, omp, dentry)  \
-    fsapi_create_dentry_by_pname_ex(&g_fcfs_api_ctx, \
+#define fcfs_api_create_dentry_by_pname(parent_inode, name, omp, dentry)  \
+    fcfs_api_create_dentry_by_pname_ex(&g_fcfs_api_ctx, \
             parent_inode, name, omp, dentry)
 
-#define fsapi_symlink_dentry_by_pname(link, parent_inode, name, omp, dentry) \
-    fsapi_symlink_dentry_by_pname_ex(&g_fcfs_api_ctx, link, \
+#define fcfs_api_symlink_dentry_by_pname(link, parent_inode, name, omp, dentry) \
+    fcfs_api_symlink_dentry_by_pname_ex(&g_fcfs_api_ctx, link, \
             parent_inode, name, omp, dentry)
 
-#define fsapi_readlink_by_pname(parent_inode, name, link, size) \
-    fsapi_readlink_by_pname_ex(&g_fcfs_api_ctx, parent_inode, \
+#define fcfs_api_readlink_by_pname(parent_inode, name, link, size) \
+    fcfs_api_readlink_by_pname_ex(&g_fcfs_api_ctx, parent_inode, \
             name, link, size)
 
-#define fsapi_readlink_by_inode(inode, link, size) \
-    fsapi_readlink_by_inode_ex(&g_fcfs_api_ctx, inode, link, size)
+#define fcfs_api_readlink_by_inode(inode, link, size) \
+    fcfs_api_readlink_by_inode_ex(&g_fcfs_api_ctx, inode, link, size)
 
-#define fsapi_link_dentry_by_pname(src_inode, dest_parent_inode, \
+#define fcfs_api_link_dentry_by_pname(src_inode, dest_parent_inode, \
         dest_name, omp, dentry)  \
-    fsapi_link_dentry_by_pname_ex(&g_fcfs_api_ctx, src_inode, \
+    fcfs_api_link_dentry_by_pname_ex(&g_fcfs_api_ctx, src_inode, \
             dest_parent_inode, dest_name, omp, dentry)
 
-#define fsapi_remove_dentry_by_pname(parent_inode, name)  \
-    fsapi_remove_dentry_by_pname_ex(&g_fcfs_api_ctx, \
+#define fcfs_api_remove_dentry_by_pname(parent_inode, name)  \
+    fcfs_api_remove_dentry_by_pname_ex(&g_fcfs_api_ctx, \
             parent_inode, name)
 
-#define fsapi_rename_dentry_by_pname(src_parent_inode, src_name, \
+#define fcfs_api_rename_dentry_by_pname(src_parent_inode, src_name, \
         dest_parent_inode, dest_name, flags)  \
-    fsapi_rename_dentry_by_pname_ex(&g_fcfs_api_ctx, src_parent_inode, \
+    fcfs_api_rename_dentry_by_pname_ex(&g_fcfs_api_ctx, src_parent_inode, \
             src_name, dest_parent_inode, dest_name, flags)
 
-#define fsapi_modify_dentry_stat(inode, attr, flags, dentry)  \
-    fsapi_modify_dentry_stat_ex(&g_fcfs_api_ctx, inode, attr, flags, dentry)
+#define fcfs_api_modify_dentry_stat(inode, attr, flags, dentry)  \
+    fcfs_api_modify_dentry_stat_ex(&g_fcfs_api_ctx, inode, attr, flags, dentry)
 
-#define fsapi_list_dentry_by_inode(inode, array)  \
-    fsapi_list_dentry_by_inode_ex(&g_fcfs_api_ctx, inode, array)
+#define fcfs_api_list_dentry_by_inode(inode, array)  \
+    fcfs_api_list_dentry_by_inode_ex(&g_fcfs_api_ctx, inode, array)
 
-#define fsapi_alloc_opendir_session()  \
-    fsapi_alloc_opendir_session_ex(&g_fcfs_api_ctx)
+#define fcfs_api_alloc_opendir_session()  \
+    fcfs_api_alloc_opendir_session_ex(&g_fcfs_api_ctx)
 
-#define fsapi_free_opendir_session(session) \
-        fsapi_free_opendir_session_ex(&g_fcfs_api_ctx, session)
+#define fcfs_api_free_opendir_session(session) \
+        fcfs_api_free_opendir_session_ex(&g_fcfs_api_ctx, session)
 
-#define fsapi_dentry_sys_lock(session, inode, flags, file_size, space_end) \
-    fsapi_dentry_sys_lock_ex(&g_fcfs_api_ctx, session, inode, \
+#define fcfs_api_dentry_sys_lock(session, inode, flags, file_size, space_end) \
+    fcfs_api_dentry_sys_lock_ex(&g_fcfs_api_ctx, session, inode, \
             flags, file_size, space_end)
 
-static inline int fsapi_lookup_inode_ex(FSAPIContext *ctx,
+static inline int fcfs_api_lookup_inode_ex(FSAPIContext *ctx,
         const char *path, const int enoent_log_level, int64_t *inode)
 {
     FDIRDEntryFullName fullname;
@@ -94,7 +94,7 @@ static inline int fsapi_lookup_inode_ex(FSAPIContext *ctx,
             &fullname, enoent_log_level, inode);
 }
 
-static inline int fsapi_stat_dentry_by_path_ex(FSAPIContext *ctx,
+static inline int fcfs_api_stat_dentry_by_path_ex(FSAPIContext *ctx,
         const char *path, const int enoent_log_level, FDIRDEntryInfo *dentry)
 {
     FDIRDEntryFullName fullname;
@@ -103,14 +103,14 @@ static inline int fsapi_stat_dentry_by_path_ex(FSAPIContext *ctx,
             &fullname, enoent_log_level, dentry);
 }
 
-static inline int fsapi_stat_dentry_by_inode_ex(FSAPIContext *ctx,
+static inline int fcfs_api_stat_dentry_by_inode_ex(FSAPIContext *ctx,
         const int64_t inode, FDIRDEntryInfo *dentry)
 {
     return fdir_client_stat_dentry_by_inode(ctx->contexts.fdir,
             inode, dentry);
 }
 
-static inline int fsapi_stat_dentry_by_pname_ex(FSAPIContext *ctx,
+static inline int fcfs_api_stat_dentry_by_pname_ex(FSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name,
         const int enoent_log_level, FDIRDEntryInfo *dentry)
 {
@@ -120,7 +120,7 @@ static inline int fsapi_stat_dentry_by_pname_ex(FSAPIContext *ctx,
             &pname, enoent_log_level, dentry);
 }
 
-static inline int fsapi_create_dentry_by_pname_ex(FSAPIContext *ctx,
+static inline int fcfs_api_create_dentry_by_pname_ex(FSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name,
         const FDIRClientOwnerModePair *omp, FDIRDEntryInfo *dentry)
 {
@@ -130,7 +130,7 @@ static inline int fsapi_create_dentry_by_pname_ex(FSAPIContext *ctx,
             &ctx->ns, &pname, omp, dentry);
 }
 
-static inline int fsapi_symlink_dentry_by_pname_ex(FSAPIContext *ctx,
+static inline int fcfs_api_symlink_dentry_by_pname_ex(FSAPIContext *ctx,
         const string_t *link, const int64_t parent_inode,
         const string_t *name, const FDIRClientOwnerModePair *omp, FDIRDEntryInfo *dentry)
 {
@@ -140,7 +140,7 @@ static inline int fsapi_symlink_dentry_by_pname_ex(FSAPIContext *ctx,
             link, &ctx->ns, &pname, omp, dentry);
 }
 
-static inline int fsapi_readlink_by_pname_ex(FSAPIContext *ctx,
+static inline int fcfs_api_readlink_by_pname_ex(FSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name,
         string_t *link, const int size)
 {
@@ -150,22 +150,22 @@ static inline int fsapi_readlink_by_pname_ex(FSAPIContext *ctx,
             &pname, link, size);
 }
 
-static inline int fsapi_readlink_by_inode_ex(FSAPIContext *ctx,
+static inline int fcfs_api_readlink_by_inode_ex(FSAPIContext *ctx,
         const int64_t inode, string_t *link, const int size)
 {
     return fdir_client_readlink_by_inode(ctx->contexts.fdir,
             inode, link, size);
 }
 
-int fsapi_remove_dentry_by_pname_ex(FSAPIContext *ctx,
+int fcfs_api_remove_dentry_by_pname_ex(FSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name);
 
-int fsapi_rename_dentry_by_pname_ex(FSAPIContext *ctx,
+int fcfs_api_rename_dentry_by_pname_ex(FSAPIContext *ctx,
         const int64_t src_parent_inode, const string_t *src_name,
         const int64_t dest_parent_inode, const string_t *dest_name,
         const int flags);
 
-static inline int fsapi_modify_dentry_stat_ex(FSAPIContext *ctx,
+static inline int fcfs_api_modify_dentry_stat_ex(FSAPIContext *ctx,
         const int64_t inode, const struct stat *attr, const int64_t flags,
         FDIRDEntryInfo *dentry)
 {
@@ -181,26 +181,26 @@ static inline int fsapi_modify_dentry_stat_ex(FSAPIContext *ctx,
             &ctx->ns, inode, flags, &stat, dentry);
 }
 
-static inline int fsapi_list_dentry_by_inode_ex(FSAPIContext *ctx,
+static inline int fcfs_api_list_dentry_by_inode_ex(FSAPIContext *ctx,
         const int64_t inode, FDIRClientDentryArray *array)
 {
     return fdir_client_list_dentry_by_inode(ctx->contexts.fdir, inode, array);
 }
 
-static inline FSAPIOpendirSession *fsapi_alloc_opendir_session_ex(
+static inline FSAPIOpendirSession *fcfs_api_alloc_opendir_session_ex(
         FSAPIContext *ctx)
 {
     return (FSAPIOpendirSession *)fast_mblock_alloc_object(
             &ctx->opendir_session_pool);
 }
 
-static inline void fsapi_free_opendir_session_ex(
+static inline void fcfs_api_free_opendir_session_ex(
         FSAPIContext *ctx, FSAPIOpendirSession *session)
 {
     fast_mblock_free_object(&ctx->opendir_session_pool, session);
 }
 
-static inline int fsapi_dentry_sys_lock_ex(FSAPIContext *ctx,
+static inline int fcfs_api_dentry_sys_lock_ex(FSAPIContext *ctx,
         FDIRClientSession *session, const int64_t inode, const int flags,
         int64_t *file_size, int64_t *space_end)
 {
@@ -212,7 +212,7 @@ static inline int fsapi_dentry_sys_lock_ex(FSAPIContext *ctx,
             flags, file_size, space_end);
 }
 
-static inline int fsapi_dentry_sys_unlock(FDIRClientSession *session,
+static inline int fcfs_api_dentry_sys_unlock(FDIRClientSession *session,
         const string_t *ns, const int64_t inode, const bool force,
         const int64_t old_size, const int64_t new_size,
         const int64_t inc_alloc, const int flags)
@@ -224,7 +224,7 @@ static inline int fsapi_dentry_sys_unlock(FDIRClientSession *session,
     return result;
 }
 
-static inline int fsapi_link_dentry_by_pname_ex(FSAPIContext *ctx,
+static inline int fcfs_api_link_dentry_by_pname_ex(FSAPIContext *ctx,
         const int64_t src_inode, const int64_t dest_parent_inode,
         const string_t *dest_name, const FDIRClientOwnerModePair *omp,
         FDIRDEntryInfo *dentry)

@@ -94,7 +94,7 @@ static int deal_open_flags(FSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
     return 0;
 }
 
-int fsapi_open_ex(FSAPIContext *ctx, FSAPIFileInfo *fi,
+int fcfs_api_open_ex(FSAPIContext *ctx, FSAPIFileInfo *fi,
         const char *path, const int flags,
         const FDIRClientOwnerModePair *omp)
 {
@@ -125,7 +125,7 @@ int fsapi_open_ex(FSAPIContext *ctx, FSAPIFileInfo *fi,
     return 0;
 }
 
-int fsapi_open_by_dentry_ex(FSAPIContext *ctx, FSAPIFileInfo *fi,
+int fcfs_api_open_by_dentry_ex(FSAPIContext *ctx, FSAPIFileInfo *fi,
         const FDIRDEntryInfo *dentry, const int flags,
         const FDIRClientOwnerModePair *omp)
 {
@@ -144,7 +144,7 @@ int fsapi_open_by_dentry_ex(FSAPIContext *ctx, FSAPIFileInfo *fi,
     return 0;
 }
 
-int fsapi_open_by_inode_ex(FSAPIContext *ctx, FSAPIFileInfo *fi,
+int fcfs_api_open_by_inode_ex(FSAPIContext *ctx, FSAPIFileInfo *fi,
         const int64_t inode, const int flags,
         const FDIRClientOwnerModePair *omp)
 {
@@ -167,7 +167,7 @@ int fsapi_open_by_inode_ex(FSAPIContext *ctx, FSAPIFileInfo *fi,
     return 0;
 }
 
-int fsapi_close(FSAPIFileInfo *fi)
+int fcfs_api_close(FSAPIFileInfo *fi)
 {
     if (fi->magic != FS_API_MAGIC_NUMBER) {
         return EBADF;
@@ -275,7 +275,7 @@ static int do_pwrite(FSAPIFileInfo *fi, const char *buff,
     }
 }
 
-int fsapi_pwrite(FSAPIFileInfo *fi, const char *buff,
+int fcfs_api_pwrite(FSAPIFileInfo *fi, const char *buff,
         const int size, const int64_t offset, int *written_bytes)
 {
     int total_inc_alloc;
@@ -296,7 +296,7 @@ int fsapi_pwrite(FSAPIFileInfo *fi, const char *buff,
             &total_inc_alloc, true);
 }
 
-int fsapi_write(FSAPIFileInfo *fi, const char *buff,
+int fcfs_api_write(FSAPIFileInfo *fi, const char *buff,
         const int size, int *written_bytes)
 {
     FDIRClientSession session;
@@ -320,7 +320,7 @@ int fsapi_write(FSAPIFileInfo *fi, const char *buff,
     }
 
     if ((fi->flags & O_APPEND)) {
-        if ((result=fsapi_dentry_sys_lock(&session, fi->dentry.inode,
+        if ((result=fcfs_api_dentry_sys_lock(&session, fi->dentry.inode,
                         0, &old_size, &space_end)) != 0)
         {
             return result;
@@ -349,14 +349,14 @@ int fsapi_write(FSAPIFileInfo *fi, const char *buff,
 
         flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE |
             FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
-        fsapi_dentry_sys_unlock(&session, ns, fi->dentry.inode,
+        fcfs_api_dentry_sys_unlock(&session, ns, fi->dentry.inode,
                 false, old_size, fi->offset, total_inc_alloc, flags);
     }
 
     return result;
 }
 
-int fsapi_pread(FSAPIFileInfo *fi, char *buff, const int size,
+int fcfs_api_pread(FSAPIFileInfo *fi, char *buff, const int size,
         const int64_t offset, int *read_bytes)
 {
     FSBlockSliceKeyInfo bs_key;
@@ -441,11 +441,11 @@ int fsapi_pread(FSAPIFileInfo *fi, char *buff, const int size,
     return result;
 }
 
-int fsapi_read(FSAPIFileInfo *fi, char *buff, const int size, int *read_bytes)
+int fcfs_api_read(FSAPIFileInfo *fi, char *buff, const int size, int *read_bytes)
 {
     int result;
 
-    if ((result=fsapi_pread(fi, buff, size, fi->offset, read_bytes)) != 0) {
+    if ((result=fcfs_api_pread(fi, buff, size, fi->offset, read_bytes)) != 0) {
         return result;
     }
 
@@ -553,7 +553,7 @@ static int file_truncate(FSAPIContext *ctx, const int64_t oid,
         return EINVAL;
     }
 
-    if ((result=fsapi_dentry_sys_lock(&session, oid, 0,
+    if ((result=fcfs_api_dentry_sys_lock(&session, oid, 0,
                     &old_size, &space_end)) != 0)
     {
         return result;
@@ -582,12 +582,12 @@ static int file_truncate(FSAPIContext *ctx, const int64_t oid,
     } else {
         ns = NULL;  //do NOT update
     }
-    unlock_res = fsapi_dentry_sys_unlock(&session, ns, oid,
+    unlock_res = fcfs_api_dentry_sys_unlock(&session, ns, oid,
             true, old_size, new_size, alloc_bytes, flags);
     return result == 0 ? unlock_res : result;
 }
 
-int fsapi_ftruncate(FSAPIFileInfo *fi, const int64_t new_size)
+int fcfs_api_ftruncate(FSAPIFileInfo *fi, const int64_t new_size)
 {
     if (fi->magic != FS_API_MAGIC_NUMBER || !((fi->flags & O_WRONLY) ||
                 (fi->flags & O_RDWR)))
@@ -620,7 +620,7 @@ static int get_regular_file_inode(FSAPIContext *ctx, const char *path,
     return 0;
 }
 
-int fsapi_truncate_ex(FSAPIContext *ctx, const char *path,
+int fcfs_api_truncate_ex(FSAPIContext *ctx, const char *path,
         const int64_t new_size)
 {
     int result;
@@ -632,7 +632,7 @@ int fsapi_truncate_ex(FSAPIContext *ctx, const char *path,
     return file_truncate(ctx, inode, new_size);
 }
 
-int fsapi_unlink_ex(FSAPIContext *ctx, const char *path)
+int fcfs_api_unlink_ex(FSAPIContext *ctx, const char *path)
 {
     FDIRDEntryFullName fullname;
     FDIRDEntryInfo dentry;
@@ -705,7 +705,7 @@ static inline int calc_file_offset_ex(FSAPIFileInfo *fi,
     return 0;
 }
 
-int fsapi_lseek(FSAPIFileInfo *fi, const int64_t offset, const int whence)
+int fcfs_api_lseek(FSAPIFileInfo *fi, const int64_t offset, const int whence)
 {
     int64_t new_offset;
     int result;
@@ -734,7 +734,7 @@ static void fill_stat(const FDIRDEntryInfo *dentry, struct stat *buf)
     buf->st_ctime = dentry->stat.ctime;
 }
 
-int fsapi_fstat(FSAPIFileInfo *fi, struct stat *buf)
+int fcfs_api_fstat(FSAPIFileInfo *fi, struct stat *buf)
 {
     int result;
 
@@ -752,7 +752,7 @@ int fsapi_fstat(FSAPIFileInfo *fi, struct stat *buf)
     return 0;
 }
 
-int fsapi_stat_ex(FSAPIContext *ctx, const char *path, struct stat *buf)
+int fcfs_api_stat_ex(FSAPIContext *ctx, const char *path, struct stat *buf)
 {
     int result;
     FDIRDEntryFullName fullname;
@@ -806,7 +806,7 @@ static inline int flock_unlock(FSAPIFileInfo *fi, const int operation,
     return result;
 }
 
-int fsapi_flock_ex2(FSAPIFileInfo *fi, const int operation,
+int fcfs_api_flock_ex2(FSAPIFileInfo *fi, const int operation,
         const int64_t owner_id, const pid_t pid)
 {
     if (fi->magic != FS_API_MAGIC_NUMBER) {
@@ -901,7 +901,7 @@ static inline int flock_op_to_fcntl_type(const int operation, short *type)
     return 0;
 }
 
-int fsapi_setlk(FSAPIFileInfo *fi, const struct flock *lock,
+int fcfs_api_setlk(FSAPIFileInfo *fi, const struct flock *lock,
         const int64_t owner_id)
 {
     int operation;
@@ -940,7 +940,7 @@ int fsapi_setlk(FSAPIFileInfo *fi, const struct flock *lock,
     }
 }
 
-int fsapi_getlk(FSAPIFileInfo *fi, struct flock *lock, int64_t *owner_id)
+int fcfs_api_getlk(FSAPIFileInfo *fi, struct flock *lock, int64_t *owner_id)
 {
     int operation;
     int result;
@@ -979,7 +979,7 @@ int fsapi_getlk(FSAPIFileInfo *fi, struct flock *lock, int64_t *owner_id)
     return result;
 }
 
-int fsapi_fallocate(FSAPIFileInfo *fi, const int mode,
+int fcfs_api_fallocate(FSAPIFileInfo *fi, const int mode,
         const int64_t offset, const int64_t length)
 {
     FDIRClientSession session;
@@ -1010,7 +1010,7 @@ int fsapi_fallocate(FSAPIFileInfo *fi, const int mode,
         return 0;
     }
 
-    if ((result=fsapi_dentry_sys_lock(&session, fi->dentry.inode,
+    if ((result=fcfs_api_dentry_sys_lock(&session, fi->dentry.inode,
                     0, &old_size, &space_end)) != 0)
     {
         return result;
@@ -1053,13 +1053,13 @@ int fsapi_fallocate(FSAPIFileInfo *fi, const int mode,
     } else {
         ns = NULL;  //do NOT update
     }
-    unlock_res = fsapi_dentry_sys_unlock(&session, ns, fi->dentry.inode,
+    unlock_res = fcfs_api_dentry_sys_unlock(&session, ns, fi->dentry.inode,
             true, old_size, new_size, alloc_bytes, flags);
 
     return result == 0 ? unlock_res : result;
 }
 
-int fsapi_rename_ex(FSAPIContext *ctx, const char *old_path,
+int fcfs_api_rename_ex(FSAPIContext *ctx, const char *old_path,
         const char *new_path, const int flags)
 {
     FDIRDEntryFullName src_fullname;
@@ -1087,7 +1087,7 @@ int fsapi_rename_ex(FSAPIContext *ctx, const char *old_path,
     return result;
 }
 
-int fsapi_symlink_ex(FSAPIContext *ctx, const char *target,
+int fcfs_api_symlink_ex(FSAPIContext *ctx, const char *target,
         const char *path, const FDIRClientOwnerModePair *omp)
 {
     FDIRDEntryFullName fullname;
@@ -1101,7 +1101,7 @@ int fsapi_symlink_ex(FSAPIContext *ctx, const char *target,
             &link, &fullname, omp, &dentry);
 }
 
-int fsapi_readlink(FSAPIContext *ctx, const char *path,
+int fcfs_api_readlink(FSAPIContext *ctx, const char *path,
         char *buff, const int size)
 {
     FDIRDEntryFullName fullname;
@@ -1114,7 +1114,7 @@ int fsapi_readlink(FSAPIContext *ctx, const char *path,
         &fullname, &link, size);
 }
 
-int fsapi_link_ex(FSAPIContext *ctx, const char *old_path,
+int fcfs_api_link_ex(FSAPIContext *ctx, const char *old_path,
         const char *new_path, const FDIRClientOwnerModePair *omp)
 {
     FDIRDEntryFullName src_fullname;
@@ -1130,7 +1130,7 @@ int fsapi_link_ex(FSAPIContext *ctx, const char *old_path,
             &src_fullname, &dest_fullname, omp, &dentry);
 }
 
-int fsapi_statvfs_ex(FSAPIContext *ctx, const char *path,
+int fcfs_api_statvfs_ex(FSAPIContext *ctx, const char *path,
         struct statvfs *stbuf)
 {
     int result;

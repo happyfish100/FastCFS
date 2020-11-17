@@ -65,7 +65,7 @@ static int copy_file()
     omp.mode = 0755;
     omp.uid = geteuid();
     omp.gid = getegid();
-    if ((result=fsapi_open(&fi, fs_filename,
+    if ((result=fcfs_api_open(&fi, fs_filename,
                     O_CREAT | O_WRONLY, &omp)) != 0)
     {
         return result;
@@ -86,7 +86,7 @@ static int copy_file()
             return result;
         }
 
-        result = fsapi_write(&fi, buff, read_bytes, &current_write);
+        result = fcfs_api_write(&fi, buff, read_bytes, &current_write);
         if (result != 0) {
             logError("file: "__FILE__", line: %d, "
                     "write to file %s fail, "
@@ -98,7 +98,7 @@ static int copy_file()
 
         write_bytes += current_write;
     }
-    fsapi_close(&fi);
+    fcfs_api_close(&fi);
 
     return 0;
 }
