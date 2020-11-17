@@ -1,1 +1,42 @@
-/build/
+# Makefile.in
+src/api/Makefile
+src/api/tests/Makefile
+src/fuse/Makefile
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dSYM
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.out
+src/api/tests/test_file_op
+src/api/tests/test_file_copy
+src/fuse/fcfs_fused
+
+# other
+logs
+data
+*.pid
+*.swp
+*.swo

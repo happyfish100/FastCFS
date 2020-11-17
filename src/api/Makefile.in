@@ -1,0 +1,44 @@
+.SUFFIXES: .c .o .lo
+
+COMPILE = $(CC) $(CFLAGS)
+INC_PATH = -I../common -I../include
+LIB_PATH = $(LIBS) -lfsclient -lfdirclient -lfastcommon
+TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
+
+FAST_SHARED_OBJS = fcfs_api.lo fcfs_api_file.lo fcfs_api_util.lo
+
+FAST_STATIC_OBJS = fcfs_api.o fcfs_api_file.o fcfs_api_util.o
+
+HEADER_FILES = fcfs_api.h fcfs_api_types.h fcfs_api_file.h fcfs_api_util.h
+
+ALL_OBJS = $(FAST_STATIC_OBJS) $(FAST_SHARED_OBJS)
+
+ALL_PRGS = 
+SHARED_LIBS = libfcfsapi.so
+STATIC_LIBS = libfcfsapi.a
+ALL_LIBS = $(SHARED_LIBS) $(STATIC_LIBS)
+
+all: $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
+libfcfsapi.so: $(FAST_SHARED_OBJS)
+	$(COMPILE) -o $@ -shared $(FAST_SHARED_OBJS) $(LIB_PATH)
+libfcfsapi.a: $(FAST_STATIC_OBJS)
+	ar rcs $@ $(FAST_STATIC_OBJS)
+.o:
+	$(COMPILE) -o $@ $<  $(FAST_STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c:
+	$(COMPILE) -o $@ $<  $(FAST_STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c.o:
+	$(COMPILE) -c -o $@ $<  $(INC_PATH)
+.c.lo:
+	$(COMPILE) -c -fPIC -o $@ $<  $(INC_PATH)
+install:
+	mkdir -p $(TARGET_LIB)
+	mkdir -p $(TARGET_PREFIX)/lib
+	mkdir -p $(TARGET_PREFIX)/include/fsapi
+
+	install -m 755 $(SHARED_LIBS) $(TARGET_LIB)
+	install -m 644 $(HEADER_FILES) $(TARGET_PREFIX)/include/fsapi
+	if [ ! -e $(TARGET_PREFIX)/lib/libfcfsapi.so ]; then ln -s $(TARGET_LIB)/libfcfsapi.so $(TARGET_PREFIX)/lib/libfcfsapi.so; fi
+clean:
+	rm -f $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
+
