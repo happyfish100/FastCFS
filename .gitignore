@@ -40,3 +40,6 @@ data
 *.pid
 *.swp
 *.swo
+
+# Build tmp path after execute fastcfs.sh
+build
