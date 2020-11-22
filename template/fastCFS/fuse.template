@@ -178,6 +178,25 @@ network_timeout = 30
 # config the cluster servers and groups
 cluster_config_filename = cluster.conf
 
+[write_combine]
+# if enable write combine feature for FastStore
+# default value is true
+enabled = true
+
+# the max buffer size for write combine
+# the min value is 64KB and the max value is the data block size such as 4MB
+# default value is 256KB
+max_size = 256KB
+
+# the min wait time in milliseconds for write combine
+# the min value is 10ms and the max value is 100ms
+# default value is 10ms
+min_wait_time_ms = 10
+
+# the max wait time in milliseconds for write combine
+# the min value is 100ms and the max value is 10000ms
+# default value is 1000ms
+max_wait_time_ms = 1000
 
 [FUSE]
 # the mount point (local path) for FUSE

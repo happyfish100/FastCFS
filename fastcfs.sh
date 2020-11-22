@@ -662,11 +662,11 @@ init_faststore_config() {
       # Replace placeholders with reality in cluster template
       echo "INFO:Begin config $t_cluster_conf..."
       placeholder_replace $t_cluster_conf SERVER_GROUP_COUNT "1"
-      placeholder_replace $t_cluster_conf DATA_GROUP_COUNT "16"
+      placeholder_replace $t_cluster_conf DATA_GROUP_COUNT "64"
       placeholder_replace $t_cluster_conf SERVER_GROUP_1_SERVER_IDS "[1, 3]"
 
-      data_group_ids='data_group_ids = [1, 8]\
-data_group_ids = [9, 16]'
+      data_group_ids='data_group_ids = [1, 32]\
+data_group_ids = [33, 64]'
       if [ "$uname" = "FreeBSD" ] || [ "$uname" = "Darwin" ]; then
         sed -i "" "s#\\\${DATA_GROUP_IDS}#${data_group_ids}#g" $t_cluster_conf
       else
