@@ -714,8 +714,8 @@ data_group_ids = [9, 16]'
           if cp -f $CLUSTER_SHELL_TPL $fuse_shell; then
             chmod u+x $fuse_shell
             placeholder_replace $fuse_shell CLUSTER_NAME "fuse"
-            # Add fs_fused command to $fuse_shell
-            echo "fs_fused $t_fuse_conf \$mode" >> $fuse_shell
+            # Add fcfs_fused command to $fuse_shell
+            echo "fcfs_fused $t_fuse_conf \$mode" >> $fuse_shell
           else
             echo "WARNING:Create $fuse_shell from $CLUSTER_SHELL_TPL failed!"
           fi
