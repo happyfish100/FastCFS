@@ -22,6 +22,7 @@ FDIR_LIB="fastDIR"
 FDIR_LIB_URL="https://github.com/happyfish100/fastDIR.git"
 STORE_LIB="faststore"
 STORE_LIB_URL="https://github.com/happyfish100/faststore.git"
+FASTCFS_LIB="FastCFS"
 
 DEFAULT_CLUSTER_SIZE=3
 DEFAULT_HOST=127.0.0.1
@@ -43,7 +44,7 @@ FSTORE_DEFAULT_STORE_PATH_COUNT=2
 FUSE_DEFAULT_BASE_PATH=/usr/local/fuse
 
 # cluster op shell template
-CLUSTER_SHELL_TPL="./conf/cluster.sh.template"
+CLUSTER_SHELL_TPL="./template/cluster.sh.template"
 
 BUILD_PATH="build"
 mode=$1    # pull, makeinstall, init or clean 
@@ -74,28 +75,39 @@ pull_source_code() {
 
 make_op() {
   if [ $# != 2 ]; then
-    echo "ERROR:$0 - make_clean() function need repository name and mode!"
+    echo "ERROR:$0 - make_op() function need module repository name and mode!"
     exit 1
   fi
 
   module_name=$1
   make_mode=$2
 
-  if ! [ -d $BUILD_PATH/$module_name ]; then
-    echo "ERROR:$0 - module repository {$module_name} does not exist!"
-    echo "ERROR:You must checkout from remote repository first!"
-    exit 1
-  else  
-    cd $BUILD_PATH/$module_name/
+  if [ $module_name = $FASTCFS_LIB ]; then
     echo "INFO:=====Begin to $make_mode module $module_name...====="
-    command="./$make_shell $make_mode"
-    echo "INFO:Execute command=$command, path=$PWD"
-    if [ $make_mode = "make" ]; then
-        result=`./$make_shell`
-      else
-        result=`./$make_shell $make_mode`
+      command="./$make_shell $make_mode"
+      echo "INFO:Execute command=$command, path=$PWD"
+      if [ $make_mode = "make" ]; then
+          result=`./$make_shell`
+        else
+          result=`./$make_shell $make_mode`
+      fi
+  else
+    if ! [ -d $BUILD_PATH/$module_name ]; then
+      echo "ERROR:$0 - module repository {$module_name} does not exist!"
+      echo "ERROR:You must checkout from remote repository first!"
+      exit 1
+    else  
+      cd $BUILD_PATH/$module_name/
+      echo "INFO:=====Begin to $make_mode module $module_name...====="
+      command="./$make_shell $make_mode"
+      echo "INFO:Execute command=$command, path=$PWD"
+      if [ $make_mode = "make" ]; then
+          result=`./$make_shell`
+        else
+          result=`./$make_shell $make_mode`
+      fi
+      cd -
     fi
-    cd -
   fi
 }
 
@@ -445,9 +457,9 @@ init_fastdir_config() {
   # Init config fastDIR to target path.
   echo "INFO:Will initialize $dir_cluster_size instances for $FDIR_LIB..."
 
-  SERVER_TPL="./conf/fastDIR/server.template"
-  CLUSTER_TPL="./conf/fastDIR/cluster_servers.template"
-  CLIENT_TPL="./conf/fastDIR/client.template"
+  SERVER_TPL="./template/fastDIR/server.template"
+  CLUSTER_TPL="./template/fastDIR/cluster_servers.template"
+  CLIENT_TPL="./template/fastDIR/client.template"
 
   check_config_file $SERVER_TPL
   check_config_file $CLUSTER_TPL
@@ -552,12 +564,12 @@ init_faststore_config() {
   # Init config faststore to target path.
   echo "INFO:Will initialize $store_cluster_size instances for $STORE_LIB..."
 
-  S_SERVER_TPL="./conf/faststore/server.template"
-  S_CLUSTER_TPL="./conf/faststore/cluster.template"
-  S_CLIENT_TPL="./conf/faststore/client.template"
-  S_SERVERS_TPL="./conf/faststore/servers.template"
-  S_STORAGE_TPL="./conf/faststore/storage.template"
-  S_FUSE_TPL="./conf/faststore/fuse.template"
+  S_SERVER_TPL="./template/faststore/server.template"
+  S_CLUSTER_TPL="./template/faststore/cluster.template"
+  S_CLIENT_TPL="./template/faststore/client.template"
+  S_SERVERS_TPL="./template/faststore/servers.template"
+  S_STORAGE_TPL="./template/faststore/storage.template"
+  S_FUSE_TPL="./template/fastCFS/fuse.template"
 
   check_config_file $S_SERVER_TPL
   check_config_file $S_CLUSTER_TPL
@@ -720,6 +732,8 @@ case "$mode" in
     # Clone or pull source code from github.com if not exists.
 
     echo "INFO:Begin to pull source codes..."
+    # Pull fastCFS self.
+    git pull
     # Create build path if not exists.
     if ! [ -d $BUILD_PATH ]; then
       mkdir -m 775 $BUILD_PATH
@@ -751,6 +765,8 @@ case "$mode" in
     make_op $FDIR_LIB install
     make_op $STORE_LIB make
     make_op $STORE_LIB install
+    make_op $FASTCFS_LIB make
+    make_op $FASTCFS_LIB install
   ;;
 
   'init')
@@ -790,6 +806,7 @@ case "$mode" in
     make_op $FRAME_LIB clean
     make_op $FDIR_LIB clean
     make_op $STORE_LIB clean
+    make_op $FASTCFS_LIB clean
   ;;
 
   *)
