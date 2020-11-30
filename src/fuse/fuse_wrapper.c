@@ -134,13 +134,13 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     }
 
     if ((to_set & FUSE_SET_ATTR_SIZE)) {
-        FSAPIFileInfo *fh;
+        FCFSAPIFileInfo *fh;
         if (fi == NULL) {
             fuse_reply_err(req, EBADF);
             return;
         }
 
-        fh = (FSAPIFileInfo *)fi->fh;
+        fh = (FCFSAPIFileInfo *)fi->fh;
         if (fh == NULL) {
             fuse_reply_err(req, EBADF);
             return;
@@ -240,7 +240,7 @@ static void fs_do_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
     fuse_reply_entry(req, &param);
 }
 
-static int dentry_list_to_buff(fuse_req_t req, FSAPIOpendirSession *session)
+static int dentry_list_to_buff(fuse_req_t req, FCFSAPIOpendirSession *session)
 {
     FDIRClientDentry *cd;
     FDIRClientDentry *end;
@@ -296,7 +296,7 @@ static void fs_do_opendir(fuse_req_t req, fuse_ino_t ino,
         struct fuse_file_info *fi)
 {
     int64_t new_inode;
-    FSAPIOpendirSession *session;
+    FCFSAPIOpendirSession *session;
     int result;
 
     if (fs_convert_inode(ino, &new_inode) != 0) {
@@ -324,7 +324,7 @@ static void fs_do_opendir(fuse_req_t req, fuse_ino_t ino,
 static void do_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
         off_t offset, struct fuse_file_info *fi, const int buffer_type)
 {
-    FSAPIOpendirSession *session;
+    FCFSAPIOpendirSession *session;
     int result;
 
     /*
@@ -334,7 +334,7 @@ static void do_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
             (int64_t)offset, (int64_t)size);
             */
 
-    session = (FSAPIOpendirSession *)fi->fh;
+    session = (FCFSAPIOpendirSession *)fi->fh;
     if (session == NULL) {
         fuse_reply_err(req, EBUSY);
         return;
@@ -380,9 +380,9 @@ static void fs_do_readdirplus(fuse_req_t req, fuse_ino_t ino, size_t size,
 static void fs_do_releasedir(fuse_req_t req, fuse_ino_t ino,
         struct fuse_file_info *fi)
 {
-    FSAPIOpendirSession *session;
+    FCFSAPIOpendirSession *session;
 
-    session = (FSAPIOpendirSession *)fi->fh;
+    session = (FCFSAPIOpendirSession *)fi->fh;
     if (session != NULL) {
         fcfs_api_free_opendir_session(session);
         fi->fh = 0;
@@ -392,17 +392,17 @@ static void fs_do_releasedir(fuse_req_t req, fuse_ino_t ino,
 }
 
 static int do_open(fuse_req_t req, FDIRDEntryInfo *dentry,
-        struct fuse_file_info *fi, const FDIRClientOwnerModePair *omp)
+        struct fuse_file_info *fi, const FCFSAPIFileContext *fctx)
 {
     int result;
-    FSAPIFileInfo *fh;
+    FCFSAPIFileInfo *fh;
 
-    fh = (FSAPIFileInfo *)fast_mblock_alloc_object(&fh_allocator);
+    fh = (FCFSAPIFileInfo *)fast_mblock_alloc_object(&fh_allocator);
     if (fh == NULL) {
         return ENOMEM;
     }
 
-    if ((result=fcfs_api_open_by_dentry(fh, dentry, fi->flags, omp)) != 0) {
+    if ((result=fcfs_api_open_by_dentry(fh, dentry, fi->flags, fctx)) != 0) {
         logError("file: "__FILE__", line: %d, func: %s, "
             "ino: %"PRId64", fh: %"PRId64", flags: %d, result: %d\n",
             __LINE__, __FUNCTION__, dentry->inode, fi->fh, fi->flags, result);
@@ -469,7 +469,7 @@ static void fs_do_access(fuse_req_t req, fuse_ino_t ino, int mask)
 static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
         const char *name, mode_t mode, struct fuse_file_info *fi)
 {
-    FDIRClientOwnerModePair omp;
+    FCFSAPIFileContext fctx;
     int result;
     int64_t parent_inode;
     string_t nm;
@@ -481,10 +481,10 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
         return;
     }
 
-    FCFS_FUSE_SET_OMP_BY_REQ(omp, mode, req);
+    FCFS_FUSE_SET_FCTX_BY_REQ(fctx, mode, req);
     FC_SET_STRING(nm, (char *)name);
-    if ((result=fcfs_api_create_dentry_by_pname(parent_inode, &nm,
-                    &omp, &dentry)) != 0)
+    if ((result=fcfs_api_create_dentry_by_pname(parent_inode,
+                    &nm, &fctx.omp, &dentry)) != 0)
     {
         if (result != EEXIST) {
             fuse_reply_err(req, ENOENT);
@@ -505,7 +505,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
     }
 
     fi->flags &= ~(O_CREAT | O_EXCL);
-    if ((result=do_open(req, &dentry, fi, &omp)) != 0) {
+    if ((result=do_open(req, &dentry, fi, &fctx)) != 0) {
         fuse_reply_err(req, result);
         return;
     }
@@ -565,8 +565,9 @@ static void fs_do_mkdir(fuse_req_t req, fuse_ino_t parent,
     do_mknod(req, parent, name, mode, 0);
 }
 
-static int remove_dentry(fuse_ino_t parent, const char *name)
+static int remove_dentry(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
+    FCFSAPIFileContext fctx;
     int64_t parent_inode;
     string_t nm;
 
@@ -580,15 +581,16 @@ static int remove_dentry(fuse_ino_t parent, const char *name)
             __LINE__, __FUNCTION__, parent_inode, name);
             */
 
+    FCFS_FUSE_SET_FCTX_BY_REQ(fctx, 0, req);
     FC_SET_STRING(nm, (char *)name);
-    return fcfs_api_remove_dentry_by_pname(parent_inode, &nm);
+    return fcfs_api_remove_dentry_by_pname(parent_inode, &nm, &fctx);
 }
 
 static void fs_do_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
     int result;
 
-    result = remove_dentry(parent, name);
+    result = remove_dentry(req, parent, name);
     fuse_reply_err(req, result);
 }
 
@@ -596,7 +598,7 @@ static void fs_do_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
     int result;
 
-    result = remove_dentry(parent, name);
+    result = remove_dentry(req, parent, name);
     fuse_reply_err(req, result);
 }
 
@@ -605,6 +607,7 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
 {
     int64_t old_parent_inode;
     int64_t new_parent_inode;
+    FCFSAPIFileContext fctx;
     string_t old_nm;
     string_t new_nm;
     int result;
@@ -627,10 +630,11 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
             new_parent_inode, newname);
             */
 
+    FCFS_FUSE_SET_FCTX_BY_REQ(fctx, 0, req);
     FC_SET_STRING(old_nm, (char *)oldname);
     FC_SET_STRING(new_nm, (char *)newname);
     result = fcfs_api_rename_dentry_by_pname(old_parent_inode, &old_nm,
-            new_parent_inode, &new_nm, flags);
+            new_parent_inode, &new_nm, flags, &fctx);
     fuse_reply_err(req, result);
 }
 
@@ -739,7 +743,8 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
 			  struct fuse_file_info *fi)
 {
     int result;
-    FDIRClientOwnerModePair omp;
+    FCFSAPIFileContext fctx;
+    const struct fuse_ctx *fuse_ctx;
     FDIRDEntryInfo dentry;
 
     /*
@@ -752,11 +757,13 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
         fuse_reply_err(req, ENOENT);
         return;
     }
+    fuse_ctx = fuse_req_ctx(req);
 
-    omp.mode = dentry.stat.mode;
-    omp.uid = dentry.stat.uid;
-    omp.gid = dentry.stat.gid;
-    if ((result=do_open(req, &dentry, fi, &omp)) != 0) {
+    fctx.omp.mode = dentry.stat.mode;
+    fctx.omp.uid = dentry.stat.uid;
+    fctx.omp.gid = dentry.stat.gid;
+    fctx.tid = fuse_ctx->pid;
+    if ((result=do_open(req, &dentry, fi, &fctx)) != 0) {
         fuse_reply_err(req, result);
         return;
     }
@@ -791,7 +798,7 @@ static void fs_do_release(fuse_req_t req, fuse_ino_t ino,
              struct fuse_file_info *fi)
 {
     int result;
-    FSAPIFileInfo *fh;
+    FCFSAPIFileInfo *fh;
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
@@ -799,7 +806,7 @@ static void fs_do_release(fuse_req_t req, fuse_ino_t ino,
             __LINE__, __FUNCTION__, ino, fi->fh);
             */
 
-    fh = (FSAPIFileInfo *)fi->fh;
+    fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh != NULL) {
         result = fcfs_api_close(fh);
         fast_mblock_free_object(&fh_allocator, fh);
@@ -812,7 +819,7 @@ static void fs_do_release(fuse_req_t req, fuse_ino_t ino,
 static void fs_do_read(fuse_req_t req, fuse_ino_t ino, size_t size,
 			  off_t offset, struct fuse_file_info *fi)
 {
-    FSAPIFileInfo *fh;
+    FCFSAPIFileInfo *fh;
     int result;
     int read_bytes;
     char fixed_buff[128 * 1024];
@@ -825,7 +832,7 @@ static void fs_do_read(fuse_req_t req, fuse_ino_t ino, size_t size,
         return;
     }
 
-    fh = (FSAPIFileInfo *)fi->fh;
+    fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         fuse_reply_err(req, EBADF);
         return;
@@ -851,11 +858,11 @@ static void fs_do_read(fuse_req_t req, fuse_ino_t ino, size_t size,
 void fs_do_write(fuse_req_t req, fuse_ino_t ino, const char *buff,
         size_t size, off_t offset, struct fuse_file_info *fi)
 {
-    FSAPIFileInfo *fh;
+    FCFSAPIFileInfo *fh;
     int result;
     int written_bytes;
 
-    fh = (FSAPIFileInfo *)fi->fh;
+    fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         fuse_reply_err(req, EBADF);
         return;
@@ -884,10 +891,10 @@ void fs_do_write(fuse_req_t req, fuse_ino_t ino, const char *buff,
 void fs_do_lseek(fuse_req_t req, fuse_ino_t ino, off_t offset,
         int whence, struct fuse_file_info *fi)
 {
-    FSAPIFileInfo *fh;
+    FCFSAPIFileInfo *fh;
     int result;
 
-    fh = (FSAPIFileInfo *)fi->fh;
+    fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         fuse_reply_err(req, EBADF);
         return;
@@ -905,7 +912,7 @@ static void fs_do_getlk(fuse_req_t req, fuse_ino_t ino,
         struct fuse_file_info *fi, struct flock *lock)
 {
     int result;
-    FSAPIFileInfo *fh;
+    FCFSAPIFileInfo *fh;
     int64_t owner_id;
 
     /*
@@ -914,7 +921,7 @@ static void fs_do_getlk(fuse_req_t req, fuse_ino_t ino,
             __LINE__, __FUNCTION__, ino, fi->fh, lock->l_type, lock->l_pid);
             */
 
-    fh = (FSAPIFileInfo *)fi->fh;
+    fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         result = EBADF;
     } else {
@@ -932,7 +939,7 @@ static void fs_do_setlk(fuse_req_t req, fuse_ino_t ino,
         struct fuse_file_info *fi, struct flock *lock, int sleep)
 {
     int result;
-    FSAPIFileInfo *fh;
+    FCFSAPIFileInfo *fh;
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
@@ -940,7 +947,7 @@ static void fs_do_setlk(fuse_req_t req, fuse_ino_t ino,
             __LINE__, __FUNCTION__, ino, fi->fh, fi->lock_owner, lock->l_pid);
             */
 
-    fh = (FSAPIFileInfo *)fi->fh;
+    fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         result = EBADF;
     } else {
@@ -953,7 +960,7 @@ static void fs_do_flock(fuse_req_t req, fuse_ino_t ino,
         struct fuse_file_info *fi, int op)
 {
     int result;
-    FSAPIFileInfo *fh;
+    FCFSAPIFileInfo *fh;
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
@@ -963,7 +970,7 @@ static void fs_do_flock(fuse_req_t req, fuse_ino_t ino,
             (op & (LOCK_SH | LOCK_EX | LOCK_UN)));
             */
 
-    fh = (FSAPIFileInfo *)fi->fh;
+    fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         result = EBADF;
     } else {
@@ -993,9 +1000,9 @@ static void fs_do_fallocate(fuse_req_t req, fuse_ino_t ino, int mode,
         off_t offset, off_t length, struct fuse_file_info *fi)
 {
     int result;
-    FSAPIFileInfo *fh;
+    FCFSAPIFileInfo *fh;
 
-    fh = (FSAPIFileInfo *)fi->fh;
+    fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         result = EBADF;
     } else {
@@ -1009,7 +1016,7 @@ int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
 {
     int result;
     if ((result=fast_mblock_init_ex1(&fh_allocator, "fuse_fh",
-                    sizeof(FSAPIFileInfo), 4096, 0, NULL, NULL, true)) != 0)
+                    sizeof(FCFSAPIFileInfo), 4096, 0, NULL, NULL, true)) != 0)
     {
         return result;
     }

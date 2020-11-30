@@ -188,13 +188,13 @@ static int load_fuse_config(IniFullContext *ini_ctx)
     char *allow_others;
     int result;
 
-    ns.str = iniGetStrValue(FS_API_DEFAULT_FASTDIR_SECTION_NAME,
+    ns.str = iniGetStrValue(FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
             "namespace", ini_ctx->context);
     if (ns.str == NULL || *ns.str == '\0') {
         logError("file: "__FILE__", line: %d, "
                 "config file: %s, section: %s, item: namespace "
                 "not exist or is empty", __LINE__, ini_ctx->filename,
-                FS_API_DEFAULT_FASTDIR_SECTION_NAME);
+                FCFS_API_DEFAULT_FASTDIR_SECTION_NAME);
         return ENOENT;
     }
     ns.len = strlen(ns.str);
@@ -292,7 +292,7 @@ int fs_fuse_global_init(const char *config_filename)
     }
 
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename,
-            FS_API_DEFAULT_FASTDIR_SECTION_NAME, &iniContext);
+            FCFS_API_DEFAULT_FASTDIR_SECTION_NAME, &iniContext);
     do {
         ini_ctx.section_name = INI_IDEMPOTENCY_SECTION_NAME;
         if ((result=client_channel_init(&ini_ctx)) != 0) {
@@ -334,12 +334,12 @@ int fs_fuse_global_init(const char *config_filename)
         }
 
         g_fdir_client_vars.client_ctx.idempotency_enabled =
-            iniGetBoolValue(FS_API_DEFAULT_FASTDIR_SECTION_NAME,
+            iniGetBoolValue(FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
                     "idempotency_enabled", ini_ctx.context,
                     g_idempotency_client_cfg.enabled);
 
         g_fs_client_vars.client_ctx.idempotency_enabled =
-            iniGetBoolValue(FS_API_DEFAULT_FASTSTORE_SECTION_NAME,
+            iniGetBoolValue(FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
                     "idempotency_enabled", ini_ctx.context,
                     g_idempotency_client_cfg.enabled);
 
@@ -358,9 +358,9 @@ int fs_fuse_global_init(const char *config_filename)
         len = sprintf(sf_idempotency_config,
                 "%s idempotency_enabled=%d, "
                 "%s idempotency_enabled=%d, ",
-                FS_API_DEFAULT_FASTDIR_SECTION_NAME,
+                FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
                 g_fdir_client_vars.client_ctx.idempotency_enabled,
-                FS_API_DEFAULT_FASTSTORE_SECTION_NAME,
+                FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
                 g_fs_client_vars.client_ctx.idempotency_enabled);
         idempotency_client_channel_config_to_string_ex(
                 sf_idempotency_config + len,
@@ -385,7 +385,7 @@ int fs_fuse_global_init(const char *config_filename)
     }
 
     fdir_client_log_config(g_fcfs_api_ctx.contexts.fdir);
-    fs_client_log_config(g_fcfs_api_ctx.contexts.fs);
+    fs_client_log_config(g_fcfs_api_ctx.contexts.fsapi->fs);
 
     logInfo("FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "

@@ -29,18 +29,21 @@
 
 #define fcfs_api_init(ns, config_filename)   \
     fcfs_api_init_ex(&g_fcfs_api_ctx, ns, config_filename,  \
-            FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,  \
-            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME)
+            FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,   \
+            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME, \
+            FCFS_API_DEFAULT_FSAPI_SECTION_NAME)
 
 #define fcfs_api_pooled_init(ns, config_filename)   \
     fcfs_api_pooled_init_ex(&g_fcfs_api_ctx, ns, config_filename, \
-            FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,  \
-            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME)
+            FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,   \
+            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME, \
+            FCFS_API_DEFAULT_FSAPI_SECTION_NAME)
 
 #define fcfs_api_pooled_init1(ns, ini_ctx) \
     fcfs_api_pooled_init_ex1(&g_fcfs_api_ctx, ns, ini_ctx, \
-            FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,  \
-            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME)
+            FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,   \
+            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME, \
+            FCFS_API_DEFAULT_FSAPI_SECTION_NAME)
 
 #define fcfs_api_destroy()  fcfs_api_destroy_ex(&g_fcfs_api_ctx)
 

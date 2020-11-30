@@ -214,13 +214,15 @@ static int setup_server_env(const char *config_filename)
     if (g_fdir_client_vars.client_ctx.idempotency_enabled ||
             g_fs_client_vars.client_ctx.idempotency_enabled)
     {
-        result = receipt_handler_init();
+        if ((result=receipt_handler_init()) != 0) {
+            return result;
+        }
     }
 
-    if (result == 0) {
-        result = check_create_root_path();
+    if ((result=check_create_root_path()) != 0) {
+        return result;
     }
-    return result;
+    return fs_api_combine_thread_start();
 }
 
 static struct fuse_session *create_fuse_session(char *argv0,
