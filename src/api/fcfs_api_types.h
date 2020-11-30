@@ -13,8 +13,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _FS_API_TYPES_H
-#define _FS_API_TYPES_H
+#ifndef _FCFS_API_TYPES_H
+#define _FCFS_API_TYPES_H
 
 #include <limits.h>
 #include <sys/types.h>
@@ -22,30 +22,31 @@
 #include "fastcommon/fast_mblock.h"
 #include "fastcommon/fast_buffer.h"
 #include "fastdir/client/fdir_client.h"
-#include "faststore/client/fs_client.h"
+#include "fastsore/api/fs_api.h"
 
 typedef struct fcfs_api_opendir_session {
     FDIRClientDentryArray array;
     int btype;   //buffer type
     FastBuffer buffer;
-} FSAPIOpendirSession;
+} FCFSAPIOpendirSession;
 
 typedef struct fcfs_api_context {
     string_t ns;  //namespace
     char ns_holder[NAME_MAX];
     struct {
         FDIRClientContext *fdir;
-        FSClientContext *fs;
+        FSAPIContext *fsapi;
     } contexts;
 
     struct fast_mblock_man opendir_session_pool;
-} FSAPIContext;
+} FCFSAPIContext;
 
 typedef struct fcfs_api_file_info {
-    FSAPIContext *ctx;
+    FCFSAPIContext *ctx;
+    FSAPIOperationContext op_ctx;
     struct {
         FDIRClientSession flock;
-        FSAPIOpendirSession *opendir;
+        FCFSAPIOpendirSession *opendir;
     } sessions;
     FDIRDEntryInfo dentry;
     int flags;
@@ -54,13 +55,18 @@ typedef struct fcfs_api_file_info {
         int last_modified_time;
     } write_notify;
     int64_t offset;  //current offset
-} FSAPIFileInfo;
+} FCFSAPIFileInfo;
+
+typedef struct fcfs_api_file_context {
+    FDIRClientOwnerModePair omp;
+    int64_t tid;
+} FCFSAPIFileContext;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern FSAPIContext g_fcfs_api_ctx;
+    extern FCFSAPIContext g_fcfs_api_ctx;
 
 #ifdef __cplusplus
 }

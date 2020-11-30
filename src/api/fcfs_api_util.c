@@ -21,8 +21,9 @@
 #include "fastcommon/sched_thread.h"
 #include "fcfs_api_util.h"
 
-int fcfs_api_remove_dentry_by_pname_ex(FSAPIContext *ctx,
-        const int64_t parent_inode, const string_t *name)
+int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
+        const int64_t parent_inode, const string_t *name,
+        const FCFSAPIFileContext *fctx)
 {
     FDIRDEntryPName pname;
     FDIRDEntryInfo dentry;
@@ -36,8 +37,8 @@ int fcfs_api_remove_dentry_by_pname_ex(FSAPIContext *ctx,
     }
 
     if (S_ISREG(dentry.stat.mode)) {
-        result = fs_unlink_file(ctx->contexts.fs, dentry.inode,
-                dentry.stat.size);
+        result = fs_api_unlink_file(ctx->contexts.fsapi,
+                dentry.inode, dentry.stat.size, fctx->tid);
     } else {
         result = 0;
     }
@@ -49,10 +50,10 @@ int fcfs_api_remove_dentry_by_pname_ex(FSAPIContext *ctx,
     return result;
 }
 
-int fcfs_api_rename_dentry_by_pname_ex(FSAPIContext *ctx,
+int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t src_parent_inode, const string_t *src_name,
         const int64_t dest_parent_inode, const string_t *dest_name,
-        const int flags)
+        const int flags, const FCFSAPIFileContext *fctx)
 {
     FDIRDEntryPName src_pname;
     FDIRDEntryPName dest_pname;
@@ -71,7 +72,8 @@ int fcfs_api_rename_dentry_by_pname_ex(FSAPIContext *ctx,
     }
 
     if (pe != NULL && S_ISREG(pe->stat.mode)) {
-        fs_unlink_file(ctx->contexts.fs, pe->inode, pe->stat.size);
+        fs_api_unlink_file(ctx->contexts.fsapi, pe->inode,
+                pe->stat.size, fctx->tid);
     }
     return result;
 }
