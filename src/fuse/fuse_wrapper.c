@@ -135,6 +135,8 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
 
     if ((to_set & FUSE_SET_ATTR_SIZE)) {
         FCFSAPIFileInfo *fh;
+        const struct fuse_ctx *fctx;
+
         if (fi == NULL) {
             fuse_reply_err(req, EBADF);
             return;
@@ -153,7 +155,10 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
                 (int64_t)attr->st_size);
                 */
 
-        if ((result=fcfs_api_ftruncate(fh, attr->st_size)) != 0) {
+        fctx = fuse_req_ctx(req);
+        if ((result=fcfs_api_ftruncate_ex(fh,
+                        attr->st_size, fctx->pid)) != 0)
+        {
             fuse_reply_err(req, result);
             return;
         }
@@ -820,12 +825,14 @@ static void fs_do_read(fuse_req_t req, fuse_ino_t ino, size_t size,
 			  off_t offset, struct fuse_file_info *fi)
 {
     FCFSAPIFileInfo *fh;
+    const struct fuse_ctx *fctx;
     int result;
     int read_bytes;
     char fixed_buff[128 * 1024];
     char *buff;
     
-    if (size < sizeof(fixed_buff)) {
+    //TODO buffer use memory pool
+    if (size <= sizeof(fixed_buff)) {
         buff = fixed_buff;
     } else if ((buff=(char *)fc_malloc(size)) == NULL) {
         fuse_reply_err(req, ENOMEM);
@@ -838,16 +845,20 @@ static void fs_do_read(fuse_req_t req, fuse_ino_t ino, size_t size,
         return;
     }
 
-    /*
-    logInfo("file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", fh: %p, size: %"PRId64", offset: %"PRId64,
-            __LINE__, __FUNCTION__, ino, fh, size, offset);
-            */
-
-    if ((result=fcfs_api_pread(fh, buff, size, offset, &read_bytes)) != 0) {
+    fctx = fuse_req_ctx(req);
+    if ((result=fcfs_api_pread_ex(fh, buff, size, offset,
+                    &read_bytes, fctx->pid)) != 0)
+    {
         fuse_reply_err(req, result);
         return;
     }
+
+    /*
+    logInfo("file: "__FILE__", line: %d, func: %s, "
+            "ino: %"PRId64", fh: %p, size: %"PRId64", offset: %"PRId64", "
+            "read_bytes: %d", __LINE__, __FUNCTION__, ino, fh, size,
+            offset, read_bytes);
+            */
 
     fuse_reply_buf(req, buff, read_bytes);
     if (buff != fixed_buff) {
@@ -859,6 +870,7 @@ void fs_do_write(fuse_req_t req, fuse_ino_t ino, const char *buff,
         size_t size, off_t offset, struct fuse_file_info *fi)
 {
     FCFSAPIFileInfo *fh;
+    const struct fuse_ctx *fctx;
     int result;
     int written_bytes;
 
@@ -874,7 +886,10 @@ void fs_do_write(fuse_req_t req, fuse_ino_t ino, const char *buff,
             __LINE__, __FUNCTION__, ino, size, offset);
             */
 
-    if ((result=fcfs_api_pwrite(fh, buff, size, offset, &written_bytes)) != 0) {
+    fctx = fuse_req_ctx(req);
+    if ((result=fcfs_api_pwrite_ex(fh, buff, size, offset,
+                    &written_bytes, fctx->pid)) != 0)
+    {
         fuse_reply_err(req, result);
         return;
     }
@@ -1001,12 +1016,14 @@ static void fs_do_fallocate(fuse_req_t req, fuse_ino_t ino, int mode,
 {
     int result;
     FCFSAPIFileInfo *fh;
+    const struct fuse_ctx *fctx;
 
     fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         result = EBADF;
     } else {
-        result = fcfs_api_fallocate(fh, mode, offset, length);
+        fctx = fuse_req_ctx(req);
+        result = fcfs_api_fallocate_ex(fh, mode, offset, length, fctx->pid);
     }
 
     fuse_reply_err(req, result);

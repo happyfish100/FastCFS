@@ -16,7 +16,7 @@ if [ -n "$GCC_VERSION" ] && [ $GCC_VERSION -ge 7 ]; then
 fi
 CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE"
 if [ "$DEBUG_FLAG" = "1" ]; then
-  CFLAGS="$CFLAGS -g -O1 -DDEBUG_FLAG"
+  CFLAGS="$CFLAGS -g -DDEBUG_FLAG"
 else
   CFLAGS="$CFLAGS -O3"
 fi

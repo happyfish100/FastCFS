@@ -43,7 +43,7 @@ typedef struct fcfs_api_context {
 
 typedef struct fcfs_api_file_info {
     FCFSAPIContext *ctx;
-    FSAPIOperationContext op_ctx;
+    int64_t tid;
     struct {
         FDIRClientSession flock;
         FCFSAPIOpendirSession *opendir;

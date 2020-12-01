@@ -24,21 +24,19 @@
 
 #define FCFS_API_MAGIC_NUMBER    1588076578
 
-static int file_truncate(FCFSAPIFileInfo *fi, const int64_t oid,
-        const int64_t new_size);
+static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
+        const int64_t new_size, const int64_t tid);
 
 static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
         const FDIRClientOwnerModePair *omp, const int64_t tid, int result)
 {
-    FS_API_SET_TID_AND_ALLOCATOR_CTX_EX(fi->op_ctx,
-            fi->ctx->contexts.fsapi, tid);
-
     if (result == 0) {
         if (S_ISDIR(fi->dentry.stat.mode)) {
             return EISDIR;
         }
     }
 
+    fi->tid = tid;
     if (!((fi->flags & O_WRONLY) || (fi->flags & O_RDWR))) {
         fi->offset = 0;
         return result;
@@ -81,7 +79,9 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
     fi->write_notify.last_modified_time = fi->dentry.stat.mtime;
     if ((fi->flags & O_TRUNC)) {
         if (fi->dentry.stat.size > 0) {
-            if ((result=file_truncate(fi, fi->dentry.inode, 0)) != 0) {
+            if ((result=file_truncate(fi->ctx, fi->dentry.
+                            inode, 0, tid)) != 0)
+            {
                 return result;
             }
 
@@ -203,8 +203,10 @@ static inline void print_block_slice_key(FSBlockSliceKeyInfo *bs_key)
 
 static int do_pwrite(FCFSAPIFileInfo *fi, const char *buff,
         const int size, const int64_t offset, int *written_bytes,
-        int *total_inc_alloc, const bool need_report_modified)
+        int *total_inc_alloc, const bool need_report_modified,
+        const int64_t tid)
 {
+    FSAPIOperationContext op_ctx;
     int64_t new_offset;
     int result;
     bool combined;
@@ -212,12 +214,13 @@ static int do_pwrite(FCFSAPIFileInfo *fi, const char *buff,
     int inc_alloc;
     int remain;
 
+    FS_API_SET_CTX_AND_TID_EX(op_ctx, fi->ctx->contexts.fsapi, tid);
     *total_inc_alloc = *written_bytes = 0;
     new_offset = offset;
-    fs_set_block_slice(&fi->op_ctx.bs_key, fi->dentry.inode, offset, size);
+    fs_set_block_slice(&op_ctx.bs_key, fi->dentry.inode, offset, size);
     while (1) {
-        //print_block_slice_key(&fi->op_ctx.bs_key);
-        if ((result=fs_api_slice_write(&fi->op_ctx,
+        //print_block_slice_key(&op_ctx.bs_key);
+        if ((result=fs_api_slice_write(&op_ctx,
                         buff + *written_bytes, &combined,
                         &current_written, &inc_alloc)) != 0)
         {
@@ -234,10 +237,10 @@ static int do_pwrite(FCFSAPIFileInfo *fi, const char *buff,
             break;
         }
 
-        if (current_written == fi->op_ctx.bs_key.slice.length) {  //fully completed
-            fs_next_block_slice_key(&fi->op_ctx.bs_key, remain);
+        if (current_written == op_ctx.bs_key.slice.length) {  //fully completed
+            fs_next_block_slice_key(&op_ctx.bs_key, remain);
         } else {  //partially completed, try again the remain part
-            fs_set_slice_size(&fi->op_ctx.bs_key, new_offset, remain);
+            fs_set_slice_size(&op_ctx.bs_key, new_offset, remain);
         }
     }
 
@@ -284,8 +287,9 @@ static int do_pwrite(FCFSAPIFileInfo *fi, const char *buff,
     }
 }
 
-int fcfs_api_pwrite(FCFSAPIFileInfo *fi, const char *buff,
-        const int size, const int64_t offset, int *written_bytes)
+int fcfs_api_pwrite_ex(FCFSAPIFileInfo *fi, const char *buff,
+        const int size, const int64_t offset, int *written_bytes,
+        const int64_t tid)
 {
     int total_inc_alloc;
 
@@ -302,11 +306,11 @@ int fcfs_api_pwrite(FCFSAPIFileInfo *fi, const char *buff,
     }
 
     return do_pwrite(fi, buff, size, offset, written_bytes,
-            &total_inc_alloc, true);
+            &total_inc_alloc, true, tid);
 }
 
-int fcfs_api_write(FCFSAPIFileInfo *fi, const char *buff,
-        const int size, int *written_bytes)
+int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
+        const int size, int *written_bytes, const int64_t tid)
 {
     FDIRClientSession session;
     bool need_report_modified;
@@ -343,7 +347,7 @@ int fcfs_api_write(FCFSAPIFileInfo *fi, const char *buff,
     }
 
     if ((result=do_pwrite(fi, buff, size, fi->offset, written_bytes,
-                    &total_inc_alloc, need_report_modified)) == 0)
+                    &total_inc_alloc, need_report_modified, tid)) == 0)
     {
         fi->offset += *written_bytes;
     }
@@ -365,10 +369,10 @@ int fcfs_api_write(FCFSAPIFileInfo *fi, const char *buff,
     return result;
 }
 
-int fcfs_api_pread(FCFSAPIFileInfo *fi, char *buff, const int size,
-        const int64_t offset, int *read_bytes)
+int fcfs_api_pread_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
+        const int64_t offset, int *read_bytes, const int64_t tid)
 {
-    FSBlockSliceKeyInfo bs_key;
+    FSAPIOperationContext op_ctx;
     int result;
     int current_read;
     int remain;
@@ -387,10 +391,11 @@ int fcfs_api_pread(FCFSAPIFileInfo *fi, char *buff, const int size,
         return EBADF;
     }
 
-    fs_set_block_slice(&bs_key, fi->dentry.inode, offset, size);
+    FS_API_SET_CTX_AND_TID_EX(op_ctx, fi->ctx->contexts.fsapi, tid);
+    fs_set_block_slice(&op_ctx.bs_key, fi->dentry.inode, offset, size);
     while (1) {
-        //print_block_slice_key(&bs_key);
-        if ((result=fs_api_slice_read(&fi->op_ctx, buff + *read_bytes,
+        //print_block_slice_key(&op_ctx.bs_key);
+        if ((result=fs_api_slice_read(&op_ctx, buff + *read_bytes,
                         &current_read)) != 0)
         {
             if (result == ENODATA) {
@@ -400,7 +405,7 @@ int fcfs_api_pread(FCFSAPIFileInfo *fi, char *buff, const int size,
             }
         }
 
-        while (current_read < bs_key.slice.length) {
+        while (current_read < op_ctx.bs_key.slice.length) {
             /* deal file hole caused by ftruncate and lseek */
             current_offset = offset + *read_bytes + current_read;
             if (current_offset == fi->dentry.stat.size) {
@@ -418,8 +423,10 @@ int fcfs_api_pread(FCFSAPIFileInfo *fi, char *buff, const int size,
 
             hole_bytes = fi->dentry.stat.size - current_offset;
             if (hole_bytes > 0) {
-                if (current_read + hole_bytes > (int64_t)bs_key.slice.length) {
-                    fill_bytes = bs_key.slice.length - current_read;
+                if (current_read + hole_bytes > (int64_t)
+                        op_ctx.bs_key.slice.length)
+                {
+                    fill_bytes = op_ctx.bs_key.slice.length - current_read;
                 } else {
                     fill_bytes = hole_bytes;
                 }
@@ -438,23 +445,31 @@ int fcfs_api_pread(FCFSAPIFileInfo *fi, char *buff, const int size,
             break;
         }
 
+        /*
+        logInfo("current read: %d, total read: %d, slice length: %d",
+                current_read, *read_bytes, op_ctx.bs_key.slice.length);
+                */
+
         *read_bytes += current_read;
         remain = size - *read_bytes;
-        if (remain <= 0 || current_read < bs_key.slice.length) {
+        if (remain <= 0 || current_read < op_ctx.bs_key.slice.length) {
             break;
         }
 
-        fs_next_block_slice_key(&bs_key, remain);
+        fs_next_block_slice_key(&op_ctx.bs_key, remain);
     }
 
     return result;
 }
 
-int fcfs_api_read(FCFSAPIFileInfo *fi, char *buff, const int size, int *read_bytes)
+int fcfs_api_read_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
+        int *read_bytes, const int64_t tid)
 {
     int result;
 
-    if ((result=fcfs_api_pread(fi, buff, size, fi->offset, read_bytes)) != 0) {
+    if ((result=fcfs_api_pread_ex(fi, buff, size, fi->offset,
+                    read_bytes, tid)) != 0)
+    {
         return result;
     }
 
@@ -462,10 +477,11 @@ int fcfs_api_read(FCFSAPIFileInfo *fi, char *buff, const int size, int *read_byt
     return 0;
 }
 
-static int do_truncate(FCFSAPIFileInfo *fi, const int64_t oid,
+static int do_truncate(FCFSAPIContext *ctx, const int64_t oid,
         const int64_t old_space_end, const int64_t offset,
-        const int64_t length, int64_t *total_dec_alloc)
+        const int64_t length, int64_t *total_dec_alloc, const int64_t tid)
 {
+    FSAPIOperationContext op_ctx;
     int64_t remain;
     int dec_alloc;
     int result;
@@ -480,14 +496,16 @@ static int do_truncate(FCFSAPIFileInfo *fi, const int64_t oid,
     } else {
         remain = length;
     }
-    fs_set_block_slice(&fi->op_ctx.bs_key, oid, offset, remain);
+
+    FS_API_SET_CTX_AND_TID_EX(op_ctx, ctx->contexts.fsapi, tid);
+    fs_set_block_slice(&op_ctx.bs_key, oid, offset, remain);
     while (1) {
-        //print_block_slice_key(&fi->op_ctx.bs_key);
-        if (fi->op_ctx.bs_key.slice.length == FS_FILE_BLOCK_SIZE) {
-            result = fs_api_block_delete(&fi->op_ctx,
+        //print_block_slice_key(&op_ctx.bs_key);
+        if (op_ctx.bs_key.slice.length == FS_FILE_BLOCK_SIZE) {
+            result = fs_api_block_delete(&op_ctx,
                     &dec_alloc);
         } else {
-            result = fs_api_slice_delete(&fi->op_ctx,
+            result = fs_api_slice_delete(&op_ctx,
                     &dec_alloc);
         }
         if (result == 0) {
@@ -498,21 +516,22 @@ static int do_truncate(FCFSAPIFileInfo *fi, const int64_t oid,
             break;
         }
 
-        remain -= fi->op_ctx.bs_key.slice.length;
+        remain -= op_ctx.bs_key.slice.length;
         if (remain <= 0) {
             break;
         }
 
-        fs_next_block_slice_key(&fi->op_ctx.bs_key, remain);
+        fs_next_block_slice_key(&op_ctx.bs_key, remain);
     }
 
     return result;
 }
 
-static int do_allocate(FCFSAPIFileInfo *fi, const int64_t oid,
+static int do_allocate(FCFSAPIContext *ctx, const int64_t oid,
         const int64_t offset, const int64_t length,
-        int64_t *total_inc_alloc)
+        int64_t *total_inc_alloc, const int64_t tid)
 {
+    FSAPIOperationContext op_ctx;
     int64_t remain;
     int inc_alloc;
     int result;
@@ -522,28 +541,29 @@ static int do_allocate(FCFSAPIFileInfo *fi, const int64_t oid,
         return 0;
     }
 
+    FS_API_SET_CTX_AND_TID_EX(op_ctx, ctx->contexts.fsapi, tid);
     remain = length;
-    fs_set_block_slice(&fi->op_ctx.bs_key, oid, offset, remain);
+    fs_set_block_slice(&op_ctx.bs_key, oid, offset, remain);
     while (1) {
-        //print_block_slice_key(&fi->op_ctx.bs_key);
-        if ((result=fs_api_slice_allocate(&fi->op_ctx, &inc_alloc)) != 0) {
+        //print_block_slice_key(&op_ctx.bs_key);
+        if ((result=fs_api_slice_allocate(&op_ctx, &inc_alloc)) != 0) {
             break;
         }
         *total_inc_alloc += inc_alloc;
 
-        remain -= fi->op_ctx.bs_key.slice.length;
+        remain -= op_ctx.bs_key.slice.length;
         if (remain <= 0) {
             break;
         }
 
-        fs_next_block_slice_key(&fi->op_ctx.bs_key, remain);
+        fs_next_block_slice_key(&op_ctx.bs_key, remain);
     }
 
     return result;
 }
 
-static int file_truncate(FCFSAPIFileInfo *fi, const int64_t oid,
-        const int64_t new_size)
+static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
+        const int64_t new_size, const int64_t tid)
 {
     FDIRClientSession session;
     int64_t old_size;
@@ -573,8 +593,8 @@ static int file_truncate(FCFSAPIFileInfo *fi, const int64_t oid,
             flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE;
         }
     } else {
-        result = do_truncate(fi, oid, space_end, new_size,
-                old_size - new_size, &alloc_bytes);
+        result = do_truncate(ctx, oid, space_end, new_size,
+                old_size - new_size, &alloc_bytes, tid);
 
         flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE;
         if (new_size < space_end) {
@@ -583,7 +603,7 @@ static int file_truncate(FCFSAPIFileInfo *fi, const int64_t oid,
     }
 
     if (result == 0) {
-        ns = &fi->ctx->ns;  //set ns for update file_size, space_end etc.
+        ns = &ctx->ns;  //set ns for update file_size, space_end etc.
     } else {
         ns = NULL;  //do NOT update
     }
@@ -592,7 +612,8 @@ static int file_truncate(FCFSAPIFileInfo *fi, const int64_t oid,
     return result == 0 ? unlock_res : result;
 }
 
-int fcfs_api_ftruncate(FCFSAPIFileInfo *fi, const int64_t new_size)
+int fcfs_api_ftruncate_ex(FCFSAPIFileInfo *fi, const int64_t new_size,
+        const int64_t tid)
 {
     if (fi->magic != FCFS_API_MAGIC_NUMBER || !((fi->flags & O_WRONLY) ||
                 (fi->flags & O_RDWR)))
@@ -600,7 +621,7 @@ int fcfs_api_ftruncate(FCFSAPIFileInfo *fi, const int64_t new_size)
         return EBADF;
     }
 
-    return file_truncate(fi, fi->dentry.inode, new_size);
+    return file_truncate(fi->ctx, fi->dentry.inode, new_size, tid);
 }
 
 static int get_regular_file_inode(FCFSAPIContext *ctx, const char *path,
@@ -630,16 +651,12 @@ int fcfs_api_truncate_ex(FCFSAPIContext *ctx, const char *path,
 {
     int result;
     int64_t inode;
-    FCFSAPIFileInfo fi;
 
     if ((result=get_regular_file_inode(ctx, path, &inode)) != 0) {
         return result;
     }
 
-    fi.ctx = ctx;
-    FS_API_SET_TID_AND_ALLOCATOR_CTX_EX(fi.op_ctx,
-            ctx->contexts.fsapi, fctx->tid);
-    return file_truncate(&fi, inode, new_size);
+    return file_truncate(ctx, inode, new_size, fctx->tid);
 }
 
 int fcfs_api_unlink_ex(FCFSAPIContext *ctx, const char *path,
@@ -990,8 +1007,8 @@ int fcfs_api_getlk(FCFSAPIFileInfo *fi, struct flock *lock, int64_t *owner_id)
     return result;
 }
 
-int fcfs_api_fallocate(FCFSAPIFileInfo *fi, const int mode,
-        const int64_t offset, const int64_t length)
+int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
+        const int64_t offset, const int64_t length, const int64_t tid)
 {
     FDIRClientSession session;
     int64_t old_size;
@@ -1029,8 +1046,8 @@ int fcfs_api_fallocate(FCFSAPIFileInfo *fi, const int mode,
 
     flags = 0;
     if (op == 0) {   //allocate space
-        result = do_allocate(fi, fi->dentry.inode,
-                offset, length, &alloc_bytes);
+        result = do_allocate(fi->ctx, fi->dentry.inode,
+                offset, length, &alloc_bytes, tid);
         new_size = offset + length;
         if (new_size > space_end) {
             flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
@@ -1040,8 +1057,8 @@ int fcfs_api_fallocate(FCFSAPIFileInfo *fi, const int mode,
                 FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE;
         }
     } else {  //deallocate space
-        result = do_truncate(fi, fi->dentry.inode, space_end,
-                offset, length, &alloc_bytes);
+        result = do_truncate(fi->ctx, fi->dentry.inode, space_end,
+                offset, length, &alloc_bytes, tid);
         if (offset + length >= old_size) {
             new_size = offset;
             flags |= (mode & FALLOC_FL_KEEP_SIZE) ? 0 :

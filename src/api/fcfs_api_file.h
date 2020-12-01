@@ -83,25 +83,27 @@ extern "C" {
 
     int fcfs_api_close(FCFSAPIFileInfo *fi);
 
-    int fcfs_api_pwrite(FCFSAPIFileInfo *fi, const char *buff,
-            const int size, const int64_t offset, int *written_bytes);
+    int fcfs_api_pwrite_ex(FCFSAPIFileInfo *fi, const char *buff,
+            const int size, const int64_t offset, int *written_bytes,
+            const int64_t tid);
 
-    int fcfs_api_write(FCFSAPIFileInfo *fi, const char *buff,
-            const int size, int *written_bytes);
+    int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
+            const int size, int *written_bytes, const int64_t tid);
 
-    int fcfs_api_pread(FCFSAPIFileInfo *fi, char *buff, const int size,
-            const int64_t offset, int *read_bytes);
+    int fcfs_api_pread_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
+            const int64_t offset, int *read_bytes, const int64_t tid);
 
-    int fcfs_api_read(FCFSAPIFileInfo *fi, char *buff,
-            const int size, int *read_bytes);
+    int fcfs_api_read_ex(FCFSAPIFileInfo *fi, char *buff,
+            const int size, int *read_bytes, const int64_t tid);
 
-    int fcfs_api_ftruncate(FCFSAPIFileInfo *fi, const int64_t new_size);
+    int fcfs_api_ftruncate_ex(FCFSAPIFileInfo *fi, const int64_t new_size,
+            const int64_t tid);
 
     int fcfs_api_truncate_ex(FCFSAPIContext *ctx, const char *path,
             const int64_t new_size, const FCFSAPIFileContext *fctx);
 
-    int fcfs_api_fallocate(FCFSAPIFileInfo *fi, const int mode,
-            const int64_t offset, const int64_t len);
+    int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
+            const int64_t offset, const int64_t len, const int64_t tid);
 
     int fcfs_api_unlink_ex(FCFSAPIContext *ctx, const char *path,
             const FCFSAPIFileContext *fctx);
