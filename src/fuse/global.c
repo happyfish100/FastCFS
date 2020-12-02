@@ -302,7 +302,7 @@ int fs_fuse_global_init(const char *config_filename)
         SF_SET_CONTEXT_INI_CONFIG(config, config_filename,
                 &iniContext, INI_IDEMPOTENCY_SECTION_NAME,
                 0, 0, IDEMPOTENCY_DEFAULT_WORK_THREADS);
-        if ((result=sf_load_config_ex("fs_fused", &config)) != 0) {
+        if ((result=sf_load_config_ex("fs_fused", &config, 0)) != 0) {
             break;
         }
 

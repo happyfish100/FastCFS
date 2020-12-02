@@ -146,6 +146,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    fs_api_terminate();
     if (result == 0) {
         logInfo("file: "__FILE__", line: %d, "
                 "program exit normally.\n", __LINE__);
