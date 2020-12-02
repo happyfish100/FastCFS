@@ -223,7 +223,8 @@ static int setup_server_env(const char *config_filename)
     if ((result=check_create_root_path()) != 0) {
         return result;
     }
-    return fs_api_combine_thread_start();
+
+    return fs_api_start();
 }
 
 static struct fuse_session *create_fuse_session(char *argv0,
