@@ -35,7 +35,7 @@ static void usage(char *argv[])
 int main(int argc, char *argv[])
 {
     const char *config_filename = "/etc/fastcfs/fuse.conf";
-    FDIRClientOwnerModePair omp;
+    FCFSAPIFileContext fctx;
 	int ch;
 	int result;
     int open_flags;
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     int64_t file_size;
     int64_t file_size_to_set;
     int length = 0;
-    FSAPIFileInfo fi;
+    FCFSAPIFileInfo fi;
     char *ns = "fs";
     char *input_filename = NULL;
     char *filename;
@@ -58,9 +58,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    omp.mode = 0755;
-    omp.uid = geteuid();
-    omp.gid = getegid();
+    fctx.tid = getpid();
+    fctx.omp.mode = 0755;
+    fctx.omp.uid = geteuid();
+    fctx.omp.gid = getegid();
     open_flags = 0;
     file_size_to_set = -1;
     while ((ch=getopt(argc, argv, "hc:o:n:i:l:S:AT")) != -1) {
@@ -145,13 +146,15 @@ int main(int argc, char *argv[])
     */
 
     if ((result=fcfs_api_open(&fi, filename, O_CREAT |
-                    O_WRONLY | open_flags, &omp)) != 0)
+                    O_WRONLY | open_flags, &fctx)) != 0)
     {
         return result;
     }
 
     if (file_size_to_set >= 0) {
-        if ((result=fcfs_api_ftruncate(&fi, file_size_to_set)) != 0) {
+        if ((result=fcfs_api_ftruncate_ex(&fi,file_size_to_set,
+                        fctx.tid)) != 0)
+        {
             return result;
         }
     }
@@ -171,7 +174,7 @@ int main(int argc, char *argv[])
     }
     fcfs_api_close(&fi);
 
-    if ((result=fcfs_api_open(&fi, filename, O_RDONLY, &omp)) != 0) {
+    if ((result=fcfs_api_open(&fi, filename, O_RDONLY, &fctx)) != 0) {
         return result;
     }
     in_buff = (char *)malloc(length);

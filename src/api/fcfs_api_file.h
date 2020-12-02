@@ -47,6 +47,21 @@ extern "C" {
 #define fcfs_api_open_by_dentry(fi, dentry, flags, fctx) \
     fcfs_api_open_by_dentry_ex(&g_fcfs_api_ctx, fi, dentry, flags, fctx)
 
+#define fcfs_api_write(fi, buff, size, written_bytes)  \
+    fcfs_api_write_ex(fi, buff, size, written_bytes, (fi)->tid)
+
+#define fcfs_api_pwrite(fi, buff, size, offset, written_bytes)  \
+    fcfs_api_pwrite_ex(fi, buff, size, offset, written_bytes, (fi)->tid)
+
+#define fcfs_api_read(fi, buff, size, read_bytes)  \
+    fcfs_api_read_ex(fi, buff, size, read_bytes, (fi)->tid)
+
+#define fcfs_api_pread(fi, buff, size, offset, read_bytes)  \
+    fcfs_api_pread_ex(fi, buff, size, offset, read_bytes, (fi)->tid)
+
+#define fcfs_api_ftruncate(fi, new_size) \
+    fcfs_api_ftruncate_ex(fi, new_size, getpid())
+
 #define fcfs_api_truncate(path, new_size, fctx) \
     fcfs_api_truncate_ex(&g_fcfs_api_ctx, path, new_size, fctx)
 
