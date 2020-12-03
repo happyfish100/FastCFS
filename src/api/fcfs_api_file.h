@@ -98,6 +98,9 @@ extern "C" {
 
     int fcfs_api_close(FCFSAPIFileInfo *fi);
 
+    void fcfs_api_file_write_done_callback(
+            FSAPIWriteDoneCallbackArg *callback_arg);
+
     int fcfs_api_pwrite_ex(FCFSAPIFileInfo *fi, const char *buff,
             const int size, const int64_t offset, int *written_bytes,
             const int64_t tid);

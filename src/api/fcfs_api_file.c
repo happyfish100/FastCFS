@@ -192,6 +192,54 @@ int fcfs_api_close(FCFSAPIFileInfo *fi)
     return 0;
 }
 
+static int fcfs_api_file_report_size_and_time(
+        FCFSAPIWriteDoneCallbackArg *callback_arg, int *flags,
+        FDIRDEntryInfo *dentry)
+{
+    int64_t new_size;
+    int current_time;
+
+    new_size = callback_arg->arg.bs_key->block.offset +
+        callback_arg->arg.bs_key->slice.offset +
+        callback_arg->arg.write_bytes;
+    if (new_size > callback_arg->extra.file_size) {
+        *flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE |
+            FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
+    } else {
+        if (new_size > callback_arg->extra.space_end) {
+            *flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
+        } else {
+            *flags = 0;
+        }
+
+        current_time = get_current_time();
+        if (current_time > callback_arg->extra.last_modified_time) {
+            *flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_MTIME;
+        }
+    }
+
+    if (callback_arg->arg.inc_alloc != 0)  {
+        *flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
+    }
+
+    if (*flags == 0) {
+        return 0;
+    } else {
+        return fdir_client_set_dentry_size(callback_arg->extra.ctx->
+                contexts.fdir, &callback_arg->extra.ctx->ns, callback_arg->
+                arg.bs_key->block.oid, new_size, callback_arg->arg.inc_alloc,
+                false, *flags, dentry);
+    }
+}
+
+void fcfs_api_file_write_done_callback(FSAPIWriteDoneCallbackArg *callback_arg)
+{
+    int flags;
+    FDIRDEntryInfo dentry;
+    fcfs_api_file_report_size_and_time((FCFSAPIWriteDoneCallbackArg *)
+            callback_arg, &flags, &dentry);
+}
+
 /*
 static inline void print_block_slice_key(FSBlockSliceKeyInfo *bs_key)
 {
@@ -207,84 +255,67 @@ static int do_pwrite(FCFSAPIFileInfo *fi, const char *buff,
         const int64_t tid)
 {
     FSAPIOperationContext op_ctx;
+    FSAPIWriteBuffer wbuffer;
+    FCFSAPIWriteDoneCallbackArg callback_arg;
     int64_t new_offset;
     int result;
-    bool combined;
-    int current_written;
-    int inc_alloc;
     int remain;
 
     FS_API_SET_CTX_AND_TID_EX(op_ctx, fi->ctx->contexts.fsapi, tid);
+    wbuffer.extra_data = &callback_arg.extra;
+    callback_arg.extra.ctx = fi->ctx;
+
     *total_inc_alloc = *written_bytes = 0;
     new_offset = offset;
     fs_set_block_slice(&op_ctx.bs_key, fi->dentry.inode, offset, size);
     while (1) {
         //print_block_slice_key(&op_ctx.bs_key);
-        if ((result=fs_api_slice_write(&op_ctx,
-                        buff + *written_bytes, &combined,
-                        &current_written, &inc_alloc)) != 0)
+        callback_arg.arg.bs_key = &op_ctx.bs_key;
+        callback_arg.extra.file_size = fi->dentry.stat.size;
+        callback_arg.extra.space_end = fi->dentry.stat.space_end;
+        callback_arg.extra.last_modified_time = fi->write_notify.last_modified_time;
+        wbuffer.buff = buff + *written_bytes;
+        if ((result=fs_api_slice_write(&op_ctx, &wbuffer, &callback_arg.
+                        arg.write_bytes, &callback_arg.arg.inc_alloc)) != 0)
         {
-            if (current_written == 0) {
+            if (callback_arg.arg.write_bytes == 0) {
                 break;
             }
         }
 
-        new_offset += current_written;
-        *written_bytes += current_written;
-        *total_inc_alloc += inc_alloc;
+        new_offset += callback_arg.arg.write_bytes;
+        *written_bytes += callback_arg.arg.write_bytes;
+        *total_inc_alloc += callback_arg.arg.inc_alloc;
+        if (need_report_modified) {
+            if (wbuffer.combined) {
+                if (new_offset > fi->dentry.stat.size) {
+                    fi->dentry.stat.size = new_offset;
+                }
+                fi->write_notify.last_modified_time = get_current_time();
+            } else {
+                int flags;
+                fcfs_api_file_report_size_and_time(&callback_arg,
+                        &flags, &fi->dentry);
+                if ((flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_MTIME) != 0) {
+                    fi->write_notify.last_modified_time = get_current_time();
+                }
+            }
+        }
+
         remain = size - *written_bytes;
         if (remain <= 0) {
             break;
         }
 
-        if (current_written == op_ctx.bs_key.slice.length) {  //fully completed
+        if (callback_arg.arg.write_bytes == op_ctx.bs_key.slice.length) {
+            /* fully completed */
             fs_next_block_slice_key(&op_ctx.bs_key, remain);
         } else {  //partially completed, try again the remain part
             fs_set_slice_size(&op_ctx.bs_key, new_offset, remain);
         }
     }
 
-    if (*written_bytes > 0) {
-        int64_t new_size;
-        int flags;
-
-        if (!need_report_modified) {
-            return 0;
-        }
-
-        new_size = offset + *written_bytes;
-        if (new_size > fi->dentry.stat.size) {
-            flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE |
-                FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
-        } else {
-            int current_time;
-
-            if (new_size > fi->dentry.stat.space_end) {
-                flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
-            } else {
-                flags = 0;
-            }
-
-            current_time = get_current_time();
-            if (current_time > fi->write_notify.last_modified_time) {
-                fi->write_notify.last_modified_time = current_time;
-                flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_MTIME;
-            }
-        }
-
-        if (*total_inc_alloc != 0)  {
-            flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
-        }
-
-        if (flags != 0) {
-            result = fdir_client_set_dentry_size(fi->ctx->contexts.fdir,
-                    &fi->ctx->ns, fi->dentry.inode, new_size,
-                    *total_inc_alloc, false, flags, &fi->dentry);
-        }
-        return 0;
-    } else {
-        return EIO;
-    }
+    return (*written_bytes > 0) ? 0 : EIO;
 }
 
 int fcfs_api_pwrite_ex(FCFSAPIFileInfo *fi, const char *buff,

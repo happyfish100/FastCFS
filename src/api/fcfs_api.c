@@ -77,7 +77,10 @@ int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     ini_ctx->section_name = fsapi_section_name;
-    if ((result=fs_api_init_ex(fsapi, ini_ctx)) != 0) {
+    if ((result=fs_api_init_ex(fsapi, ini_ctx,
+                    fcfs_api_file_write_done_callback,
+                    sizeof(FCFSAPIWriteDoneCallbackExtraData))) != 0)
+    {
         return result;
     }
 
@@ -164,7 +167,10 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     ini_ctx->section_name = fsapi_section_name;
-    if ((result=fs_api_init_ex(fsapi, ini_ctx)) != 0) {
+    if ((result=fs_api_init_ex(fsapi, ini_ctx,
+                    fcfs_api_file_write_done_callback,
+                    sizeof(FCFSAPIWriteDoneCallbackExtraData))) != 0)
+    {
         return result;
     }
 

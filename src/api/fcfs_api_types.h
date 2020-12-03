@@ -62,6 +62,18 @@ typedef struct fcfs_api_file_context {
     int64_t tid;
 } FCFSAPIFileContext;
 
+typedef struct fcfs_api_write_done_callback_extra_data {
+    FCFSAPIContext *ctx;
+    int64_t file_size;
+    int64_t space_end;
+    int last_modified_time;
+} FCFSAPIWriteDoneCallbackExtraData;
+
+typedef struct fcfs_api_write_done_callback_arg {
+    FSAPIWriteDoneCallbackArg arg;  //must be the first
+    FCFSAPIWriteDoneCallbackExtraData extra;
+} FCFSAPIWriteDoneCallbackArg;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
