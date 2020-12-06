@@ -828,7 +828,7 @@ static void fs_do_read(fuse_req_t req, fuse_ino_t ino, size_t size,
     const struct fuse_ctx *fctx;
     int result;
     int read_bytes;
-    char fixed_buff[128 * 1024];
+    char fixed_buff[256* 1024];
     char *buff;
     
     //TODO buffer use memory pool
