@@ -275,6 +275,7 @@ static const char *get_owner_type_caption(
 
 int fs_fuse_global_init(const char *config_filename)
 {
+#define MIN_THREAD_STACK_SIZE  (320 * 1024)
     int result;
     string_t base_path;
     string_t mountpoint;
@@ -305,6 +306,13 @@ int fs_fuse_global_init(const char *config_filename)
                 0, 0, IDEMPOTENCY_DEFAULT_WORK_THREADS);
         if ((result=sf_load_config_ex("fs_fused", &config, 0)) != 0) {
             break;
+        }
+        if (SF_G_THREAD_STACK_SIZE < MIN_THREAD_STACK_SIZE) {
+            logWarning("file: "__FILE__", line: %d, "
+                    "config file: %s, thread_stack_size: %d is too small, "
+                    "set to %d", __LINE__, config_filename,
+                    SF_G_THREAD_STACK_SIZE, MIN_THREAD_STACK_SIZE);
+            SF_G_THREAD_STACK_SIZE = MIN_THREAD_STACK_SIZE;
         }
 
         if ((result=load_fuse_config(&ini_ctx)) != 0) {
