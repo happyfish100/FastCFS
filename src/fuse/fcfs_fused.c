@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 
     config_filename = argv[1];
     log_init2();
-    //log_set_time_precision(&g_log_context, LOG_TIME_PRECISION_USECOND);
+    //log_set_time_precision(&g_log_context, LOG_TIME_PRECISION_MSECOND);
 
     result = get_base_path_from_conf_file(config_filename,
             SF_G_BASE_PATH, sizeof(SF_G_BASE_PATH));

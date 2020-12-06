@@ -65,6 +65,17 @@ static int copy_file()
     if ((result=fcfs_api_pooled_init(ns, config_filename)) != 0) {
         return result;
     }
+    if ((result=fs_api_start()) != 0) {
+        return result;
+    }
+
+    fdir_client_log_config(g_fcfs_api_ctx.contexts.fdir);
+    fs_client_log_config(g_fcfs_api_ctx.contexts.fsapi->fs);
+    /*
+    fs_api_config_to_string(write_combine_config,
+            sizeof(write_combine_config));
+            */
+
 
     if (fs_filename[strlen(fs_filename) - 1] == '/') {
         const char *filename;
@@ -81,10 +92,10 @@ static int copy_file()
                 "%s", fs_filename);
     }
 
+    fctx.tid = getpid();
     fctx.omp.mode = 0755;
     fctx.omp.uid = geteuid();
     fctx.omp.gid = getegid();
-    fctx.tid = getpid();
     if ((result=fcfs_api_open(&fi, new_fs_filename,
                     O_CREAT | O_WRONLY, &fctx)) != 0)
     {
@@ -129,6 +140,7 @@ static int copy_file()
     }
     fcfs_api_close(&fi);
 
+    fs_api_terminate();
     return 0;
 }
 
