@@ -24,26 +24,30 @@
 #include "fastcommon/logger.h"
 #include "fastcfs/fcfs_api.h"
 
-static void usage(char *argv[])
-{
-    fprintf(stderr, "Usage: %s [-c config_filename] "
-            "-n [namespace=fs] <input_local_filename> "
-            "<fs_filename>\n\n", argv[0]);
-}
-
-const char *config_filename = "/etc/fastcfs/fuse.conf";
+const char *config_filename = "/etc/fcfs/fuse.conf";
 static char *ns = "fs";
+static int buffer_size = 128 * 1024;
 static char *input_filename;
 static char *fs_filename;
 
+static void usage(char *argv[])
+{
+    fprintf(stderr, "Usage: %s [-c config_filename=%s] "
+            "[-n namespace=fs] [-b buffer_size=128KB] "
+            "<input_local_filename> <fs_filename>\n\n",
+            argv[0], config_filename);
+}
+
 static int copy_file()
 {
-#define BUFFEER_SIZE  (128 * 1024)
+#define FIXED_BUFFEER_SIZE  (128 * 1024)
     FCFSAPIFileContext fctx;
 	int result;
     int fd;
     FCFSAPIFileInfo fi;
-    char buff[BUFFEER_SIZE];
+    char fixed_buff[FIXED_BUFFEER_SIZE];
+    char *buff;
+    char new_fs_filename[PATH_MAX];
     int read_bytes;
     int write_bytes;
     int current_write;
@@ -62,18 +66,43 @@ static int copy_file()
         return result;
     }
 
+    if (fs_filename[strlen(fs_filename) - 1] == '/') {
+        const char *filename;
+        filename = strrchr(input_filename, '/');
+        if (filename != NULL) {
+            filename++;  //skip "/"
+        } else {
+            filename = input_filename;
+        }
+        snprintf(new_fs_filename, sizeof(new_fs_filename),
+                "%s%s", fs_filename, filename);
+    } else {
+        snprintf(new_fs_filename, sizeof(new_fs_filename),
+                "%s", fs_filename);
+    }
+
     fctx.omp.mode = 0755;
     fctx.omp.uid = geteuid();
     fctx.omp.gid = getegid();
-    if ((result=fcfs_api_open(&fi, fs_filename,
+    fctx.tid = getpid();
+    if ((result=fcfs_api_open(&fi, new_fs_filename,
                     O_CREAT | O_WRONLY, &fctx)) != 0)
     {
         return result;
     }
 
+    if (buffer_size <= FIXED_BUFFEER_SIZE) {
+        buff = fixed_buff;
+    } else {
+        buff = (char *)fc_malloc(buffer_size);
+        if (buff == NULL) {
+            return ENOMEM;
+        }
+    }
+
     write_bytes = 0;
     while (1) {
-        read_bytes = read(fd, buff, BUFFEER_SIZE);
+        read_bytes = read(fd, buff, buffer_size);
         if (read_bytes == 0) {
             break;
         } else if (read_bytes < 0) {
@@ -105,14 +134,16 @@ static int copy_file()
 
 int main(int argc, char *argv[])
 {
+    int result;
 	int ch;
+    int64_t bytes;
 
     if (argc < 3) {
         usage(argv);
         return 1;
     }
 
-    while ((ch=getopt(argc, argv, "hc:n:")) != -1) {
+    while ((ch=getopt(argc, argv, "hc:n:b:")) != -1) {
         switch (ch) {
             case 'h':
                 usage(argv);
@@ -122,6 +153,13 @@ int main(int argc, char *argv[])
                 break;
             case 'n':
                 ns = optarg;
+                break;
+            case 'b':
+                if ((result=parse_bytes(optarg, 1, &bytes)) != 0) {
+                    usage(argv);
+                    return result;
+                }
+                buffer_size = bytes;
                 break;
             default:
                 usage(argv);
@@ -139,6 +177,10 @@ int main(int argc, char *argv[])
 
     input_filename = argv[optind];
     fs_filename = argv[optind + 1];
+    if (strlen(fs_filename) == 0) {
+        usage(argv);
+        return EINVAL;
+    }
 
     return copy_file();
 }
