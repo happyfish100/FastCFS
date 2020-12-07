@@ -17,6 +17,7 @@
 #include <limits.h>
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
+#include "async_reporter.h"
 #include "fcfs_api.h"
 
 #define FCFS_API_MIN_SHARED_ALLOCATOR_COUNT           1
@@ -208,4 +209,20 @@ void fcfs_api_destroy_ex(FCFSAPIContext *ctx)
         fs_api_destroy_ex(ctx->contexts.fsapi);
         ctx->contexts.fsapi = NULL;
     }
+}
+
+int fcfs_api_start_ex(FCFSAPIContext *ctx)
+{
+    int result;
+    if ((result=fs_api_start_ex(ctx->contexts.fsapi)) != 0) {
+        return result;
+    }
+
+    return async_reporter_init(ctx);
+}
+
+void fcfs_api_terminate_ex(FCFSAPIContext *ctx)
+{
+    fs_api_terminate_ex(ctx->contexts.fsapi);
+    async_reporter_terminate();
 }

@@ -47,6 +47,9 @@
 
 #define fcfs_api_destroy()  fcfs_api_destroy_ex(&g_fcfs_api_ctx)
 
+#define fcfs_api_start() fcfs_api_start_ex(&g_fcfs_api_ctx)
+#define fcfs_api_terminate() fcfs_api_terminate_ex(&g_fcfs_api_ctx)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -105,6 +108,10 @@ extern "C" {
             const char *fs_section_name, const char *fsapi_section_name);
 
     void fcfs_api_destroy_ex(FCFSAPIContext *ctx);
+
+    int fcfs_api_start_ex(FCFSAPIContext *ctx);
+
+    void fcfs_api_terminate_ex(FCFSAPIContext *ctx);
 
 #ifdef __cplusplus
 }

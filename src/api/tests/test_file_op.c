@@ -145,6 +145,10 @@ int main(int argc, char *argv[])
     }
     */
 
+    if ((result=fcfs_api_start()) != 0) {
+        return result;
+    }
+
     if ((result=fcfs_api_open(&fi, filename, O_CREAT |
                     O_WRONLY | open_flags, &fctx)) != 0)
     {
@@ -218,5 +222,6 @@ int main(int argc, char *argv[])
     }
 
     fcfs_api_close(&fi);
+    fcfs_api_terminate();
     return 0;
 }

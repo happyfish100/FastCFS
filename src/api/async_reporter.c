@@ -22,21 +22,39 @@
 
 AsyncReporterContext g_async_reporter_ctx;
 
+#define FCFS_API_CTX  g_async_reporter_ctx.fcfs_api_ctx
+
 static inline void deal_tasks(FCFSAPIAsyncReportTask *head)
 {
     FCFSAPIAsyncReportTask *task;
+    FDIRDEntryInfo dentry;
+    int result;
 
     do {
         task = head;
         head = head->next;
 
-        //TODO
+        while (1) {
+            result = fdir_client_set_dentry_size(FCFS_API_CTX->contexts.fdir,
+                    &FCFS_API_CTX->ns, task->oid, task->new_fsize,
+                    task->inc_alloc, task->force, task->flags, &dentry);
+            if (result == 0 || result == ENOENT || result == EINVAL) {
+                break;
+            }
+            sleep(1);
+        }
+
+        fast_mblock_free_object(task->allocator, task);
     } while (head != NULL);
 }
 
 void async_reporter_terminate()
 {
     FCFSAPIAsyncReportTask *head;
+
+    if (!g_async_reporter_ctx.fcfs_api_ctx->async_report_enabled) {
+        return;
+    }
 
     head = (FCFSAPIAsyncReportTask *)fc_queue_try_pop_all(
             &g_async_reporter_ctx.queue);
@@ -68,13 +86,17 @@ int async_reporter_init(FCFSAPIContext *fcfs_api_ctx)
     int result;
     pthread_t tid;
 
+    g_async_reporter_ctx.fcfs_api_ctx = fcfs_api_ctx;
+    if (!fcfs_api_ctx->async_report_enabled) {
+        return 0;
+    } 
+
     if ((result=fc_queue_init(&g_async_reporter_ctx.queue, (long)
                     (&((FCFSAPIAsyncReportTask *)NULL)->next))) != 0)
     {
         return result;
     }
 
-    g_async_reporter_ctx.fcfs_api_ctx = fcfs_api_ctx;
     return fc_create_thread(&tid, async_reporter_thread_func, NULL,
             SF_G_THREAD_STACK_SIZE);
 }

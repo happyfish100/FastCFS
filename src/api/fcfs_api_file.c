@@ -20,6 +20,7 @@
 #include "fastcommon/sockopt.h"
 #include "fastcommon/sched_thread.h"
 #include "fcfs_api_util.h"
+#include "async_reporter.h"
 #include "fcfs_api_file.h"
 
 #define FCFS_API_MAGIC_NUMBER    1588076578
@@ -192,6 +193,33 @@ int fcfs_api_close(FCFSAPIFileInfo *fi)
     return 0;
 }
 
+static int report_size_and_time(FCFSAPIContext *ctx, const uint64_t oid,
+            const int64_t new_fsize, const int inc_alloc, const bool force,
+            const int flags, FDIRDEntryInfo *dentry)
+{
+    if (ctx->async_report_enabled) {
+        if (dentry != NULL) {
+            if ((flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE)) {
+                dentry->stat.size = new_fsize;
+            }
+            if ((flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END)) {
+                dentry->stat.space_end = new_fsize;
+            }
+            if ((flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_MTIME)) {
+                dentry->stat.mtime = get_current_time();
+            }
+        }
+        return async_reporter_push(oid, new_fsize, inc_alloc, force, flags);
+    } else {
+        FDIRDEntryInfo tmp;
+        if (dentry == NULL) {
+            dentry = &tmp;
+        }
+        return fdir_client_set_dentry_size(ctx->contexts.fdir, &ctx->ns,
+                oid, new_fsize, inc_alloc, force, flags, dentry);
+    }
+}
+
 static int fcfs_api_file_report_size_and_time(
         FCFSAPIWriteDoneCallbackArg *callback_arg, int *flags,
         FDIRDEntryInfo *dentry)
@@ -225,8 +253,7 @@ static int fcfs_api_file_report_size_and_time(
     if (*flags == 0) {
         return 0;
     } else {
-        return fdir_client_set_dentry_size(callback_arg->extra.ctx->
-                contexts.fdir, &callback_arg->extra.ctx->ns, callback_arg->
+        return report_size_and_time(callback_arg->extra.ctx, callback_arg->
                 arg.bs_key->block.oid, new_size, callback_arg->arg.inc_alloc,
                 false, *flags, dentry);
     }
@@ -235,9 +262,8 @@ static int fcfs_api_file_report_size_and_time(
 void fcfs_api_file_write_done_callback(FSAPIWriteDoneCallbackArg *callback_arg)
 {
     int flags;
-    FDIRDEntryInfo dentry;
     fcfs_api_file_report_size_and_time((FCFSAPIWriteDoneCallbackArg *)
-            callback_arg, &flags, &dentry);
+            callback_arg, &flags, NULL);
 }
 
 /*
@@ -633,9 +659,8 @@ static inline int check_and_sys_unlock(FCFSAPIContext *ctx,
         return result == 0 ? unlock_res : result;
     } else {
         if (result == 0) {
-            FDIRDEntryInfo dentry;
-            return fdir_client_set_dentry_size(ctx->contexts.fdir, &ctx->ns,
-                    oid, new_size, alloc_bytes, true, flags, &dentry);
+            return report_size_and_time(ctx, oid, new_size,
+                    alloc_bytes, true, flags, NULL);
         } else {
             return result;
         }

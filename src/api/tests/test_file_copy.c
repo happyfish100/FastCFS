@@ -65,7 +65,7 @@ static int copy_file()
     if ((result=fcfs_api_pooled_init(ns, config_filename)) != 0) {
         return result;
     }
-    if ((result=fs_api_start()) != 0) {
+    if ((result=fcfs_api_start()) != 0) {
         return result;
     }
 
@@ -140,7 +140,7 @@ static int copy_file()
     }
     fcfs_api_close(&fi);
 
-    fs_api_terminate();
+    fcfs_api_terminate();
     return 0;
 }
 
