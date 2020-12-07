@@ -344,7 +344,7 @@ int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
         const int size, int *written_bytes, const int64_t tid)
 {
     FDIRClientSession session;
-    bool need_report_modified;
+    bool use_sys_lock;
     int result;
     int total_inc_alloc;
     int flags;
@@ -363,7 +363,8 @@ int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
         return EBADF;
     }
 
-    if ((fi->flags & O_APPEND)) {
+    use_sys_lock = fi->ctx->use_sys_lock_for_append && (fi->flags & O_APPEND);
+    if (use_sys_lock) {
         if ((result=fcfs_api_dentry_sys_lock(&session, fi->dentry.inode,
                         0, &old_size, &space_end)) != 0)
         {
@@ -371,19 +372,17 @@ int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
         }
 
         fi->offset = old_size;
-        need_report_modified = false;
     } else {
-        old_size = 0;
-        need_report_modified = true;
+        old_size = fi->dentry.stat.size;
     }
 
     if ((result=do_pwrite(fi, buff, size, fi->offset, written_bytes,
-                    &total_inc_alloc, need_report_modified, tid)) == 0)
+                    &total_inc_alloc, !use_sys_lock, tid)) == 0)
     {
         fi->offset += *written_bytes;
     }
 
-    if ((fi->flags & O_APPEND)) {
+    if (use_sys_lock) {
         string_t *ns;
         if (fi->offset > old_size) {
             ns = &fi->ctx->ns; //set ns for update file_size, space_end etc.
@@ -593,23 +592,71 @@ static int do_allocate(FCFSAPIContext *ctx, const int64_t oid,
     return result;
 }
 
+static inline int check_and_sys_lock(FCFSAPIContext *ctx,
+        FDIRClientSession *session, const int64_t oid,
+        int64_t *old_size, int64_t *space_end)
+{
+    FDIRDEntryInfo dentry;
+    int result;
+
+    if (ctx->use_sys_lock_for_append) {
+        result = fcfs_api_dentry_sys_lock(session,
+                oid, 0, old_size, space_end);
+    } else {
+        if ((result=fdir_client_stat_dentry_by_inode(ctx->
+                        contexts.fdir, oid, &dentry)) == 0)
+        {
+            *old_size = dentry.stat.size;
+            *space_end = dentry.stat.space_end;
+        }
+    }
+
+    return result;
+}
+
+static inline int check_and_sys_unlock(FCFSAPIContext *ctx,
+        FDIRClientSession *session, const int64_t oid,
+        const int64_t old_size, const int64_t new_size,
+        const int64_t alloc_bytes, const int flags, const int result)
+{
+    if (ctx->use_sys_lock_for_append) {
+        string_t *ns;
+        int unlock_res;
+
+        if (result == 0) {
+            ns = &ctx->ns;  //set ns for update file_size, space_end etc.
+        } else {
+            ns = NULL;  //do NOT update
+        }
+        unlock_res = fcfs_api_dentry_sys_unlock(session, ns, oid,
+                true, old_size, new_size, alloc_bytes, flags);
+        return result == 0 ? unlock_res : result;
+    } else {
+        if (result == 0) {
+            FDIRDEntryInfo dentry;
+            return fdir_client_set_dentry_size(ctx->contexts.fdir, &ctx->ns,
+                    oid, new_size, alloc_bytes, true, flags, &dentry);
+        } else {
+            return result;
+        }
+    }
+}
+
 static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
         const int64_t new_size, const int64_t tid)
 {
     FDIRClientSession session;
     int64_t old_size;
-    string_t *ns;
     int64_t alloc_bytes;
     int64_t space_end;
     int result;
     int flags;
-    int unlock_res;
 
     if (new_size < 0) {
         return EINVAL;
     }
 
-    if ((result=fcfs_api_dentry_sys_lock(&session, oid, 0,
+    if ((result=check_and_sys_lock(ctx, &session, oid,
                     &old_size, &space_end)) != 0)
     {
         return result;
@@ -631,16 +678,13 @@ static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
         if (new_size < space_end) {
             flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
         }
+        if (alloc_bytes != 0)  {
+            flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
+        }
     }
 
-    if (result == 0) {
-        ns = &ctx->ns;  //set ns for update file_size, space_end etc.
-    } else {
-        ns = NULL;  //do NOT update
-    }
-    unlock_res = fcfs_api_dentry_sys_unlock(&session, ns, oid,
-            true, old_size, new_size, alloc_bytes, flags);
-    return result == 0 ? unlock_res : result;
+    return check_and_sys_unlock(ctx, &session, oid,
+            old_size, new_size, alloc_bytes, flags, result);
 }
 
 int fcfs_api_ftruncate_ex(FCFSAPIFileInfo *fi, const int64_t new_size,
@@ -1046,11 +1090,9 @@ int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
     int64_t new_size;
     int64_t space_end;
     int64_t alloc_bytes;
-    string_t *ns;
     int op;
     int flags;
     int result;
-    int unlock_res;
 
     if (offset < 0 || length < 0) {
         return EINVAL;
@@ -1069,10 +1111,15 @@ int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
         return 0;
     }
 
-    if ((result=fcfs_api_dentry_sys_lock(&session, fi->dentry.inode,
-                    0, &old_size, &space_end)) != 0)
-    {
-        return result;
+    if (fi->ctx->use_sys_lock_for_append) {
+        if ((result=fcfs_api_dentry_sys_lock(&session, fi->dentry.
+                        inode, 0, &old_size, &space_end)) != 0)
+        {
+            return result;
+        }
+    } else {
+        old_size = fi->dentry.stat.size;
+        space_end = fi->dentry.stat.space_end;
     }
 
     flags = 0;
@@ -1106,16 +1153,11 @@ int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
             }
         }
     }
-
-    if (result == 0) {
-        ns = &fi->ctx->ns; //set ns for update file_size, space_end etc.
-    } else {
-        ns = NULL;  //do NOT update
+    if (alloc_bytes != 0)  {
+        flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
     }
-    unlock_res = fcfs_api_dentry_sys_unlock(&session, ns, fi->dentry.inode,
-            true, old_size, new_size, alloc_bytes, flags);
-
-    return result == 0 ? unlock_res : result;
+    return check_and_sys_unlock(fi->ctx, &session, fi->dentry.inode,
+            old_size, new_size, alloc_bytes, flags, result);
 }
 
 int fcfs_api_rename_ex(FCFSAPIContext *ctx, const char *old_path,

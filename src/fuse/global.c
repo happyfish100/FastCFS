@@ -402,7 +402,8 @@ int fs_fuse_global_init(const char *config_filename)
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "owner_type: %s%s, singlethread: %d, clone_fd: %d, "
             "max_idle_threads: %d, allow_others: %s, auto_unmount: %d, "
-            "attribute_timeout: %.1fs, entry_timeout: %.1fs, %s",
+            "attribute_timeout: %.1fs, entry_timeout: %.1fs, "
+            "use_sys_lock_for_append: %d, %s",
             fuse_pkgversion(), g_fuse_global_vars.ns,
             sf_idempotency_config, g_fuse_global_vars.mountpoint,
             get_owner_type_caption(g_fuse_global_vars.owner.type),
@@ -412,6 +413,7 @@ int fs_fuse_global_init(const char *config_filename)
             g_fuse_global_vars.auto_unmount,
             g_fuse_global_vars.attribute_timeout,
             g_fuse_global_vars.entry_timeout,
+            g_fcfs_api_ctx.use_sys_lock_for_append,
             write_combine_config);
     return 0;
 }

@@ -31,6 +31,7 @@ typedef struct fcfs_api_opendir_session {
 } FCFSAPIOpendirSession;
 
 typedef struct fcfs_api_context {
+    bool use_sys_lock_for_append;
     string_t ns;  //namespace
     char ns_holder[NAME_MAX];
     struct {

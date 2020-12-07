@@ -38,9 +38,20 @@ static int opendir_session_alloc_init(void *element, void *args)
 }
 
 static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
-        FSAPIContext *fsapi, const char *ns, const bool need_lock)
+        FSAPIContext *fsapi, const char *ns, IniFullContext *ini_ctx,
+        const bool need_lock)
 {
     int result;
+
+    ctx->use_sys_lock_for_append = iniGetBoolValue(NULL,
+            "use_sys_lock_for_append", ini_ctx->context, false);
+
+    if ((result=fs_api_init_ex(fsapi, ini_ctx,
+                    fcfs_api_file_write_done_callback,
+                    sizeof(FCFSAPIWriteDoneCallbackExtraData))) != 0)
+    {
+        return result;
+    }
 
     if ((result=fast_mblock_init_ex1(&ctx->opendir_session_pool,
                     "opendir_session", sizeof(FCFSAPIOpendirSession), 64,
@@ -77,14 +88,7 @@ int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     ini_ctx->section_name = fsapi_section_name;
-    if ((result=fs_api_init_ex(fsapi, ini_ctx,
-                    fcfs_api_file_write_done_callback,
-                    sizeof(FCFSAPIWriteDoneCallbackExtraData))) != 0)
-    {
-        return result;
-    }
-
-    return fcfs_api_common_init(ctx, fdir, fsapi, ns, need_lock);
+    return fcfs_api_common_init(ctx, fdir, fsapi, ns, ini_ctx, need_lock);
 }
 
 int fcfs_api_init_ex(FCFSAPIContext *ctx, const char *ns,
@@ -167,14 +171,7 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     ini_ctx->section_name = fsapi_section_name;
-    if ((result=fs_api_init_ex(fsapi, ini_ctx,
-                    fcfs_api_file_write_done_callback,
-                    sizeof(FCFSAPIWriteDoneCallbackExtraData))) != 0)
-    {
-        return result;
-    }
-
-    return fcfs_api_common_init(ctx, fdir, fsapi, ns, need_lock);
+    return fcfs_api_common_init(ctx, fdir, fsapi, ns, ini_ctx, need_lock);
 }
 
 void fcfs_api_destroy_ex(FCFSAPIContext *ctx)
