@@ -24,15 +24,18 @@ AsyncReporterContext g_async_reporter_ctx;
 
 #define FCFS_API_CTX  g_async_reporter_ctx.fcfs_api_ctx
 
-static inline void deal_tasks(FCFSAPIAsyncReportTask *head)
+static inline int deal_tasks(FCFSAPIAsyncReportTask *head)
 {
     FCFSAPIAsyncReportTask *task;
     FDIRDEntryInfo dentry;
+    int count;
     int result;
 
+    count = 0;
     do {
         task = head;
         head = head->next;
+        ++count;
 
         while (1) {
             result = fdir_client_set_dentry_size(FCFS_API_CTX->contexts.fdir,
@@ -46,11 +49,14 @@ static inline void deal_tasks(FCFSAPIAsyncReportTask *head)
 
         fast_mblock_free_object(task->allocator, task);
     } while (head != NULL);
+
+    return count;
 }
 
 void async_reporter_terminate()
 {
     FCFSAPIAsyncReportTask *head;
+    int count;
 
     if (!g_async_reporter_ctx.fcfs_api_ctx->async_report_enabled) {
         return;
@@ -59,11 +65,14 @@ void async_reporter_terminate()
     head = (FCFSAPIAsyncReportTask *)fc_queue_try_pop_all(
             &g_async_reporter_ctx.queue);
     if (head != NULL) {
-        deal_tasks(head);
+        count = deal_tasks(head);
+    } else {
+        count = 0;
     }
 
     logInfo("file: "__FILE__", line: %d, "
-            "async_reporter_terminate", __LINE__);
+            "async_reporter_terminate, remain count: %d",
+            __LINE__, count);
 }
 
 static void *async_reporter_thread_func(void *arg)

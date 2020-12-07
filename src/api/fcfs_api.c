@@ -63,6 +63,10 @@ static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
             FCFS_API_MIN_SHARED_ALLOCATOR_COUNT,
             FCFS_API_MAX_SHARED_ALLOCATOR_COUNT, true);
 
+    if ((result=fcfs_api_allocator_init(ctx)) != 0) {
+        return result;
+    }
+
     ini_ctx->section_name = fsapi_section_name;
     if ((result=fs_api_init_ex(fsapi, ini_ctx,
                     fcfs_api_file_write_done_callback,
@@ -188,7 +192,6 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         return result;
     }
 
-    ini_ctx->section_name = fsapi_section_name;
     return fcfs_api_common_init(ctx, fdir, fsapi, ns, ini_ctx,
             fdir_section_name, fsapi_section_name, need_lock);
 }
