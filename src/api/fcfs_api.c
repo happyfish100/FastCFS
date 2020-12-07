@@ -19,6 +19,10 @@
 #include "fastcommon/logger.h"
 #include "fcfs_api.h"
 
+#define FCFS_API_MIN_SHARED_ALLOCATOR_COUNT           1
+#define FCFS_API_MAX_SHARED_ALLOCATOR_COUNT        1000
+#define FCFS_API_DEFAULT_SHARED_ALLOCATOR_COUNT      17
+
 FCFSAPIContext g_fcfs_api_ctx;
 
 static int opendir_session_alloc_init(void *element, void *args)
@@ -39,13 +43,26 @@ static int opendir_session_alloc_init(void *element, void *args)
 
 static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         FSAPIContext *fsapi, const char *ns, IniFullContext *ini_ctx,
+        const char *fdir_section_name, const char *fsapi_section_name,
         const bool need_lock)
 {
     int result;
 
-    ctx->use_sys_lock_for_append = iniGetBoolValue(NULL,
+    ctx->use_sys_lock_for_append = iniGetBoolValue(fdir_section_name,
             "use_sys_lock_for_append", ini_ctx->context, false);
+    ctx->async_report_enabled = iniGetBoolValue(fdir_section_name,
+            "async_report_enabled", ini_ctx->context, true);
+    ctx->async_report_interval_ms = iniGetIntValue(fdir_section_name,
+            "async_report_interval_ms", ini_ctx->context, 10);
 
+    ini_ctx->section_name = fdir_section_name;
+    ctx->shared_allocator_count = iniGetIntCorrectValueEx(
+            ini_ctx, "shared_allocator_count",
+            FCFS_API_DEFAULT_SHARED_ALLOCATOR_COUNT,
+            FCFS_API_MIN_SHARED_ALLOCATOR_COUNT,
+            FCFS_API_MAX_SHARED_ALLOCATOR_COUNT, true);
+
+    ini_ctx->section_name = fsapi_section_name;
     if ((result=fs_api_init_ex(fsapi, ini_ctx,
                     fcfs_api_file_write_done_callback,
                     sizeof(FCFSAPIWriteDoneCallbackExtraData))) != 0)
@@ -87,8 +104,8 @@ int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         return result;
     }
 
-    ini_ctx->section_name = fsapi_section_name;
-    return fcfs_api_common_init(ctx, fdir, fsapi, ns, ini_ctx, need_lock);
+    return fcfs_api_common_init(ctx, fdir, fsapi, ns, ini_ctx,
+            fdir_section_name, fsapi_section_name, need_lock);
 }
 
 int fcfs_api_init_ex(FCFSAPIContext *ctx, const char *ns,
@@ -171,7 +188,8 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     ini_ctx->section_name = fsapi_section_name;
-    return fcfs_api_common_init(ctx, fdir, fsapi, ns, ini_ctx, need_lock);
+    return fcfs_api_common_init(ctx, fdir, fsapi, ns, ini_ctx,
+            fdir_section_name, fsapi_section_name, need_lock);
 }
 
 void fcfs_api_destroy_ex(FCFSAPIContext *ctx)

@@ -2,14 +2,17 @@
 
 COMPILE = $(CC) $(CFLAGS)
 INC_PATH = -I../common -I../include
-LIB_PATH = $(LIBS) -lfsclient -lfsapi -lfdirclient -lfastcommon
+LIB_PATH = $(LIBS) -lfsclient -lfsapi -lfdirclient -lfastcommon -lserverframe
 TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
 
-FAST_SHARED_OBJS = fcfs_api.lo fcfs_api_file.lo fcfs_api_util.lo
+FAST_SHARED_OBJS = fcfs_api.lo fcfs_api_file.lo fcfs_api_util.lo \
+                   fcfs_api_allocator.lo async_reporter.lo
 
-FAST_STATIC_OBJS = fcfs_api.o fcfs_api_file.o fcfs_api_util.o
+FAST_STATIC_OBJS = fcfs_api.o fcfs_api_file.o fcfs_api_util.o \
+                   fcfs_api_allocator.o async_reporter.o
 
-HEADER_FILES = fcfs_api.h fcfs_api_types.h fcfs_api_file.h fcfs_api_util.h
+HEADER_FILES = fcfs_api.h fcfs_api_types.h fcfs_api_file.h \
+               fcfs_api_util.h fcfs_api_allocator.h async_reporter.h
 
 ALL_OBJS = $(FAST_STATIC_OBJS) $(FAST_SHARED_OBJS)
 

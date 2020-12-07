@@ -32,6 +32,9 @@ typedef struct fcfs_api_opendir_session {
 
 typedef struct fcfs_api_context {
     bool use_sys_lock_for_append;
+    bool async_report_enabled;
+    int async_report_interval_ms;
+    int shared_allocator_count;
     string_t ns;  //namespace
     char ns_holder[NAME_MAX];
     struct {
@@ -74,6 +77,15 @@ typedef struct fcfs_api_write_done_callback_arg {
     FSAPIWriteDoneCallbackArg arg;  //must be the first
     FCFSAPIWriteDoneCallbackExtraData extra;
 } FCFSAPIWriteDoneCallbackArg;
+
+typedef struct fcfs_api_async_report_task {
+    int64_t oid;
+    int64_t new_fsize;
+    int inc_alloc;
+    int flags;
+    struct fast_mblock_man *allocator;  //for free
+    struct fcfs_api_async_report_task *next; //for async_reporter's queue
+} FCFSAPIAsyncReportTask;
 
 #ifdef __cplusplus
 extern "C" {
