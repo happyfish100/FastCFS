@@ -193,30 +193,29 @@ int fcfs_api_close(FCFSAPIFileInfo *fi)
     return 0;
 }
 
-static int report_size_and_time(FCFSAPIContext *ctx, const uint64_t oid,
-            const int64_t new_fsize, const int inc_alloc, const bool force,
-            const int flags, FDIRDEntryInfo *dentry)
+static int report_size_and_time(FCFSAPIContext *ctx,
+        const FDIRSetDEntrySizeInfo *dsize, FDIRDEntryInfo *dentry)
 {
     if (ctx->async_report_enabled) {
         if (dentry != NULL) {
-            if ((flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE)) {
-                dentry->stat.size = new_fsize;
+            if ((dsize->flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE)) {
+                dentry->stat.size = dsize->file_size;
             }
-            if ((flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END)) {
-                dentry->stat.space_end = new_fsize;
+            if ((dsize->flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END)) {
+                dentry->stat.space_end = dsize->file_size;
             }
-            if ((flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_MTIME)) {
+            if ((dsize->flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_MTIME)) {
                 dentry->stat.mtime = get_current_time();
             }
         }
-        return async_reporter_push(oid, new_fsize, inc_alloc, force, flags);
+        return async_reporter_push(dsize);
     } else {
         FDIRDEntryInfo tmp;
         if (dentry == NULL) {
             dentry = &tmp;
         }
-        return fdir_client_set_dentry_size(ctx->contexts.fdir, &ctx->ns,
-                oid, new_fsize, inc_alloc, force, flags, dentry);
+        return fdir_client_set_dentry_size(ctx->contexts.fdir,
+                &ctx->ns, dsize, dentry);
     }
 }
 
@@ -224,17 +223,17 @@ static int fcfs_api_file_report_size_and_time(
         FCFSAPIWriteDoneCallbackArg *callback_arg, int *flags,
         FDIRDEntryInfo *dentry)
 {
-    int64_t new_size;
+    FDIRSetDEntrySizeInfo dsize;
     int current_time;
 
-    new_size = callback_arg->arg.bs_key->block.offset +
+    dsize.file_size = callback_arg->arg.bs_key->block.offset +
         callback_arg->arg.bs_key->slice.offset +
         callback_arg->arg.write_bytes;
-    if (new_size > callback_arg->extra.file_size) {
+    if (dsize.file_size > callback_arg->extra.file_size) {
         *flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE |
             FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
     } else {
-        if (new_size > callback_arg->extra.space_end) {
+        if (dsize.file_size > callback_arg->extra.space_end) {
             *flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
         } else {
             *flags = 0;
@@ -253,9 +252,11 @@ static int fcfs_api_file_report_size_and_time(
     if (*flags == 0) {
         return 0;
     } else {
-        return report_size_and_time(callback_arg->extra.ctx, callback_arg->
-                arg.bs_key->block.oid, new_size, callback_arg->arg.inc_alloc,
-                false, *flags, dentry);
+        dsize.inode = callback_arg->arg.bs_key->block.oid;
+        dsize.inc_alloc = callback_arg->arg.inc_alloc;
+        dsize.force = false;
+        dsize.flags = *flags;
+        return report_size_and_time(callback_arg->extra.ctx, &dsize, dentry);
     }
 }
 
@@ -370,10 +371,10 @@ int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
         const int size, int *written_bytes, const int64_t tid)
 {
     FDIRClientSession session;
+    FDIRSetDEntrySizeInfo dsize;
     bool use_sys_lock;
     int result;
     int total_inc_alloc;
-    int flags;
     int64_t old_size;
     int64_t space_end;
 
@@ -416,10 +417,13 @@ int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
             ns = NULL;  //do NOT update
         }
 
-        flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE |
+        dsize.inode = fi->dentry.inode;
+        dsize.file_size = fi->offset;
+        dsize.inc_alloc = total_inc_alloc;
+        dsize.force = false;
+        dsize.flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE |
             FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
-        fcfs_api_dentry_sys_unlock(&session, ns, fi->dentry.inode,
-                false, old_size, fi->offset, total_inc_alloc, flags);
+        fcfs_api_dentry_sys_unlock(&session, ns, old_size, &dsize);
     }
 
     return result;
@@ -641,9 +645,8 @@ static inline int check_and_sys_lock(FCFSAPIContext *ctx,
 }
 
 static inline int check_and_sys_unlock(FCFSAPIContext *ctx,
-        FDIRClientSession *session, const int64_t oid,
-        const int64_t old_size, const int64_t new_size,
-        const int64_t alloc_bytes, const int flags, const int result)
+        FDIRClientSession *session, const int64_t old_size,
+        const FDIRSetDEntrySizeInfo *dsize, const int result)
 {
     if (ctx->use_sys_lock_for_append) {
         string_t *ns;
@@ -654,13 +657,11 @@ static inline int check_and_sys_unlock(FCFSAPIContext *ctx,
         } else {
             ns = NULL;  //do NOT update
         }
-        unlock_res = fcfs_api_dentry_sys_unlock(session, ns, oid,
-                true, old_size, new_size, alloc_bytes, flags);
+        unlock_res = fcfs_api_dentry_sys_unlock(session, ns, old_size, dsize);
         return result == 0 ? unlock_res : result;
     } else {
         if (result == 0) {
-            return report_size_and_time(ctx, oid, new_size,
-                    alloc_bytes, true, flags, NULL);
+            return report_size_and_time(ctx, dsize, NULL);
         } else {
             return result;
         }
@@ -671,11 +672,10 @@ static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
         const int64_t new_size, const int64_t tid)
 {
     FDIRClientSession session;
+    FDIRSetDEntrySizeInfo dsize;
     int64_t old_size;
-    int64_t alloc_bytes;
     int64_t space_end;
     int result;
-    int flags;
 
     if (new_size < 0) {
         return EINVAL;
@@ -687,29 +687,31 @@ static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
         return result;
     }
 
+    dsize.inode = oid;
+    dsize.file_size = new_size;
+    dsize.force = true;
     if (new_size >= old_size) {
         result = 0;
-        alloc_bytes = 0;
+        dsize.inc_alloc = 0;
         if (new_size == old_size) {
-            flags = 0;
+            dsize.flags = 0;
         } else {
-            flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE;
+            dsize.flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE;
         }
     } else {
         result = do_truncate(ctx, oid, space_end, new_size,
-                old_size - new_size, &alloc_bytes, tid);
+                old_size - new_size, &dsize.inc_alloc, tid);
 
-        flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE;
+        dsize.flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE;
         if (new_size < space_end) {
-            flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
+            dsize.flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
         }
-        if (alloc_bytes != 0)  {
-            flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
+        if (dsize.inc_alloc != 0)  {
+            dsize.flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
         }
     }
 
-    return check_and_sys_unlock(ctx, &session, oid,
-            old_size, new_size, alloc_bytes, flags, result);
+    return check_and_sys_unlock(ctx, &session, old_size, &dsize, result);
 }
 
 int fcfs_api_ftruncate_ex(FCFSAPIFileInfo *fi, const int64_t new_size,
@@ -1111,12 +1113,10 @@ int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
         const int64_t offset, const int64_t length, const int64_t tid)
 {
     FDIRClientSession session;
+    FDIRSetDEntrySizeInfo dsize;
     int64_t old_size;
-    int64_t new_size;
     int64_t space_end;
-    int64_t alloc_bytes;
     int op;
-    int flags;
     int result;
 
     if (offset < 0 || length < 0) {
@@ -1147,42 +1147,43 @@ int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
         space_end = fi->dentry.stat.space_end;
     }
 
-    flags = 0;
+    dsize.inode = fi->dentry.inode;
+    dsize.force = true;
+    dsize.flags = 0;
     if (op == 0) {   //allocate space
         result = do_allocate(fi->ctx, fi->dentry.inode,
-                offset, length, &alloc_bytes, tid);
-        new_size = offset + length;
-        if (new_size > space_end) {
-            flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
+                offset, length, &dsize.inc_alloc, tid);
+        dsize.file_size = offset + length;
+        if (dsize.file_size > space_end) {
+            dsize.flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
         }
-        if (new_size > old_size) {
-            flags |= (mode & FALLOC_FL_KEEP_SIZE) ? 0 :
+        if (dsize.file_size > old_size) {
+            dsize.flags |= (mode & FALLOC_FL_KEEP_SIZE) ? 0 :
                 FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE;
         }
     } else {  //deallocate space
         result = do_truncate(fi->ctx, fi->dentry.inode, space_end,
-                offset, length, &alloc_bytes, tid);
+                offset, length, &dsize.inc_alloc, tid);
         if (offset + length >= old_size) {
-            new_size = offset;
-            flags |= (mode & FALLOC_FL_KEEP_SIZE) ? 0 :
+            dsize.file_size = offset;
+            dsize.flags |= (mode & FALLOC_FL_KEEP_SIZE) ? 0 :
                 FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE;
-            if (new_size < space_end) {
-                flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
+            if (dsize.file_size < space_end) {
+                dsize.flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
             }
         } else {
             if (offset < space_end && offset + length >= space_end) {
-                new_size = offset;
-                flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
+                dsize.file_size = offset;
+                dsize.flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END;
             } else {
-                new_size = old_size;
+                dsize.file_size = old_size;
             }
         }
     }
-    if (alloc_bytes != 0)  {
-        flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
+    if (dsize.inc_alloc != 0)  {
+        dsize.flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
     }
-    return check_and_sys_unlock(fi->ctx, &session, fi->dentry.inode,
-            old_size, new_size, alloc_bytes, flags, result);
+    return check_and_sys_unlock(fi->ctx, &session, old_size, &dsize, result);
 }
 
 int fcfs_api_rename_ex(FCFSAPIContext *ctx, const char *old_path,

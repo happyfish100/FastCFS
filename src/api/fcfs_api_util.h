@@ -214,13 +214,11 @@ static inline int fcfs_api_dentry_sys_lock_ex(FCFSAPIContext *ctx,
 }
 
 static inline int fcfs_api_dentry_sys_unlock(FDIRClientSession *session,
-        const string_t *ns, const int64_t inode, const bool force,
-        const int64_t old_size, const int64_t new_size,
-        const int64_t inc_alloc, const int flags)
+        const string_t *ns, const int64_t old_size,
+        const FDIRSetDEntrySizeInfo *dsize)
 {
     int result;
-    result = fdir_client_dentry_sys_unlock_ex(session, ns, inode,
-            force, old_size, new_size, inc_alloc, flags);
+    result = fdir_client_dentry_sys_unlock_ex(session, ns, old_size, dsize);
     fdir_client_close_session(session, result != 0);
     return result;
 }

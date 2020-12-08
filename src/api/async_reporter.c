@@ -39,8 +39,7 @@ static inline int deal_tasks(FCFSAPIAsyncReportTask *head)
 
         while (1) {
             result = fdir_client_set_dentry_size(FCFS_API_CTX->contexts.fdir,
-                    &FCFS_API_CTX->ns, task->oid, task->new_fsize,
-                    task->inc_alloc, task->force, task->flags, &dentry);
+                    &FCFS_API_CTX->ns, &task->dsize, &dentry);
             if (result == 0 || result == ENOENT || result == EINVAL) {
                 break;
             }

@@ -79,11 +79,7 @@ typedef struct fcfs_api_write_done_callback_arg {
 } FCFSAPIWriteDoneCallbackArg;
 
 typedef struct fcfs_api_async_report_task {
-    uint64_t oid;
-    int64_t new_fsize;
-    int inc_alloc;
-    bool force;
-    int flags;
+    FDIRSetDEntrySizeInfo dsize;
     struct fast_mblock_man *allocator;  //for free
     struct fcfs_api_async_report_task *next; //for async_reporter's queue
 } FCFSAPIAsyncReportTask;
