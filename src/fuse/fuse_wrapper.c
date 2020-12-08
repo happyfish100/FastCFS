@@ -855,8 +855,10 @@ static void fs_do_read(fuse_req_t req, fuse_ino_t ino, size_t size,
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
             "ino: %"PRId64", fh: %p, size: %"PRId64", offset: %"PRId64", "
-            "read_bytes: %d", __LINE__, __FUNCTION__, ino, fh, size,
-            offset, read_bytes);
+            "read_bytes: %d, flags: %d, O_DIRECT: %d, O_SYNC: %d, "
+            "O_DSYNC: %d", __LINE__, __FUNCTION__, ino, fh, size,
+            offset, read_bytes, fh->flags, fh->flags & O_DIRECT,
+            fh->flags & O_SYNC, fh->flags & O_DSYNC);
             */
 
     fuse_reply_buf(req, buff, read_bytes);
@@ -879,12 +881,6 @@ void fs_do_write(fuse_req_t req, fuse_ino_t ino, const char *buff,
         return;
     }
 
-    /*
-    logInfo("=======file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", size: %"PRId64", offset: %"PRId64,
-            __LINE__, __FUNCTION__, ino, size, offset);
-            */
-
     fctx = fuse_req_ctx(req);
     if ((result=fcfs_api_pwrite_ex(fh, buff, size, offset,
                     &written_bytes, fctx->pid)) != 0)
@@ -895,8 +891,11 @@ void fs_do_write(fuse_req_t req, fuse_ino_t ino, const char *buff,
 
     /*
     logInfo("=======file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", size: %"PRId64", offset: %"PRId64", written_bytes: %d",
-            __LINE__, __FUNCTION__, ino, size, offset, written_bytes);
+            "ino: %"PRId64", size: %"PRId64", offset: %"PRId64", "
+            "written_bytes: %d, flags: %d, O_DIRECT: %d, O_SYNC: %d, "
+            "O_DSYNC: %d", __LINE__, __FUNCTION__, ino, size, offset,
+            written_bytes, fh->flags, fh->flags & O_DIRECT,
+            fh->flags & O_SYNC, fh->flags & O_DSYNC);
             */
 
     fuse_reply_write(req, written_bytes);
