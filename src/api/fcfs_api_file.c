@@ -87,6 +87,7 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
             }
 
             fi->dentry.stat.size = 0;
+            fi->dentry.stat.space_end = 0;
         }
     }
 

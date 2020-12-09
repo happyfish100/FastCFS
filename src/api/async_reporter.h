@@ -23,6 +23,11 @@
 typedef struct {
     FCFSAPIContext *fcfs_api_ctx;
     struct fc_queue queue;
+    FDIRSetDEntrySizeInfo *dsizes;
+    struct {
+        FCFSAPIAsyncReportTaskPtrArray sorted;  //for sort
+        FCFSAPIAsyncReportTaskPtrArray merged;
+    } task_ptr_arrays;
 } AsyncReporterContext;
 
 #ifdef __cplusplus

@@ -79,10 +79,17 @@ typedef struct fcfs_api_write_done_callback_arg {
 } FCFSAPIWriteDoneCallbackArg;
 
 typedef struct fcfs_api_async_report_task {
+    int id;   //used by async_reporter for stable sort
     FDIRSetDEntrySizeInfo dsize;
     struct fast_mblock_man *allocator;  //for free
     struct fcfs_api_async_report_task *next; //for async_reporter's queue
 } FCFSAPIAsyncReportTask;
+
+typedef struct fcfs_api_async_report_task_ptr_array {
+    int alloc;
+    int count;
+    FCFSAPIAsyncReportTask **tasks;
+} FCFSAPIAsyncReportTaskPtrArray;
 
 #ifdef __cplusplus
 extern "C" {
