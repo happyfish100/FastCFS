@@ -20,7 +20,8 @@
 #include "fcfs_api_types.h"
 
 typedef struct fcfs_api_allocator_context {
-    struct fast_mblock_man async_report_event;    //element: FCFSAPIAsyncReportEvent
+    struct fast_mblock_man async_report_event; //element: FCFSAPIAsyncReportEvent
+    struct fast_mblock_man waiting_task;       //element: FCFSAPIWaitingTask
 } FCFSAPIAllocatorContext;
 
 typedef struct fcfs_api_allocator_ctx_array {

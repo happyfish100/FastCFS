@@ -85,6 +85,7 @@ typedef struct fcfs_api_waiting_task {
     pthread_lock_cond_pair_t lcp;  //for notify
     bool finished;
     struct fast_mblock_man *allocator;  //for free
+    struct fcfs_api_waiting_task *next; //for event waitings queue
 } FCFSAPIWaitingTask;
 
 typedef struct fcfs_api_async_report_event {
@@ -94,6 +95,7 @@ typedef struct fcfs_api_async_report_event {
     struct {
         FCFSAPIWaitingTask *head; //use lock of inode sharding
     } waitings;
+    struct fc_list_head dlink;  //for inode sharding htable
 
     struct fast_mblock_man *allocator;  //for free
     struct fcfs_api_async_report_event *next; //for async_reporter's queue
@@ -104,11 +106,6 @@ typedef struct fcfs_api_async_report_event_ptr_array {
     int count;
     FCFSAPIAsyncReportEvent **events;
 } FCFSAPIAsyncReportEventPtrArray;
-
-typedef struct fcfs_api_insert_event_context {
-    FCFSAPIAsyncReportEvent *event;
-    FSAPIWaitingTask *waiting_task;
-} FCFSAPIInsertEventContext;
 
 #ifdef __cplusplus
 extern "C" {

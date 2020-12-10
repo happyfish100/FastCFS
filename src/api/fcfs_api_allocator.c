@@ -25,6 +25,19 @@ static int async_report_event_alloc_init(FCFSAPIAsyncReportEvent *event,
     return 0;
 }
 
+static int waiting_task_alloc_init(FSAPIWaitingTask *task,
+        struct fast_mblock_man *allocator)
+{
+    int result;
+
+    if ((result=init_pthread_lock_cond_pair(&task->lcp)) != 0) {
+        return result;
+    }
+
+    task->allocator = allocator;
+    return 0;
+}
+
 static int init_allocator_context(FCFSAPIAllocatorContext *ctx)
 {
     int result;
@@ -33,6 +46,14 @@ static int init_allocator_context(FCFSAPIAllocatorContext *ctx)
                     4096, 0, (fast_mblock_alloc_init_func)
                     async_report_event_alloc_init,
                     &ctx->async_report_event, true)) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fast_mblock_init_ex1(&ctx->waiting_task,
+                    "waiting_task", sizeof(FCFSAPIWaitingTask), 1024, 0,
+                    (fast_mblock_alloc_init_func)waiting_task_alloc_init,
+                    &ctx->waiting_task, true)) != 0)
     {
         return result;
     }
