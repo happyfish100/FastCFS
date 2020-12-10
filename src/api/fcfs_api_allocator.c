@@ -18,21 +18,21 @@
 
 FCFSAPIAllocatorCtxArray g_fcfs_api_allocator_array;
 
-static int async_report_task_alloc_init(FCFSAPIAsyncReportTask *task,
+static int async_report_event_alloc_init(FCFSAPIAsyncReportEvent *event,
         struct fast_mblock_man *allocator)
 {
-    task->allocator = allocator;
+    event->allocator = allocator;
     return 0;
 }
 
 static int init_allocator_context(FCFSAPIAllocatorContext *ctx)
 {
     int result;
-    if ((result=fast_mblock_init_ex1(&ctx->async_report_task,
-                    "async_report_task", sizeof(FCFSAPIAsyncReportTask),
+    if ((result=fast_mblock_init_ex1(&ctx->async_report_event,
+                    "async_report_event", sizeof(FCFSAPIAsyncReportEvent),
                     4096, 0, (fast_mblock_alloc_init_func)
-                    async_report_task_alloc_init,
-                    &ctx->async_report_task, true)) != 0)
+                    async_report_event_alloc_init,
+                    &ctx->async_report_event, true)) != 0)
     {
         return result;
     }

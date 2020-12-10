@@ -78,18 +78,37 @@ typedef struct fcfs_api_write_done_callback_arg {
     FCFSAPIWriteDoneCallbackExtraData extra;
 } FCFSAPIWriteDoneCallbackArg;
 
-typedef struct fcfs_api_async_report_task {
+struct fcfs_api_inode_hentry;
+struct fcfs_api_insert_event_context;
+
+typedef struct fcfs_api_waiting_task {
+    pthread_lock_cond_pair_t lcp;  //for notify
+    bool finished;
+    struct fast_mblock_man *allocator;  //for free
+} FCFSAPIWaitingTask;
+
+typedef struct fcfs_api_async_report_event {
     int id;   //used by async_reporter for stable sort
     FDIRSetDEntrySizeInfo dsize;
-    struct fast_mblock_man *allocator;  //for free
-    struct fcfs_api_async_report_task *next; //for async_reporter's queue
-} FCFSAPIAsyncReportTask;
+    struct fcfs_api_inode_hentry *inode_hentry;
+    struct {
+        FCFSAPIWaitingTask *head; //use lock of inode sharding
+    } waitings;
 
-typedef struct fcfs_api_async_report_task_ptr_array {
+    struct fast_mblock_man *allocator;  //for free
+    struct fcfs_api_async_report_event *next; //for async_reporter's queue
+} FCFSAPIAsyncReportEvent;
+
+typedef struct fcfs_api_async_report_event_ptr_array {
     int alloc;
     int count;
-    FCFSAPIAsyncReportTask **tasks;
-} FCFSAPIAsyncReportTaskPtrArray;
+    FCFSAPIAsyncReportEvent **events;
+} FCFSAPIAsyncReportEventPtrArray;
+
+typedef struct fcfs_api_insert_event_context {
+    FCFSAPIAsyncReportEvent *event;
+    FSAPIWaitingTask *waiting_task;
+} FCFSAPIInsertEventContext;
 
 #ifdef __cplusplus
 extern "C" {

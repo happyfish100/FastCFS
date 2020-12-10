@@ -25,9 +25,9 @@ typedef struct {
     struct fc_queue queue;
     FDIRSetDEntrySizeInfo *dsizes;
     struct {
-        FCFSAPIAsyncReportTaskPtrArray sorted;  //for sort
-        FCFSAPIAsyncReportTaskPtrArray merged;
-    } task_ptr_arrays;
+        FCFSAPIAsyncReportEventPtrArray sorted;  //for sort
+        FCFSAPIAsyncReportEventPtrArray merged;
+    } event_ptr_arrays;
 } AsyncReporterContext;
 
 #ifdef __cplusplus
@@ -42,18 +42,18 @@ extern "C" {
 
     static inline int async_reporter_push(const FDIRSetDEntrySizeInfo *dsize)
     {
-        FCFSAPIAsyncReportTask *task;
+        FCFSAPIAsyncReportEvent *event;
         FCFSAPIAllocatorContext *allocator_ctx;
 
         allocator_ctx = fcfs_api_allocator_get(dsize->inode);
-        task = (FCFSAPIAsyncReportTask *)fast_mblock_alloc_object(
-                &allocator_ctx->async_report_task);
-        if (task == NULL) {
+        event = (FCFSAPIAsyncReportEvent *)fast_mblock_alloc_object(
+                &allocator_ctx->async_report_event);
+        if (event == NULL) {
             return ENOMEM;
         }
 
-        task->dsize = *dsize;
-        fc_queue_push(&g_async_reporter_ctx.queue, task);
+        event->dsize = *dsize;
+        fc_queue_push(&g_async_reporter_ctx.queue, event);
         return 0;
     }
 
