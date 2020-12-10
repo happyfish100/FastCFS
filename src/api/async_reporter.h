@@ -19,6 +19,7 @@
 #include "fastcommon/fc_queue.h"
 #include "fcfs_api_types.h"
 #include "fcfs_api_allocator.h"
+#include "inode_htable.h"
 
 typedef struct {
     FCFSAPIContext *fcfs_api_ctx;
@@ -42,6 +43,7 @@ extern "C" {
 
     static inline int async_reporter_push(const FDIRSetDEntrySizeInfo *dsize)
     {
+        int result;
         FCFSAPIAsyncReportEvent *event;
         FCFSAPIAllocatorContext *allocator_ctx;
 
@@ -53,8 +55,9 @@ extern "C" {
         }
 
         event->dsize = *dsize;
+        result = inode_htable_insert(event);
         fc_queue_push(&g_async_reporter_ctx.queue, event);
-        return 0;
+        return result;
     }
 
 #ifdef __cplusplus

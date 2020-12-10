@@ -40,6 +40,7 @@ static int inode_htable_insert_callback(SFShardingHashEntry *he,
         FC_INIT_LIST_HEAD(&inode->head);
     }
 
+    ictx->event->inode_hentry = inode;
     fc_list_add(&ictx->event->dlink, &inode->head);
     return 0;
 }
@@ -98,20 +99,6 @@ int inode_htable_insert(FCFSAPIAsyncReportEvent *event)
             &key, &ictx);
 }
 
-
-static inline void wait_report_done_and_release(
-        FCFSAPIWaitingTask *waiting_task)
-{
-    PTHREAD_MUTEX_LOCK(&waiting_task->lcp.lock);
-    while (!waiting_task->finished) {
-        pthread_cond_wait(&waiting_task->lcp.cond,
-                &waiting_task->lcp.lock);
-    }
-    waiting_task->finished = false;  //reset for next use
-    PTHREAD_MUTEX_UNLOCK(&waiting_task->lcp.lock);
-    fast_mblock_free_object(waiting_task->allocator, waiting_task);
-}
-
 int inode_htable_check_conflict_and_wait(const uint64_t inode)
 {
     SFTwoIdsHashKey key;
@@ -127,7 +114,7 @@ int inode_htable_check_conflict_and_wait(const uint64_t inode)
     }
 
     if (callback_arg.waiting_task != NULL) {
-        wait_report_done_and_release(callback_arg.waiting_task);
+        fcfs_api_wait_report_done_and_release(callback_arg.waiting_task);
     }
 
     return 0;

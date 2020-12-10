@@ -37,6 +37,27 @@ extern "C" {
 
     int inode_htable_check_conflict_and_wait(const uint64_t inode);
 
+    static inline void fcfs_api_notify_waiting_task(FCFSAPIWaitingTask *task)
+    {
+        PTHREAD_MUTEX_LOCK(&task->lcp.lock);
+        task->finished = true;
+        pthread_cond_signal(&task->lcp.cond);
+        PTHREAD_MUTEX_UNLOCK(&task->lcp.lock);
+    }
+
+    static inline void fcfs_api_wait_report_done_and_release(
+            FCFSAPIWaitingTask *waiting_task)
+    {
+        PTHREAD_MUTEX_LOCK(&waiting_task->lcp.lock);
+        while (!waiting_task->finished) {
+            pthread_cond_wait(&waiting_task->lcp.cond,
+                    &waiting_task->lcp.lock);
+        }
+        waiting_task->finished = false;  //reset for next use
+        PTHREAD_MUTEX_UNLOCK(&waiting_task->lcp.lock);
+        fast_mblock_free_object(waiting_task->allocator, waiting_task);
+    }
+
 #ifdef __cplusplus
 }
 #endif

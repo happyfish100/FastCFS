@@ -190,13 +190,30 @@ static int merge_events(FCFSAPIAsyncReportEvent *head)
     return 0;
 }
 
-static inline void free_events(FCFSAPIAsyncReportEvent *head)
+static inline void notify_waiting_tasks(FCFSAPIAsyncReportEvent *event)
+{
+    FCFSAPIWaitingTask *task;
+
+    PTHREAD_MUTEX_LOCK(&event->inode_hentry->hentry.sharding->lock);
+    while (event->waitings.head != NULL) {
+        task = event->waitings.head;
+        event->waitings.head = event->waitings.head->next;
+
+        fcfs_api_notify_waiting_task(task);
+    }
+    fc_list_del_init(&event->dlink);
+    PTHREAD_MUTEX_UNLOCK(&event->inode_hentry->hentry.sharding->lock);
+}
+
+static inline void notify_waiting_tasks_and_free_events(
+        FCFSAPIAsyncReportEvent *head)
 {
     FCFSAPIAsyncReportEvent *event;
     do {
         event = head;
         head = head->next;
 
+        notify_waiting_tasks(event);
         fast_mblock_free_object(event->allocator, event);
     } while (head != NULL);
 }
@@ -210,7 +227,7 @@ static inline int deal_events(FCFSAPIAsyncReportEvent *head)
     int current_count;
 
     if ((result=merge_events(head)) != 0) {
-        free_events(head);
+        notify_waiting_tasks_and_free_events(head);
         return result;
     }
 
@@ -230,7 +247,7 @@ static inline int deal_events(FCFSAPIAsyncReportEvent *head)
         batch_set_dentry_size(current_count);
     }
 
-    free_events(head);
+    notify_waiting_tasks_and_free_events(head);
     logInfo("total event count: %d, report (merged) count: %d",
             SORTED_TASK_PTR_ARRAY.count, MERGED_TASK_PTR_ARRAY.count);
     return 0;

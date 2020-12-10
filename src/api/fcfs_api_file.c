@@ -57,9 +57,8 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
                         return EEXIST;
                     }
 
-                    if ((result=fdir_client_stat_dentry_by_path_ex(
-                                    fi->ctx->contexts.fdir, fullname,
-                                    LOG_DEBUG, &fi->dentry)) != 0)
+                    if ((result=fcfs_api_stat_dentry_by_fullname_ex(fi->ctx,
+                                    fullname, LOG_DEBUG, &fi->dentry)) != 0)
                     {
                         return result;
                     }
@@ -120,7 +119,7 @@ int fcfs_api_open_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
     fi->sessions.flock.mconn = NULL;
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
-    result = fdir_client_stat_dentry_by_path_ex(ctx->contexts.fdir,
+    result = fcfs_api_stat_dentry_by_fullname_ex(ctx,
             &fullname, LOG_DEBUG, &fi->dentry);
     if ((result=deal_open_flags(fi, &fullname, &new_omp,
                     fctx->tid, result)) != 0)
@@ -159,8 +158,8 @@ int fcfs_api_open_by_inode_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
 {
     int result;
 
-    if ((result=fdir_client_stat_dentry_by_inode(ctx->contexts.fdir,
-                    inode, &fi->dentry)) != 0)
+    if ((result=fcfs_api_stat_dentry_by_inode_ex(
+                    ctx, inode, &fi->dentry)) != 0)
     {
         return result;
     }
@@ -474,9 +473,8 @@ int fcfs_api_pread_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
             }
 
             if (current_offset > fi->dentry.stat.size) {
-                if ((result=fdir_client_stat_dentry_by_inode(fi->
-                                ctx->contexts.fdir, fi->dentry.inode,
-                                &fi->dentry)) != 0)
+                if ((result=fcfs_api_stat_dentry_by_inode_ex(fi->ctx,
+                                fi->dentry.inode, &fi->dentry)) != 0)
                 {
                     return result;
                 }
@@ -634,8 +632,8 @@ static inline int check_and_sys_lock(FCFSAPIContext *ctx,
         result = fcfs_api_dentry_sys_lock(session,
                 oid, 0, old_size, space_end);
     } else {
-        if ((result=fdir_client_stat_dentry_by_inode(ctx->
-                        contexts.fdir, oid, &dentry)) == 0)
+        if ((result=fcfs_api_stat_dentry_by_inode_ex(
+                        ctx, oid, &dentry)) == 0)
         {
             *old_size = dentry.stat.size;
             *space_end = dentry.stat.space_end;
@@ -736,7 +734,7 @@ static int get_regular_file_inode(FCFSAPIContext *ctx, const char *path,
 
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
-    if ((result=fdir_client_stat_dentry_by_path_ex(ctx->contexts.fdir,
+    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx,
                     &fullname, LOG_DEBUG, &dentry)) != 0)
     {
         return result;
@@ -771,7 +769,7 @@ int fcfs_api_unlink_ex(FCFSAPIContext *ctx, const char *path,
 
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
-    if ((result=fdir_client_stat_dentry_by_path_ex(ctx->contexts.fdir,
+    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx,
                     &fullname, LOG_DEBUG, &dentry)) != 0)
     {
         return result;
@@ -814,8 +812,7 @@ static inline int calc_file_offset_ex(FCFSAPIFileInfo *fi,
             break;
         case SEEK_END:
             if (refresh_fsize) {
-                if ((result=fdir_client_stat_dentry_by_inode(
-                                fi->ctx->contexts.fdir,
+                if ((result=fcfs_api_stat_dentry_by_inode_ex(fi->ctx,
                                 fi->dentry.inode, &fi->dentry)) != 0)
                 {
                     return result;
@@ -873,8 +870,8 @@ int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf)
         return EBADF;
     }
 
-    if ((result=fdir_client_stat_dentry_by_inode(fi->ctx->contexts.
-                    fdir, fi->dentry.inode, &fi->dentry)) != 0)
+    if ((result=fcfs_api_stat_dentry_by_inode_ex(fi->ctx,
+                    fi->dentry.inode, &fi->dentry)) != 0)
     {
         return result;
     }
@@ -891,7 +888,7 @@ int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path, struct stat *buf)
 
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
-    if ((result=fdir_client_stat_dentry_by_path_ex(ctx->contexts.fdir,
+    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx,
                     &fullname, LOG_DEBUG, &dentry)) != 0)
     {
         return result;
