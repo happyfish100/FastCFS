@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include "fcfs_api_allocator.h"
+#include "async_reporter.h"
 #include "inode_htable.h"
 
 static SFHtableShardingContext inode_sharding_ctx;
@@ -114,6 +115,10 @@ int inode_htable_check_conflict_and_wait(const uint64_t inode)
     }
 
     if (callback_arg.waiting_task != NULL) {
+        async_reporter_notify();
+        logInfo("file: "__FILE__", line: %d, "
+                "inode: %"PRId64", wait_report_done_and_release",
+                __LINE__, inode);
         fcfs_api_wait_report_done_and_release(callback_arg.waiting_task);
     }
 

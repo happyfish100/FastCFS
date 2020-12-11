@@ -110,7 +110,7 @@ static inline int fcfs_api_lookup_inode_by_path_ex(FCFSAPIContext *ctx,
 static inline int fcfs_api_stat_dentry_by_inode_ex(FCFSAPIContext *ctx,
         const int64_t inode, FDIRDEntryInfo *dentry)
 {
-    if (ctx->async_report_enabled) {
+    if (ctx->async_report.enabled) {
         inode_htable_check_conflict_and_wait(inode);
     }
     return fdir_client_stat_dentry_by_inode(ctx->contexts.fdir,
@@ -121,7 +121,7 @@ static inline int fcfs_api_stat_dentry_by_fullname_ex(FCFSAPIContext *ctx,
         const FDIRDEntryFullName *fullname, const int enoent_log_level,
         FDIRDEntryInfo *dentry)
 {
-    if (ctx->async_report_enabled) {
+    if (ctx->async_report.enabled) {
         int result;
         int64_t inode;
         if ((result=fcfs_api_lookup_inode_by_fullname_ex(ctx,
@@ -153,7 +153,7 @@ static inline int fcfs_api_stat_dentry_by_pname_ex(FCFSAPIContext *ctx,
     FDIRDEntryPName pname;
     FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
 
-    if (ctx->async_report_enabled) {
+    if (ctx->async_report.enabled) {
         int result;
         int64_t inode;
         if ((result=fdir_client_lookup_inode_by_pname_ex(ctx->contexts.
@@ -181,7 +181,8 @@ static inline int fcfs_api_create_dentry_by_pname_ex(FCFSAPIContext *ctx,
 
 static inline int fcfs_api_symlink_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const string_t *link, const int64_t parent_inode,
-        const string_t *name, const FDIRClientOwnerModePair *omp, FDIRDEntryInfo *dentry)
+        const string_t *name, const FDIRClientOwnerModePair *omp,
+        FDIRDEntryInfo *dentry)
 {
     FDIRDEntryPName pname;
     FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);

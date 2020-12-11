@@ -196,7 +196,7 @@ int fcfs_api_close(FCFSAPIFileInfo *fi)
 static int report_size_and_time(FCFSAPIContext *ctx,
         const FDIRSetDEntrySizeInfo *dsize, FDIRDEntryInfo *dentry)
 {
-    if (ctx->async_report_enabled) {
+    if (ctx->async_report.enabled) {
         if (dentry != NULL) {
             if ((dsize->flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE)) {
                 dentry->stat.size = dsize->file_size;

@@ -68,7 +68,8 @@ int fcfs_api_allocator_init(FCFSAPIContext *api_ctx)
     FCFSAPIAllocatorContext *ctx;
     FCFSAPIAllocatorContext *end;
 
-    g_fcfs_api_allocator_array.count = api_ctx->shared_allocator_count;
+    g_fcfs_api_allocator_array.count = api_ctx->
+        async_report.shared_allocator_count;
     bytes = sizeof(FCFSAPIAllocatorContext) * g_fcfs_api_allocator_array.count;
     g_fcfs_api_allocator_array.allocators = (FCFSAPIAllocatorContext *)
         fc_malloc(bytes);

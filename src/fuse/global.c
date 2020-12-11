@@ -284,6 +284,7 @@ int fs_fuse_global_init(const char *config_filename)
     SFContextIniConfig config;
     char sf_idempotency_config[256];
     char write_combine_config[512];
+    char async_report_config[512];
     char owner_config[256];
 
     if ((result=iniLoadFromFile(config_filename, &iniContext)) != 0) {
@@ -393,7 +394,10 @@ int fs_fuse_global_init(const char *config_filename)
         *owner_config = '\0';
     }
 
-    fdir_client_log_config(g_fcfs_api_ctx.contexts.fdir);
+    fcfs_api_async_report_config_to_string_ex(&g_fcfs_api_ctx,
+            async_report_config, sizeof(async_report_config))
+    fdir_client_log_config_ex(g_fcfs_api_ctx.contexts.fdir,
+            async_report_config);
     fs_client_log_config(g_fcfs_api_ctx.contexts.fsapi->fs);
     fs_api_config_to_string(write_combine_config,
             sizeof(write_combine_config));
@@ -402,8 +406,7 @@ int fs_fuse_global_init(const char *config_filename)
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "owner_type: %s%s, singlethread: %d, clone_fd: %d, "
             "max_idle_threads: %d, allow_others: %s, auto_unmount: %d, "
-            "attribute_timeout: %.1fs, entry_timeout: %.1fs, "
-            "use_sys_lock_for_append: %d, %s",
+            "attribute_timeout: %.1fs, entry_timeout: %.1fs, %s",
             fuse_pkgversion(), g_fuse_global_vars.ns,
             sf_idempotency_config, g_fuse_global_vars.mountpoint,
             get_owner_type_caption(g_fuse_global_vars.owner.type),

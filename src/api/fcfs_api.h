@@ -50,6 +50,9 @@
 #define fcfs_api_start() fcfs_api_start_ex(&g_fcfs_api_ctx)
 #define fcfs_api_terminate() fcfs_api_terminate_ex(&g_fcfs_api_ctx)
 
+#define fcfs_api_async_report_config_to_string(output, size) \
+    fcfs_api_async_report_config_to_string_ex(&g_fcfs_api_ctx, output, size)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -112,6 +115,9 @@ extern "C" {
     int fcfs_api_start_ex(FCFSAPIContext *ctx);
 
     void fcfs_api_terminate_ex(FCFSAPIContext *ctx);
+
+    void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
+            char *output, const int size);
 
 #ifdef __cplusplus
 }

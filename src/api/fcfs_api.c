@@ -22,7 +22,15 @@
 
 #define FCFS_API_MIN_SHARED_ALLOCATOR_COUNT           1
 #define FCFS_API_MAX_SHARED_ALLOCATOR_COUNT        1000
-#define FCFS_API_DEFAULT_SHARED_ALLOCATOR_COUNT      17
+#define FCFS_API_DEFAULT_SHARED_ALLOCATOR_COUNT      11
+
+#define FCFS_API_MIN_HASHTABLE_SHARDING_COUNT           1
+#define FCFS_API_MAX_HASHTABLE_SHARDING_COUNT       10000
+#define FCFS_API_DEFAULT_HASHTABLE_SHARDING_COUNT      17
+
+#define FCFS_API_MIN_HASHTABLE_TOTAL_CAPACITY          10949
+#define FCFS_API_MAX_HASHTABLE_TOTAL_CAPACITY      100000000
+#define FCFS_API_DEFAULT_HASHTABLE_TOTAL_CAPACITY    1403641
 
 FCFSAPIContext g_fcfs_api_ctx;
 
@@ -47,24 +55,50 @@ static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         const char *fdir_section_name, const char *fsapi_section_name,
         const bool need_lock)
 {
+    int64_t element_limit = 1000 * 1000;
+    const int64_t min_ttl_sec = 600;
+    const int64_t max_ttl_sec = 86400;
     int result;
 
     ctx->use_sys_lock_for_append = iniGetBoolValue(fdir_section_name,
             "use_sys_lock_for_append", ini_ctx->context, false);
-    ctx->async_report_enabled = iniGetBoolValue(fdir_section_name,
+    ctx->async_report.enabled = iniGetBoolValue(fdir_section_name,
             "async_report_enabled", ini_ctx->context, true);
-    ctx->async_report_interval_ms = iniGetIntValue(fdir_section_name,
+    ctx->async_report.interval_ms = iniGetIntValue(fdir_section_name,
             "async_report_interval_ms", ini_ctx->context, 10);
 
     ini_ctx->section_name = fdir_section_name;
-    ctx->shared_allocator_count = iniGetIntCorrectValueEx(
+    ctx->async_report.shared_allocator_count = iniGetIntCorrectValueEx(
             ini_ctx, "shared_allocator_count",
             FCFS_API_DEFAULT_SHARED_ALLOCATOR_COUNT,
             FCFS_API_MIN_SHARED_ALLOCATOR_COUNT,
             FCFS_API_MAX_SHARED_ALLOCATOR_COUNT, true);
 
-    if ((result=fcfs_api_allocator_init(ctx)) != 0) {
-        return result;
+    ctx->async_report.hashtable_sharding_count = iniGetIntCorrectValue(
+            ini_ctx, "hashtable_sharding_count",
+            FCFS_API_DEFAULT_HASHTABLE_SHARDING_COUNT,
+            FCFS_API_MIN_HASHTABLE_SHARDING_COUNT,
+            FCFS_API_MAX_HASHTABLE_SHARDING_COUNT);
+
+    ctx->async_report.hashtable_total_capacity = iniGetInt64CorrectValue(
+            ini_ctx, "hashtable_total_capacity",
+            FCFS_API_DEFAULT_HASHTABLE_TOTAL_CAPACITY,
+            FCFS_API_MIN_HASHTABLE_TOTAL_CAPACITY,
+            FCFS_API_MAX_HASHTABLE_TOTAL_CAPACITY);
+
+    if (ctx->async_report.enabled) {
+        if ((result=fcfs_api_allocator_init(ctx)) != 0) {
+            return result;
+        }
+
+        if ((result=inode_htable_init(ctx->async_report.
+                        hashtable_sharding_count,
+                        ctx->async_report.hashtable_total_capacity,
+                        ctx->async_report.shared_allocator_count,
+                        element_limit, min_ttl_sec, max_ttl_sec)) != 0)
+        {
+            return result;
+        }
     }
 
     ini_ctx->section_name = fsapi_section_name;
@@ -221,11 +255,40 @@ int fcfs_api_start_ex(FCFSAPIContext *ctx)
         return result;
     }
 
-    return async_reporter_init(ctx);
+    if (ctx->async_report.enabled) {
+        return async_reporter_init(ctx);
+    } else {
+        return 0;
+    }
 }
 
 void fcfs_api_terminate_ex(FCFSAPIContext *ctx)
 {
     fs_api_terminate_ex(ctx->contexts.fsapi);
     async_reporter_terminate();
+}
+
+void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
+        char *output, const int size)
+{
+    int len;
+
+    len = snprintf(output, size, "use_sys_lock_for_append: %d, "
+            "async_report { enabled: %d", ctx->use_sys_lock_for_append,
+            ctx->async_report.enabled);
+    if (ctx->async_report.enabled) {
+        len += snprintf(output + len, size - len, ", "
+                "async_report_interval_ms: %d, "
+                "shared_allocator_count: %d, "
+                "hashtable_sharding_count: %d, "
+                "hashtable_total_capacity: %"PRId64,
+                ctx->async_report.interval_ms,
+                ctx->async_report.shared_allocator_count,
+                ctx->async_report.hashtable_sharding_count,
+                ctx->async_report.hashtable_total_capacity);
+        if (len > size) {
+            len = size;
+        }
+    }
+    snprintf(output + len, size - len, " } ");
 }

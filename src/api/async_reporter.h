@@ -21,9 +21,15 @@
 #include "fcfs_api_allocator.h"
 #include "inode_htable.h"
 
+#define ASYNC_REPORTER_STAGE_DEALING   0
+#define ASYNC_REPORTER_STAGE_SLEEPING  1
+#define ASYNC_REPORTER_STAGE_KEEPING   2
+
 typedef struct {
     FCFSAPIContext *fcfs_api_ctx;
     struct fc_queue queue;
+    volatile int stage;
+    pthread_lock_cond_pair_t lcp;  //for timed wait
     FDIRSetDEntrySizeInfo *dsizes;
     struct {
         FCFSAPIAsyncReportEventPtrArray sorted;  //for sort
@@ -58,6 +64,30 @@ extern "C" {
         result = inode_htable_insert(event);
         fc_queue_push(&g_async_reporter_ctx.queue, event);
         return result;
+    }
+
+    static inline void async_reporter_notify()
+    {
+        if (g_async_reporter_ctx.fcfs_api_ctx->async_report.interval_ms <= 0) {
+            return;
+        }
+
+        switch (__sync_fetch_and_add(&g_async_reporter_ctx.stage, 0)) {
+            case ASYNC_REPORTER_STAGE_DEALING:
+                __sync_bool_compare_and_swap(
+                        &g_async_reporter_ctx.stage,
+                        ASYNC_REPORTER_STAGE_DEALING,
+                        ASYNC_REPORTER_STAGE_KEEPING);
+                break;
+            case ASYNC_REPORTER_STAGE_SLEEPING:
+                pthread_cond_signal(&g_async_reporter_ctx.lcp.cond);
+                break;
+            case ASYNC_REPORTER_STAGE_KEEPING:
+                //do nothing
+                break;
+            default:
+                break;
+        }
     }
 
 #ifdef __cplusplus

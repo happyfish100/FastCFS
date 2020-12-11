@@ -258,7 +258,7 @@ void async_reporter_terminate()
     FCFSAPIAsyncReportEvent *head;
     int count;
 
-    if (!g_async_reporter_ctx.fcfs_api_ctx->async_report_enabled) {
+    if (!g_async_reporter_ctx.fcfs_api_ctx->async_report.enabled) {
         return;
     }
 
@@ -275,6 +275,30 @@ void async_reporter_terminate()
             __LINE__, count);
 }
 
+static inline void check_and_set_stage()
+{
+    int old_stage;
+
+    if (__sync_bool_compare_and_swap(&g_async_reporter_ctx.stage,
+                ASYNC_REPORTER_STAGE_DEALING, ASYNC_REPORTER_STAGE_SLEEPING))
+    {
+        fc_timedwait_ms(&g_async_reporter_ctx.lcp.lock,
+                &g_async_reporter_ctx.lcp.cond, g_async_reporter_ctx.
+                fcfs_api_ctx->async_report.interval_ms);
+        if (__sync_bool_compare_and_swap(
+                    &g_async_reporter_ctx.stage,
+                    ASYNC_REPORTER_STAGE_SLEEPING,
+                    ASYNC_REPORTER_STAGE_DEALING))
+        {
+            return;
+        }
+    }
+
+    old_stage = __sync_fetch_and_add(&g_async_reporter_ctx.stage, 0);
+    __sync_bool_compare_and_swap(&g_async_reporter_ctx.stage,
+            old_stage, ASYNC_REPORTER_STAGE_DEALING);
+}
+
 static void *async_reporter_thread_func(void *arg)
 {
     FCFSAPIAsyncReportEvent *head;
@@ -285,8 +309,9 @@ static void *async_reporter_thread_func(void *arg)
         if (head != NULL) {
             deal_events(head);
         }
-        if (g_async_reporter_ctx.fcfs_api_ctx->async_report_interval_ms > 0) {
-            fc_sleep_ms(g_async_reporter_ctx.fcfs_api_ctx->async_report_interval_ms);
+
+        if (g_async_reporter_ctx.fcfs_api_ctx->async_report.interval_ms > 0) {
+            check_and_set_stage();
         }
     }
 
@@ -299,10 +324,6 @@ int async_reporter_init(FCFSAPIContext *fcfs_api_ctx)
     pthread_t tid;
 
     g_async_reporter_ctx.fcfs_api_ctx = fcfs_api_ctx;
-    if (!fcfs_api_ctx->async_report_enabled) {
-        return 0;
-    } 
-
     g_async_reporter_ctx.dsizes = (FDIRSetDEntrySizeInfo *)
         fc_malloc(sizeof(FDIRSetDEntrySizeInfo) *
                 FDIR_BATCH_SET_MAX_DENTRY_COUNT);
@@ -317,12 +338,17 @@ int async_reporter_init(FCFSAPIContext *fcfs_api_ctx)
         return result;
     }
 
+    if ((result=init_pthread_lock_cond_pair(&g_async_reporter_ctx.lcp)) != 0) {
+        return result;
+    }
+
     if ((result=fc_queue_init(&g_async_reporter_ctx.queue, (long)
                     (&((FCFSAPIAsyncReportEvent *)NULL)->next))) != 0)
     {
         return result;
     }
 
+    g_async_reporter_ctx.stage = ASYNC_REPORTER_STAGE_DEALING;
     return fc_create_thread(&tid, async_reporter_thread_func, NULL,
             SF_G_THREAD_STACK_SIZE);
 }

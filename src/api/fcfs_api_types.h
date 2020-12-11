@@ -32,9 +32,13 @@ typedef struct fcfs_api_opendir_session {
 
 typedef struct fcfs_api_context {
     bool use_sys_lock_for_append;
-    bool async_report_enabled;
-    int async_report_interval_ms;
-    int shared_allocator_count;
+    struct {
+        bool enabled;
+        int interval_ms;
+        int shared_allocator_count;
+        int hashtable_sharding_count;
+        int64_t hashtable_total_capacity;
+    } async_report;
     string_t ns;  //namespace
     char ns_holder[NAME_MAX];
     struct {
