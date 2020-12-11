@@ -25,7 +25,7 @@ static int async_report_event_alloc_init(FCFSAPIAsyncReportEvent *event,
     return 0;
 }
 
-static int waiting_task_alloc_init(FSAPIWaitingTask *task,
+static int waiting_task_alloc_init(FCFSAPIWaitingTask *task,
         struct fast_mblock_man *allocator)
 {
     int result;

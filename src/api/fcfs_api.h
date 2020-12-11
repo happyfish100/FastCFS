@@ -17,9 +17,10 @@
 #ifndef _FCFS_API_H
 #define _FCFS_API_H
 
+#include "fastcommon/shared_func.h"
 #include "fcfs_api_types.h"
 #include "fcfs_api_file.h"
-#include "fastcommon/shared_func.h"
+#include "fcfs_api_util.h"
 
 #define FCFS_API_DEFAULT_FASTDIR_SECTION_NAME    "FastDIR"
 #define FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME  "FastStore"
