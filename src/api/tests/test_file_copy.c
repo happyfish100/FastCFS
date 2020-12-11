@@ -47,6 +47,7 @@ static int copy_file()
     FCFSAPIFileInfo fi;
     char fixed_buff[FIXED_BUFFEER_SIZE];
     char async_report_config[256];
+    char write_combine_config[512];
     char *buff;
     char new_fs_filename[PATH_MAX];
     int read_bytes;
@@ -75,8 +76,11 @@ static int copy_file()
             async_report_config, sizeof(async_report_config));
     fdir_client_log_config_ex(g_fcfs_api_ctx.contexts.fdir,
             async_report_config);
-    fs_client_log_config(g_fcfs_api_ctx.contexts.fsapi->fs);
 
+    fs_api_config_to_string(write_combine_config,
+            sizeof(write_combine_config));
+    fs_client_log_config_ex(g_fcfs_api_ctx.contexts.fsapi->fs,
+            write_combine_config);
 
     if (fs_filename[strlen(fs_filename) - 1] == '/') {
         const char *filename;
