@@ -130,6 +130,7 @@ int main(int argc, char *argv[])
         }
 
         fuse_session_unmount(se);
+        fcfs_api_terminate();
         delete_pid_file(pid_filename);
     } while (0);
 
@@ -146,7 +147,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    fcfs_api_terminate();
     if (result == 0) {
         logInfo("file: "__FILE__", line: %d, "
                 "program exit normally.\n", __LINE__);
@@ -166,7 +166,7 @@ static int check_create_root_path()
     int64_t inode;
     FDIRClientOwnerModePair omp;
 
-    if ((result=fcfs_api_lookup_inode("/", &inode)) != 0) {
+    if ((result=fcfs_api_lookup_inode_by_path("/", &inode)) != 0) {
         if (result == ENOENT) {
             FDIRDEntryFullName fullname;
             FDIRDEntryInfo dentry;

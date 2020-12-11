@@ -66,7 +66,7 @@ static inline int fs_convert_inode(const fuse_ino_t ino, int64_t *new_inode)
 
     if (ino == FUSE_ROOT_ID) {
         if (root_inode == 0) {
-            if ((result=fcfs_api_lookup_inode("/", new_inode)) != 0) {
+            if ((result=fcfs_api_lookup_inode_by_path("/", new_inode)) != 0) {
                 return result;
             }
             root_inode = *new_inode;

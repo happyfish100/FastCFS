@@ -395,18 +395,20 @@ int fs_fuse_global_init(const char *config_filename)
     }
 
     fcfs_api_async_report_config_to_string_ex(&g_fcfs_api_ctx,
-            async_report_config, sizeof(async_report_config))
+            async_report_config, sizeof(async_report_config));
     fdir_client_log_config_ex(g_fcfs_api_ctx.contexts.fdir,
             async_report_config);
-    fs_client_log_config(g_fcfs_api_ctx.contexts.fsapi->fs);
+
     fs_api_config_to_string(write_combine_config,
             sizeof(write_combine_config));
+    fs_client_log_config_ex(g_fcfs_api_ctx.contexts.fsapi->fs,
+            write_combine_config);
 
     logInfo("FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "owner_type: %s%s, singlethread: %d, clone_fd: %d, "
             "max_idle_threads: %d, allow_others: %s, auto_unmount: %d, "
-            "attribute_timeout: %.1fs, entry_timeout: %.1fs, %s",
+            "attribute_timeout: %.1fs, entry_timeout: %.1fs",
             fuse_pkgversion(), g_fuse_global_vars.ns,
             sf_idempotency_config, g_fuse_global_vars.mountpoint,
             get_owner_type_caption(g_fuse_global_vars.owner.type),
@@ -415,8 +417,7 @@ int fs_fuse_global_init(const char *config_filename)
             get_allow_others_caption(g_fuse_global_vars.allow_others),
             g_fuse_global_vars.auto_unmount,
             g_fuse_global_vars.attribute_timeout,
-            g_fuse_global_vars.entry_timeout,
-            g_fcfs_api_ctx.use_sys_lock_for_append,
-            write_combine_config);
+            g_fuse_global_vars.entry_timeout);
+
     return 0;
 }
