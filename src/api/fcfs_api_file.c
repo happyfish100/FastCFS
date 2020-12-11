@@ -390,7 +390,8 @@ int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
         return EBADF;
     }
 
-    use_sys_lock = fi->ctx->use_sys_lock_for_append && (fi->flags & O_APPEND);
+    use_sys_lock = fi->ctx->use_sys_lock_for_append &&
+        !fi->ctx->async_report.enabled && (fi->flags & O_APPEND);
     if (use_sys_lock) {
         if ((result=fcfs_api_dentry_sys_lock(&session, fi->dentry.inode,
                         0, &old_size, &space_end)) != 0)
@@ -628,7 +629,7 @@ static inline int check_and_sys_lock(FCFSAPIContext *ctx,
     FDIRDEntryInfo dentry;
     int result;
 
-    if (ctx->use_sys_lock_for_append) {
+    if (ctx->use_sys_lock_for_append && !ctx->async_report.enabled) {
         result = fcfs_api_dentry_sys_lock(session,
                 oid, 0, old_size, space_end);
     } else {
@@ -647,7 +648,7 @@ static inline int check_and_sys_unlock(FCFSAPIContext *ctx,
         FDIRClientSession *session, const int64_t old_size,
         const FDIRSetDEntrySizeInfo *dsize, const int result)
 {
-    if (ctx->use_sys_lock_for_append) {
+    if (ctx->use_sys_lock_for_append && !ctx->async_report.enabled) {
         string_t *ns;
         int unlock_res;
 
@@ -1134,7 +1135,7 @@ int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
         return 0;
     }
 
-    if (fi->ctx->use_sys_lock_for_append) {
+    if (fi->ctx->use_sys_lock_for_append && !fi->ctx->async_report.enabled) {
         if ((result=fcfs_api_dentry_sys_lock(&session, fi->dentry.
                         inode, 0, &old_size, &space_end)) != 0)
         {

@@ -101,7 +101,6 @@ static int to_event_ptr_array(FCFSAPIAsyncReportEvent *head,
     } while (head != NULL);
 
     event_ptr_array->count = event - event_ptr_array->events;
-    logInfo("event count: %d", event_ptr_array->count);
     return result;
 }
 
@@ -141,6 +140,7 @@ static inline void merge_event(FCFSAPIAsyncReportEvent *dest,
 static int merge_events(FCFSAPIAsyncReportEvent *head)
 {
     int result;
+    int merge_count;
     FCFSAPIAsyncReportEvent **ts;
     FCFSAPIAsyncReportEvent **send;
     FCFSAPIAsyncReportEvent **merge;
@@ -169,9 +169,12 @@ static int merge_events(FCFSAPIAsyncReportEvent *head)
             merge = MERGED_TASK_PTR_ARRAY.events + MERGED_TASK_PTR_ARRAY.count;
         }
 
+        merge_count = 1;
         current = *ts;
         *merge++ = *ts++;
         if (current->dsize.force) {
+            logInfo("event oid: %"PRId64", force: %d, merged count: %d",
+                    current->dsize.inode, current->dsize.force, merge_count);
             continue;
         }
         if (ts == send) {
@@ -181,9 +184,13 @@ static int merge_events(FCFSAPIAsyncReportEvent *head)
         while ((ts < send) && (!(*ts)->dsize.force) &&
                 ((*ts)->dsize.inode == current->dsize.inode))
         {
+            merge_count++;
             merge_event(current, *ts);
             ts++;
         }
+
+        logInfo("event oid: %"PRId64", merged count: %d",
+                current->dsize.inode, merge_count);
     }
 
     MERGED_TASK_PTR_ARRAY.count = merge - MERGED_TASK_PTR_ARRAY.events;
@@ -248,7 +255,7 @@ static inline int deal_events(FCFSAPIAsyncReportEvent *head)
     }
 
     notify_waiting_tasks_and_free_events(head);
-    logInfo("total event count: %d, report (merged) count: %d",
+    logInfo("total (input) event count: %d, report (output) count: %d",
             SORTED_TASK_PTR_ARRAY.count, MERGED_TASK_PTR_ARRAY.count);
     return 0;
 }
