@@ -116,7 +116,7 @@ int inode_htable_check_conflict_and_wait(const uint64_t inode)
 
     if (callback_arg.waiting_task != NULL) {
         async_reporter_notify();
-        logInfo("oid: %"PRId64", wait_report_done_and_release", inode);
+        //logInfo("oid: %"PRId64", wait_report_done_and_release", inode);
         fcfs_api_wait_report_done_and_release(callback_arg.waiting_task);
     }
 

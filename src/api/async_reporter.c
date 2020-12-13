@@ -173,8 +173,10 @@ static int merge_events(FCFSAPIAsyncReportEvent *head)
         current = *ts;
         *merge++ = *ts++;
         if (current->dsize.force) {
+            /*
             logInfo("event oid: %"PRId64", force: %d, merged count: %d",
                     current->dsize.inode, current->dsize.force, merge_count);
+                    */
             continue;
         }
         if (ts == send) {
@@ -189,8 +191,10 @@ static int merge_events(FCFSAPIAsyncReportEvent *head)
             ts++;
         }
 
+        /*
         logInfo("event oid: %"PRId64", merged count: %d",
                 current->dsize.inode, merge_count);
+                */
     }
 
     MERGED_TASK_PTR_ARRAY.count = merge - MERGED_TASK_PTR_ARRAY.events;
@@ -255,8 +259,10 @@ static inline int deal_events(FCFSAPIAsyncReportEvent *head)
     }
 
     notify_waiting_tasks_and_free_events(head);
+    /*
     logInfo("total (input) event count: %d, report (output) count: %d",
             SORTED_TASK_PTR_ARRAY.count, MERGED_TASK_PTR_ARRAY.count);
+            */
     return 0;
 }
 
