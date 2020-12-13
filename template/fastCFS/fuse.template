@@ -1,6 +1,5 @@
 # the base path to store log files
 # this path must exist
-#base_path = /path/to/fuse/home
 base_path = ${BASE_PATH}
 
 #standard log level as syslog, case insensitive, value list:
@@ -62,6 +61,10 @@ connect_timeout = 2
 # network timeout in seconds
 # default value is 30s
 network_timeout = 10
+
+# TCP quick ack for Linux (setsockopt with TCP_QUICKACK option)
+# default value is true
+tcp_quick_ack = true
 
 # the rule of read data, value list:
 ### any : any available server
@@ -141,9 +144,10 @@ work_threads = 1
 # default value is 256KB
 max_pkg_size = 256KB
 
-# thread stack size, should >= 64KB
-# default value is 256KB
-thread_stack_size = 256KB
+# thread stack size, should >= 320KB
+# default value is 512KB
+thread_stack_size = 512KB
+
 
 [FastDIR]
 # connect timeout in seconds
@@ -163,7 +167,37 @@ namespace = fs
 #   the HOST can be hostname or ip address;
 #   the PORT is the service port of the FastDIR server
 #dir_server = 192.168.0.196:11012
+#dir_server = 192.168.0.197:11012
+#dir_server = 192.168.0.198:11012
 ${DIR_SERVERS}
+
+# if use sys lock for file append and truncate to avoid conflict
+# set true when the files appended or truncated by many nodes (FUSE instances)
+# default value is false
+use_sys_lock_for_append = false
+
+# if async report file attributes (size, modify time etc.) to the FastDIR server
+# default value is true
+async_report_enabled = true
+
+# the interval in milliseconds for async report file attributes to the FastDIR server
+# default value is 100 ms
+async_report_interval_ms = 100
+
+# the sharding count of hashtable
+# NO more than 1000 is recommended
+# default value is 17
+hashtable_sharding_count = 17
+
+# the capacity (bucket count) of all sharding hashtables
+# default value is 1403641
+hashtable_total_capacity = 1403641
+
+# the shared allocators for hashtabe entry, task etc.
+# NO more than the CPU cores is recommended
+# default value is 11
+shared_allocator_count = 11
+
 
 [FastStore]
 # connect timeout in seconds
@@ -178,30 +212,77 @@ network_timeout = 30
 # config the cluster servers and groups
 cluster_config_filename = cluster.conf
 
+
 [write_combine]
 # if enable write combine feature for FastStore
 # default value is true
 enabled = true
 
-# the max buffer size for write combine
+# the buffer size for write combine
 # the min value is 64KB and the max value is the data block size such as 4MB
 # default value is 256KB
-max_size = 256KB
+buffer_size = 256KB
 
 # the min wait time in milliseconds for write combine
 # the min value is 10ms and the max value is 100ms
-# default value is 10ms
-min_wait_time_ms = 10
+# default value is 20ms
+min_wait_time_ms = 50
 
 # the max wait time in milliseconds for write combine
 # the min value is 100ms and the max value is 10000ms
 # default value is 1000ms
 max_wait_time_ms = 1000
 
+# the slice size for skipping write combine
+# skip combine when the slice size >= this parameter
+# the min value is 64KB and the max value is the data block size such as 4MB
+# default value is 256KB
+skip_combine_on_slice_size = 256KB
+
+# the merged slice count of last combine for skipping write combine
+# skip combine when the last combine is in progress and
+# it's merged slice count <= this parameter
+# default value is 1
+skip_combine_on_last_merged_slices = 1
+
+# the sharding count of hashtable
+# NO more than 1000 is recommended
+# default value is 163
+hashtable_sharding_count = 163
+
+# the capacity (bucket count) of all sharding hashtables
+# default value is 1403641
+hashtable_total_capacity = 1403641
+
+# the shared allocators for hashtabe entry, task, slice etc.
+# NO more than the CPU cores is recommended
+# default value is 17
+shared_allocator_count = 17
+
+# the shared locks for timer (timeout manager)
+# default value is 163
+timer_shared_lock_count = 163
+
+# the thread limit (max threads) for the thread pool
+# default value is 16
+thread_pool_max_threads = 16
+
+# the min idle thread count for the thread pool
+# default value is 2
+thread_pool_min_idle_count = 4
+
+# the max idle time in seconds for the thread pool
+# the running thread will exit on three conditions:
+##   1. this paramter > 0
+##   2. running thread count > thread_pool_min_idle_count
+##   3. the thread's idle time exceeds this parameter
+# default value is 300 (seconds)
+thread_pool_max_idle_time = 300
+
+
 [FUSE]
 # the mount point (local path) for FUSE
 # the local path must exist
-#mountpoint = /path/to/fuse/mountpoint
 mountpoint = ${FUSE_MOUNT_POINT}
 
 # set the owner (user and group) of new created files and directories
@@ -247,8 +328,8 @@ auto_unmount = false
 
 # cache time for file attribute in seconds
 # default value is 1.0s
-attribute_timeout = 1.0
+attribute_timeout = 5.0
 
 # cache time for file entry in seconds
 # default value is 1.0s
-entry_timeout = 1.0
+entry_timeout = 5.0
