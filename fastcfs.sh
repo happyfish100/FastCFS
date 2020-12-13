@@ -663,7 +663,7 @@ init_faststore_config() {
       echo "INFO:Begin config $t_cluster_conf..."
       placeholder_replace $t_cluster_conf SERVER_GROUP_COUNT "1"
       placeholder_replace $t_cluster_conf DATA_GROUP_COUNT "64"
-      placeholder_replace $t_cluster_conf SERVER_GROUP_1_SERVER_IDS "[1, $dir_cluster_size]"
+      placeholder_replace $t_cluster_conf SERVER_GROUP_1_SERVER_IDS "[1, $store_cluster_size]"
 
       data_group_ids='data_group_ids = [1, 32]\
 data_group_ids = [33, 64]'
