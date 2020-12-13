@@ -2,17 +2,17 @@
 
 ## 1. About
 
-FastCFS is a high performance distributed file storage system.
+FastCFS is a high performance distributed file system.
+FastCFS can be used as the database back-end storage.
 
 ## 2. Development Status
 
-Developing
+v1.00 Beta
 
 ## 3. Supported Platform
 
-* CentOS (version 7.8 or newer)
-* Ubuntu (Testing)
-* BSD (Testing)
+* Linux: Kernel version >= 3.10  (Full support)
+* MacOS or FreeBSD (Only server side)
 
 ## 4. Dependencies
 
@@ -20,17 +20,19 @@ Developing
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 7.5.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (version commit-c2d8faa)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (version commit-02adaac)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (version commit-62cab21)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (master)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (master)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (master)
+* [faststore](https://github.com/happyfish100/faststore) (master)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (master)
 
 ## 5. Installation
 
-libfastcommon、libserverframe、fastDIR、faststore 四个安装包可采用 fastcfs.sh 脚本统一安装配置，也可以按照5.1-5.4分步独立安装配置。
+libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包可采用 fastcfs.sh 脚本统一安装配置，也可以按照5.1-5.5部分独立安装配置。
 
 *统一安装方式*
 
-通过执行fastcfs.sh脚本，可自动从github仓库拉取或更新四个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
+通过执行fastcfs.sh脚本，可自动从github仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
 
 命令参数说明：
 
@@ -66,7 +68,7 @@ libfastcommon、libserverframe、fastDIR、faststore 四个安装包可采用 fa
 
 ### 5.1. libfastcommon
 
-版本号：version 1.43
+版本号：version 1.44
 
 ```
 git clone https://github.com/happyfish100/libfastcommon.git
@@ -133,6 +135,17 @@ cp conf/server.conf /etc/fdir/
 cp conf/client.conf /etc/fdir/
 mkdir /usr/local/faststore
 ```
+
+### 5.5. faststore
+
+```
+git clone https://github.com/happyfish100/FastCFS.git
+cd FastCFS/
+./make.sh
+./make.sh install
+cp conf/fuse.conf /etc/fcfs/
+```
+
 
 ## 6. Configuration
 
