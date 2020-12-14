@@ -32,8 +32,9 @@ libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包�
 
 *统一安装方式*
 
-git clone https://github.com/happyfish100/FastCFS.git
-cd FastCFS/
+```
+git clone https://github.com/happyfish100/FastCFS.git && cd FastCFS/
+```
 
 通过执行fastcfs.sh脚本，可自动从github仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
 
@@ -85,8 +86,7 @@ $FCFS_SHELL_PATH/fuse.sh restart
 版本号：version 1.44
 
 ```
-git clone https://github.com/happyfish100/libfastcommon.git
-cd libfastcommon/
+git clone https://github.com/happyfish100/libfastcommon.git && cd libfastcommon/
 git checkout master
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
@@ -101,17 +101,17 @@ git checkout master
 ### 5.2. libserverframe
 
 ```
-git clone https://github.com/happyfish100/libserverframe.git
-./make.sh
-./make.sh install
+git clone https://github.com/happyfish100/libserverframe.git && cd libserverframe/
+./make.sh clean && ./make.sh && ./make.sh install
 ```
 
 ### 5.3. fastDIR
 
 ```
-git clone https://github.com/happyfish100/fastDIR.git
-./make.sh
-./make.sh install
+git clone https://github.com/happyfish100/fastDIR.git && cd fastDIR/
+./make.sh clean && ./make.sh && ./make.sh install
+mkdir /etc/fdir/
+cp conf/server.conf conf/client.conf conf/cluster_servers.conf /etc/fdir/
 ```
 
 编译警告信息：
@@ -141,22 +141,18 @@ export LC_ALL=zh_CN.UTF-8
 ### 5.4. faststore
 
 ```
-git clone https://github.com/happyfish100/faststore.git
-cd faststore/
-./make.sh
-./make.sh install
-cp conf/server.conf /etc/fdir/
-cp conf/client.conf /etc/fdir/
-mkdir /usr/local/faststore
+git clone https://github.com/happyfish100/faststore.git && cd faststore/
+./make.sh clean && ./make.sh && ./make.sh install
+mkdir /etc/fstore/
+cp conf/server.conf conf/client.conf conf/servers.conf conf/cluster.conf conf/storage.conf /etc/fstore/
 ```
 
 ### 5.5. FastCFS
 
 ```
-git clone https://github.com/happyfish100/FastCFS.git
-cd FastCFS/
-./make.sh
-./make.sh install
+git clone https://github.com/happyfish100/FastCFS.git && cd FastCFS/
+./make.sh clean && ./make.sh && ./make.sh install
+mkdir /etc/fcfs/
 cp conf/fuse.conf /etc/fcfs/
 ```
 
