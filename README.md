@@ -1,15 +1,14 @@
-# FastCFS
+# FastCFS -- a high performance distributed file system for databases
 
 ## 1. About
 
-FastCFS is a high performance distributed file system.
-FastCFS can be used as the database back-end storage.
+FastCFS is a block based standard file system which can be used as the back-end storage of databases, such as MySQL, PostgresSQL, Oracle etc.
 
 ## 2. Development Status
 
 v1.00 Beta
 
-## 3. Supported Platform
+## 3. Supported Platforms
 
 * Linux: Kernel version >= 3.10  (Full support)
 * MacOS or FreeBSD (Only server side)
@@ -28,7 +27,7 @@ v1.00 Beta
 
 ## 5. Installation
 
-libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包可采用 fastcfs.sh 脚本统一安装配置，也可以按照5.1-5.5部分独立安装配置。
+libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包可采用 fastcfs.sh 脚本统一安装配置，也可以按照5.1 - 5.5部分独立安装配置。
 
 *统一安装方式*
 
@@ -41,9 +40,9 @@ git clone https://github.com/happyfish100/FastCFS.git && cd FastCFS/
 fastcfs.sh 命令参数说明：
 
 * pull -- 从github拉取或更新代码库（拉取到本地build目录）
-* makeinstall -- 顺序编译、安装代码库
-* init -- 初始化集群目录、配置文件
-* clean -- 清除已编译程序文件
+* makeinstall -- 顺序编译、安装代码库（make && make install）
+* init -- 初始化集群目录、配置文件（已存在不会重新生成）
+* clean -- 清除已编译程序文件（相当于make clean）
 
 
 一键搭建(包括部署和运行)demo环境：
@@ -75,6 +74,8 @@ IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d '
 	--store-bind-addr= \
 	--fuse-path=/usr/local/fastcfs-test/fuse \
 	--fuse-mount-point=/usr/local/fastcfs-test/fuse/fuse1
+
+注：--fuse-mount-point为mount到本地的路径，通过这个mount point实现对FastCFS的文件存取访问。
 
 FCFS_SHELL_PATH=$(pwd)/build/shell
 $FCFS_SHELL_PATH/fastdir-cluster.sh restart
