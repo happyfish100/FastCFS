@@ -6,7 +6,7 @@ FastCFS is a block based standard file system which can be used as the back-end 
 
 ## 2. Development Status
 
-v1.00 Beta
+v1.0.0 Beta
 
 ## 3. Supported Platforms
 
