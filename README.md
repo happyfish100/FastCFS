@@ -46,7 +46,7 @@ fastcfs.sh 命令参数说明：
 * clean -- 清除已编译程序文件
 
 
-搭建demo环境：
+一键搭建(包括部署和运行)demo环境：
 
 
 ```
@@ -85,8 +85,6 @@ $FCFS_SHELL_PATH/fuse.sh restart
 
 
 ### 5.1. libfastcommon
-
-版本号：version 1.44
 
 ```
 git clone https://github.com/happyfish100/libfastcommon.git && cd libfastcommon/
