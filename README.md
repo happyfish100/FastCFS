@@ -20,11 +20,11 @@ v1.00 Beta
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 7.5.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (master)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (master)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (master)
-* [faststore](https://github.com/happyfish100/faststore) (master)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (master)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.44)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.0)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.0.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V1.0.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V1.0.0)
 
 ## 5. Installation
 
@@ -32,37 +32,51 @@ libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包�
 
 *统一安装方式*
 
+git clone https://github.com/happyfish100/FastCFS.git
+cd FastCFS/
+
 通过执行fastcfs.sh脚本，可自动从github仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
 
-命令参数说明：
+fastcfs.sh 命令参数说明：
 
 * pull -- 从github拉取或更新代码库（拉取到本地build目录）
 * makeinstall -- 顺序编译、安装代码库
 * init -- 初始化集群目录、配置文件
 * clean -- 清除已编译程序文件
 
-集群初始化参数说明：
+
+搭建demo环境：
 
 
 ```
+./helloWorld.sh
+
+或执行如下命令：
 ./fastcfs.sh pull
 ./fastcfs.sh makeinstall
+IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:' | head -n 1)
 ./fastcfs.sh init \
 	--dir-path=/usr/local/fastcfs-test/fastdir \
-	--dir-cluster-size=3 \
-	--dir-host=127.0.0.1 \
+	--dir-server-count=1 \
+	--dir-host=$IP  \
 	--dir-cluster-port=11011 \
 	--dir-service-port=21011 \
-	--dir-bind-addr=127.0.0.1 \
+	--dir-bind-addr=  \
 	--store-path=/usr/local/fastcfs-test/faststore \
-	--store-cluster-size=3 \
-	--store-host=127.0.0.1 \
+	--store-server-count=1 \
+	--store-host=$IP  \
 	--store-cluster-port=31011 \
 	--store-service-port=41011 \
 	--store-replica-port=51011 \
-	--store-bind-addr=127.0.0.1 \
+	--store-bind-addr= \
 	--fuse-path=/usr/local/fastcfs-test/fuse \
 	--fuse-mount-point=/usr/local/fastcfs-test/fuse/fuse1
+
+FCFS_SHELL_PATH=$(pwd)/build/shell
+$FCFS_SHELL_PATH/fastdir-cluster.sh restart
+$FCFS_SHELL_PATH/faststore-cluster.sh restart
+$FCFS_SHELL_PATH/fuse.sh restart
+
 ```
 
 
@@ -136,7 +150,7 @@ cp conf/client.conf /etc/fdir/
 mkdir /usr/local/faststore
 ```
 
-### 5.5. faststore
+### 5.5. FastCFS
 
 ```
 git clone https://github.com/happyfish100/FastCFS.git
@@ -200,4 +214,4 @@ Coming soon.
 
 ## License
 
-FastCFS is Open Source software released under the GNU General Public License V3.
+FastCFS is an Open Source software released under the GNU AFFERO General Public License V3 (AGPL v3).
