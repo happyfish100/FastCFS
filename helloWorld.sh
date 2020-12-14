@@ -14,7 +14,8 @@ else
 fi
 
 FASTCFS_BASE=/usr/local/fastcfs-test
-mkdir -p $FASTCFS_BASE
+FUSE_MOUNT_POINT=$FASTCFS_BASE/fuse/fuse1
+mkdir -p $FUSE_MOUNT_POINT || exit
 CMD="$IFCONFIG -a | grep -w inet | grep -v 127.0.0.1 | awk '{print \$2}' | tr -d 'addr:' | head -n 1"
 IP=$(sh -c "$CMD")
 ./fastcfs.sh init \
@@ -30,7 +31,7 @@ IP=$(sh -c "$CMD")
  --store-service-port=22011 \
  --store-replica-port=23011 \
  --fuse-path=$FASTCFS_BASE/fuse \
- --fuse-mount-point=$FASTCFS_BASE/fuse/fuse1
+ --fuse-mount-point=$FUSE_MOUNT_POINT
 
 FCFS_SHELL_PATH=$(pwd)/build/shell
 echo "正确初始化完成后，执行如下操作，进行简单测试......."
@@ -42,5 +43,5 @@ $FCFS_SHELL_PATH/fastdir-cluster.sh restart
 echo "$FCFS_SHELL_PATH/faststore-cluster.sh restart #启动存储服务"
 $FCFS_SHELL_PATH/faststore-cluster.sh restart
 
-echo "$FCFS_SHELL_PATH/fuse.sh restart #挂载fastCFS文件系统"
+echo "$FCFS_SHELL_PATH/fuse.sh restart #挂载fastCFS文件系统 $FUSE_MOUNT_POINT"
 $FCFS_SHELL_PATH/fuse.sh restart
