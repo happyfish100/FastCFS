@@ -51,8 +51,11 @@ fastcfs.sh 命令参数说明：
 
 ```
 ./helloWorld.sh
+```
 
 或执行如下命令：
+
+```
 ./fastcfs.sh pull
 ./fastcfs.sh makeinstall
 IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:' | head -n 1)
