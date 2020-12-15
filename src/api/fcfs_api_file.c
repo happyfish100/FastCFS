@@ -314,18 +314,21 @@ static int do_pwrite(FCFSAPIFileInfo *fi, const char *buff,
         *written_bytes += callback_arg.arg.write_bytes;
         *total_inc_alloc += callback_arg.arg.inc_alloc;
         if (need_report_modified) {
+            /*
             if (wbuffer.combined) {
                 if (new_offset > fi->dentry.stat.size) {
                     fi->dentry.stat.size = new_offset;
                 }
                 fi->write_notify.last_modified_time = get_current_time();
-            } else {
-                int flags;
-                fcfs_api_file_report_size_and_time(&callback_arg,
-                        &flags, &fi->dentry);
-                if ((flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_MTIME) != 0) {
-                    fi->write_notify.last_modified_time = get_current_time();
+                } else {
                 }
+                */
+
+            int flags;
+            fcfs_api_file_report_size_and_time(&callback_arg,
+                    &flags, &fi->dentry);
+            if ((flags & FDIR_DENTRY_FIELD_MODIFIED_FLAG_MTIME) != 0) {
+                fi->write_notify.last_modified_time = get_current_time();
             }
         }
 

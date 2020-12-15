@@ -29,9 +29,8 @@ int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
     FDIRDEntryInfo dentry;
     int result;
 
-    FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
-    if ((result=fdir_client_stat_dentry_by_pname(ctx->contexts.fdir,
-                    &pname, &dentry)) != 0)
+    if ((result=fcfs_api_stat_dentry_by_pname_ex(ctx,
+                    parent_inode, name, LOG_DEBUG, &dentry)) != 0)
     {
         return result;
     }
@@ -44,6 +43,7 @@ int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
     }
 
     if (result == 0) {
+        FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
         result = fdir_client_remove_dentry_by_pname(
                 ctx->contexts.fdir, &ctx->ns, &pname);
     }

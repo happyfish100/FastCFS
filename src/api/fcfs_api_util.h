@@ -221,6 +221,10 @@ static inline int fcfs_api_modify_dentry_stat_ex(FCFSAPIContext *ctx,
         FDIRDEntryInfo *dentry)
 {
     FDIRDEntryStatus stat;
+
+    if (ctx->async_report.enabled) {
+        inode_htable_check_conflict_and_wait(inode);
+    }
     stat.mode = attr->st_mode;
     stat.gid = attr->st_gid;
     stat.uid = attr->st_uid;

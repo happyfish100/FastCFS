@@ -44,7 +44,7 @@ static inline int batch_set_dentry_size(const int count)
 
 static int int_event_ptr_array(FCFSAPIAsyncReportEventPtrArray *event_ptr_array)
 {
-    event_ptr_array->alloc = 4;  //TODO
+    event_ptr_array->alloc = 1024;
     event_ptr_array->events = (FCFSAPIAsyncReportEvent **)
         fc_malloc(sizeof(FCFSAPIAsyncReportEvent *) * event_ptr_array->alloc);
     if (event_ptr_array->events == NULL) {
@@ -53,7 +53,8 @@ static int int_event_ptr_array(FCFSAPIAsyncReportEventPtrArray *event_ptr_array)
     return 0;
 }
 
-static int realloc_event_ptrs(FCFSAPIAsyncReportEventPtrArray *event_ptr_array)
+static FCFSAPIAsyncReportEvent **realloc_event_ptrs(
+        FCFSAPIAsyncReportEventPtrArray *event_ptr_array, const int count)
 {
     int alloc;
     FCFSAPIAsyncReportEvent **events;
@@ -62,19 +63,18 @@ static int realloc_event_ptrs(FCFSAPIAsyncReportEventPtrArray *event_ptr_array)
     events = (FCFSAPIAsyncReportEvent **)fc_malloc(
             sizeof(FCFSAPIAsyncReportEvent *) * alloc);
     if (events == NULL) {
-        return ENOMEM;
+        return NULL;
     }
 
-    if (event_ptr_array->count > 0) {
+    if (count > 0) {
         memcpy(events, event_ptr_array->events,
-                sizeof(FCFSAPIAsyncReportEvent *) *
-                event_ptr_array->count);
+                sizeof(FCFSAPIAsyncReportEvent *) * count);
     }
     free(event_ptr_array->events);
 
     event_ptr_array->alloc = alloc;
     event_ptr_array->events = events;
-    return 0;
+    return events + count;
 }
 
 static int to_event_ptr_array(FCFSAPIAsyncReportEvent *head,
@@ -89,10 +89,12 @@ static int to_event_ptr_array(FCFSAPIAsyncReportEvent *head,
     event = event_ptr_array->events;
     do {
         if (event_count >= event_ptr_array->alloc) {
-            if ((result=realloc_event_ptrs(event_ptr_array)) != 0) {
+            if ((event=realloc_event_ptrs(event_ptr_array,
+                            event_count)) == NULL)
+            {
+                result = ENOMEM;
                 break;
             }
-            event = event_ptr_array->events + event_ptr_array->count;
         }
 
         head->id = ++event_count;
@@ -100,7 +102,7 @@ static int to_event_ptr_array(FCFSAPIAsyncReportEvent *head,
         head = head->next;
     } while (head != NULL);
 
-    event_ptr_array->count = event - event_ptr_array->events;
+    event_ptr_array->count = event_count;
     return result;
 }
 
@@ -163,10 +165,12 @@ static int merge_events(FCFSAPIAsyncReportEvent *head)
         if (merge - MERGED_TASK_PTR_ARRAY.events >=
                 MERGED_TASK_PTR_ARRAY.alloc)
         {
-            if ((result=realloc_event_ptrs(&MERGED_TASK_PTR_ARRAY)) != 0) {
+            if ((merge=realloc_event_ptrs(&MERGED_TASK_PTR_ARRAY,
+                            merge - MERGED_TASK_PTR_ARRAY.events)) == NULL)
+            {
+                result = ENOMEM;
                 break;
             }
-            merge = MERGED_TASK_PTR_ARRAY.events + MERGED_TASK_PTR_ARRAY.count;
         }
 
         merge_count = 1;
