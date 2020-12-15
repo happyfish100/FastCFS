@@ -75,7 +75,7 @@ IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d '
 	--fuse-path=/usr/local/fastcfs-test/fuse \
 	--fuse-mount-point=/usr/local/fastcfs-test/fuse/fuse1
 
-注：--fuse-mount-point为mount到本地的路径，通过这个mount point实现对FastCFS的文件存取访问。
+注：--fuse-mount-point为mount到本地的路径，通过这个mount point对FastCFS进行文件存取访问。
 
 FCFS_SHELL_PATH=$(pwd)/build/shell
 $FCFS_SHELL_PATH/fastdir-cluster.sh restart

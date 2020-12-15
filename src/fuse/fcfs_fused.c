@@ -188,7 +188,7 @@ static int setup_server_env(const char *config_filename)
     int result;
 
     sf_set_current_time();
-    if ((result=fs_fuse_global_init(config_filename)) != 0) {
+    if ((result=fcfs_fuse_global_init(config_filename)) != 0) {
         return result;
     }
 

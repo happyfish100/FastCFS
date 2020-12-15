@@ -56,7 +56,7 @@ extern "C" {
 
     extern FUSEGlobalVars g_fuse_global_vars;
 
-	int fs_fuse_global_init(const char *config_filename);
+	int fcfs_fuse_global_init(const char *config_filename);
 
 #ifdef __cplusplus
 }

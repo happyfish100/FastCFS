@@ -140,7 +140,9 @@ static int load_owner_config(IniFullContext *ini_ctx)
         g_fuse_global_vars.owner.type = owner_type_caller;
     }
 
-    if (g_fuse_global_vars.owner.type != owner_type_fixed) {
+    if (g_fuse_global_vars.owner.type == owner_type_caller) {
+        g_fuse_global_vars.owner.uid = geteuid();
+        g_fuse_global_vars.owner.gid = getegid();
         return 0;
     }
 
@@ -273,7 +275,7 @@ static const char *get_owner_type_caption(
     }
 }
 
-int fs_fuse_global_init(const char *config_filename)
+int fcfs_fuse_global_init(const char *config_filename)
 {
 #define MIN_THREAD_STACK_SIZE  (320 * 1024)
     int result;
@@ -305,7 +307,7 @@ int fs_fuse_global_init(const char *config_filename)
         SF_SET_CONTEXT_INI_CONFIG(config, config_filename,
                 &iniContext, INI_IDEMPOTENCY_SECTION_NAME,
                 0, 0, IDEMPOTENCY_DEFAULT_WORK_THREADS);
-        if ((result=sf_load_config_ex("fs_fused", &config, 0)) != 0) {
+        if ((result=sf_load_config_ex("fcfs_fused", &config, 0)) != 0) {
             break;
         }
         if (SF_G_THREAD_STACK_SIZE < MIN_THREAD_STACK_SIZE) {
