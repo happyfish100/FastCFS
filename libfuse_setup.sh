@@ -29,7 +29,7 @@ yum_check_install_gcc() {
 
 yum_install_gcc() {
   major_version=$1
-  if [ major_version -lt 8 ]; then
+  if [ $major_version -lt 8 ]; then
     yum install centos-release-scl scl-utils-build -y
     yum_check_install_gcc 9
     if [ $? -ne 0 ]; then
