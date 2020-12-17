@@ -1,49 +1,79 @@
 #!/bin/sh
 
+get_gcc_version() {
+  LANG=en_US.UTF-8 && gcc -v 2>&1 | grep 'gcc version' | \
+          awk -F 'version' '{print $2}' | awk '{print $1}' | \
+          awk -F '.' '{print $1}'
+}
+
 apt_check_install_gcc() {
   version=$1
-  name=gcc-$version
-  apt list $name 2>&1 | grep $name && apt install $name -y
+  pkg_gcc="gcc-$version"
+  pkg_cpp="g++-$version"
+  apt list $pkg_gcc 2>&1 | grep $pkg_gcc && apt install $pkg_gcc $pkg_cpp -y
 }
 
 apt_install_gcc() {
-  apt_check_install_gcc 9
+  apt_check_install_gcc 7
   if [ $? -ne 0 ]; then
     apt_check_install_gcc 8
     if [ $? -ne 0 ]; then
-      apt_check_install_gcc 7
-      if [ $? -ne 0 ]; then
-        apt list gcc 2>&1 | grep gcc && apt install gcc -y
-      fi
+      apt_check_install_gcc 9
+    fi
+  fi
+}
+
+apt_install_required_gcc() {
+  os_major_version=$1
+  apt install gcc g++ -y
+  if [ $? -ne 0 ]; then
+    apt_install_gcc $os_major_version
+  else
+    gcc_version=$(get_gcc_version)
+    if [ -z "$gcc_version" ] || [ "$gcc_version" -lt 4 ]; then
+      apt_install_gcc $os_major_version
     fi
   fi
 }
 
 yum_check_install_gcc() {
-  version=$1
-  name=devtoolset-$version-gcc
-  yum list $name 2>&1 | grep "$name" && \
-  yum install devtoolset-$version-gcc devtoolset-$version-gcc-c++ -y && \
-  source /opt/rh/devtoolset-$version/enable
+  prefix=$1
+  version=$2
+  pkg_prefix="${prefix}toolset-${version}"
+  pkg_gcc="${pkg_prefix}-gcc"
+  pkg_cpp="${pkg_prefix}-gcc-c++"
+  yum list $pkg_gcc 2>&1 | grep "$pkg_gcc" && \
+      yum install $pkg_gcc $pkg_cpp -y && \
+      source /opt/rh/$pkg_prefix/enable
 }
 
 yum_install_gcc() {
-  major_version=$1
-  if [ $major_version -lt 8 ]; then
+  os_major_version=$1
+  if [ $os_major_version -lt 8 ]; then
     yum install centos-release-scl scl-utils-build -y
-    yum_check_install_gcc 9
-    if [ $? -ne 0 ]; then
-      yum_check_install_gcc 8
-      if [ $? -ne 0 ]; then
-        yum_check_install_gcc 7
-      fi
-    fi
+    prefix='dev'
   else
-    version=9 && name=devtoolset-$version-gcc && \
-            yum install gcc-toolset-$version-gcc gcc-toolset-$version-gcc-c++ -y && \
-            source /opt/rh/gcc-toolset-$version/enable
+    prefix='gcc-'
+  fi
+
+  yum_check_install_gcc "$prefix" 7
+  if [ $? -ne 0 ]; then
+    yum_check_install_gcc "$prefix" 8
     if [ $? -ne 0 ]; then
-       yum install gcc gcc-c++ -y
+      yum_check_install_gcc "$prefix" 9
+    fi
+  fi
+}
+
+yum_install_required_gcc() {
+  os_major_version=$1
+  yum install gcc gcc-c++ -y
+  if [ $? -ne 0 ]; then
+    yum_install_gcc $os_major_version
+  else
+    gcc_version=$(get_gcc_version)
+    if [ -z "$gcc_version" ] || [ "$gcc_version" -lt 4 ]; then
+      yum_install_gcc $os_major_version
     fi
   fi
 }
@@ -61,10 +91,10 @@ if [ $uname = 'Linux' ]; then
   fi
   os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
 
-  gcc_version=$(LANG=en_US.UTF-8 && gcc -v 2>&1 | grep 'gcc version' | \
-          awk -F 'version' '{print $2}' | awk '{print $1}' | awk -F '.' '{print $1}')
+  gcc_version=$(get_gcc_version)
   python_version=$(python3 --version 2>&1 | grep Python | awk '{print $2}')
   pip3_version=$(pip3 --version 2>&1 | awk '{print $2}')
+
   if [ $osname = 'Ubuntu' ]; then
     if [ -z "$python_version" ]; then
       apt install python3 python3-pip -y
@@ -74,8 +104,8 @@ if [ $uname = 'Linux' ]; then
       apt install python3-pip -y
     fi
 
-    if [ -z "$gcc_version" ] || [ "$gcc_version" -lt 7 ]; then
-      apt_install_gcc $os_major_version
+    if [ -z "$gcc_version" ] || [ "$gcc_version" -lt 4 ]; then
+      apt_install_required_gcc
     fi
   else
     if [ -z "$python_version" ]; then
@@ -86,12 +116,13 @@ if [ $uname = 'Linux' ]; then
       yum install python3-pip -y
     fi
 
-    if [ -z "$gcc_version" ] || [ "$gcc_version" -lt 7 ]; then
-      yum_install_gcc $os_major_version
+    if [ -z "$gcc_version" ] || [ "$gcc_version" -lt 4 ]; then
+      yum_install_required_gcc
     fi
+
   fi
 else
-  echo "Unsupport OS: $uname"
+  echo "Unsupport OS: $uname" 1>&2
   exit 1
 fi
 
@@ -114,3 +145,4 @@ meson configure -D prefix=/usr
 meson configure -D examples=false
 ninja
 ninja install
+sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
