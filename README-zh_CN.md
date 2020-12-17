@@ -37,12 +37,6 @@ libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包�
 git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
 ```
 
-先编译和安装libfuse，可执行如下脚本：
-
-```
-./libfuse_setup.sh
-```
-
 通过执行fastcfs.sh脚本，可自动从github仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
 
 fastcfs.sh 命令参数说明：
@@ -53,16 +47,16 @@ fastcfs.sh 命令参数说明：
 * clean -- 清除已编译程序文件（相当于make clean）
 
 
-一键搭建(包括部署和运行)demo环境：
-
+一键搭建(包括部署和运行)demo环境（需要root身份执行）：
 
 ```
 ./helloWorld.sh
 ```
 
-或执行如下命令：
+或执行如下命令（需要root身份执行）：
 
 ```
+./libfuse_setup.sh
 ./fastcfs.sh pull
 ./fastcfs.sh makeinstall
 IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:' | head -n 1)
@@ -137,13 +131,23 @@ perl: warning: Falling back to the standard locale ("C").
 可以修改/etc/profile，增加export LC_ALL=C解决上这个警告（记得刷新当前session：. /etc/profile）
 头文件安装成功，其他目录创建失败。
 
-### 5.4. libfuse for CentOS and Ubuntu
+### 5.4 faststore
 
-构建libfuse需要先安装meson和ninja。安装meson和ninja需要Python3.5及以上版本。
+```
+git clone https://github.com/happyfish100/faststore.git; cd faststore/
+./make.sh clean && ./make.sh && ./make.sh install
+mkdir /etc/fstore/
+cp conf/server.conf conf/client.conf conf/servers.conf conf/cluster.conf conf/storage.conf /etc/fstore/
+```
 
-##### Python安装
 
-包名：python3 python3-pip
+### 5.5 libfuse
+
+构建libfuse需要先安装meson和ninja。安装meson和ninja需要python3.5及以上版本。
+
+##### python安装
+
+包名：python3  python3-pip
 
 Ubuntu下安装命令：
 ```
@@ -155,7 +159,7 @@ CentOS下安装命令：
 yum install python3 python3-pip -y
 ```
 
-##### meson和ninja安装
+##### meson 和 ninja 安装
 
 ```
 pip3 install meson
@@ -188,16 +192,7 @@ ninja && ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 ```
 
-### 5.5. faststore
-
-```
-git clone https://github.com/happyfish100/faststore.git; cd faststore/
-./make.sh clean && ./make.sh && ./make.sh install
-mkdir /etc/fstore/
-cp conf/server.conf conf/client.conf conf/servers.conf conf/cluster.conf conf/storage.conf /etc/fstore/
-```
-
-### 5.6. FastCFS
+### 5.6 FastCFS
 
 ```
 git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
@@ -221,15 +216,15 @@ FastCFS有以下几个配置文件：
 * storage.conf - 存储参数配置
 * client.conf - 客户端使用的配置文件，需引用cluster.conf
 
-### 6.1. server.conf 配置
+### 6.1 server.conf 配置
 
-### 6.2. cluster.conf 配置
+### 6.2 cluster.conf 配置
 
-### 6.3. servers.conf 配置
+### 6.3 servers.conf 配置
 
-### 6.4. storage.conf 配置
+### 6.4 storage.conf 配置
 
-### 6.5. client.conf 配置
+### 6.5 client.conf 配置
 
 ## 运行
 
@@ -237,4 +232,4 @@ Coming soon.
 
 ## License
 
-FastCFS is Open Source software released under the GNU General Public License V3.
+FastCFS is Open Source software released under the GNU AFFERO General Public License V3 (AGPL v3).
