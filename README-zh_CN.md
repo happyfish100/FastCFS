@@ -86,6 +86,9 @@ $FCFS_SHELL_PATH/fuse.sh restart
 
 ```
 
+上述操作完成后，通过命令 df -h  可以看到FastCFS挂载的文件目录。
+
+
 ### 5.1. libfastcommon
 
 ```

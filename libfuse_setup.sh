@@ -154,7 +154,7 @@ if [ $? -ne 0 ]; then
   pip3 install ninja
 fi
 
-mkdir build; cd build
+mkdir -p build; cd build
 git clone https://github.com/libfuse/libfuse.git
 cd libfuse/
 git checkout fuse-3.10.1
