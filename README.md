@@ -120,30 +120,6 @@ mkdir /etc/fdir/
 cp conf/server.conf conf/client.conf conf/cluster_servers.conf /etc/fdir/
 ```
 
-编译警告信息：
-
-```
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LANGUAGE = (unset),
-	LC_ALL = (unset),
-	LC_CTYPE = "UTF-8",
-	LANG = "en_US.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-```
-
-可以修改/etc/profile，增加以下环境变量解决上这个警告（记得刷新当前session：. /etc/profile）：
-
-```
-export LC_CTYPE=zh_CN.UTF-8
-export LC_ALL=zh_CN.UTF-8
-```
-
-/etc/locale.conf文件修改：
-
-> LANG="zh_CN.UTF-8"
-
 ### 5.4 faststore
 
 ```

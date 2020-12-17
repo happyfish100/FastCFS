@@ -1,9 +1,11 @@
 #!/bin/bash
 
 get_gcc_version() {
+  old_lang=$LANG
   LANG=en_US.UTF-8 && gcc -v 2>&1 | grep 'gcc version' | \
           awk -F 'version' '{print $2}' | awk '{print $1}' | \
           awk -F '.' '{print $1}'
+  LANG=$old_lang
 }
 
 apt_check_install_gcc() {
@@ -77,6 +79,10 @@ yum_install_required_gcc() {
     fi
   fi
 }
+
+if [ -z "$LANG" ]; then
+  export LANG=en_US.UTF-8
+fi
 
 uname=$(uname)
 if [ $uname = 'Linux' ]; then

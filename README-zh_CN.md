@@ -118,22 +118,6 @@ git clone https://github.com/happyfish100/fastDIR.git; cd fastDIR/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-编译警告信息：
-
-```
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-	LANGUAGE = (unset),
-	LC_ALL = (unset),
-	LC_CTYPE = "UTF-8",
-	LANG = "en_US.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-```
-
-可以修改/etc/profile，增加export LC_ALL=C解决上这个警告（记得刷新当前session：. /etc/profile）
-头文件安装成功，其他目录创建失败。
-
 ### 5.4 faststore
 
 ```
