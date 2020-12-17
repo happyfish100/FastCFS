@@ -154,6 +154,7 @@ if [ $? -ne 0 ]; then
   pip3 install ninja
 fi
 
+mkdir build; cd build
 git clone https://github.com/libfuse/libfuse.git
 cd libfuse/
 git checkout fuse-3.10.1
@@ -164,3 +165,4 @@ meson configure -D examples=false
 ninja
 ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
+cd ..
