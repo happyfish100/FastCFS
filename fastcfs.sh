@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This shell will make and install these four libs in order:
 #     libfastcommon

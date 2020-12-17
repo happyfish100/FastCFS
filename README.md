@@ -18,7 +18,7 @@ v1.0.0 Beta
 * [libfuse](https://github.com/libfuse/libfuse) (version 3.9.4 or newer)
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
-    * [gcc](https://www.gnu.org/software/gcc/) (version 7.5.0 or newer)
+    * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
 * [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.44)
 * [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.0)
 * [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.0.0)
@@ -27,12 +27,20 @@ v1.0.0 Beta
 
 ## 5. Installation
 
+libfuse可以采用脚本libfuse_setup.sh一键编译和安装。
+
 libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包可采用 fastcfs.sh 脚本统一安装配置，也可以按照5.1 - 5.5部分独立安装配置。
 
 *统一安装方式*
 
 ```
-git clone https://github.com/happyfish100/FastCFS.git && cd FastCFS/
+git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
+```
+
+先编译和安装libfuse，可执行如下脚本：
+
+```
+./libfuse_setup.sh
 ```
 
 通过执行fastcfs.sh脚本，可自动从github仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
@@ -88,7 +96,7 @@ $FCFS_SHELL_PATH/fuse.sh restart
 ### 5.1. libfastcommon
 
 ```
-git clone https://github.com/happyfish100/libfastcommon.git && cd libfastcommon/
+git clone https://github.com/happyfish100/libfastcommon.git; cd libfastcommon/
 git checkout master
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
@@ -103,14 +111,14 @@ git checkout master
 ### 5.2. libserverframe
 
 ```
-git clone https://github.com/happyfish100/libserverframe.git && cd libserverframe/
+git clone https://github.com/happyfish100/libserverframe.git; cd libserverframe/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
 ### 5.3. fastDIR
 
 ```
-git clone https://github.com/happyfish100/fastDIR.git && cd fastDIR/
+git clone https://github.com/happyfish100/fastDIR.git; cd fastDIR/
 ./make.sh clean && ./make.sh && ./make.sh install
 mkdir /etc/fdir/
 cp conf/server.conf conf/client.conf conf/cluster_servers.conf /etc/fdir/
@@ -143,7 +151,7 @@ export LC_ALL=zh_CN.UTF-8
 ### 5.4. faststore
 
 ```
-git clone https://github.com/happyfish100/faststore.git && cd faststore/
+git clone https://github.com/happyfish100/faststore.git; cd faststore/
 ./make.sh clean && ./make.sh && ./make.sh install
 mkdir /etc/fstore/
 cp conf/server.conf conf/client.conf conf/servers.conf conf/cluster.conf conf/storage.conf /etc/fstore/
@@ -152,7 +160,7 @@ cp conf/server.conf conf/client.conf conf/servers.conf conf/cluster.conf conf/st
 ### 5.5. FastCFS
 
 ```
-git clone https://github.com/happyfish100/FastCFS.git && cd FastCFS/
+git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
 ./make.sh clean && ./make.sh && ./make.sh install
 mkdir /etc/fcfs/
 cp conf/fuse.conf /etc/fcfs/

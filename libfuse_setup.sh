@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 get_gcc_version() {
   LANG=en_US.UTF-8 && gcc -v 2>&1 | grep 'gcc version' | \
@@ -91,13 +91,23 @@ if [ $uname = 'Linux' ]; then
   fi
   os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
 
+  git_version=$(git --version 2>&1 | grep 'version' | awk '{print $3}')
+  make_version=$(make --version 2>&1 | grep 'Make' | awk '{print $3}')
   gcc_version=$(get_gcc_version)
   python_version=$(python3 --version 2>&1 | grep Python | awk '{print $2}')
   pip3_version=$(pip3 --version 2>&1 | awk '{print $2}')
 
   if [ $osname = 'Ubuntu' ]; then
+    if [ -z "$git_version" ]; then
+      apt install git -y
+    fi
+
+    if [ -z "$make_version" ]; then
+      apt install make -y
+    fi
+
     if [ -z "$python_version" ]; then
-      apt install python3 python3-pip -y
+      apt install python3 -y
     fi
 
     if [ -z "$pip3_version" ]; then
@@ -108,6 +118,14 @@ if [ $uname = 'Linux' ]; then
       apt_install_required_gcc
     fi
   else
+    if [ -z "$git_version" ]; then
+      yum install git -y
+    fi
+
+    if [ -z "$make_version" ]; then
+      yum install make -y
+    fi
+
     if [ -z "$python_version" ]; then
       yum install python3 -y || yum install python38 -y || yum install python36 -y || exit 2
     fi
