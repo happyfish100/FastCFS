@@ -99,6 +99,11 @@ if [ $uname = 'Linux' ]; then
 
   git_version=$(git --version 2>&1 | grep 'version' | awk '{print $3}')
   make_version=$(make --version 2>&1 | grep 'Make' | awk '{print $3}')
+  PKG_CONFIG_PRG=$(which pkg-config 2>&1)
+  if [ $? -ne 0 ]; then
+    PKG_CONFIG_PRG=''
+  fi
+
   gcc_version=$(get_gcc_version)
   python_version=$(python3 --version 2>&1 | grep Python | awk '{print $2}')
   pip3_version=$(pip3 --version 2>&1 | awk '{print $2}')
@@ -110,6 +115,10 @@ if [ $uname = 'Linux' ]; then
 
     if [ -z "$make_version" ]; then
       apt install make -y
+    fi
+
+    if [ -z "$PKG_CONFIG_PRG" ]; then
+      apt install pkg-config -y
     fi
 
     if [ -z "$python_version" ]; then
@@ -132,8 +141,12 @@ if [ $uname = 'Linux' ]; then
       yum install make -y
     fi
 
+    if [ -z "$PKG_CONFIG_PRG" ]; then
+      yum install pkgconfig -y || yum install pkgconf-pkg-config -y
+    fi
+
     if [ -z "$python_version" ]; then
-      yum install python3 -y || yum install python38 -y || yum install python36 -y || exit 2
+      yum install python3 -y || yum install python36 -y || yum install python38 -y || exit 2
     fi
 
     if [ -z "$pip3_version" ]; then
@@ -143,7 +156,6 @@ if [ $uname = 'Linux' ]; then
     if [ -z "$gcc_version" ] || [ "$gcc_version" -lt 4 ]; then
       yum_install_required_gcc
     fi
-
   fi
 else
   echo "Unsupport OS: $uname" 1>&2
