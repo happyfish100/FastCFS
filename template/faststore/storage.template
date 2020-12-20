@@ -11,7 +11,7 @@ read_threads_per_path = 1
 # each store path is configurated in the section as: [store-path-$id],
 # eg. [store-path-1] for the first store path, [store-path-2] for
 #     the second store path, and so on.
-store_path_count = 2
+store_path_count = 1
 
 # the trunk files are used for striped disk space management
 # the trunk file size from 64MB to 1GB
@@ -87,16 +87,15 @@ path = ${DATA1_PATH}
 # overwrite the global config: reserved_space_per_disk
 reserved_space = 20%
 
-
-[store-path-2]
+#[store-path-2]
 #path = /path/to/faststore/data2
-path = ${DATA2_PATH}
+#path = ${DATA2_PATH}
 
 # overwrite the global config: write_threads_per_path
-write_threads = 1
+#write_threads = 1
 
 # overwrite the global config: write_threads_per_path
-read_threads = 2
+#read_threads = 2
 
 # overwrite the global config: prealloc_space_per_path
-prealloc_space = 1%
+#prealloc_space = 1%

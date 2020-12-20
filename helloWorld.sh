@@ -16,6 +16,14 @@ else
 fi
 
 FASTCFS_BASE=/usr/local/fastcfs-test
+for arg do
+  case "$arg" in
+    --prefix=*)
+      FASTCFS_BASE=${arg#--prefix=}
+    ;;
+  esac
+done
+
 FUSE_MOUNT_POINT=$FASTCFS_BASE/fuse/fuse1
 mkdir -p $FUSE_MOUNT_POINT || exit
 CMD="$IFCONFIG -a | grep -w inet | grep -v 127.0.0.1 | awk '{print \$2}' | tr -d 'addr:' | head -n 1"

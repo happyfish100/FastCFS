@@ -679,8 +679,7 @@ data_group_ids = [33, 64]'
       # Replace placeholders with reality in storage template
       echo "INFO:Begin config $t_storage_conf..."
       placeholder_replace $t_storage_conf DATA1_PATH "${store_pathes[$i]}/storage_data1"
-      placeholder_replace $t_storage_conf DATA2_PATH "${store_pathes[$i]}/storage_data2"
-      placeholder_replace $t_storage_conf CACHE_PATH "${store_pathes[$i]}/storage_cache"
+      #placeholder_replace $t_storage_conf DATA2_PATH "${store_pathes[$i]}/storage_data2"
     fi
 
     if [[ $same_host = false ]] || [[ $i -eq 0 ]]; then
