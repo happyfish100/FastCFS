@@ -770,14 +770,19 @@ case "$mode" in
 
   'makeinstall')
     # Make and install all lib repositories sequentially.
+    make_op $COMMON_LIB clean
     make_op $COMMON_LIB make
     make_op $COMMON_LIB install
+    make_op $FRAME_LIB clean
     make_op $FRAME_LIB make
     make_op $FRAME_LIB install
+    make_op $FDIR_LIB clean
     make_op $FDIR_LIB make
     make_op $FDIR_LIB install
+    make_op $STORE_LIB clean
     make_op $STORE_LIB make
     make_op $STORE_LIB install
+    make_op $FASTCFS_LIB clean
     make_op $FASTCFS_LIB make
     make_op $FASTCFS_LIB install
   ;;
