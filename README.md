@@ -1,12 +1,12 @@
-# FastCFS -- a high performance distributed file system for databases and private cloud
+# FastCFS -- a high performance cloud native distributed file system for databases
 
 ## 1. About
 
 FastCFS is a block based standard file system which can be used as the back-end storage of databases, such as MySQL, PostgresSQL, Oracle etc.
 
-## 2. Development Status
+## 2. Current Version
 
-v1.0.0 Beta
+V1.1.0
 
 ## 3. Supported Platforms
 
@@ -19,11 +19,11 @@ v1.0.0 Beta
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.44)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.0)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.0.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V1.0.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V1.0.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.45)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.1)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.1.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V1.1.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V1.1.0)
 
 ## 5. Installation
 
@@ -50,7 +50,7 @@ fastcfs.sh 命令参数说明：
 一键搭建(包括部署和运行)demo环境（需要root身份执行）：
 
 ```
-./helloWorld.sh
+./helloWorld.sh --prefix=/usr/local/fastcfs-test
 ```
 
 或执行如下命令（需要root身份执行）：

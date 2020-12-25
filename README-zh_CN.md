@@ -1,12 +1,12 @@
-# FastCFS -- 可以跑数据库的高性能分布式文件系统
+# FastCFS -- 可以跑数据库的高性能云原生分布式文件系统
 
 ## 1. 关于
 
-FastCFS 是一款基于块存储的通用分布式文件系统，可以作为MySQL、PostgresSQL、Oracle等数据库和私有云的后端存储。
+FastCFS 是一款基于块存储的通用分布式文件系统，可以作为MySQL、PostgresSQL、Oracle等数据库和云平台的后端存储。
 
-## 2. 开发状态
+## 2. 当前版本
 
-V1.0.0 Beta
+V1.1.0
 
 ## 3. 支持的操作系统
 
@@ -19,11 +19,11 @@ V1.0.0 Beta
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.44)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.0)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.0.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V1.0.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V1.0.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.45)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.1)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.1.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V1.1.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V1.1.0)
 
 ## 5. 安装
 
@@ -50,7 +50,7 @@ fastcfs.sh 命令参数说明：
 一键搭建(包括部署和运行)demo环境（需要root身份执行）：
 
 ```
-./helloWorld.sh
+./helloWorld.sh --prefix=/usr/local/fastcfs-test
 ```
 
 或执行如下命令（需要root身份执行）：
