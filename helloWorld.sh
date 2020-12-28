@@ -2,7 +2,7 @@
 
 ./libfuse_setup.sh
 
-echo "搭建简单的测试环境，1节点dir，1节点store"
+echo "just for FastCFS demo: 1 fdir instance and 1 fstore instance"
 ./fastcfs.sh pull
 ./fastcfs.sh makeinstall
 
@@ -44,14 +44,13 @@ IP=$(sh -c "$CMD")
   --fuse-mount-point=$FUSE_MOUNT_POINT
 
 FCFS_SHELL_PATH=$(pwd)/build/shell
-echo "正确初始化完成后，执行如下操作，进行简单测试......."
-echo "启动脚本位于：$FCFS_SHELL_PATH"
+echo "the startup scripts at $FCFS_SHELL_PATH"
 
-echo "$FCFS_SHELL_PATH/fastdir-cluster.sh restart #启动元数据服务"
+echo "$FCFS_SHELL_PATH/fastdir-cluster.sh restart # start the metadata service"
 $FCFS_SHELL_PATH/fastdir-cluster.sh restart
 
-echo "$FCFS_SHELL_PATH/faststore-cluster.sh restart #启动存储服务"
+echo "$FCFS_SHELL_PATH/faststore-cluster.sh restart # start the store service"
 $FCFS_SHELL_PATH/faststore-cluster.sh restart
 
-echo "$FCFS_SHELL_PATH/fuse.sh restart #挂载fastCFS文件系统 $FUSE_MOUNT_POINT"
+echo "$FCFS_SHELL_PATH/fuse.sh restart # mount fastCFS to $FUSE_MOUNT_POINT"
 $FCFS_SHELL_PATH/fuse.sh restart
