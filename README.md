@@ -98,5 +98,6 @@ df -h
 
 ## 6. Contact us
 
-search "fastdfs" for WeChat subscription related articles
+email: 384681(at)qq(dot)com
 
+WeChat subscription: search "fastdfs" for the related articles (Chinese Only)

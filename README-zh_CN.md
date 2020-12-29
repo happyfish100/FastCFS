@@ -95,7 +95,9 @@ $FCFS_SHELL_PATH/fuse.sh restart
 ## 6. 联系我们
 
 查看FastCFS相关技术文章，请关注微信公众号：
+
 ![微信公众号](images/wechat_subscribe.jpg)
+
 
 微信交流群：
 ![微信交流群](images/wechat_group.png)
