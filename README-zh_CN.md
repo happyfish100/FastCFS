@@ -27,11 +27,15 @@ V1.1.0
 
 ## 5. 安装
 
-libfuse可以采用脚本libfuse_setup.sh一键编译和安装。
+### 5.1 DIY安装
 
-libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包可采用 fastcfs.sh 脚本统一安装配置，也可以按照5.1 - 5.6部分独立安装配置。
+参阅 INSTALL.md
 
-*统一安装方式*
+libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编译和安装。
+
+### 5.2 一键安装
+
+libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包可采用 fastcfs.sh 脚本统一安装配置，也可以参照INSTALL.md独立安装。
 
 ```
 git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
@@ -87,3 +91,11 @@ $FCFS_SHELL_PATH/fuse.sh restart
 ```
 
 上述操作完成后，通过命令 df -h  可以看到FastCFS挂载的文件目录。
+
+## 6. 联系我们
+
+查看FastCFS相关技术文章，请关注微信公众号：
+![微信公众号](images/wechat_subscribe.jpg)
+
+微信交流群：
+![微信交流群](images/wechat_group.png)

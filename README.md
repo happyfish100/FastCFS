@@ -27,13 +27,13 @@ V1.1.0
 
 ## 5. Installation
 
-* step by step installation *
+### 5.1 DIY installation (step by step)
 
 please see INSTALL.md
 
-* easy installation *
+recommend to execute libfuse_setup.sh for compiling and installing libfuse
 
-libfuse_setup.sh for compiling and installing libfuse
+### 5.2 easy installation
 
 libfastcommon, libserverframe, fastDIR, faststore and FastCFS can be compiled, installed and auto configurated by fastcfs.sh
 
@@ -98,8 +98,5 @@ df -h
 
 ## 6. Contact us
 
-WeChat subscription for related articles:
-![wechat subscribe](images/wechat_subscribe.jpg)
+search "fastdfs" for WeChat subscription related articles
 
-WeChat communication for Q & A:
-![wechat group](images/wechat_group.png)
