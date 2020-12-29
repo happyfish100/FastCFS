@@ -6,7 +6,7 @@ git checkout master
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-default install directories:
+默认安装目录：
 ```
 /usr/lib64
 /usr/lib
@@ -39,42 +39,42 @@ cp conf/server.conf conf/client.conf conf/servers.conf conf/cluster.conf conf/st
 
 ### 5. libfuse
 
-libfuse requires meson and ninja which require python3.5 or higher version
+构建libfuse需要先安装meson和ninja。安装meson和ninja需要python3.5及以上版本。
 
-##### python
+##### python安装
 
-packages: python3  python3-pip
+包名：python3  python3-pip
 
-Ubuntu:
+Ubuntu下安装命令：
 ```
 apt install python3 python3-pip -y
 ```
 
-CentOS:
+CentOS下安装命令：
 ```
 yum install python3 python3-pip -y
 ```
 
-##### meson and ninja
+##### meson 和 ninja 安装
 
 ```
 pip3 install meson
 pip3 install ninja
 ```
 
-##### gcc
+##### gcc安装
 
-Ubuntu:
+Ubuntu下安装命令：
 ```
 apt install gcc g++ -y
 ```
 
-CentOS:
+CentOS下安装命令：
 ```
 yum install gcc gcc-c++ -y
 ```
 
-##### libfuse
+##### libfuse安装
 
 ```
 git clone https://github.com/libfuse/libfuse.git
@@ -96,3 +96,5 @@ git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
 mkdir /etc/fcfs/
 cp conf/fuse.conf /etc/fcfs/
 ```
+
+配置参见 [配置文档](CONFIGURE-zh_CN.md)

@@ -29,7 +29,7 @@ V1.1.0
 
 ### 5.1 DIY安装
 
-参阅 INSTALL.md
+参阅 [安装文档](INSTALL-zh_CN.md)
 
 libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编译和安装。
 

@@ -29,7 +29,7 @@ V1.1.0
 
 ### 5.1 DIY installation (step by step)
 
-please see INSTALL.md
+please see [INSTALL](INSTALL.md)
 
 recommend to execute libfuse_setup.sh for compiling and installing libfuse
 
