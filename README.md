@@ -81,7 +81,10 @@ IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d '
 	--fuse-path=/usr/local/fastcfs-test/fuse \
 	--fuse-mount-point=/usr/local/fastcfs-test/fuse/fuse1
 
-Note: --fuse-mount-point is the path mounted to local, the files in FastCFS can be accessed by this local path
+Note:
+   * you should set IP variable manually with multi local ip addresses. show local ip list:
+     ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:'
+   * --fuse-mount-point is the path mounted to local, the files in FastCFS can be accessed by this local path
 
 FCFS_SHELL_PATH=$(pwd)/build/shell
 $FCFS_SHELL_PATH/fastdir-cluster.sh restart

@@ -1,11 +1,5 @@
 #!/bin/bash
 
-./libfuse_setup.sh
-
-echo "just for FastCFS demo: 1 fdir instance and 1 fstore instance"
-./fastcfs.sh pull
-./fastcfs.sh makeinstall
-
 if [ -f /usr/sbin/ifconfig ]; then
   IFCONFIG=/usr/sbin/ifconfig
 elif [ -f /sbin/ifconfig ]; then
@@ -16,18 +10,60 @@ else
 fi
 
 FASTCFS_BASE=/usr/local/fastcfs-test
+IP=''
 for arg do
   case "$arg" in
     --prefix=*)
       FASTCFS_BASE=${arg#--prefix=}
+    ;;
+   --ip=*)
+      IP=${arg#--ip=}
     ;;
   esac
 done
 
 FUSE_MOUNT_POINT=$FASTCFS_BASE/fuse/fuse1
 mkdir -p $FUSE_MOUNT_POINT || exit
-CMD="$IFCONFIG -a | grep -w inet | grep -v 127.0.0.1 | awk '{print \$2}' | tr -d 'addr:' | head -n 1"
-IP=$(sh -c "$CMD")
+
+if [ -z "$IP" ]; then
+  CMD="$IFCONFIG -a | grep -w inet | grep -v 127.0.0.1 | awk '{print \$2}' | tr -d 'addr:'"
+  IPS=$(sh -c "$CMD")
+  if [ -z "$IPS" ]; then
+    echo "can't find ip address"
+    exit
+  fi
+
+  IP_COUNT=$(echo "$IPS" | wc -l)
+  if [ $IP_COUNT -eq 1 ]; then
+    IP=$(echo "$IPS" | head -n 1)
+  else
+    while true; do
+      echo ''
+      i=0
+      for IP in $IPS; do
+        ((i++))
+        echo "${i}. $IP"
+      done
+      printf "please choice IP number [1 - %d], q for quit: " $IP_COUNT
+      read index
+      if [ "x$index" = 'xq' ]; then
+        exit
+      fi
+      IP=$(echo "$IPS" | head -n $index | tail -n 1)
+      if [ ! -z "$IP" ]; then
+         echo "use local IP: $IP"
+         echo ''
+         break
+      fi
+    done
+  fi
+fi
+
+./libfuse_setup.sh
+
+echo "just for FastCFS demo: 1 fdir instance and 1 fstore instance"
+./fastcfs.sh pull
+./fastcfs.sh makeinstall
 ./fastcfs.sh init \
   --dir-path=$FASTCFS_BASE/fastdir \
   --dir-server-count=1 \
