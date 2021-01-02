@@ -30,6 +30,7 @@ commit version: %{CommitVersion}
 %package -n %{FastCFSFused}
 Requires: %{FastCFSAPI} = %{version}-%{release}
 Requires: fuse3 >= 3.10.1
+Requires: %{FastCFSConfig} >= 1.0.0
 Summary: FastCFS fuse
 
 %package -n %{FastCFSAPI}
