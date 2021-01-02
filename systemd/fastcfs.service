@@ -1,0 +1,17 @@
+[Unit]
+Description=fastcfs service
+After=network.target
+
+[Service]
+Type=forking
+Environment=CONF=/etc/fastcfs/fcfs/fuse.conf
+ExecStart=/usr/bin/fcfs_fused ${CONF} start
+ExecStop=/usr/bin/fcfs_fused ${CONF} stop
+ExecReload=/usr/bin/fcfs_fused ${CONF} restart
+ExecRestart=/usr/bin/fcfs_fused ${CONF} restart
+
+# Disable OOM kill on the postmaster
+OOMScoreAdjust=-1000
+
+[Install]
+WantedBy=multi-user.target

@@ -1,7 +1,8 @@
-%define FastCFSFUSE FastCFS-fuse
-%define FastCFSAPI FastCFS-api
-%define FastCFSDevel FastCFS-devel
+%define FastCFSFused  FastCFS-fused
+%define FastCFSAPI   FastCFS-api-libs
+%define FastCFSDevel FastCFS-api-devel
 %define FastCFSDebuginfo FastCFS-debuginfo
+%define FastCFSConfig FastCFS-fuse-config
 %define CommitVersion %(echo $COMMIT_VERSION)
 
 Name: FastCFS
@@ -19,14 +20,14 @@ BuildRequires: fastDIR-devel >= 1.1.1
 BuildRequires: faststore-devel >= 1.1.1
 BuildRequires: fuse3-devel >= 3.10.1
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
-Requires: %{FastCFSFUSE} = %{version}-%{release}
+Requires: %{FastCFSFused} = %{version}-%{release}
 Requires: %{FastCFSAPI} = %{version}-%{release}
 
 %description
 a high performance distributed file system which can be used as the back-end storage of databases and cloud platforms.
 commit version: %{CommitVersion}
 
-%package -n %{FastCFSFUSE}
+%package -n %{FastCFSFused}
 Requires: %{FastCFSAPI} = %{version}-%{release}
 Requires: fuse3 >= 3.10.1
 Summary: FastCFS fuse
@@ -40,7 +41,10 @@ Summary: FastCFS api library
 Requires: %{FastCFSAPI} = %{version}-%{release}
 Summary: header files of FastCFS api library
 
-%description -n %{FastCFSFUSE}
+%package -n %{FastCFSConfig}
+Summary: FastCFS fuse config files for sample
+
+%description -n %{FastCFSFused}
 FastCFS fuse
 commit version: %{CommitVersion}
 
@@ -50,6 +54,10 @@ commit version: %{CommitVersion}
 
 %description -n %{FastCFSDevel}
 This package provides the header files of libfcfsapi
+commit version: %{CommitVersion}
+
+%description -n %{FastCFSConfig}
+FastCFS fuse config files for sample
 commit version: %{CommitVersion}
 
 
@@ -62,6 +70,12 @@ commit version: %{CommitVersion}
 %install
 rm -rf %{buildroot}
 DESTDIR=$RPM_BUILD_ROOT ./make.sh install
+CONFDIR=%{buildroot}/etc/fastcfs/fcfs/
+SYSTEMDIR=%{buildroot}/usr/lib/systemd/system/
+mkdir -p $CONFDIR
+mkdir -p $SYSTEMDIR
+cp conf/*.conf $CONFDIR
+cp systemd/fastcfs.service $SYSTEMDIR
 
 %post
 
@@ -74,8 +88,9 @@ rm -rf %{buildroot}
 
 %files
 
-%files -n %{FastCFSFUSE}
+%files -n %{FastCFSFused}
 /usr/bin/fcfs_fused
+/usr/lib/systemd/system/fastcfs.service
 
 %files -n %{FastCFSAPI}
 %defattr(-,root,root,-)
@@ -84,6 +99,10 @@ rm -rf %{buildroot}
 %files -n %{FastCFSDevel}
 %defattr(-,root,root,-)
 /usr/include/fastcfs/*
+
+%files -n %{FastCFSConfig}
+%defattr(-,root,root,-)
+%config(noreplace) /etc/fastcfs/fcfs/*.conf
 
 %changelog
 * Fri Jan 1 2021 YuQing <384681@qq.com>
