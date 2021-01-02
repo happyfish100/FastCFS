@@ -32,8 +32,8 @@ Requires: fuse3 >= 3.10.1
 Summary: FastCFS fuse
 
 %package -n %{FastCFSAPI}
-Requires: fastDIR >= 1.1.1
-Requires: faststore >= 1.1.1
+Requires: fastDIR-client >= 1.1.1
+Requires: faststore-client >= 1.1.1
 Summary: FastCFS api library
 
 %package -n %{FastCFSDevel}
