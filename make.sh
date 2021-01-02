@@ -133,17 +133,18 @@ replace_makefile()
     sed_replace "s#\\\$(ENABLE_SHARED_LIB)#$ENABLE_SHARED_LIB#g" Makefile
 }
 
-cd src
-cd api
+cd src/api
 replace_makefile
 make $1 $2
 
-cd tests || exit
-replace_makefile
-make $1 $2
-cd ../..
+if [ -z $DESTDIR ]; then
+  cd tests || exit
+  replace_makefile
+  make $1 $2
+  cd ..
+fi
 
-cd fuse
+cd ../fuse
 replace_makefile
 make $1 $2
 
