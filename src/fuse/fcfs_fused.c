@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     }
 
     snprintf(pid_filename, sizeof(pid_filename),
-             "%s/serverd.pid", SF_G_BASE_PATH);
+             "%s/fused.pid", SF_G_BASE_PATH);
 
     stop = false;
     sf_parse_daemon_mode_and_action(argc, argv, &daemon_mode, &action);
