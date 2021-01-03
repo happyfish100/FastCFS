@@ -79,7 +79,6 @@ cp conf/*.conf $CONFDIR
 cp systemd/fastcfs.service $SYSTEMDIR
 
 %post
-mkdir -p /opt/fastcfs/fuse
 
 %preun
 
@@ -89,6 +88,9 @@ mkdir -p /opt/fastcfs/fuse
 rm -rf %{buildroot}
 
 %files
+
+%post -n %{FastCFSFused}
+mkdir -p /opt/fastcfs/fuse
 
 %files -n %{FastCFSFused}
 /usr/bin/fcfs_fused
