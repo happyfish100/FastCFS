@@ -79,6 +79,7 @@ cp conf/*.conf $CONFDIR
 cp systemd/fastcfs.service $SYSTEMDIR
 
 %post
+mkdir -p /opt/fastcfs/fuse
 
 %preun
 
