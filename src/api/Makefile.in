@@ -5,15 +5,17 @@ INC_PATH = -I../common -I../include
 LIB_PATH = $(LIBS) -lfsclient -lfsapi -lfdirclient -lfastcommon -lserverframe
 TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
 
-FAST_SHARED_OBJS = fcfs_api.lo fcfs_api_file.lo fcfs_api_util.lo \
-                   fcfs_api_allocator.lo async_reporter.lo inode_htable.lo
+FAST_SHARED_OBJS = ../common/fcfs_global.lo fcfs_api.lo fcfs_api_file.lo    \
+                   fcfs_api_util.lo fcfs_api_allocator.lo async_reporter.lo \
+                   inode_htable.lo
 
-FAST_STATIC_OBJS = fcfs_api.o fcfs_api_file.o fcfs_api_util.o \
-                   fcfs_api_allocator.o async_reporter.o inode_htable.o
+FAST_STATIC_OBJS = ../common/fcfs_global.o fcfs_api.o fcfs_api_file.o    \
+                   fcfs_api_util.o fcfs_api_allocator.o async_reporter.o \
+                   inode_htable.o
 
-HEADER_FILES = fcfs_api.h fcfs_api_types.h fcfs_api_file.h \
-               fcfs_api_util.h fcfs_api_allocator.h async_reporter.h \
-               inode_htable.h
+HEADER_FILES = ../common/fcfs_global.h fcfs_api.h fcfs_api_types.h  \
+               fcfs_api_file.h fcfs_api_util.h fcfs_api_allocator.h \
+               async_reporter.h inode_htable.h
 
 ALL_OBJS = $(FAST_STATIC_OBJS) $(FAST_SHARED_OBJS)
 
