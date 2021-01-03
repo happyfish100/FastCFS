@@ -43,6 +43,7 @@ Requires: %{FastCFSAPI} = %{version}-%{release}
 Summary: header files of FastCFS api library
 
 %package -n %{FastCFSConfig}
+Requires: faststore-config >= 1.0.0
 Summary: FastCFS fuse config files for sample
 
 %description -n %{FastCFSFused}
@@ -95,7 +96,7 @@ mkdir -p /opt/fastcfs/fuse
 
 %files -n %{FastCFSFused}
 /usr/bin/fcfs_fused
-/usr/lib/systemd/system/fastcfs.service
+%config(noreplace) /usr/lib/systemd/system/fastcfs.service
 
 %files -n %{FastCFSAPI}
 %defattr(-,root,root,-)
