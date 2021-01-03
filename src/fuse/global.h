@@ -18,6 +18,7 @@
 #define _FCFS_FUSE_GLOBAL_H
 
 #include "fastcommon/logger.h"
+#include "common/fcfs_global.h"
 
 #define FCFS_FUSE_DEFAULT_ATTRIBUTE_TIMEOUT 1.0
 #define FCFS_FUSE_DEFAULT_ENTRY_TIMEOUT     1.0

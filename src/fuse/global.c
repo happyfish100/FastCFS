@@ -406,11 +406,14 @@ int fcfs_fuse_global_init(const char *config_filename)
     fs_client_log_config_ex(g_fcfs_api_ctx.contexts.fsapi->fs,
             write_combine_config);
 
-    logInfo("FUSE library version %s, "
+    logInfo("FastCFS V%d.%d.%d, FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "owner_type: %s%s, singlethread: %d, clone_fd: %d, "
             "max_idle_threads: %d, allow_others: %s, auto_unmount: %d, "
             "attribute_timeout: %.1fs, entry_timeout: %.1fs",
+            g_fcfs_global_vars.version.major,
+            g_fcfs_global_vars.version.minor,
+            g_fcfs_global_vars.version.patch,
             fuse_pkgversion(), g_fuse_global_vars.ns,
             sf_idempotency_config, g_fuse_global_vars.mountpoint,
             get_owner_type_caption(g_fuse_global_vars.owner.type),
