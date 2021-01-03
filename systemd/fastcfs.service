@@ -7,8 +7,8 @@ Type=forking
 PIDFile=/opt/fastcfs/fcfs/fused.pid
 ExecStart=/usr/bin/fcfs_fused /etc/fastcfs/fcfs/fuse.conf start
 
-# No artificial start/stop timeout
-TimeoutSec=0
+# start/stop timeout
+TimeoutSec=60
 
 # Disable OOM kill by Linux kernel
 OOMScoreAdjust=-1000
