@@ -90,6 +90,7 @@ rm -rf %{buildroot}
 %files
 
 %post -n %{FastCFSFused}
+mkdir -p /opt/fastcfs/fcfs
 mkdir -p /opt/fastcfs/fuse
 
 %files -n %{FastCFSFused}
