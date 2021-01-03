@@ -5,7 +5,7 @@ INC_PATH = -I.. -I../common -I../include
 LIB_PATH = -L../api $(LIBS) -lfuse3 -lfcfsapi -lfdirclient -lfsapi -lfsclient -lfastcommon -lserverframe
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
-STATIC_OBJS = ../common/fcfs_global.o fuse_wrapper.o global.o
+STATIC_OBJS = fuse_wrapper.o global.o
 
 ALL_PRGS = fcfs_fused
 
