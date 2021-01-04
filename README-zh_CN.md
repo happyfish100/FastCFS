@@ -6,7 +6,7 @@ FastCFS 是一款基于块存储的通用分布式文件系统，可以作为MyS
 
 ## 2. 当前版本
 
-V1.1.0
+V1.1.1
 
 ## 3. 支持的操作系统
 
@@ -19,81 +19,38 @@ V1.1.0
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.45)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.1)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.1.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V1.1.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V1.1.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.46)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.2)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.1.1)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V1.1.1)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V1.1.1)
 
 ## 5. 安装
 
-### 5.1 DIY安装
+FastCFS包含 libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包。
 
-参阅 [安装文档](INSTALL-zh_CN.md)
+### 一键部署
 
-libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编译和安装。
-
-### 5.2 一键安装
-
-libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包可采用 fastcfs.sh 脚本统一安装配置，也可以参照INSTALL.md独立安装。
-
+如果你打算快速体验一下FastCFS，可以一键搭建(包括部署和运行)demo环境（需要root身份执行）：
 ```
 git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
-```
-
-通过执行fastcfs.sh脚本，可自动从github仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
-
-fastcfs.sh 命令参数说明：
-
-* pull -- 从github拉取或更新代码库（拉取到本地build目录）
-* makeinstall -- 顺序编译、安装代码库（make clean && make && make install）
-* init -- 初始化集群目录、配置文件（已存在不会重新生成）
-* clean -- 清除已编译程序文件（相当于make clean）
-
-
-一键搭建(包括部署和运行)demo环境（需要root身份执行）：
-
-```
 ./helloWorld.sh --prefix=/usr/local/fastcfs-test
 ```
 
-或执行如下命令（需要root身份执行）：
-
-```
-./libfuse_setup.sh
-./fastcfs.sh pull
-./fastcfs.sh makeinstall
-IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:' | head -n 1)
-./fastcfs.sh init \
-	--dir-path=/usr/local/fastcfs-test/fastdir \
-	--dir-server-count=1 \
-	--dir-host=$IP  \
-	--dir-cluster-port=11011 \
-	--dir-service-port=21011 \
-	--dir-bind-addr=  \
-	--store-path=/usr/local/fastcfs-test/faststore \
-	--store-server-count=1 \
-	--store-host=$IP  \
-	--store-cluster-port=31011 \
-	--store-service-port=41011 \
-	--store-replica-port=51011 \
-	--store-bind-addr= \
-	--fuse-path=/usr/local/fastcfs-test/fuse \
-	--fuse-mount-point=/usr/local/fastcfs-test/fuse/fuse1
-
-注：
-   * 当本机有多个IP地址时，需要手动设置IP 变量为其中的一个IP地址。查看本机IP列表：
-     ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:'
-   * --fuse-mount-point为mount到本地的路径，通过这个mount point对FastCFS进行文件存取访问。
-
-FCFS_SHELL_PATH=$(pwd)/build/shell
-$FCFS_SHELL_PATH/fastdir-cluster.sh restart
-$FCFS_SHELL_PATH/faststore-cluster.sh restart
-$FCFS_SHELL_PATH/fuse.sh restart
-
-```
-
 上述操作完成后，通过命令 df -h  可以看到FastCFS挂载的文件目录。
+
+### DIY安装
+
+如果你要自己搭建FastCFS环境，可以采用如下两种安装方式之一：
+
+* yum安装（仅支持CentOS 7.x 和 8.x），参阅 [YUM安装文档](YUMINSTALL-zh_CN.md)
+
+* 源码编译安装，参阅 [安装文档](INSTALL-zh_CN.md)
+
+### 配置指南
+
+FastCFS安装完成后，请参阅[配置指南](CONFIGURE-zh_CN.md)
+
 
 ## 6. 联系我们
 
