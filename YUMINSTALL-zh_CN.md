@@ -54,7 +54,7 @@ FastDFS后台程序可通过systemd管理。systemd服务名称如下：
 
 可以使用标准的systemd命令对上述3个服务进行管理，例如：
 ```
-sudo systemctl restart fastdir
-sudo systemctl restart faststore
-sudo systemctl restart fastcfs
+systemctl restart fastdir
+systemctl restart faststore
+systemctl restart fastcfs
 ```
