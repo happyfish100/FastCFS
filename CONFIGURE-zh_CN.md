@@ -36,14 +36,14 @@
         |
         |__ fdir
         |    |__ serverd.pid: 服务进程fdir_serverd的pid文件
-        |    |__ data: 系统数据文件目录
+        |    |__ data: 系统数据文件目录，包含集群拓扑结构和binlog
         |    |__ logs: 日志文件目录
         |         |__ fdir_serverd.log: 错误日志
         |         |__ slow.log: 慢查询日志
         |
         |__ fstore
              |__ serverd.pid: 服务进程fs_serverd的pid文件
-             |__ data: 系统数据文件目录
+             |__ data: 系统数据文件目录，包含集群拓扑结构和binlog
              |__ logs: 日志文件目录
                   |__ fs_serverd.log: 错误日志
                   |__ slow.log: 慢查询日志
@@ -51,7 +51,7 @@
 
 FastCFS集群配置包含如下三部分：
 
-### 1. fastDIR server 配置
+### 1. fastDIR server（服务实例）配置
 
 配置文件路径：/etc/fastcfs/fdir
 
@@ -59,9 +59,30 @@ fastDIR集群内各个server配置的cluster_servers.conf必须完全一样。
 
 建议配置一次，分发到其他服务器即可。
 
-1.1 把fastDIR集群中的所有服务器配置到cluster_servers.conf中；
+1.1 把fastDIR集群中的所有服务实例配置到cluster_servers.conf中；
 
   每个fastDIR服务实例包含2个服务端口：cluster 和 service
+
+  一个fastDIR服务实例需要配置一个[server-$id]的section，其中$id为实例ID。
+
+  如果一台服务器上启动了多个实例，因端口与全局配置的不一致，此时必须指定端口。
+
+  一个服务实例的配置示例如下：
+
+```
+[server-3]
+cluster-port = 11015
+service-port = 11016
+host = 172.16.168.128
+```
+
+等价的另外一种配置方式：
+```
+[server-3]
+host = 172.16.168.128:11015
+host = 172.16.168.128:11016
+```
+
 
 1.2 配置 server.conf
 
@@ -75,23 +96,36 @@ sudo systemctl restart fastdir
 tail /opt/fastcfs/fdir/logs/fdir_serverd.log
 ```
 
-### 2. faststore server 配置
+### 2. faststore server（服务实例）配置
 
 配置文件路径：/etc/fastcfs/fstore
 
-faststore集群各个server配置的servers.conf和cluster.conf必须完全一样。
+faststore集群各个服务实例配置的servers.conf和cluster.conf必须完全一样。
 
 建议把这两个配置文件分别配置好，然后分发到其他服务器。
 
-2.1 把faststore集群中的所有服务器配置到servers.conf中；
+2.1 把faststore集群中的所有服务实例配置到servers.conf中；
 
   每个faststore服务实例包含3个服务端口：cluster、replica 和 service
+
+  和fastDIR的cluster_servers.conf相比，多了一个replica端口，二者配置方式完全相同。
 
 2.2 在cluster.conf中配置服务器分组和数据分组对应关系；
 
  对于生产环境，为了便于今后扩容，建议数据分组数目至少为256，最好不要超过1024（视业务发展规模而定）
 
 2.3 在storage.conf 中配置存储路径等参数；
+
+   支持配置多个存储路径。为了充分发挥出硬盘性能，建议挂载单盘，每块盘作为一个存储路径。
+
+配置示例：
+```
+store_path_count = 1
+
+[store-path-1]
+path = /opt/faststore/data
+```
+
 
 2.4 配置 server.conf
 
