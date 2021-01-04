@@ -60,4 +60,5 @@ FastCFS安装完成后，请参阅[配置指南](CONFIGURE-zh_CN.md)
 
 
 微信交流群：
+
 ![微信交流群](https://1moni.cn/images/fastcfsqa.jpg)
