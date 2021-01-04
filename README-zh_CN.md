@@ -56,7 +56,7 @@ FastCFS安装完成后，请参阅[配置指南](CONFIGURE-zh_CN.md)
 
 查看FastCFS相关技术文章，请关注微信公众号：
 
-![微信公众号](images/wechat_subscribe.jpg)
+![微信公众号](https://1moni.cn/images/fastcfs.jpg)
 
 
 微信交流群：
