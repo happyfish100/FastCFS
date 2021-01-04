@@ -1,4 +1,6 @@
 
+## yum安装方式
+
 yum 安装方式主要用于测试和生产环境搭建。
 
 ### 1. 安装FastOS.repo
@@ -14,8 +16,6 @@ CentOS 8
 ```
 rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
 ```
-
-yum装包完成后，FastDFS后台程序可通过systemd管理。
 
 ### 2. fastDIR server安装
 
@@ -45,14 +45,14 @@ yum install FastCFS-fused -y
 
 安装完成后，需要修改对应的配置文件，服务才可以正常启动。请参阅[配置指南](CONFIGURE-zh_CN.md)
 
-systemd服务名称如下：
+FastDFS后台程序可通过systemd管理。systemd服务名称如下：
 ```
   * fastdir： 目录服务，对应程序为 fdir_serverd
   * faststore：存储服务，对应程序为 fs_serverd
   * fastcfs： FUSE后台服务，对应程序为 fcfs_fused
 ```
 
-可以使用标准的systemd命令对上述3个服务进行控制，例如：
+可以使用标准的systemd命令对上述3个服务进行管理，例如：
 ```
 sudo systemctl restart fastdir
 sudo systemctl restart faststore
