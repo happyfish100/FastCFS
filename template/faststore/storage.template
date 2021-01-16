@@ -1,4 +1,3 @@
-
 # the write thread count per store path
 # the default value is 1
 write_threads_per_path = 1
@@ -77,6 +76,7 @@ object_block_hashtable_capacity = 11229331
 # the default value is 163
 object_block_shared_locks_count = 163
 
+
 #### store paths config #####
 [store-path-1]
 
@@ -85,7 +85,7 @@ object_block_shared_locks_count = 163
 path = ${DATA1_PATH}
 
 # overwrite the global config: reserved_space_per_disk
-reserved_space = 20%
+reserved_space = 10%
 
 #[store-path-2]
 #path = /path/to/faststore/data2
