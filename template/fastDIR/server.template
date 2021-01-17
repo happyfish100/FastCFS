@@ -51,9 +51,19 @@ max_buff_size = 256KB
 # default value is 16K
 max_pkg_size = 256KB
 
+# TCP quick ack for Linux (setsockopt with TCP_QUICKACK option)
+# default value is true
+tcp_quick_ack = true
+
 # the binlog buffer size for load data
 # default value is 64K
 binlog_buffer_size = 256KB
+
+# the last binlog rows of the slave to check
+# consistency with the master
+# <= 0 means no check for the slave binlog consistency
+# default value is 3
+slave_binlog_check_last_rows = 3
 
 # the hashtable capacity for dentry namespace
 # default value is 1361
@@ -97,40 +107,72 @@ run_by_group=
 #not set (empty) means run by current user
 run_by_user =
 
-# sync log buff to disk every interval seconds
-# default value is 10 seconds
-sync_log_buff_interval = 1
-
 # thread stack size, should >= 64KB
 # default value is 256KB
 thread_stack_size = 256KB
 
-# if rotate the error log every day
-# default value is false
-rotate_error_log = false
 
-# rotate error log time base, time format: Hour:Minute
+# NOTE: following global parameters for error_log and slow_log
+# which can be overwritten in [error_log] and [slow_log] sections
+
+# sync log buff to disk every interval seconds
+# default value is 10 seconds
+sync_log_buff_interval = 1
+
+# if rotate the log file every day
+# set to true for rotate the log file anyway at the rotate time
+# default value is false
+log_file_rotate_everyday = false
+
+# the time to rotate the log file, format is Hour:Minute
 # Hour from 0 to 23, Minute from 0 to 59
+# valid only when log_file_rotate_everyday is true
 # default value is 00:00
-error_log_rotate_time = 00:00
+log_file_rotate_time = 00:00
 
-# if compress the old error log by gzip
+# if compress the old log file by gzip
 # default value is false
-compress_old_error_log = false
+log_file_compress_old = false
 
-# compress the error log days before
+# compress the log file days before
 # default value is 1
-compress_error_log_days_before = 7
+log_file_compress_days_before = 7
 
-# rotate error log when the log file exceeds this size
+# rotate the log file when the log file exceeds this size
 # 0 means never rotates log file by log file size
 # default value is 0
-rotate_error_log_size = 0
+log_file_rotate_on_size = 0
 
 # keep days of the log files
-# 0 means do not delete old log files
+# 0 means do not delete the old log files
 # default value is 0
 log_file_keep_days = 0
+
+# the time to delete the old log files, format is Hour:Minute
+# Hour from 0 to 23, Minute from 0 to 59
+# valid only when log_file_keep_days > 0
+# default value is 01:30
+log_file_delete_old_time = 01:30
+
+
+[error_log]
+# global log parameters can be overwritten here for error log
+
+[slow_log]
+# global log parameters can be overwritten here for slow log
+
+# if enable the slow log
+# default value is false
+enabled = true
+
+# the filename prefix of the slow log
+# default value is slow
+filename_prefix = slow
+
+# log the request to the slow log whose response time exceeds this parameter
+# default value is 100ms
+log_slower_than_ms = 50
+
 
 [cluster]
 # bind an address of this host

@@ -1,7 +1,9 @@
 
 [group-cluster]
+# the default cluster port
 port = ${CLUSTER_PORT}
 
+# net_type and ip_prefix for matching cluster group with multi-NICs
 # outer: extranet IP, such as 202.102.100.1
 # inner: intranet IP such as 172.16.1.5 or 192.168.3.17
 # inner-10: 10 leading network, such as 10.32.1.100
@@ -11,16 +13,20 @@ port = ${CLUSTER_PORT}
 #ip_prefix = 172.
 
 [group-service]
+# the default service port
 port = ${SERVICE_PORT}
-#net_type = outer
+
+# net_type and ip_prefix for matching service group with multi-NICs
+#net_type = inner-192
 #ip_prefix =
 
-# config a server
+# config a server instance
 # section format: [server-$id]
 # server id is a 32 bits natural number (1, 2, 3 etc.),
 [server-1]
 
 # format: host[:port]
-# host can be an IP or a hostname
+# host can be an IP address or a hostname
+# IP address is recommended
 # can occur more than once
 host = ${SERVER_HOST}
