@@ -177,6 +177,12 @@ fdir_service_stat $IP:$port
   查看faststore集群状态：
 ```
 fs_cluster_stat
+
+查看非ACTIVE的服务列表，使用：
+fs_cluster_stat -N
+
+使用 -h 查看更多选项
+
 ```
 
  查看FastCFS磁盘使用情况：
