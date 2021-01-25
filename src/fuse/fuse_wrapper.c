@@ -1039,11 +1039,26 @@ static void fs_do_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
         return;
     }
 
-    logInfo("setxattr ino: %"PRId64", new inode: %"PRId64, ino, new_inode);
-
     FC_SET_STRING(xattr.key, (char *)name);
     FC_SET_STRING_EX(xattr.value, (char *)value, size);
     result = fcfs_api_set_xattr_by_inode(new_inode, &xattr, flags);
+    fuse_reply_err(req, result);
+}
+
+static void fs_do_removexattr(fuse_req_t req, fuse_ino_t ino,
+        const char *name)
+{
+    int64_t new_inode;
+    int result;
+    string_t nm;
+
+    if (fs_convert_inode(ino, &new_inode) != 0) {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+
+    FC_SET_STRING(nm, (char *)name);
+    result = fcfs_api_remove_xattr_by_inode(new_inode, &nm);
     fuse_reply_err(req, result);
 }
 
@@ -1178,6 +1193,7 @@ int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
     ops->setxattr = fs_do_setxattr;
     ops->getxattr = fs_do_getxattr;
     ops->listxattr = fs_do_listxattr;
+    ops->removexattr = fs_do_removexattr;
 
     return 0;
 }
