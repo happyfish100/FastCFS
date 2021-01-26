@@ -1,10 +1,10 @@
-# FastCFS -- a high performance cloud native distributed file system for databases
+# FastCFS -- a high performance cloud native distributed file system for databases, K8s and VM
 
 Chinese language please click: [README in Chinese](README-zh_CN.md)
 
 ## 1. About
 
-FastCFS is a block based standard file system which can be used as the back-end storage of databases, such as MySQL, PostgresSQL, Oracle etc.
+FastCFS is a block based standard distributed file system which can be used as the back-end storage of databases (MySQL, PostgresSQL, Oracle etc.), K8s and virtual machines such as KVM.
 
 ## 2. Current Version
 
