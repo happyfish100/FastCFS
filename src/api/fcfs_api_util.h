@@ -84,7 +84,8 @@ extern "C" {
     fcfs_api_remove_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, name)
 
 #define fcfs_api_get_xattr_by_inode(inode, name, value, size) \
-    fcfs_api_get_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, name, value, size)
+    fcfs_api_get_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, \
+            name, LOG_DEBUG, value, size)
 
 #define fcfs_api_list_xattr_by_inode(inode, list, size) \
     fcfs_api_list_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, list, size)
@@ -264,11 +265,11 @@ static inline int fcfs_api_remove_xattr_by_inode_ex(FCFSAPIContext *ctx,
 }
 
 static inline int fcfs_api_get_xattr_by_inode_ex(FCFSAPIContext *ctx,
-        const int64_t inode, const string_t *name, string_t *value,
-        const int size)
+        const int64_t inode, const string_t *name,
+        const int enoattr_log_level, string_t *value, const int size)
 {
-    return fdir_client_get_xattr_by_inode(ctx->contexts.fdir,
-            inode, name, value, size);
+    return fdir_client_get_xattr_by_inode_ex(ctx->contexts.fdir,
+            inode, name, enoattr_log_level, value, size);
 }
 
 static inline int fcfs_api_list_xattr_by_inode_ex(FCFSAPIContext *ctx,
