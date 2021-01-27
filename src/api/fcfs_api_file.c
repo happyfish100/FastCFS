@@ -1282,7 +1282,11 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
 
     stbuf->f_bsize = stbuf->f_frsize = 512;
     stbuf->f_blocks = sstat.total / stbuf->f_frsize;
-    stbuf->f_bfree = (sstat.total - sstat.used) / stbuf->f_frsize;
+    if (sstat.total > sstat.used) {
+        stbuf->f_bfree = (sstat.total - sstat.used) / stbuf->f_frsize;
+    } else {
+        stbuf->f_bfree = 0;
+    }
     stbuf->f_bavail = sstat.avail / stbuf->f_frsize;
 
     stbuf->f_files = istat.total;
