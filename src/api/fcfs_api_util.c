@@ -29,23 +29,16 @@ int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
     FDIRDEntryInfo dentry;
     int result;
 
-    if ((result=fcfs_api_stat_dentry_by_pname_ex(ctx,
-                    parent_inode, name, LOG_DEBUG, &dentry)) != 0)
+    FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
+    if ((result=fdir_client_remove_dentry_by_pname_ex(
+            ctx->contexts.fdir, &ctx->ns, &pname, &dentry)) != 0)
     {
         return result;
     }
 
-    if (S_ISREG(dentry.stat.mode)) {
+    if (S_ISREG(dentry.stat.mode) && dentry.stat.nlink == 0) {
         result = fs_api_unlink_file(ctx->contexts.fsapi,
                 dentry.inode, dentry.stat.size, fctx->tid);
-    } else {
-        result = 0;
-    }
-
-    if (result == 0) {
-        FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
-        result = fdir_client_remove_dentry_by_pname(
-                ctx->contexts.fdir, &ctx->ns, &pname);
     }
     return result;
 }
@@ -71,7 +64,7 @@ int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
         return result;
     }
 
-    if (pe != NULL && S_ISREG(pe->stat.mode)) {
+    if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0) {
         fs_api_unlink_file(ctx->contexts.fsapi, pe->inode,
                 pe->stat.size, fctx->tid);
     }
