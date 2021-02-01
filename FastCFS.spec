@@ -6,7 +6,7 @@
 %define CommitVersion %(echo $COMMIT_VERSION)
 
 Name: FastCFS
-Version: 1.2.0
+Version: 1.2.1
 Release: 1%{?dist}
 Summary: a high performance cloud native distributed file system for databases
 License: AGPL v3.0
@@ -16,8 +16,8 @@ Source: http://github.com/happyfish100/FastCFS/%{name}-%{version}.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n) 
 
-BuildRequires: fastDIR-devel >= 1.2.0
-BuildRequires: faststore-devel >= 1.2.0
+BuildRequires: fastDIR-devel >= 1.2.1
+BuildRequires: faststore-devel >= 1.2.1
 BuildRequires: fuse3-devel >= 3.10.1
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
 Requires: %{FastCFSFused} = %{version}-%{release}
@@ -34,8 +34,8 @@ Requires: %{FastCFSConfig} >= 1.0.0
 Summary: FastCFS fuse
 
 %package -n %{FastCFSAPI}
-Requires: fastDIR-client >= 1.2.0
-Requires: faststore-client >= 1.2.0
+Requires: fastDIR-client >= 1.2.1
+Requires: faststore-client >= 1.2.1
 Summary: FastCFS api library
 
 %package -n %{FastCFSDevel}
