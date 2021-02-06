@@ -36,9 +36,10 @@ static inline int dao_init_context(const int thread_index,
     FDIRClientContext *client_ctx;
 
     client_ctx = (FDIRClientContext *)ctx;
-    fcfs_auth_client_init_full_ctx(&client_ctx->auth);
-    if ((result=fdir_client_simple_init_ex(client_ctx, g_server_global_vars.
-                    fdir_client_cfg_filename, NULL)) != 0)
+    if ((result=fdir_client_simple_init_ex(client_ctx,
+                    &g_fcfs_auth_client_vars.client_ctx,
+                    g_server_global_vars.fdir_client_cfg_filename,
+                    NULL)) != 0)
     {
         return result;
     }
