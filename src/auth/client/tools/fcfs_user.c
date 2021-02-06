@@ -62,7 +62,7 @@ static int create_user(int argc, char *argv[])
 {
     string_t input_key_filename;
     FilenameString user_key_filename;
-    unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN];
+    unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN + 1];
     char *filename;
     char abs_path[PATH_MAX];
     int result;
@@ -186,12 +186,11 @@ int main(int argc, char *argv[])
     const char *config_filename = "/etc/fastcfs/auth/client.conf";
     char *operation;
     FCFSAuthClientUserKeyPair admin;
-    unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN];
+    unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN + 1];
     FilenameString admin_key_filename;
     string_t passwd;
     string_t privs;
     bool need_username;
-    bool need_priv;
     int result;
 
     if (argc < 2) {
@@ -240,18 +239,14 @@ int main(int argc, char *argv[])
     operation = argv[current_index++];
     if (strcasecmp(operation, "create") == 0) {
         need_username = true;
-        need_priv = false;
     } else if (strcasecmp(operation, "grant") == 0) {
         need_username = true;
-        need_priv = true;
     } else if (strcasecmp(operation, "delete") == 0 ||
             strcasecmp(operation, "remove") == 0)
     {
         need_username = true;
-        need_priv = false;
     } else if (strcasecmp(operation, "list") == 0) {
         need_username = false;
-        need_priv = false;
     } else {
         fprintf(stderr, "unknow operation: %s\n", operation);
         usage(argv);

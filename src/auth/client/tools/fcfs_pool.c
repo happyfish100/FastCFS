@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
     const char *config_filename = "/etc/fastcfs/auth/client.conf";
     char *operation;
     FCFSAuthClientUserKeyPair admin;
-    unsigned char passwd_buff[16];
+    unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN + 1];
     FilenameString admin_key_filename;
     string_t passwd;
     int username_options;
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
     }
 
     passwd.str = (char *)passwd_buff;
-    passwd.len = 16;
+    passwd.len = FCFS_AUTH_PASSWD_LEN;
     fcfs_auth_replace_filename_with_username(&admin.key_filename,
             &admin.username, &admin_key_filename);
     if ((result=fcfs_auth_load_passwd(
