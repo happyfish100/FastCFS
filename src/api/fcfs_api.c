@@ -123,10 +123,11 @@ static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
 int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         FSAPIContext *fsapi, const char *ns, IniFullContext *ini_ctx,
         const char *fdir_section_name, const char *fs_section_name,
-        const char *fsapi_section_name, const FDIRConnectionManager *
-        fdir_conn_manager, const FSConnectionManager *fs_conn_manager,
+        const char *fsapi_section_name, const SFConnectionManager *
+        fdir_conn_manager, const SFConnectionManager *fs_conn_manager,
         const bool need_lock)
 {
+    const bool bg_thread_enabled = true;
     int result;
 
     ini_ctx->section_name = fdir_section_name;
@@ -138,7 +139,7 @@ int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
 
     ini_ctx->section_name = fs_section_name;
     if ((result=fs_client_init_ex1(fsapi->fs, ini_ctx,
-                    fs_conn_manager)) != 0)
+                    fs_conn_manager, bg_thread_enabled)) != 0)
     {
         return result;
     }
@@ -199,19 +200,20 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         FSAPIContext *fsapi, const char *ns, IniFullContext *ini_ctx,
         const char *fdir_section_name, const char *fs_section_name,
         const char *fsapi_section_name, const FDIRClientConnManagerType
-        conn_manager_type, const FSConnectionManager *fs_conn_manager,
+        conn_manager_type, const SFConnectionManager *fs_conn_manager,
         const bool need_lock)
 {
-    int result;
+    const bool bg_thread_enabled = true;
     const int max_count_per_entry = 0;
     const int max_idle_time = 3600;
+    int result;
 
     ini_ctx->section_name = fdir_section_name;
     if (conn_manager_type == conn_manager_type_simple) {
         result = fdir_client_simple_init_ex1(fdir, ini_ctx);
     } else if (conn_manager_type == conn_manager_type_pooled) {
         result = fdir_client_pooled_init_ex1(fdir, ini_ctx,
-                max_count_per_entry, max_idle_time);
+                max_count_per_entry, max_idle_time, bg_thread_enabled);
     } else {
         result = EINVAL;
     }
@@ -221,7 +223,7 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
 
     ini_ctx->section_name = fs_section_name;
     if ((result=fs_client_init_ex1(fsapi->fs, ini_ctx,
-                    fs_conn_manager)) != 0)
+                    fs_conn_manager, bg_thread_enabled)) != 0)
     {
         return result;
     }

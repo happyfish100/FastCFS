@@ -80,8 +80,8 @@ extern "C" {
     int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
             FSAPIContext *fsapi, const char *ns, IniFullContext *ini_ctx,
             const char *fdir_section_name, const char *fs_section_name,
-            const char *fsapi_section_name, const FDIRConnectionManager *
-            fdir_conn_manager, const FSConnectionManager *fs_conn_manager,
+            const char *fsapi_section_name, const SFConnectionManager *
+            fdir_conn_manager, const SFConnectionManager *fs_conn_manager,
             const bool need_lock);
 
     int fcfs_api_init_ex(FCFSAPIContext *ctx, const char *ns,
@@ -92,7 +92,7 @@ extern "C" {
             FSAPIContext *fsapi, const char *ns, IniFullContext *ini_ctx,
             const char *fdir_section_name, const char *fs_section_name,
             const char *fsapi_section_name, const FDIRClientConnManagerType
-            conn_manager_type, const FSConnectionManager *fs_conn_manager,
+            conn_manager_type, const SFConnectionManager *fs_conn_manager,
             const bool need_lock);
 
     static inline int fcfs_api_pooled_init_ex1(FCFSAPIContext *ctx,
