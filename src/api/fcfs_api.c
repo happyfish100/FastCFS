@@ -253,7 +253,20 @@ void fcfs_api_destroy_ex(FCFSAPIContext *ctx)
 int fcfs_api_start_ex(FCFSAPIContext *ctx)
 {
     int result;
+
     if ((result=fs_api_start_ex(ctx->contexts.fsapi)) != 0) {
+        return result;
+    }
+
+    if ((result=sf_connection_manager_start(&ctx->
+                    contexts.fdir->cm)) != 0)
+    {
+        return result;
+    }
+
+    if ((result=sf_connection_manager_start(&ctx->
+                    contexts.fsapi->fs->cm)) != 0)
+    {
         return result;
     }
 
