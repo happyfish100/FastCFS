@@ -141,13 +141,9 @@ fused 配置文件路径：/etc/fastcfs/fcfs
 /etc/fastcfs/fstore/cluster.conf
 ```
 
-3.2 修改如下两个配置文件的 cluster_servers_filename 参数
+3.2 复制fastDIR server上的如下配置文件到 /etc/fastcfs/fdir/
 ```
-/etc/fastcfs/fcfs/fuse.conf
-/etc/fastcfs/fdir/client.conf
-
-注：
-  本参数和FastDIR 的server.conf中的同名参数保持一致即可。
+/etc/fastcfs/fdir/cluster_servers.conf
 ```
 
 3.3 如有必要，修改fuse.conf 中的mountpoint（可选）
