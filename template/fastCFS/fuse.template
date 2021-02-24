@@ -162,14 +162,8 @@ network_timeout = 10
 # the namespace for FastDIR
 namespace = fs
 
-# dir_server can ocur more than once for multi dir servers.
-# the value format of dir_server is "HOST:PORT",
-#   the HOST can be hostname or ip address;
-#   the PORT is the service port of the FastDIR server
-#dir_server = 192.168.0.196:11012
-#dir_server = 192.168.0.197:11012
-#dir_server = 192.168.0.198:11012
-${DIR_SERVERS}
+# config the cluster servers
+cluster_servers_filename = ${DIR_CLUSTER_SERVERS_CONF}
 
 # if use sys lock for file append and truncate to avoid conflict
 # set true when the files appended or truncated by many nodes (FUSE instances)
@@ -210,7 +204,7 @@ connect_timeout = 2
 network_timeout = 30
 
 # config the cluster servers and groups
-cluster_config_filename = cluster.conf
+cluster_config_filename = ${STORE_CLUSTER_CONF}
 
 
 [write_combine]
