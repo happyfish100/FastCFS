@@ -510,7 +510,7 @@ init_fastdir_config() {
     fi
 
     t_cluster_conf=$target_dir/cluster_servers.conf
-    if [[ $i eq 0 ]]; then
+    if [[ $i -eq 0 ]]; then
       t_dir_cluster_servers_conf=$t_cluster_conf
     fi
 
@@ -667,7 +667,7 @@ init_faststore_config() {
 
     t_cluster_conf=$target_path/cluster.conf
     
-    if [[ $i eq 0 ]]; then
+    if [[ $i -eq 0 ]]; then
       t_store_cluster_conf=$t_cluster_conf
     fi
 
