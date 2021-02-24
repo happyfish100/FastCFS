@@ -541,21 +541,6 @@ init_fastdir_config() {
       # Replace placeholders with reality in client template
       echo "INFO:Begin config $t_client_conf..."
       placeholder_replace $t_client_conf BASE_PATH "${dir_pathes[$i]}"
-      #替换fastDIR服务器占位符
-      #dir_server = 192.168.0.196:11012
-      t_dir_servers=""
-      cr='\
-      '
-      for (( j=0; j < $dir_server_count; j++ )); do
-        t_dir_servers=$t_dir_servers'dir_server = '${dir_hosts[$j]}':'${dir_service_ports[$j]}'\
-'
-      done
-      #placeholder_replace $t_client_conf DIR_SERVERS "$t_dir_servers"
-      if [ "$uname" = "FreeBSD" ] || [ "$uname" = "Darwin" ]; then
-        sed -i "" "s#\\\${DIR_SERVERS}#${t_dir_servers}#g" $t_client_conf
-      else
-        sed -i "s#\\\${DIR_SERVERS}#${t_dir_servers}#g" $t_client_conf
-      fi
     else
       echo "ERROR:Create client.conf from $CLIENT_TPL failed!"
     fi
@@ -718,16 +703,10 @@ data_group_ids = [33, 64]'
         echo "INFO:Begin config $t_fuse_conf..."
         placeholder_replace $t_fuse_conf BASE_PATH "$fuse_path"
         placeholder_replace $t_fuse_conf FUSE_MOUNT_POINT "$fuse_mount_point"
+        
+        #替换fastDIR、faststore服务器集群配置文件占位符
         placeholder_replace $t_fuse_conf DIR_CLUSTER_SERVERS_CONF "$t_dir_cluster_servers_conf"
         placeholder_replace $t_fuse_conf STORE_CLUSTER_CONF "$t_store_cluster_conf"
-        
-        #替换fastDIR服务器占位符
-        #dir_server = 192.168.0.196:11012
-        t_dir_servers=""
-        for (( j=0; j < $dir_server_count; j++ )); do
-          t_dir_servers=$t_dir_servers"dir_server = ${dir_hosts[$j]}:${dir_service_ports[$j]}\n"
-        done
-        placeholder_replace $t_fuse_conf DIR_SERVERS "$t_dir_servers"
 
         # Create fuse op shell from template
         fuse_shell="$BUILD_PATH/shell/fuse.sh"
