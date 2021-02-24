@@ -449,6 +449,8 @@ check_config_file() {
   fi
 }
 
+t_dir_cluster_servers_conf="cluster_servers.conf"
+
 init_fastdir_config() {
   # if [[ ${#dir_pathes[*]} -le 0 ]] || [[ $dir_server_count -le 0 ]]; then
   #   echo "Parameters --dir-path and dir-server-count not specified, would not config $FDIR_LIB"
@@ -508,6 +510,10 @@ init_fastdir_config() {
     fi
 
     t_cluster_conf=$target_dir/cluster_servers.conf
+    if [[ $i eq 0 ]]; then
+      t_dir_cluster_servers_conf=$t_cluster_conf
+    fi
+
     if cp -f $CLUSTER_TPL $t_cluster_conf; then
       # Replace placeholders with reality in cluster_servers template
       echo "INFO:Begin config $t_cluster_conf..."
@@ -555,6 +561,8 @@ init_fastdir_config() {
     fi
   done
 }
+
+t_store_cluster_conf="cluster.conf"
 
 init_faststore_config() {
   # if [[ ${#store_pathes[*]} -le 0 ]] || [[ $store_server_count -le 0 ]]; then
@@ -658,6 +666,11 @@ init_faststore_config() {
     fi
 
     t_cluster_conf=$target_path/cluster.conf
+    
+    if [[ $i eq 0 ]]; then
+      t_store_cluster_conf=$t_cluster_conf
+    fi
+
     if cp -f $S_CLUSTER_TPL $t_cluster_conf; then
       # Replace placeholders with reality in cluster template
       echo "INFO:Begin config $t_cluster_conf..."
@@ -683,22 +696,31 @@ data_group_ids = [33, 64]'
     fi
 
     if [[ $same_host = false ]] || [[ $i -eq 0 ]]; then
-      t_fuse_conf=$target_path/fuse.conf
+      if ! [[ -d $fuse_path ]]; then
+        if ! mkdir -p $fuse_path; then
+          echo "WARNING:Create fuse base_path $fuse_path failed!"
+        fi
+      fi
+      if ! [[ -d $fuse_mount_point ]]; then
+        if ! mkdir -p $fuse_mount_point; then
+          echo "WARNING:Create fuse mount point $fuse_mount_point failed!"
+        fi
+      fi
+      fuse_conf_path=$fuse_path/conf
+      if ! [[ -d $fuse_conf_path ]]; then
+        if ! mkdir -p $fuse_conf_path; then
+          echo "WARNING:Create fuse conf path $fuse_conf_path failed!"
+        fi
+      fi
+      t_fuse_conf=$fuse_conf_path/fuse.conf
       if cp -f $S_FUSE_TPL $t_fuse_conf; then
         # Replace placeholders with reality in fuse template
         echo "INFO:Begin config $t_fuse_conf..."
-        if ! [[ -d $fuse_path ]]; then
-          if ! mkdir -p $fuse_path; then
-            echo "WARNING:Create fuse base_path $fuse_path failed!"
-          fi
-        fi
-        if ! [[ -d $fuse_mount_point ]]; then
-          if ! mkdir -p $fuse_mount_point; then
-            echo "WARNING:Create fuse mount point $fuse_mount_point failed!"
-          fi
-        fi
         placeholder_replace $t_fuse_conf BASE_PATH "$fuse_path"
         placeholder_replace $t_fuse_conf FUSE_MOUNT_POINT "$fuse_mount_point"
+        placeholder_replace $t_fuse_conf DIR_CLUSTER_SERVERS_CONF "$t_dir_cluster_servers_conf"
+        placeholder_replace $t_fuse_conf STORE_CLUSTER_CONF "$t_store_cluster_conf"
+        
         #替换fastDIR服务器占位符
         #dir_server = 192.168.0.196:11012
         t_dir_servers=""
