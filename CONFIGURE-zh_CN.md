@@ -141,14 +141,13 @@ fused 配置文件路径：/etc/fastcfs/fcfs
 /etc/fastcfs/fstore/cluster.conf
 ```
 
-3.2 修改如下两个配置文件的 dir_server 参数
+3.2 修改如下两个配置文件的 cluster_servers_filename 参数
 ```
 /etc/fastcfs/fcfs/fuse.conf
 /etc/fastcfs/fdir/client.conf
 
 注：
-   * dir_server配置的端口为fastDIR server的service端口；
-   * dir_server可以出现多次，一行配置一个dir server IP及其服务端口。
+  本参数和FastDIR 的server.conf中的同名参数保持一致即可。
 ```
 
 3.3 如有必要，修改fuse.conf 中的mountpoint（可选）
