@@ -6,7 +6,7 @@ FastCFS 是一款基于块存储的通用分布式文件系统，可以作为MyS
 
 ## 2. 当前版本
 
-V1.2.1
+V1.3.0
 
 ## 3. 支持的操作系统
 
@@ -20,10 +20,10 @@ V1.2.1
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
 * [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.48)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.4)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.2.1)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V1.2.1)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V1.2.1)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.5)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V1.3.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V1.3.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V1.3.0)
 
 ## 5. 安装
 
