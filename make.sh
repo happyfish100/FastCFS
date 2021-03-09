@@ -133,7 +133,11 @@ replace_makefile()
     sed_replace "s#\\\$(ENABLE_SHARED_LIB)#$ENABLE_SHARED_LIB#g" Makefile
 }
 
-cd src/api
+cd src/auth/server
+replace_makefile
+make $1 $2
+
+cd ../../api
 replace_makefile
 make $1 $2
 
@@ -147,7 +151,6 @@ fi
 cd ../fuse
 replace_makefile
 make $1 $2
-
 
 if [ "$1" = "install" ]; then
   cd ..

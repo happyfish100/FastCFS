@@ -2,6 +2,8 @@
 src/api/Makefile
 src/api/tests/Makefile
 src/fuse/Makefile
+src/auth/server/Makefile
+src/auth/client/Makefile
 
 # Prerequisites
 *.d
@@ -33,6 +35,7 @@ src/fuse/Makefile
 src/api/tests/test_file_op
 src/api/tests/test_file_copy
 src/fuse/fcfs_fused
+src/auth/server/fcfs_authd
 
 # other
 logs
