@@ -18,6 +18,7 @@
 #define _SERVER_GLOBAL_H
 
 #include "fastcommon/common_define.h"
+#include "sf/sf_global.h"
 #include "common/auth_global.h"
 #include "server_types.h"
 
@@ -29,6 +30,9 @@ typedef struct server_global_vars {
 
     SFSlowLogContext slow_log;
 } AuthServerGlobalVars;
+
+#define SLOW_LOG_CFG            g_server_global_vars.slow_log.cfg
+#define SLOW_LOG_CTX            g_server_global_vars.slow_log.ctx
 
 #ifdef __cplusplus
 extern "C" {

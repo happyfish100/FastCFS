@@ -14,20 +14,20 @@
  */
 
 
-#ifndef _AUTH_GLOBAL_H
-#define _AUTH_GLOBAL_H
+#ifndef _FCFS_AUTH_GLOBAL_H
+#define _FCFS_AUTH_GLOBAL_H
 
 #include "fastcommon/common_define.h"
 
-typedef struct auth_global_vars {
+typedef struct fcfs_auth_global_vars {
     Version version;
-} AuthGlobalVars;
+} FCFSAuthGlobalVars;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern AuthGlobalVars g_auth_global_vars;
+    extern FCFSAuthGlobalVars g_fcfs_auth_global_vars;
 
 #ifdef __cplusplus
 }

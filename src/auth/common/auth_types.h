@@ -13,8 +13,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "auth_global.h"
+#ifndef _FCFS_AUTH_TYPES_H
+#define _FCFS_AUTH_TYPES_H
 
-FCFSAuthGlobalVars g_fcfs_auth_global_vars = {
-    {1, 0, 0}
-};
+#include "fastcommon/common_define.h"
+#include "sf/sf_types.h"
+
+#define FCFS_AUTH_DEFAULT_SERVICE_PORT  31012
+
+#endif

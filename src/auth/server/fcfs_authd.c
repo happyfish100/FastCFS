@@ -38,10 +38,10 @@
 #include "sf/sf_nio.h"
 #include "sf/sf_service.h"
 #include "sf/sf_util.h"
-//#include "common/auth_proto.h"
+#include "common/auth_proto.h"
 #include "server_types.h"
 #include "server_global.h"
-//#include "server_func.h"
+#include "server_func.h"
 //#include "service_handler.h"
 
 static bool daemon_mode = true;
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
         }
         */
 
-        //fdir_proto_init();
+        fcfs_auth_proto_init();
         //sched_print_all_entries();
 
         /*
@@ -183,12 +183,9 @@ static int setup_server_env(const char *config_filename)
     int result;
 
     sf_set_current_time();
-
-    /*
     if ((result=server_load_config(config_filename)) != 0) {
         return result;
     }
-    */
 
     if (daemon_mode) {
         daemon_init(false);

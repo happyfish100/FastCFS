@@ -5,7 +5,8 @@ INC_PATH = -I.. -I../common
 LIB_PATH = $(LIBS) -lfdirclient -lfastcommon -lserverframe
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
-STATIC_OBJS = ../common/auth_global.o dao/user.o server_global.o
+STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o \
+              dao/user.o server_global.o server_func.o
 
 ALL_PRGS = fcfs_authd
 

@@ -13,8 +13,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "auth_global.h"
+#include "auth_proto.h"
 
-FCFSAuthGlobalVars g_fcfs_auth_global_vars = {
-    {1, 0, 0}
-};
+void fcfs_auth_proto_init()
+{
+}
+
+const char *fcfs_auth_get_cmd_caption(const int cmd)
+{
+    switch (cmd) {
+        case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
+            return "USER_LOGIN_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP:
+            return "USER_LOGIN_RESP";
+        default:
+            return sf_get_cmd_caption(cmd);
+    }
+}
