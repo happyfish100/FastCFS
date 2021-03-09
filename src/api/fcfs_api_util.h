@@ -80,6 +80,9 @@ extern "C" {
 #define fcfs_api_set_xattr_by_inode(inode, xattr, flags) \
     fcfs_api_set_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, xattr, flags)
 
+#define fcfs_api_remove_xattr_by_inode(inode, name) \
+    fcfs_api_remove_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, name)
+
 #define fcfs_api_get_xattr_by_inode(inode, name, value, size) \
     fcfs_api_get_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, name, value, size)
 
@@ -251,6 +254,13 @@ static inline int fcfs_api_set_xattr_by_inode_ex(FCFSAPIContext *ctx,
 {
     return fdir_client_set_xattr_by_inode(ctx->contexts.fdir,
             &ctx->ns, inode, xattr, flags);
+}
+
+static inline int fcfs_api_remove_xattr_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, const string_t *name)
+{
+    return fdir_client_remove_xattr_by_inode(ctx->contexts.fdir,
+            &ctx->ns, inode, name);
 }
 
 static inline int fcfs_api_get_xattr_by_inode_ex(FCFSAPIContext *ctx,
