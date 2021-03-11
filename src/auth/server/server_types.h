@@ -17,11 +17,13 @@
 #ifndef _SERVER_TYPES_H
 #define _SERVER_TYPES_H
 
+#include "fastcommon/uniq_skiplist.h"
 #include "sf/sf_types.h"
 #include "fastdir/client/fdir_client.h"
 #include "common/auth_types.h"
 
 #define AUTH_FIXED_USER_COUNT  256
+#define AUTH_FIXED_POOL_COUNT  256
 
 #define TASK_STATUS_CONTINUE           12345
 #define TASK_ARG          ((AuthServerTaskArg *)task->arg)
@@ -34,10 +36,33 @@
 
 #define SERVER_CTX        ((AuthServerContext *)task->thread_data->arg)
 
+typedef struct auth_storage_pool_info {
+    int64_t id;
+    string_t name;
+    int64_t quota;
+} AuthStoragePoolInfo;
+
+typedef struct auth_storage_pool_granted {
+    int64_t id;
+    AuthStoragePoolInfo pool;
+    struct {
+        int fdir;
+        int fstore;
+    } priv;
+} AuthStoragePoolGranted;
+
 typedef struct auth_user_info {
-    string_t username;
+    int64_t id;
+    string_t name;
     int64_t priv;
 } AuthUserInfo;
+
+typedef struct auth_storage_pool_array {
+    AuthStoragePoolInfo *pools;
+    AuthStoragePoolInfo fixed[AUTH_FIXED_POOL_COUNT];
+    int count;
+    int alloc;
+} AuthStoragePoolArray;
 
 typedef struct auth_user_array {
     AuthUserInfo *users;
