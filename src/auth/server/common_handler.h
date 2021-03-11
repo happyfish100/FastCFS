@@ -13,29 +13,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+//common_handler.h
 
-#ifndef _SERVER_GLOBAL_H
-#define _SERVER_GLOBAL_H
+#ifndef FCFS_AUTH_COMMON_HANDLER_H
+#define FCFS_AUTH_COMMON_HANDLER_H
 
-#include "fastcommon/common_define.h"
-#include "sf/sf_global.h"
-#include "common/auth_global.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "server_types.h"
 
-typedef struct server_global_vars {
-    char *fdir_client_cfg_filename;
-    SFSlowLogContext slow_log;
-} AuthServerGlobalVars;
-
-#define SLOW_LOG                g_server_global_vars.slow_log
-#define SLOW_LOG_CFG            SLOW_LOG.cfg
-#define SLOW_LOG_CTX            SLOW_LOG.ctx
-
 #ifdef __cplusplus
+
 extern "C" {
 #endif
 
-    extern AuthServerGlobalVars g_server_global_vars;
+void common_handler_init();
 
 #ifdef __cplusplus
 }

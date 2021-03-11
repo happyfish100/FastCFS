@@ -42,7 +42,8 @@
 #include "server_types.h"
 #include "server_global.h"
 #include "server_func.h"
-//#include "service_handler.h"
+#include "common_handler.h"
+#include "service_handler.h"
 
 static bool daemon_mode = true;
 static int setup_server_env(const char *config_filename);
@@ -119,30 +120,27 @@ int main(int argc, char *argv[])
             break;
         }
 
-        /*
         if ((result=service_handler_init()) != 0) {
             break;
         }
 
+        /*
         if ((result=server_load_data()) != 0) {
             break;
         }
         */
 
-        fcfs_auth_proto_init();
+        common_handler_init();
         //sched_print_all_entries();
 
-        /*
-        result = sf_service_init_ex2(&g_sf_context,
+        result = sf_service_init_ex(&g_sf_context,
                 service_alloc_thread_extra_data, NULL,
                 NULL, sf_proto_set_body_length, service_deal_task,
                 service_task_finish_cleanup, NULL, 1000,
-                sizeof(FDIRProtoHeader), sizeof(FDIRServerTaskArg),
-                init_nio_task);
+                sizeof(FCFSAuthProtoHeader), sizeof(AuthServerTaskArg));
         if (result != 0) {
             break;
         }
-        */
         sf_enable_thread_notify(true);
         sf_set_remove_from_ready_list(false);
     } while (0);

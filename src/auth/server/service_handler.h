@@ -13,29 +13,27 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+//service_handler.h
 
-#ifndef _SERVER_GLOBAL_H
-#define _SERVER_GLOBAL_H
+#ifndef FCFS_AUTH_SERVER_HANDLER_H
+#define FCFS_AUTH_SERVER_HANDLER_H
 
-#include "fastcommon/common_define.h"
-#include "sf/sf_global.h"
-#include "common/auth_global.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "fastcommon/fast_task_queue.h"
 #include "server_types.h"
-
-typedef struct server_global_vars {
-    char *fdir_client_cfg_filename;
-    SFSlowLogContext slow_log;
-} AuthServerGlobalVars;
-
-#define SLOW_LOG                g_server_global_vars.slow_log
-#define SLOW_LOG_CFG            SLOW_LOG.cfg
-#define SLOW_LOG_CTX            SLOW_LOG.ctx
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern AuthServerGlobalVars g_server_global_vars;
+int service_handler_init();
+int service_handler_destroy();
+int service_deal_task(struct fast_task_info *task, const int stage);
+void service_task_finish_cleanup(struct fast_task_info *task);
+void *service_alloc_thread_extra_data(const int thread_index);
+//int service_thread_loop(struct nio_thread_data *thread_data);
 
 #ifdef __cplusplus
 }

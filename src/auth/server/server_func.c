@@ -27,56 +27,39 @@
 #include "server_global.h"
 #include "server_func.h"
 
-static int server_load_admin_config(IniContext *ini_context)
+static int server_load_fdir_client_config(IniContext *ini_context,
+        const char *config_filename)
 {
-#define ADMIN_SECTION_NAME "admin"
+#define FASTDIR_SECTION_NAME  "FastDIR"
+#define ITEM_NAME_FDIR_CLIENT_CFG_FILENAME  "client_config_filename"
 
-    char *username;
-    char *secret_key;
-    char *buff;
-    char *p;
-    struct {
-        int username;
-        int secret_key;
-    } lengths;
-    int bytes;
+    char full_filename[PATH_MAX];
+    char *client_cfg_filename;
+    int result;
 
-    //TODO
-    return 0;
-
-    if ((username=iniGetRequiredStrValue(ADMIN_SECTION_NAME, "username",
-                    ini_context)) == NULL)
+    if ((client_cfg_filename=iniGetRequiredStrValue(FASTDIR_SECTION_NAME,
+                    ITEM_NAME_FDIR_CLIENT_CFG_FILENAME, ini_context)) == NULL)
     {
         return ENOENT;
     }
 
-    if ((secret_key=iniGetRequiredStrValue(ADMIN_SECTION_NAME, "secret_key",
-                    ini_context)) == NULL)
-    {
-        return ENOENT;
+    resolve_path(config_filename, client_cfg_filename,
+            full_filename, sizeof(full_filename));
+    if (!fileExists(full_filename)) {
+        result = errno != 0 ? errno : ENOENT;
+        logError("file: "__FILE__", line: %d, "
+                "config file: %s, item: %s, value: %s, access file %s fail, "
+                "errno: %d, error info: %s", __LINE__, config_filename,
+                ITEM_NAME_FDIR_CLIENT_CFG_FILENAME, client_cfg_filename,
+                full_filename, result, STRERROR(result));
+        return result;
     }
 
-    g_server_global_vars.admin.username.len = strlen(username);
-    g_server_global_vars.admin.secret_key.len = strlen(secret_key);
-
-    lengths.username = g_server_global_vars.admin.username.len + 1;
-    lengths.secret_key = g_server_global_vars.admin.secret_key.len + 1;
-
-    bytes = lengths.username + lengths.secret_key;
-    buff = (char *)fc_malloc(bytes);
-    if (buff == NULL) {
+    if ((g_server_global_vars.fdir_client_cfg_filename=
+                fc_strdup(full_filename)) == NULL)
+    {
         return ENOMEM;
     }
-
-    p = buff;
-    g_server_global_vars.admin.username.str = p;
-    p += lengths.username;
-
-    g_server_global_vars.admin.secret_key.str = p;
-    p += lengths.secret_key;
-
-    memcpy(g_server_global_vars.admin.username.str, username, lengths.username);
-    memcpy(g_server_global_vars.admin.secret_key.str, secret_key, lengths.secret_key);
     return 0;
 }
 
@@ -94,9 +77,8 @@ static void server_log_configs()
             sz_service_config, sizeof(sz_service_config));
 
     snprintf(sz_server_config, sizeof(sz_server_config),
-            "admin config {username: %s, secret_key: %s}",
-            g_server_global_vars.admin.username.str,
-            g_server_global_vars.admin.secret_key.str);
+            "FastDIR client_config_filename: %s",
+            g_server_global_vars.fdir_client_cfg_filename);
 
     logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s",
             g_fcfs_auth_global_vars.version.major,
@@ -128,7 +110,9 @@ int server_load_config(const char *filename)
         return result;
     }
 
-    if ((result=server_load_admin_config(&ini_context)) != 0) {
+    if ((result=server_load_fdir_client_config(
+                    &ini_context, filename)) != 0)
+    {
         return result;
     }
 
