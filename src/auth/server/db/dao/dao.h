@@ -13,27 +13,30 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _AUTH_DAO_USER_H
-#define _AUTH_DAO_USER_H
+#ifndef _AUTH_DAO_H
+#define _AUTH_DAO_H
 
+#include "../../server_global.h"
 #include "types.h"
+#include "user.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int dao_user_create(FDIRClientContext *client_ctx, FCFSAuthUserInfo *user);
+static inline int dao_get_context_size()
+{
+    return sizeof(FDIRClientContext);
+}
 
-int dao_user_remove(FDIRClientContext *client_ctx, const string_t *username);
+static inline int dao_init_context(void *ctx)
+{
+    FDIRClientContext *client_ctx;
 
-int dao_user_list(FDIRClientContext *client_ctx, const string_t *username,
-        FCFSAuthUserArray *array);
-
-int dao_user_update_priv(FDIRClientContext *client_ctx,
-        const string_t *username, const int64_t priv);
-
-int dao_user_update_passwd(FDIRClientContext *client_ctx,
-        const string_t *username, const string_t *passwd);
+    client_ctx = (FDIRClientContext *)ctx;
+    return fdir_client_simple_init_ex(client_ctx, g_server_global_vars.
+            fdir_client_cfg_filename, NULL);
+}
 
 #ifdef __cplusplus
 }

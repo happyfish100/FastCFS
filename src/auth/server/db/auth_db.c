@@ -209,15 +209,58 @@ static inline DBUserInfo *user_get(AuthServerContext *server_ctx,
             adb_ctx.user.sl_pair.skiplist, &target);
 }
 
+static inline int user_set_passwd(DBUserInfo *user, const string_t *passwd)
+{
+    int result;
+    char *old_passwd;
+
+    old_passwd = user->user.passwd.str;
+    result = fast_allocator_alloc_string(&adb_ctx.name_acontext,
+            &user->user.passwd, passwd);
+    if (old_passwd != NULL) {
+        fast_allocator_free(&adb_ctx.name_acontext, old_passwd);
+    }
+    return result;
+}
+
 static int user_create(AuthServerContext *server_ctx, DBUserInfo *user,
         const string_t *username, const string_t *passwd, const int64_t priv)
 {
+    int result;
+    bool need_insert;
+
     if (user == NULL) {
-        user = (DBUserInfo *)fast_mblock_alloc_object(&adb_ctx.user.allocator);
+        user = (DBUserInfo *)fast_mblock_alloc_object(
+                &adb_ctx.user.allocator);
         if (user == NULL) {
             return ENOMEM;
         }
+
+        if ((result=fast_allocator_alloc_string(&adb_ctx.name_acontext,
+                        &user->user.name, username)) != 0)
+        {
+            return result;
+        }
+        need_insert = true;
+    } else {
+        need_insert = false;
     }
+
+    if ((result=user_set_passwd(user, passwd)) != 0) {
+        return result;
+    }
+    user->user.priv = priv;
+    if ((result=dao_user_create(server_ctx->dao_ctx, &user->user)) != 0) {
+        return result;
+    }
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user->status = FCFS_AUTH_USER_STATUS_NORMAL;
+    if (need_insert) {
+        result = uniq_skiplist_insert(adb_ctx.user.sl_pair.skiplist, user);
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
     return 0;
 }
 
@@ -232,10 +275,14 @@ int adb_user_create(AuthServerContext *server_ctx, const string_t *username,
     if (user != NULL && user->status == FCFS_AUTH_USER_STATUS_NORMAL) {
         result = EEXIST;
     } else {
-        result = user_create(server_ctx, user, username, passwd, priv);
+        result = ENOENT;
     }
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
+    if (result == ENOENT) {
+        result = user_create(server_ctx, user,
+                username, passwd, priv);
+    }
     return result;
 }
 

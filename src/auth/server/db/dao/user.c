@@ -46,9 +46,6 @@
 static FDIRClientOwnerModePair dao_omp = {0, 0, 0700};
 static string_t dao_ns = {AUTH_NAMESPACE_STR, AUTH_NAMESPACE_LEN};
 
-static string_t dir_name_created = {DIR_NAME_CREATED_STR, DIR_NAME_CREATED_LEN};
-static string_t dir_name_granted = {DIR_NAME_GRANTED_STR, DIR_NAME_GRANTED_LEN};
-
 static string_t xttr_name_passwd = {XTTR_NAME_PASSWD_STR, XTTR_NAME_PASSWD_LEN};
 static string_t xttr_name_priv = {XTTR_NAME_PRIV_STR, XTTR_NAME_PRIV_LEN};
 static string_t xttr_name_status = {XTTR_NAME_STATUS_STR, XTTR_NAME_STATUS_LEN};
@@ -79,21 +76,83 @@ static inline int set_xattr_integer(FDIRClientContext *client_ctx,
     return set_xattr_string(client_ctx, inode, name, &value);
 }
 
-int dao_user_create(FDIRClientContext *client_ctx, const string_t *username,
-        const string_t *passwd, const int64_t priv)
+static int user_make_subdir(FDIRClientContext *client_ctx,
+        const string_t *username, const char *subdir,
+        const bool check_exist)
 {
+    AuthFullPath fp;
+    FDIRDEntryInfo dentry;
     int result;
-    AuthFullPath path;
+
+    AUTH_SET_USER_PATH(fp, username, subdir);
+    if (check_exist) {
+        result = fdir_client_lookup_inode_by_path_ex(client_ctx,
+                &fp.fullname, LOG_DEBUG, &dentry.inode);
+        if (result == 0) {
+            return 0;
+        } else if (result != ENOENT) {
+            return result;
+        }
+    }
+
+    result = fdir_client_create_dentry(client_ctx,
+            &fp.fullname, &dao_omp, &dentry);
+    return result == EEXIST ? 0 : result;
+}
+
+int dao_user_create(FDIRClientContext *client_ctx, FCFSAuthUserInfo *user)
+{
+    int64_t inode;
+    int result;
+    bool check_exist;
+    AuthFullPath home;
     FDIRDEntryInfo dentry;
 
-    AUTH_SET_USER_PATH(username, path);
-    if ((result=fdir_client_create_dentry(client_ctx, &path.fullname,
-                    &dao_omp, &dentry)) != 0)
+    AUTH_SET_USER_HOME(home, &user->name);
+    result = fdir_client_create_dentry(client_ctx,
+            &home.fullname, &dao_omp, &dentry);
+    if (result == 0) {
+        inode = dentry.inode;
+        check_exist = false;
+    } else if (result == EEXIST) {
+        if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
+                        &home.fullname, LOG_ERR, &inode)) != 0)
+        {
+            return result;
+        }
+        check_exist = true;
+    } else {
+        return result;
+    }
+
+    if ((result=user_make_subdir(client_ctx, &user->name,
+                    DIR_NAME_CREATED_STR, check_exist)) != 0)
+    {
+        return result;
+    }
+    if ((result=user_make_subdir(client_ctx, &user->name,
+                    DIR_NAME_GRANTED_STR, check_exist)) != 0)
     {
         return result;
     }
 
-    //TODO
+    if ((result=set_xattr_string(client_ctx, inode,
+                    &xttr_name_passwd, &user->passwd)) != 0)
+    {
+        return result;
+    }
+    if ((result=set_xattr_integer(client_ctx, inode,
+                    &xttr_name_priv, user->priv)) != 0)
+    {
+        return result;
+    }
+    if ((result=set_xattr_integer(client_ctx, inode, &xttr_name_status,
+                    FCFS_AUTH_USER_STATUS_NORMAL)) != 0)
+    {
+        return result;
+    }
+
+    user->id = inode;
     return 0;
 }
 

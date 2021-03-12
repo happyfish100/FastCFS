@@ -38,6 +38,7 @@
 #include "sf/sf_service.h"
 #include "sf/sf_global.h"
 #include "common/auth_proto.h"
+#include "db/dao/dao.h"
 #include "db/auth_db.h"
 #include "server_global.h"
 #include "server_func.h"
@@ -127,17 +128,18 @@ int service_deal_task(struct fast_task_info *task, const int stage)
 
 void *service_alloc_thread_extra_data(const int thread_index)
 {
+    int alloc_size;
     AuthServerContext *server_context;
 
-    server_context = (AuthServerContext *)fc_malloc(sizeof(AuthServerContext));
+    alloc_size = sizeof(AuthServerContext) + dao_get_context_size();
+    server_context = (AuthServerContext *)fc_malloc(alloc_size);
     if (server_context == NULL) {
         return NULL;
     }
 
-    memset(server_context, 0, sizeof(AuthServerContext));
-    if (fdir_client_simple_init_ex(&server_context->client_ctx,
-                g_server_global_vars.fdir_client_cfg_filename, NULL) != 0)
-    {
+    memset(server_context, 0, alloc_size);
+    server_context->dao_ctx = (void *)(server_context + 1);
+    if (dao_init_context(server_context->dao_ctx) != 0) {
         sf_terminate_myself();
         return NULL;
     }

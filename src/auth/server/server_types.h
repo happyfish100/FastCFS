@@ -19,7 +19,6 @@
 
 #include "fastcommon/uniq_skiplist.h"
 #include "sf/sf_types.h"
-#include "fastdir/client/fdir_client.h"
 #include "common/auth_types.h"
 
 #define TASK_STATUS_CONTINUE           12345
@@ -41,7 +40,7 @@ typedef struct server_task_arg {
 } AuthServerTaskArg;
 
 typedef struct auth_server_context {
-    FDIRClientContext client_ctx;
+    void *dao_ctx;
 } AuthServerContext;
 
 #endif

@@ -30,13 +30,21 @@ typedef struct auth_full_path {
     FDIRDEntryFullName fullname;
 } AuthFullPath;
 
-#define AUTH_SET_USER_PATH(username, path)  \
+#define AUTH_SET_USER_PATH(fp, username, subdir)  \
     do {  \
-        FC_SET_STRING_EX(path.fullname.ns, AUTH_NAMESPACE_STR, \
+        FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
                 AUTH_NAMESPACE_LEN); \
-        path.fullname.path.str = path.buff;  \
-        path.fullname.path.len = sprintf(path.fullname.path.str, \
-                AUTH_BASE_PATH"/%s", username->str);   \
+        fp.fullname.path.str = fp.buff;  \
+        if (subdir != NULL) { \
+            fp.fullname.path.len = sprintf(fp.fullname.path.str, \
+                    AUTH_BASE_PATH"/%s/%s", (username)->str, subdir); \
+        } else { \
+            fp.fullname.path.len = sprintf(fp.fullname.path.str, \
+                    AUTH_BASE_PATH"/%s", (username)->str);   \
+        } \
     } while (0)
+
+#define AUTH_SET_USER_HOME(fp, username)  \
+    AUTH_SET_USER_PATH(fp, username, NULL)
 
 #endif
