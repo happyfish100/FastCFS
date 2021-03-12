@@ -38,10 +38,10 @@
 #include "sf/sf_service.h"
 #include "sf/sf_global.h"
 #include "common/auth_proto.h"
+#include "db/auth_db.h"
 #include "server_global.h"
 #include "server_func.h"
 #include "common_handler.h"
-#include "auth_db.h"
 #include "service_handler.h"
 
 typedef int (*deal_task_func)(struct fast_task_info *task);

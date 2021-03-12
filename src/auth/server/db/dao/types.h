@@ -18,7 +18,7 @@
 
 #include <limits.h>
 #include "fastdir/client/fdir_client.h"
-#include "../server_types.h"
+#include "common/auth_types.h"
 
 #define AUTH_NAMESPACE_STR    "sys-auth"
 #define AUTH_NAMESPACE_LEN    (sizeof(AUTH_NAMESPACE_STR) - 1)

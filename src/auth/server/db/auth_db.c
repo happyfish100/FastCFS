@@ -19,14 +19,16 @@
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "fastcommon/uniq_skiplist.h"
+#include "fastcommon/fast_allocator.h"
 #include "sf/sf_global.h"
-#include "server_global.h"
+#include "../server_global.h"
+#include "dao/user.h"
 #include "auth_db.h"
 
 #define SKIPLIST_INIT_LEVEL_COUNT   2
 
 typedef struct db_storage_pool_info {
-    AuthStoragePoolInfo pool;
+    FCFSAuthStoragePoolInfo pool;
     int status;
 } DBStoragePoolInfo;
 
@@ -40,7 +42,7 @@ typedef struct db_storage_pool_granted {
 } DBStoragePoolGranted;
 
 typedef struct db_user_info {
-    AuthUserInfo user;
+    FCFSAuthUserInfo user;
     int status;
     struct {
         struct uniq_skiplist *created;  //element: DBStoragePoolInfo
@@ -50,6 +52,7 @@ typedef struct db_user_info {
 
 typedef struct auth_db_context {
     pthread_mutex_t lock;
+    struct fast_allocator_context name_acontext;
 
     struct {
         UniqSkiplistPair sl_pair;
@@ -69,7 +72,7 @@ typedef struct auth_db_context {
     } pool;
 } AuthDBContext;
 
-static AuthDBContext auth_db_ctx;
+static AuthDBContext adb_ctx;
 
 static int user_compare(const DBUserInfo *user1, const DBUserInfo *user2)
 {
@@ -93,31 +96,42 @@ int user_alloc_init(void *element, void *args)
     DBUserInfo *user;
 
     user = (DBUserInfo *)element;
-    user->storage_pools.created = uniq_skiplist_new(&auth_db_ctx.pool.
+    user->storage_pools.created = uniq_skiplist_new(&adb_ctx.pool.
             factories.created, SKIPLIST_INIT_LEVEL_COUNT);
-    user->storage_pools.granted = uniq_skiplist_new(&auth_db_ctx.pool.
+    user->storage_pools.granted = uniq_skiplist_new(&adb_ctx.pool.
             factories.granted, SKIPLIST_INIT_LEVEL_COUNT);
     return 0;
+}
+
+static inline int init_name_allocators(
+        struct fast_allocator_context *name_acontext)
+{
+#define NAME_REGION_COUNT 1
+    struct fast_region_info regions[NAME_REGION_COUNT];
+
+    FAST_ALLOCATOR_INIT_REGION(regions[0], 0, NAME_MAX, 8, 1024);
+    return fast_allocator_init_ex(name_acontext, "name",
+            regions, NAME_REGION_COUNT, 0, 0.00, 0, false);
 }
 
 static int init_allocators()
 {
     int result;
-    if ((result=fast_mblock_init_ex1(&auth_db_ctx.user.allocator,
+    if ((result=fast_mblock_init_ex1(&adb_ctx.user.allocator,
                 "user_allocator", sizeof(DBUserInfo), 256, 0,
                 user_alloc_init, NULL, true)) != 0)
     {
         return result;
     }
 
-    if ((result=fast_mblock_init_ex1(&auth_db_ctx.pool.allocators.created,
+    if ((result=fast_mblock_init_ex1(&adb_ctx.pool.allocators.created,
                 "spool_created", sizeof(DBStoragePoolInfo), 1024, 0,
                 NULL, NULL, true)) != 0)
     {
         return result;
     }
 
-    if ((result=fast_mblock_init_ex1(&auth_db_ctx.pool.allocators.granted,
+    if ((result=fast_mblock_init_ex1(&adb_ctx.pool.allocators.granted,
                 "spool_granted", sizeof(DBStoragePoolGranted), 1024, 0,
                 NULL, NULL, true)) != 0)
     {
@@ -135,7 +149,7 @@ static int init_skiplists()
     const int delay_free_seconds = 0;
     int result;
 
-    if ((result=uniq_skiplist_init_pair(&auth_db_ctx.user.sl_pair,
+    if ((result=uniq_skiplist_init_pair(&adb_ctx.user.sl_pair,
                     SKIPLIST_INIT_LEVEL_COUNT, max_level_count,
                     (skiplist_compare_func)user_compare, NULL,
                     min_alloc_elements_once, delay_free_seconds)) != 0)
@@ -143,7 +157,7 @@ static int init_skiplists()
         return result;
     }
 
-    if ((result=uniq_skiplist_init_ex(&auth_db_ctx.pool.factories.created,
+    if ((result=uniq_skiplist_init_ex(&adb_ctx.pool.factories.created,
                     max_level_count, (skiplist_compare_func)created_pool_cmp,
                     NULL, alloc_skiplist_once, min_alloc_elements_once,
                     delay_free_seconds)) != 0)
@@ -151,7 +165,7 @@ static int init_skiplists()
         return result;
     }
 
-    if ((result=uniq_skiplist_init_ex(&auth_db_ctx.pool.factories.granted,
+    if ((result=uniq_skiplist_init_ex(&adb_ctx.pool.factories.granted,
                     max_level_count, (skiplist_compare_func)granted_pool_cmp,
                     NULL, alloc_skiplist_once, min_alloc_elements_once,
                     delay_free_seconds)) != 0)
@@ -166,7 +180,11 @@ int auth_db_init()
 {
     int result;
 
-    if ((result=init_pthread_lock(&auth_db_ctx.lock)) != 0) {
+    if ((result=init_pthread_lock(&adb_ctx.lock)) != 0) {
+        return result;
+    }
+
+    if ((result=init_name_allocators(&adb_ctx.name_acontext)) != 0) {
         return result;
     }
 
@@ -179,4 +197,60 @@ int auth_db_init()
     }
 
     return 0;
+}
+
+static inline DBUserInfo *user_get(AuthServerContext *server_ctx,
+        const string_t *username)
+{
+    DBUserInfo target;
+
+    target.user.name = *username;
+    return (DBUserInfo *)uniq_skiplist_find(
+            adb_ctx.user.sl_pair.skiplist, &target);
+}
+
+static int user_create(AuthServerContext *server_ctx, DBUserInfo *user,
+        const string_t *username, const string_t *passwd, const int64_t priv)
+{
+    if (user == NULL) {
+        user = (DBUserInfo *)fast_mblock_alloc_object(&adb_ctx.user.allocator);
+        if (user == NULL) {
+            return ENOMEM;
+        }
+    }
+    return 0;
+}
+
+int adb_user_create(AuthServerContext *server_ctx, const string_t *username,
+        const string_t *passwd, const int64_t priv)
+{
+    int result;
+    DBUserInfo *user;
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL && user->status == FCFS_AUTH_USER_STATUS_NORMAL) {
+        result = EEXIST;
+    } else {
+        result = user_create(server_ctx, user, username, passwd, priv);
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return result;
+}
+
+const FCFSAuthUserInfo *adb_user_get(AuthServerContext *server_ctx,
+        const string_t *username)
+{
+    DBUserInfo *user;
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    if (user != NULL && user->status == FCFS_AUTH_USER_STATUS_NORMAL) {
+        return &user->user;
+    } else {
+        return NULL;
+    }
 }

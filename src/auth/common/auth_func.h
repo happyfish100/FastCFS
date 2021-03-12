@@ -13,17 +13,32 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef _FCFS_AUTH_FUNC_H
+#define _FCFS_AUTH_FUNC_H
 
-#ifndef _FCFS_AUTH_DB_H
-#define _FCFS_AUTH_DB_H
-
-#include "server_types.h"
+#include "sf/sf_proto.h"
+#include "auth_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int auth_db_init();
+    static inline void fcfs_auth_user_init_array(FCFSAuthUserArray *array)
+    {
+        array->users = array->fixed;
+        array->alloc = FCFS_AUTH_FIXED_USER_COUNT;
+        array->count = 0;
+    }
+
+    static inline void fcfs_auth_user_free_array(FCFSAuthUserArray *array)
+    {
+        if (array->users != array->fixed) {
+            free(array->users);
+            array->users = array->fixed;
+            array->alloc = FCFS_AUTH_FIXED_USER_COUNT;
+        }
+    }
+
 
 #ifdef __cplusplus
 }

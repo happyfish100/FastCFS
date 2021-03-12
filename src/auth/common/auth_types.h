@@ -21,4 +21,53 @@
 
 #define FCFS_AUTH_DEFAULT_SERVICE_PORT  31012
 
+#define FCFS_AUTH_FIXED_USER_COUNT  256
+#define FCFS_AUTH_FIXED_POOL_COUNT  256
+
+#define FCFS_AUTH_USER_STATUS_NORMAL   0
+#define FCFS_AUTH_USER_STATUS_DELETED  1
+
+#define FCFS_AUTH_USER_PRIV_USER_MANAGE      (1 << 0)
+#define FCFS_AUTH_USER_PRIV_CREATE_POOL      (1 << 1)
+#define FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER  (1 << 2)
+
+#define FCFS_AUTH_USER_PRIV_ALL  (FCFS_AUTH_USER_PRIV_USER_MANAGE | \
+        FCFS_AUTH_USER_PRIV_CREATE_POOL | \
+        FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER)
+
+typedef struct fcfs_auth_storage_pool_info {
+    int64_t id;
+    string_t name;
+    int64_t quota;
+} FCFSAuthStoragePoolInfo;
+
+typedef struct fcfs_auth_storage_pool_granted {
+    int64_t id;
+    FCFSAuthStoragePoolInfo pool;
+    struct {
+        int fdir;
+        int fstore;
+    } priv;
+} FCFSAuthStoragePoolGranted;
+
+typedef struct fcfs_auth_user_info {
+    int64_t id;
+    string_t name;
+    int64_t priv;
+} FCFSAuthUserInfo;
+
+typedef struct fcfs_auth_storage_pool_array {
+    FCFSAuthStoragePoolInfo *pools;
+    FCFSAuthStoragePoolInfo fixed[FCFS_AUTH_FIXED_POOL_COUNT];
+    int count;
+    int alloc;
+} FCFSAuthStoragePoolArray;
+
+typedef struct fcfs_auth_user_array {
+    FCFSAuthUserInfo *users;
+    FCFSAuthUserInfo fixed[FCFS_AUTH_FIXED_USER_COUNT];
+    int count;
+    int alloc;
+} FCFSAuthUserArray;
+
 #endif

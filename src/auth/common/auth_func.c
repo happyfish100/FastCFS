@@ -13,29 +13,4 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-#include <sys/stat.h>
-#include "fastcommon/shared_func.h"
-#include "fastcommon/logger.h"
-#include "user.h"
-
-int user_create(const string_t *username, const string_t *passwd,
-        const int64_t priv)
-{
-    int result;
-    AuthFullPath path;
-
-    AUTH_SET_USER_PATH(username, path);
-    /*
-    if ((result=dentry_find(&path->fullname, &dentry)) != 0) {
-        return result;
-    }
-    */
-
-    return 0;
-}
-
-int user_remove(const string_t *username)
-{
-    return 0;
-}
+#include "auth_func.h"
