@@ -21,7 +21,7 @@
 #include "fastcommon/uniq_skiplist.h"
 #include "sf/sf_global.h"
 #include "server_global.h"
-#include "db_in_memory.h"
+#include "auth_db.h"
 
 #define SKIPLIST_INIT_LEVEL_COUNT   2
 
@@ -32,7 +32,7 @@ typedef struct db_storage_pool_info {
 
 typedef struct db_storage_pool_granted {
     int64_t id;
-    DBStoragePoolInfo *pool;
+    DBStoragePoolInfo *sp;
     struct {
         int fdir;
         int fstore;
@@ -48,7 +48,7 @@ typedef struct db_user_info {
     } storage_pools;
 } DBUserInfo;
 
-typedef struct db_in_memory_context {
+typedef struct auth_db_context {
     pthread_mutex_t lock;
 
     struct {
@@ -67,9 +67,9 @@ typedef struct db_in_memory_context {
             struct fast_mblock_man granted; //element: DBStoragePoolGranted
         } allocators;
     } pool;
-} DBInMemoryContext;
+} AuthDBContext;
 
-static DBInMemoryContext in_memory_ctx;
+static AuthDBContext auth_db_ctx;
 
 static int user_compare(const DBUserInfo *user1, const DBUserInfo *user2)
 {
@@ -82,11 +82,10 @@ static int created_pool_cmp(const DBStoragePoolInfo *pool1,
     return strcmp(pool1->pool.name.str, pool2->pool.name.str);
 }
 
-//TODO
-static int granted_pool_cmp(const DBStoragePoolInfo *pool1,
-        const DBStoragePoolInfo *pool2)
+static int granted_pool_cmp(const DBStoragePoolGranted *pg1,
+        const DBStoragePoolGranted *pg2)
 {
-    return strcmp(pool1->pool.name.str, pool2->pool.name.str);
+    return strcmp(pg1->sp->pool.name.str, pg2->sp->pool.name.str);
 }
 
 int user_alloc_init(void *element, void *args)
@@ -94,9 +93,9 @@ int user_alloc_init(void *element, void *args)
     DBUserInfo *user;
 
     user = (DBUserInfo *)element;
-    user->storage_pools.created = uniq_skiplist_new(&in_memory_ctx.pool.
+    user->storage_pools.created = uniq_skiplist_new(&auth_db_ctx.pool.
             factories.created, SKIPLIST_INIT_LEVEL_COUNT);
-    user->storage_pools.granted = uniq_skiplist_new(&in_memory_ctx.pool.
+    user->storage_pools.granted = uniq_skiplist_new(&auth_db_ctx.pool.
             factories.granted, SKIPLIST_INIT_LEVEL_COUNT);
     return 0;
 }
@@ -104,21 +103,21 @@ int user_alloc_init(void *element, void *args)
 static int init_allocators()
 {
     int result;
-    if ((result=fast_mblock_init_ex1(&in_memory_ctx.user.allocator,
+    if ((result=fast_mblock_init_ex1(&auth_db_ctx.user.allocator,
                 "user_allocator", sizeof(DBUserInfo), 256, 0,
                 user_alloc_init, NULL, true)) != 0)
     {
         return result;
     }
 
-    if ((result=fast_mblock_init_ex1(&in_memory_ctx.pool.allocators.created,
+    if ((result=fast_mblock_init_ex1(&auth_db_ctx.pool.allocators.created,
                 "spool_created", sizeof(DBStoragePoolInfo), 1024, 0,
                 NULL, NULL, true)) != 0)
     {
         return result;
     }
 
-    if ((result=fast_mblock_init_ex1(&in_memory_ctx.pool.allocators.granted,
+    if ((result=fast_mblock_init_ex1(&auth_db_ctx.pool.allocators.granted,
                 "spool_granted", sizeof(DBStoragePoolGranted), 1024, 0,
                 NULL, NULL, true)) != 0)
     {
@@ -136,7 +135,7 @@ static int init_skiplists()
     const int delay_free_seconds = 0;
     int result;
 
-    if ((result=uniq_skiplist_init_pair(&in_memory_ctx.user.sl_pair,
+    if ((result=uniq_skiplist_init_pair(&auth_db_ctx.user.sl_pair,
                     SKIPLIST_INIT_LEVEL_COUNT, max_level_count,
                     (skiplist_compare_func)user_compare, NULL,
                     min_alloc_elements_once, delay_free_seconds)) != 0)
@@ -144,7 +143,7 @@ static int init_skiplists()
         return result;
     }
 
-    if ((result=uniq_skiplist_init_ex(&in_memory_ctx.pool.factories.created,
+    if ((result=uniq_skiplist_init_ex(&auth_db_ctx.pool.factories.created,
                     max_level_count, (skiplist_compare_func)created_pool_cmp,
                     NULL, alloc_skiplist_once, min_alloc_elements_once,
                     delay_free_seconds)) != 0)
@@ -152,7 +151,7 @@ static int init_skiplists()
         return result;
     }
 
-    if ((result=uniq_skiplist_init_ex(&in_memory_ctx.pool.factories.granted,
+    if ((result=uniq_skiplist_init_ex(&auth_db_ctx.pool.factories.granted,
                     max_level_count, (skiplist_compare_func)granted_pool_cmp,
                     NULL, alloc_skiplist_once, min_alloc_elements_once,
                     delay_free_seconds)) != 0)
@@ -163,11 +162,11 @@ static int init_skiplists()
     return 0;
 }
 
-int db_in_memory_init()
+int auth_db_init()
 {
     int result;
 
-    if ((result=init_pthread_lock(&in_memory_ctx.lock)) != 0) {
+    if ((result=init_pthread_lock(&auth_db_ctx.lock)) != 0) {
         return result;
     }
 

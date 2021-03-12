@@ -14,8 +14,8 @@
  */
 
 
-#ifndef _FCFS_DB_IN_MEMORY_H
-#define _FCFS_DB_IN_MEMORY_H
+#ifndef _FCFS_AUTH_DB_H
+#define _FCFS_AUTH_DB_H
 
 #include "server_types.h"
 
@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-int db_in_memory_init();
+int auth_db_init();
 
 #ifdef __cplusplus
 }

@@ -41,13 +41,14 @@
 #include "server_global.h"
 #include "server_func.h"
 #include "common_handler.h"
+#include "auth_db.h"
 #include "service_handler.h"
 
 typedef int (*deal_task_func)(struct fast_task_info *task);
 
 int service_handler_init()
 {
-    return 0;
+    return auth_db_init();
 }
 
 int service_handler_destroy()
