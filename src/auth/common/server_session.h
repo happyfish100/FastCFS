@@ -13,24 +13,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "auth_proto.h"
 
-void fcfs_auth_proto_init()
-{
-}
+#ifndef _FCFS_AUTH_SERVER_SESSION_H
+#define _FCFS_AUTH_SERVER_SESSION_H
 
-const char *fcfs_auth_get_cmd_caption(const int cmd)
-{
-    switch (cmd) {
-        case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
-            return "USER_LOGIN_REQ";
-        case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP:
-            return "USER_LOGIN_RESP";
-        case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
-            return "USER_CREATE_REQ";
-        case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP:
-            return "USER_CREATE_RESP";
-        default:
-            return sf_get_cmd_caption(cmd);
-    }
+typedef struct auth_server_session {
+    int64_t session_id;
+    int64_t user_id;
+    int64_t pool_id;
+} AuthServerSession;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int server_session_init();
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif

@@ -23,7 +23,37 @@
 #define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ             9
 #define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP           10
 
+#define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ             9
+#define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP           10
+
+#define FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ           21
+#define FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP          22
+
 typedef SFCommonProtoHeader  FCFSAuthProtoHeader;
+
+typedef struct fcfs_auth_proto_user_passwd_pair {
+    char passwd[FCFS_AUTH_PASSWD_LEN];
+    struct {
+        char padding[7];
+        char len;
+        char str[0];
+    } username;
+} FCFSAuthProtoUserPasswdPair;
+
+typedef struct fcfs_auth_proto_user_login_req {
+    FCFSAuthProtoUserPasswdPair up_pair;
+} FCFSAuthProtoUserLoginReq;
+
+typedef struct fcfs_auth_proto_user_login_resp {
+    char session_id[8];
+} FCFSAuthProtoUserLoginResp;
+
+typedef struct fcfs_auth_proto_user_create_req {
+    char session_id[8];
+    char priv[8];
+    FCFSAuthProtoUserPasswdPair up_pair;
+} FCFSAuthProtoUserCreateReq;
+
 
 #ifdef __cplusplus
 extern "C" {

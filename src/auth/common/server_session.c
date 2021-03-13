@@ -13,24 +13,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "auth_proto.h"
 
-void fcfs_auth_proto_init()
-{
-}
+#include <sys/stat.h>
+#include <limits.h>
+#include "fastcommon/ini_file_reader.h"
+#include "fastcommon/shared_func.h"
+#include "fastcommon/logger.h"
+#include "server_session.h"
 
-const char *fcfs_auth_get_cmd_caption(const int cmd)
+int server_session_init()
 {
-    switch (cmd) {
-        case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
-            return "USER_LOGIN_REQ";
-        case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP:
-            return "USER_LOGIN_RESP";
-        case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
-            return "USER_CREATE_REQ";
-        case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP:
-            return "USER_CREATE_RESP";
-        default:
-            return sf_get_cmd_caption(cmd);
-    }
+    return 0;
 }
