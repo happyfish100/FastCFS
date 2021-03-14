@@ -17,17 +17,45 @@
 #ifndef _FCFS_AUTH_SERVER_SESSION_H
 #define _FCFS_AUTH_SERVER_SESSION_H
 
-typedef struct auth_server_session {
-    int64_t session_id;
+#include "fastcommon/ini_file_reader.h"
+
+typedef struct server_session_config {
+    int shared_allocator_count;
+    int shared_lock_count;
+    int hashtable_capacity;
+} ServerSessionConfig;
+
+typedef struct server_session_entry {
+    uint64_t session_id;
     int64_t user_id;
+    int64_t user_priv;
     int64_t pool_id;
-} AuthServerSession;
+    struct {
+        int fdir;
+        int fstore;
+    } pool_priv;
+} ServerSessionEntry;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int server_session_init();
+int server_session_init(IniFullContext *ini_ctx);
+
+void server_session_get_cfg(ServerSessionConfig *cfg);
+
+int server_session_add(ServerSessionEntry *entry);
+
+int server_session_user_priv_granted(const uint64_t session_id,
+        const int64_t the_priv);
+
+int server_session_fstore_priv_granted(const uint64_t session_id,
+        const int the_priv);
+
+int server_session_fdir_priv_granted(const uint64_t session_id,
+        const int64_t pool_id, const int the_priv);
+
+int server_session_delete(const uint64_t session_id);
 
 #ifdef __cplusplus
 }

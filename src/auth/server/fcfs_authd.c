@@ -42,7 +42,6 @@
 #include "server_types.h"
 #include "server_global.h"
 #include "server_func.h"
-#include "server_session.h"
 #include "common_handler.h"
 #include "service_handler.h"
 
@@ -118,10 +117,6 @@ int main(int argc, char *argv[])
         }
 
         if ((result=write_to_pid_file(g_pid_filename)) != 0) {
-            break;
-        }
-
-        if ((result=server_session_init()) != 0) {
             break;
         }
 

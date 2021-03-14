@@ -23,11 +23,6 @@
 #include "server_types.h"
 
 typedef struct server_global_vars {
-    struct {
-        int htable_capacity;
-        int shared_lock_count;
-    } session_cfg;
-
     char *fdir_client_cfg_filename;
     SFSlowLogContext slow_log;
 } AuthServerGlobalVars;

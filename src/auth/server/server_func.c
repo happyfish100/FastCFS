@@ -25,6 +25,7 @@
 #include "sf/sf_service.h"
 #include "common/auth_proto.h"
 #include "server_global.h"
+#include "server_session.h"
 #include "server_func.h"
 
 static int server_load_fdir_client_config(IniContext *ini_context,
@@ -93,6 +94,7 @@ int server_load_config(const char *filename)
 {
     const int task_buffer_extra_size = 0;
     IniContext ini_context;
+    IniFullContext ini_ctx;
     int result;
 
     if ((result=iniLoadFromFile(filename, &ini_context)) != 0) {
@@ -107,6 +109,11 @@ int server_load_config(const char *filename)
                     FCFS_AUTH_DEFAULT_SERVICE_PORT,
                     task_buffer_extra_size)) != 0)
     {
+        return result;
+    }
+
+    FAST_INI_SET_FULL_CTX_EX(ini_ctx, filename, "session", &ini_context);
+    if ((result=server_session_init(&ini_ctx)) != 0) {
         return result;
     }
 
