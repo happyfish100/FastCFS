@@ -22,13 +22,26 @@
 #include "common/auth_global.h"
 #include "server_types.h"
 
+#define AUTH_ADMIN_GENERATE_MODE_FIRST  'F'
+#define AUTH_ADMIN_GENERATE_MODE_ALWAYS 'A'
+
 typedef struct server_global_vars {
+    struct {
+        int mode;
+        char *buff; //space for username and secret_key_filename
+        string_t username;
+        string_t secret_key_filename;
+    } admin_generate;
+
     char *fdir_client_cfg_filename;
     SFSlowLogContext slow_log;
 } AuthServerGlobalVars;
 
-#define SESSION_HTABLE_CAPACITY   g_server_global_vars.session_cfg.htable_capacity
-#define SESSION_SHARED_LOCK_COUNT g_server_global_vars.session_cfg.shared_lock_count
+#define ADMIN_GENERATE               g_server_global_vars.admin_generate
+#define ADMIN_GENERATE_MODE          ADMIN_GENERATE.mode
+#define ADMIN_GENERATE_BUFF          ADMIN_GENERATE.buff
+#define ADMIN_GENERATE_USERNAME      ADMIN_GENERATE.username
+#define ADMIN_GENERATE_KEY_FILENAME  ADMIN_GENERATE.secret_key_filename
 
 #define SLOW_LOG                g_server_global_vars.slow_log
 #define SLOW_LOG_CFG            SLOW_LOG.cfg

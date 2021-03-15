@@ -64,6 +64,98 @@ static int server_load_fdir_client_config(IniContext *ini_context,
     return 0;
 }
 
+static int server_load_admin_generate_config(IniContext *ini_context,
+        const char *config_filename)
+{
+#define SECTION_NAME_ADMIN_GENERATE  "admin_generate"
+#define USERNAME_VARIABLE_STR  "${username}"
+#define USERNAME_VARIABLE_LEN  (sizeof(USERNAME_VARIABLE_STR) - 1)
+
+    char *mode;
+    string_t username;
+    string_t secret_key_filename;
+    char *var_start;
+    char *var_end;
+    char *p;
+    char new_filename[PATH_MAX];
+    char full_filename[PATH_MAX];
+    int front_len;
+    int tail_len;
+
+    mode = iniGetStrValue(SECTION_NAME_ADMIN_GENERATE, "mode", ini_context);
+    if (mode != NULL && strcmp(mode, "always") == 0) {
+        ADMIN_GENERATE_MODE = AUTH_ADMIN_GENERATE_MODE_ALWAYS;
+    } else {
+        ADMIN_GENERATE_MODE = AUTH_ADMIN_GENERATE_MODE_FIRST;
+    }
+
+    username.str = iniGetStrValue(SECTION_NAME_ADMIN_GENERATE,
+            "username", ini_context);
+    if (username.str == NULL || *username.str == '\0') {
+        username.str = "admin";
+    }
+    username.len = strlen(username.str);
+
+    secret_key_filename.str = iniGetStrValue(SECTION_NAME_ADMIN_GENERATE,
+            "secret_key_filename", ini_context);
+    if (secret_key_filename.str == NULL || *secret_key_filename.str == '\0') {
+        secret_key_filename.str = "keys/"USERNAME_VARIABLE_STR".key";
+    }
+    secret_key_filename.len = strlen(secret_key_filename.str);
+
+    if ((var_start=strstr(secret_key_filename.str,
+                    USERNAME_VARIABLE_STR)) != NULL)
+    {
+        p = new_filename;
+        front_len = var_start - secret_key_filename.str;
+        if (front_len > 0) {
+            memcpy(p, secret_key_filename.str, front_len);
+            p += front_len;
+        }
+        memcpy(p, username.str, username.len);
+        p += username.len;
+
+        var_end = var_start + USERNAME_VARIABLE_LEN;
+        tail_len = (secret_key_filename.str +
+                secret_key_filename.len) - var_end;
+        if (tail_len > 0) {
+            memcpy(p, var_end, tail_len);
+            p += tail_len;
+        }
+        *p = '\0';
+
+        resolve_path(config_filename, new_filename,
+                full_filename, sizeof(full_filename));
+    } else {
+        resolve_path(config_filename, secret_key_filename.str,
+                full_filename, sizeof(full_filename));
+    }
+    FC_SET_STRING(secret_key_filename, full_filename);
+
+    //TODO
+    if (!fileExists(full_filename)) {
+    }
+
+    ADMIN_GENERATE_BUFF = (char *)fc_malloc(username.len +
+            secret_key_filename.len + 2);
+    if (ADMIN_GENERATE_BUFF == NULL) {
+        return ENOMEM;
+    }
+    ADMIN_GENERATE_USERNAME.str = ADMIN_GENERATE_BUFF;
+    memcpy(ADMIN_GENERATE_USERNAME.str,
+            username.str, username.len + 1);
+    ADMIN_GENERATE_USERNAME.len = username.len;
+
+    ADMIN_GENERATE_KEY_FILENAME.str =
+        ADMIN_GENERATE_BUFF + username.len + 1;
+    memcpy(ADMIN_GENERATE_KEY_FILENAME.str,
+            secret_key_filename.str,
+            secret_key_filename.len + 1);
+    ADMIN_GENERATE_KEY_FILENAME.len = secret_key_filename.len;
+
+    return 0;
+}
+
 static void server_log_configs()
 {
     char sz_server_config[512];
@@ -78,7 +170,12 @@ static void server_log_configs()
             sz_service_config, sizeof(sz_service_config));
 
     snprintf(sz_server_config, sizeof(sz_server_config),
+            "admin_generate {mode: %s, username: %s, "
+            "secret_key_filename: %s}, "
             "FastDIR client_config_filename: %s",
+            (ADMIN_GENERATE_MODE == AUTH_ADMIN_GENERATE_MODE_FIRST ?
+             "first" : "always"), ADMIN_GENERATE_USERNAME.str,
+            ADMIN_GENERATE_KEY_FILENAME.str,
             g_server_global_vars.fdir_client_cfg_filename);
 
     logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s",
@@ -114,6 +211,12 @@ int server_load_config(const char *filename)
 
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, filename, "session", &ini_context);
     if ((result=server_session_init(&ini_ctx)) != 0) {
+        return result;
+    }
+
+    if ((result=server_load_admin_generate_config(
+                    &ini_context, filename)) != 0)
+    {
         return result;
     }
 
