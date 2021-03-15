@@ -29,7 +29,6 @@
 
 typedef struct db_storage_pool_info {
     FCFSAuthStoragePoolInfo pool;
-    int status;
 } DBStoragePoolInfo;
 
 typedef struct db_storage_pool_granted {
@@ -43,7 +42,6 @@ typedef struct db_storage_pool_granted {
 
 typedef struct db_user_info {
     FCFSAuthUserInfo user;
-    int status;
     struct {
         struct uniq_skiplist *created;  //element: DBStoragePoolInfo
         struct uniq_skiplist *granted;  //element: DBStoragePoolGranted
@@ -255,7 +253,7 @@ static int user_create(AuthServerContext *server_ctx, DBUserInfo *user,
     }
 
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
-    user->status = FCFS_AUTH_USER_STATUS_NORMAL;
+    user->user.status = FCFS_AUTH_USER_STATUS_NORMAL;
     if (need_insert) {
         result = uniq_skiplist_insert(adb_ctx.user.sl_pair.skiplist, user);
     }
@@ -272,7 +270,7 @@ int adb_user_create(AuthServerContext *server_ctx, const string_t *username,
 
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     user = user_get(server_ctx, username);
-    if (user != NULL && user->status == FCFS_AUTH_USER_STATUS_NORMAL) {
+    if (user != NULL && user->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
         result = EEXIST;
     } else {
         result = ENOENT;
@@ -295,7 +293,7 @@ const FCFSAuthUserInfo *adb_user_get(AuthServerContext *server_ctx,
     user = user_get(server_ctx, username);
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
-    if (user != NULL && user->status == FCFS_AUTH_USER_STATUS_NORMAL) {
+    if (user != NULL && user->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
         return &user->user;
     } else {
         return NULL;

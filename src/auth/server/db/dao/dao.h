@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+extern uint64_t g_dao_session_id;  //for request FastDIR
+
 static inline int dao_get_context_size()
 {
     return sizeof(FDIRClientContext);

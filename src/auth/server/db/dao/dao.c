@@ -18,3 +18,5 @@
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "dao.h"
+
+uint64_t g_dao_session_id;

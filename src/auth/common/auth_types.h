@@ -42,6 +42,7 @@ typedef struct fcfs_auth_storage_pool_info {
     int64_t id;
     string_t name;
     int64_t quota;
+    int status;
 } FCFSAuthStoragePoolInfo;
 
 typedef struct fcfs_auth_storage_pool_granted {
@@ -58,6 +59,7 @@ typedef struct fcfs_auth_user_info {
     string_t name;
     string_t passwd;
     int64_t priv;
+    int status;
 } FCFSAuthUserInfo;
 
 typedef struct fcfs_auth_storage_pool_array {

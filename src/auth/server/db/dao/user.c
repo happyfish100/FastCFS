@@ -76,6 +76,66 @@ static inline int set_xattr_integer(FDIRClientContext *client_ctx,
     return set_xattr_string(client_ctx, inode, name, &value);
 }
 
+static inline int get_xattr_string(FDIRClientContext *client_ctx,
+        const int64_t inode, const string_t *name, string_t *value,
+        const int size)
+{
+    int result;
+    result = fdir_client_get_xattr_by_inode_ex(client_ctx,
+            inode, name, LOG_WARNING, value, size);
+    if (result == ENODATA) {
+        value->len = 0;
+        return 0;
+    } else {
+        return result;
+    }
+}
+
+static inline int get_xattr_int64(FDIRClientContext *client_ctx,
+        const int64_t inode, const string_t *name, int64_t *nv)
+{
+    char buff[32];
+    string_t value;
+    char *endptr;
+    int result;
+
+    value.str = buff;
+    if ((result=get_xattr_string(client_ctx, inode, name,
+                    &value, sizeof(buff) - 1)) != 0)
+    {
+        return result;
+    }
+
+    if (value.len == 0) {
+        *nv = 0;
+        return 0;
+    }
+
+    *(value.str + value.len) = '\0';
+    *nv = strtoll(value.str, &endptr, 10);
+    if (endptr != NULL && *endptr != '\0') {
+        logError("file: "__FILE__", line: %d, "
+                "field: %.*s, invalid digital string: %s",
+                __LINE__, name->len, name->str, value.str);
+        return EINVAL;
+    }
+
+    return 0;
+}
+
+static inline int get_xattr_int32(FDIRClientContext *client_ctx,
+        const int64_t inode, const string_t *name, int32_t *nv)
+{
+    int64_t n;
+    int result;
+
+    if ((result=get_xattr_int64(client_ctx, inode, name, &n)) == 0) {
+        *nv = n;
+    }
+
+    return result;
+}
+
 static int user_make_subdir(FDIRClientContext *client_ctx,
         const string_t *username, const char *subdir,
         const bool check_exist)
@@ -156,7 +216,109 @@ int dao_user_create(FDIRClientContext *client_ctx, FCFSAuthUserInfo *user)
     return 0;
 }
 
-int user_remove(const string_t *username)
+int dao_user_update_priv(FDIRClientContext *client_ctx,
+        const int64_t user_id, const int64_t priv)
 {
+    return set_xattr_integer(client_ctx, user_id, &xttr_name_priv, priv);
+}
+
+int dao_user_update_passwd(FDIRClientContext *client_ctx,
+        const int64_t user_id, const string_t *passwd)
+{
+    return set_xattr_string(client_ctx, user_id,
+            &xttr_name_passwd, passwd);
+}
+
+int dao_user_remove(FDIRClientContext *client_ctx, const int64_t user_id)
+{
+    return set_xattr_integer(client_ctx, user_id, &xttr_name_status,
+            FCFS_AUTH_USER_STATUS_DELETED);
+}
+
+static int dump_to_user_array(FDIRClientContext *client_ctx,
+        struct fast_mpool_man *mpool, const FDIRClientDentryArray *darray,
+        FCFSAuthUserArray *uarray)
+{
+    const FDIRClientDentry *entry;
+    const FDIRClientDentry *end;
+    FCFSAuthUserInfo *new_users;
+    FCFSAuthUserInfo *user;
+    char buff[256];
+    string_t value;
+    int result;
+
+    if (darray->count > uarray->alloc) {
+        new_users = (FCFSAuthUserInfo *)fc_malloc(
+                sizeof(FCFSAuthUserInfo) * darray->count);
+        if (new_users == NULL) {
+            return ENOMEM;
+        }
+
+        if (uarray->users != uarray->fixed) {
+            free(uarray->users);
+        }
+        uarray->users = new_users;
+        uarray->alloc = darray->count;
+    }
+
+    end = darray->entries + darray->count;
+    for (entry=darray->entries, user=uarray->users;
+            entry<end; entry++, user++)
+    {
+        user->id = entry->dentry.inode;
+        user->name = entry->name;
+
+        value.str = buff;
+        if ((result=get_xattr_string(client_ctx, user->id,
+                        &xttr_name_passwd, &value, sizeof(buff))) != 0)
+        {
+            return result;
+        }
+        if ((result=fast_mpool_alloc_string_ex2(mpool,
+                        &user->passwd, &value)) != 0)
+        {
+            return result;
+        }
+
+        if ((result=get_xattr_int64(client_ctx, user->id,
+                        &xttr_name_priv, &user->priv)) != 0)
+        {
+            return result;
+        }
+        if ((result=get_xattr_int32(client_ctx, user->id,
+                        &xttr_name_status, &user->status)) != 0)
+        {
+            return result;
+        }
+    }
+
+    uarray->count = darray->count;
     return 0;
+}
+
+int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
+        *mpool, FCFSAuthUserArray *user_array)
+{
+    int result;
+    AuthFullPath fp;
+    FDIRClientDentryArray dentry_array;
+
+    if ((result=fdir_client_dentry_array_init_ex(
+                    &dentry_array, mpool)) != 0)
+    {
+        return result;
+    }
+
+    AUTH_SET_BASE_PATH(fp);
+    if ((result=fdir_client_list_dentry_by_path(client_ctx,
+                    &fp.fullname, &dentry_array)) != 0)
+    {
+        fdir_client_dentry_array_free(&dentry_array);
+        return result;
+    }
+
+    result = dump_to_user_array(client_ctx, mpool,
+            &dentry_array, user_array);
+    fdir_client_dentry_array_free(&dentry_array);
+    return result;
 }

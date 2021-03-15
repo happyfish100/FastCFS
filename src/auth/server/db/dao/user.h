@@ -16,6 +16,7 @@
 #ifndef _AUTH_DAO_USER_H
 #define _AUTH_DAO_USER_H
 
+#include "fastcommon/fast_mpool.h"
 #include "types.h"
 
 #ifdef __cplusplus
@@ -24,16 +25,16 @@ extern "C" {
 
 int dao_user_create(FDIRClientContext *client_ctx, FCFSAuthUserInfo *user);
 
-int dao_user_remove(FDIRClientContext *client_ctx, const string_t *username);
-
-int dao_user_list(FDIRClientContext *client_ctx, const string_t *username,
-        FCFSAuthUserArray *array);
+int dao_user_remove(FDIRClientContext *client_ctx, const int64_t user_id);
 
 int dao_user_update_priv(FDIRClientContext *client_ctx,
-        const string_t *username, const int64_t priv);
+        const int64_t user_id, const int64_t priv);
 
 int dao_user_update_passwd(FDIRClientContext *client_ctx,
-        const string_t *username, const string_t *passwd);
+        const int64_t user_id, const string_t *passwd);
+
+int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
+        *mpool, FCFSAuthUserArray *user_array);
 
 #ifdef __cplusplus
 }

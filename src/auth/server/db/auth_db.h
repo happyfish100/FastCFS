@@ -25,6 +25,8 @@ extern "C" {
 
 int auth_db_init();
 
+int adb_load_data(AuthServerContext *server_ctx);
+
 int adb_user_create(AuthServerContext *server_ctx, const string_t *username,
         const string_t *passwd, const int64_t priv);
 

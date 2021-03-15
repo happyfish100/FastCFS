@@ -23,7 +23,8 @@
 #define AUTH_NAMESPACE_STR    "sys-auth"
 #define AUTH_NAMESPACE_LEN    (sizeof(AUTH_NAMESPACE_STR) - 1)
 
-#define AUTH_BASE_PATH        "/home"
+#define AUTH_BASE_PATH_STR    "/home"
+#define AUTH_BASE_PATH_LEN    (sizeof(AUTH_BASE_PATH_STR) - 1)
 
 typedef struct auth_full_path {
     char buff[PATH_MAX];
@@ -37,14 +38,22 @@ typedef struct auth_full_path {
         fp.fullname.path.str = fp.buff;  \
         if (subdir != NULL) { \
             fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                    AUTH_BASE_PATH"/%s/%s", (username)->str, subdir); \
+                    AUTH_BASE_PATH_STR"/%s/%s", (username)->str, subdir); \
         } else { \
             fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                    AUTH_BASE_PATH"/%s", (username)->str);   \
+                    AUTH_BASE_PATH_STR"/%s", (username)->str);   \
         } \
     } while (0)
 
 #define AUTH_SET_USER_HOME(fp, username)  \
     AUTH_SET_USER_PATH(fp, username, NULL)
+
+#define AUTH_SET_BASE_PATH(fp)  \
+    do { \
+        FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
+                AUTH_NAMESPACE_LEN); \
+        FC_SET_STRING_EX(fp.fullname.path, AUTH_BASE_PATH_STR, \
+                AUTH_BASE_PATH_LEN); \
+    } while (0)
 
 #endif
