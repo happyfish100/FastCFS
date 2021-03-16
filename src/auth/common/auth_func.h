@@ -39,6 +39,7 @@ extern "C" {
         }
     }
 
+    void fcfs_auth_generate_passwd(unsigned char passwd[16]);
 
 #ifdef __cplusplus
 }

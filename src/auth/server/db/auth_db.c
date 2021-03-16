@@ -54,6 +54,7 @@ typedef struct auth_db_context {
     struct fast_allocator_context name_acontext;
 
     struct {
+        int count;
         UniqSkiplistPair sl_pair;
         struct fast_mblock_man allocator; //element: DBUserInfo
     } user;
@@ -260,7 +261,11 @@ static int user_create(AuthServerContext *server_ctx, DBUserInfo **dbuser,
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     (*dbuser)->user.status = FCFS_AUTH_USER_STATUS_NORMAL;
     if (need_insert) {
-        result = uniq_skiplist_insert(adb_ctx.user.sl_pair.skiplist, *dbuser);
+        if ((result=uniq_skiplist_insert(adb_ctx.user.sl_pair.
+                        skiplist, *dbuser)) == 0)
+        {
+            adb_ctx.user.count++;
+        }
     }
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
@@ -303,6 +308,28 @@ const FCFSAuthUserInfo *adb_user_get(AuthServerContext *server_ctx,
     } else {
         return NULL;
     }
+}
+
+int adb_user_remove(AuthServerContext *server_ctx, const string_t *username)
+{
+    DBUserInfo *user;
+    int result;
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL && user->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
+        if ((result=dao_user_remove(server_ctx->dao_ctx,
+                        user->user.id)) == 0)
+        {
+            user->user.status = FCFS_AUTH_USER_STATUS_DELETED;
+            adb_ctx.user.count--;
+        }
+    } else {
+        result = ENOENT;
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return result;
 }
 
 static int convert_user_array(AuthServerContext *server_ctx,
@@ -354,4 +381,40 @@ int adb_load_data(AuthServerContext *server_ctx)
     fcfs_auth_user_free_array(&user_array);
     fast_mpool_destroy(&mpool);
     return result;
+}
+
+int adb_check_generate_admin_user(AuthServerContext *server_ctx)
+{
+    int result;
+    bool need_create;
+    unsigned char passwd[FCFS_AUTH_PASSWD_LEN];
+    char hex_buff[2 * FCFS_AUTH_PASSWD_LEN + 1];
+    FCFSAuthUserInfo user;
+
+    if (ADMIN_GENERATE_MODE == AUTH_ADMIN_GENERATE_MODE_FIRST) {
+        need_create = (adb_ctx.user.count == 0);
+    } else {
+        need_create = adb_user_get(server_ctx,
+                &ADMIN_GENERATE_USERNAME) == NULL;
+    }
+
+    if (need_create) {
+        user.name = ADMIN_GENERATE_USERNAME;
+        fcfs_auth_generate_passwd(passwd);
+        FC_SET_STRING_EX(user.passwd, (char *)passwd, FCFS_AUTH_PASSWD_LEN);
+        user.priv = FCFS_AUTH_USER_PRIV_ALL;
+        if ((result=adb_user_create(server_ctx, &user)) == 0) {
+            if ((result=safeWriteToFile(ADMIN_GENERATE_KEY_FILENAME.str,
+                    hex_buff, user.passwd.len * 2)) == 0)
+            {
+                logInfo("file: "__FILE__", line: %d, "
+                        "scret key for user \"%s\" store to file: %s",
+                        __LINE__, ADMIN_GENERATE_USERNAME.str,
+                        ADMIN_GENERATE_KEY_FILENAME.str);
+            }
+        }
+        return result;
+    } else {
+        return 0;
+    }
 }

@@ -39,6 +39,7 @@
 #include "sf/sf_service.h"
 #include "sf/sf_util.h"
 #include "common/auth_proto.h"
+#include "db/auth_db.h"
 #include "server_types.h"
 #include "server_global.h"
 #include "server_func.h"
@@ -124,12 +125,6 @@ int main(int argc, char *argv[])
             break;
         }
 
-        /*
-        if ((result=server_load_data()) != 0) {
-            break;
-        }
-        */
-
         common_handler_init();
         //sched_print_all_entries();
 
@@ -143,6 +138,18 @@ int main(int argc, char *argv[])
         }
         sf_enable_thread_notify(true);
         sf_set_remove_from_ready_list(false);
+
+        if ((result=adb_load_data((AuthServerContext *)
+                        sf_get_random_thread_data()->arg)) != 0)
+        {
+            break;
+        }
+
+        //TODO
+        if ((result=adb_check_generate_admin_user((AuthServerContext *)
+                        sf_get_random_thread_data()->arg)) != 0) {
+            break;
+        }
     } while (0);
 
     if (result != 0) {

@@ -43,7 +43,8 @@
 #define XTTR_NAME_FSTORE_STR  "fstore"
 #define XTTR_NAME_FSTORE_LEN  (sizeof(XTTR_NAME_FSTORE_STR) - 1)
 
-static FDIRClientOwnerModePair dao_omp = {0, 0, 0700};
+static FDIRClientOwnerModePair dao_omp_dir = {0, 0, 0700 | S_IFDIR};
+//static FDIRClientOwnerModePair dao_omp_file = {0, 0, 0700 | S_IFREG};
 static string_t dao_ns = {AUTH_NAMESPACE_STR, AUTH_NAMESPACE_LEN};
 
 static string_t xttr_name_passwd = {XTTR_NAME_PASSWD_STR, XTTR_NAME_PASSWD_LEN};
@@ -156,7 +157,7 @@ static int user_make_subdir(FDIRClientContext *client_ctx,
     }
 
     result = fdir_client_create_dentry(client_ctx,
-            &fp.fullname, &dao_omp, &dentry);
+            &fp.fullname, &dao_omp_dir, &dentry);
     return result == EEXIST ? 0 : result;
 }
 
@@ -170,7 +171,7 @@ int dao_user_create(FDIRClientContext *client_ctx, FCFSAuthUserInfo *user)
 
     AUTH_SET_USER_HOME(home, &user->name);
     result = fdir_client_create_dentry(client_ctx,
-            &home.fullname, &dao_omp, &dentry);
+            &home.fullname, &dao_omp_dir, &dentry);
     if (result == 0) {
         inode = dentry.inode;
         check_exist = false;
@@ -300,7 +301,9 @@ int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
         *mpool, FCFSAuthUserArray *user_array)
 {
     int result;
+    FDIRDEntryInfo dentry;
     AuthFullPath fp;
+    FDIRDEntryFullName root;
     FDIRClientDentryArray dentry_array;
 
     if ((result=fdir_client_dentry_array_init_ex(
@@ -310,8 +313,30 @@ int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
     }
 
     AUTH_SET_BASE_PATH(fp);
-    if ((result=fdir_client_list_dentry_by_path(client_ctx,
-                    &fp.fullname, &dentry_array)) != 0)
+    if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
+                    &fp.fullname, LOG_DEBUG, &dentry.inode)) != 0)
+    {
+        if (result != ENOENT) {
+            return result;
+        }
+
+        FC_SET_STRING_EX(root.ns, AUTH_NAMESPACE_STR,
+                AUTH_NAMESPACE_LEN);
+        FC_SET_STRING_EX(root.path, "/", 1);
+        if ((result=fdir_client_create_dentry(client_ctx,
+                        &root, &dao_omp_dir, &dentry)) != 0)
+        {
+            return result;
+        }
+        if ((result=fdir_client_create_dentry(client_ctx,
+                        &fp.fullname, &dao_omp_dir, &dentry)) != 0)
+        {
+            return result;
+        }
+    }
+
+    if ((result=fdir_client_list_dentry_by_inode(client_ctx,
+                    dentry.inode, &dentry_array)) != 0)
     {
         fdir_client_dentry_array_free(&dentry_array);
         return result;

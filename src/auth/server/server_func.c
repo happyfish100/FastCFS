@@ -74,13 +74,11 @@ static int server_load_admin_generate_config(IniContext *ini_context,
     char *mode;
     string_t username;
     string_t secret_key_filename;
-    char *var_start;
-    char *var_end;
-    char *p;
     char new_filename[PATH_MAX];
+    string_t tag;
+    string_t dest;
     char full_filename[PATH_MAX];
-    int front_len;
-    int tail_len;
+    int result;
 
     mode = iniGetStrValue(SECTION_NAME_ADMIN_GENERATE, "mode", ini_context);
     if (mode != NULL && strcmp(mode, "always") == 0) {
@@ -103,37 +101,24 @@ static int server_load_admin_generate_config(IniContext *ini_context,
     }
     secret_key_filename.len = strlen(secret_key_filename.str);
 
-    if ((var_start=strstr(secret_key_filename.str,
-                    USERNAME_VARIABLE_STR)) != NULL)
-    {
-        p = new_filename;
-        front_len = var_start - secret_key_filename.str;
-        if (front_len > 0) {
-            memcpy(p, secret_key_filename.str, front_len);
-            p += front_len;
-        }
-        memcpy(p, username.str, username.len);
-        p += username.len;
+    FC_SET_STRING_EX(tag, USERNAME_VARIABLE_STR, USERNAME_VARIABLE_LEN);
+    FC_SET_STRING_EX(dest, new_filename, 0);
+    str_replace(&secret_key_filename, &tag, &username,
+            &dest, sizeof(new_filename));
 
-        var_end = var_start + USERNAME_VARIABLE_LEN;
-        tail_len = (secret_key_filename.str +
-                secret_key_filename.len) - var_end;
-        if (tail_len > 0) {
-            memcpy(p, var_end, tail_len);
-            p += tail_len;
-        }
-        *p = '\0';
-
-        resolve_path(config_filename, new_filename,
-                full_filename, sizeof(full_filename));
-    } else {
-        resolve_path(config_filename, secret_key_filename.str,
-                full_filename, sizeof(full_filename));
-    }
+    resolve_path(config_filename, new_filename,
+            full_filename, sizeof(full_filename));
     FC_SET_STRING(secret_key_filename, full_filename);
 
-    //TODO
     if (!fileExists(full_filename)) {
+        char abs_path[PATH_MAX];
+        int create_count;
+
+        getAbsolutePath(full_filename, abs_path, sizeof(abs_path));
+        if ((result=fc_mkdirs_ex(abs_path, 0755, &create_count)) != 0) {
+            return result;
+        }
+        SF_CHOWN_TO_RUNBY_RETURN_ON_ERROR(abs_path);
     }
 
     ADMIN_GENERATE_BUFF = (char *)fc_malloc(username.len +

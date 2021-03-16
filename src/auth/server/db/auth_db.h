@@ -27,6 +27,8 @@ int auth_db_init();
 
 int adb_load_data(AuthServerContext *server_ctx);
 
+int adb_check_generate_admin_user(AuthServerContext *server_ctx);
+
 int adb_user_create(AuthServerContext *server_ctx,
         const FCFSAuthUserInfo *user);
 
