@@ -62,7 +62,7 @@ void service_task_finish_cleanup(struct fast_task_info *task)
     sf_task_finish_clean_up(task);
 }
 
-static int service_deal_client_join(struct fast_task_info *task)
+static int service_deal_user_login(struct fast_task_info *task)
 {
     /*
     join_resp = (FDIRProtoClientJoinResp *)REQUEST.body;
@@ -73,6 +73,34 @@ static int service_deal_client_join(struct fast_task_info *task)
     TASK_ARG->context.response_done = true;
     */
     return 0;
+}
+
+static int service_deal_user_create(struct fast_task_info *task)
+{
+    FCFSAuthProtoUserCreateReq *req;
+    FCFSAuthUserInfo user;
+    int result;
+
+    if ((result=server_check_min_body_length(sizeof(
+                        FCFSAuthProtoUserCreateReq) + 1)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoUserCreateReq *)REQUEST.body;
+    FC_SET_STRING_EX(user.name, req->up_pair.username.str,
+            req->up_pair.username.len);
+    FC_SET_STRING_EX(user.passwd, req->up_pair.passwd,
+            FCFS_AUTH_PASSWD_LEN);
+    user.priv = buff2long(req->priv);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoUserCreateReq)
+                    + user.name.len)) != 0)
+    {
+        return result;
+    }
+
+    return adb_user_create(SERVER_CTX, &user);
 }
 
 int service_deal_task(struct fast_task_info *task, const int stage)
@@ -107,7 +135,11 @@ int service_deal_task(struct fast_task_info *task, const int stage)
                 result = sf_proto_deal_active_test(task, &REQUEST, &RESPONSE);
                 break;
             case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
-                result = service_deal_client_join(task);
+                result = service_deal_user_login(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP;
+                result = service_deal_user_create(task);
                 break;
             default:
                 RESPONSE.error.length = sprintf(

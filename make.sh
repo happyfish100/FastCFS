@@ -137,6 +137,10 @@ cd src/auth/server
 replace_makefile
 make $1 $2
 
+cd ../client
+replace_makefile
+make $1 $2
+
 cd ../../api
 replace_makefile
 make $1 $2
