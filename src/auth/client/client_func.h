@@ -28,9 +28,9 @@ extern "C" {
     fcfs_auth_client_load_from_file_ex((&g_fcfs_auth_client_vars.client_ctx), \
             filename, NULL)
 
-#define fcfs_auth_client_init(filename, cm)  \
+#define fcfs_auth_client_init(filename)  \
     fcfs_auth_client_init_ex((&g_fcfs_auth_client_vars.client_ctx),  \
-            filename, NULL, cm)
+            filename, NULL)
 
 #define fcfs_auth_client_destroy() \
     fcfs_auth_client_destroy_ex((&g_fcfs_auth_client_vars.client_ctx))

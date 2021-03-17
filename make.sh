@@ -141,6 +141,11 @@ cd ../client
 replace_makefile
 make $1 $2
 
+cd tools 
+replace_makefile
+make $1 $2
+cd ..
+
 cd ../../api
 replace_makefile
 make $1 $2

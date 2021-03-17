@@ -21,6 +21,11 @@
 #include "sf/sf_connection_manager.h"
 #include "auth_types.h"
 
+typedef struct fcfs_auth_client_user_key_pair {
+    string_t username;
+    string_t key_filename;
+} FCFSAuthClientUserKeyPair;
+
 typedef struct fcfs_auth_client_server_entry {
     int server_id;
     ConnectionInfo conn;
