@@ -17,11 +17,26 @@
 #define _FCFS_AUTH_CLIENT_TYPES_H
 
 #include "fastcommon/common_define.h"
-#include "fastcommon/connection_pool.h"
 #include "sf/sf_configs.h"
-//#include "fdir_types.h"
+#include "sf/sf_connection_manager.h"
+#include "auth_types.h"
 
-typedef struct fdir_client_context {
+typedef struct fcfs_auth_client_server_entry {
+    int server_id;
+    ConnectionInfo conn;
+    char status;
+} FCFSAuthClientServerEntry;
+
+typedef struct fcfs_auth_server_group {
+    int alloc_size;
+    int count;
+    ConnectionInfo *servers;
+} FCFSAuthServerGroup;
+
+typedef struct fcfs_auth_client_context {
+    FCServerConfig server_cfg;
+    int service_group_index;
+    SFConnectionManager cm;
     SFClientCommonConfig common_cfg;
 } FCFSAuthClientContext;
 

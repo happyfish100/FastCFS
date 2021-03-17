@@ -8,15 +8,17 @@ TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
 FAST_SHARED_OBJS = ../common/auth_global.lo ../common/auth_proto.lo \
                    ../common/auth_func.lo client_func.lo \
                    client_global.lo client_proto.lo fcfs_auth_client.lo  \
+                   simple_connection_manager.lo
 
 FAST_STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o \
                    ../common/auth_func.o client_func.o \
                    client_global.o client_proto.o fcfs_auth_client.o  \
+                   simple_connection_manager.o
 
 HEADER_FILES = ../common/auth_types.h ../common/auth_global.h \
                ../common/auth_proto.h ../common/auth_func.h \
                fcfs_auth_client.h client_types.h client_func.h \
-               client_global.h client_proto.h \
+               client_global.h client_proto.h simple_connection_manager.h
 
 ALL_OBJS = $(FAST_STATIC_OBJS) $(FAST_SHARED_OBJS)
 

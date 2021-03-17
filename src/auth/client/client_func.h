@@ -78,6 +78,9 @@ static inline int fcfs_auth_client_init_ex(FCFSAuthClientContext *client_ctx,
 **/
 void fcfs_auth_client_destroy_ex(FCFSAuthClientContext *client_ctx);
 
+int fcfs_auth_alloc_group_servers(FCFSAuthServerGroup *server_group,
+        const int alloc_size);
+
 void fcfs_auth_client_log_config_ex(FCFSAuthClientContext *client_ctx,
         const char *extra_config);
 
