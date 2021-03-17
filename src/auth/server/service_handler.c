@@ -64,14 +64,48 @@ void service_task_finish_cleanup(struct fast_task_info *task)
 
 static int service_deal_user_login(struct fast_task_info *task)
 {
-    /*
-    join_resp = (FDIRProtoClientJoinResp *)REQUEST.body;
-    int2buff(g_sf_global_vars.min_buff_size - 128,
-            join_resp->buffer_size);
-    RESPONSE.header.body_len = sizeof(FDIRProtoClientJoinResp);
+    FCFSAuthProtoUserLoginReq *req;
+    FCFSAuthProtoUserLoginResp *resp;
+    const FCFSAuthUserInfo *user;
+    string_t username;
+    string_t passwd;
+    int64_t session_id;
+    int result;
+
+    if ((result=server_check_min_body_length(sizeof(
+                        FCFSAuthProtoUserLoginReq) + 1)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoUserLoginReq *)REQUEST.body;
+    FC_SET_STRING_EX(username, req->up_pair.username.str,
+            req->up_pair.username.len);
+    FC_SET_STRING_EX(passwd, req->up_pair.passwd,
+            FCFS_AUTH_PASSWD_LEN);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoUserLoginReq)
+                    + username.len)) != 0)
+    {
+        return result;
+    }
+
+    if (!((user=adb_user_get(SERVER_CTX, &username)) != NULL &&
+            fc_string_equal(&user->passwd, &passwd)))
+    {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "username or password not correct");
+        return EPERM;
+    }
+
+    //TODO
+    session_id = 123456;
+
+    resp = (FCFSAuthProtoUserLoginResp *)REQUEST.body;
+    long2buff(session_id, resp->session_id);
+    RESPONSE.header.body_len = sizeof(FCFSAuthProtoUserLoginResp);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP;
-    TASK_ARG->context.response_done = true;
-    */
+    TASK_ARG->context.common.response_done = true;
     return 0;
 }
 

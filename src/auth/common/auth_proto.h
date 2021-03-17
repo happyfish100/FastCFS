@@ -45,11 +45,10 @@ typedef struct fcfs_auth_proto_user_login_req {
 } FCFSAuthProtoUserLoginReq;
 
 typedef struct fcfs_auth_proto_user_login_resp {
-    char session_id[8];
+    char session_id[FCFS_AUTH_SESSION_ID_LEN];
 } FCFSAuthProtoUserLoginResp;
 
 typedef struct fcfs_auth_proto_user_create_req {
-    char session_id[8];
     char priv[8];
     FCFSAuthProtoUserPasswdPair up_pair;
 } FCFSAuthProtoUserCreateReq;

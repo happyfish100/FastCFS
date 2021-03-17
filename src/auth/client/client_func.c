@@ -191,7 +191,9 @@ int fcfs_auth_client_init_ex1(FCFSAuthClientContext *client_ctx,
     int result;
 
     memset(client_ctx, 0, sizeof(FCFSAuthClientContext));
-    if ((result=fcfs_auth_client_load_from_file_ex1(client_ctx, ini_ctx)) != 0) {
+    if ((result=fcfs_auth_client_load_from_file_ex1(
+                    client_ctx, ini_ctx)) != 0)
+    {
         return result;
     }
 

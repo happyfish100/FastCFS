@@ -45,11 +45,6 @@ int adb_user_update_priv(AuthServerContext *server_ctx,
 int adb_user_update_passwd(AuthServerContext *server_ctx,
         const string_t *username, const string_t *passwd);
 
-/*
-    int user_login(const string_t *username,
-            const string_t *passwd, int64_t *priv);
-            */
-
 #ifdef __cplusplus
 }
 #endif

@@ -38,6 +38,7 @@ typedef struct fcfs_auth_client_context {
     int service_group_index;
     SFConnectionManager cm;
     SFClientCommonConfig common_cfg;
+    char session_id[FCFS_AUTH_SESSION_ID_LEN];
 } FCFSAuthClientContext;
 
 #endif

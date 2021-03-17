@@ -29,19 +29,25 @@ typedef struct fcfs_auth_cm_simple_extra {
         ConnectionInfo *conn;
         ConnectionInfo holder;
     } master_cache;
-    ConnectionPool cp;
+    ConnectionPool cpool;
     FCFSAuthClientContext *client_ctx;
     FCFSAuthServerGroup *cluster_sarray;
 } FCFSAuthCMSimpleExtra;
 
-static inline int make_connection(SFConnectionManager *cm,
-        ConnectionInfo *conn)
+static int connect_done_callback(ConnectionInfo *conn, void *args)
 {
-    if (conn->sock >= 0) {
-        return 0;
-    }
+    //TODO
+    /*
+       SFConnectionParameters *params;
+       int result;
 
-    return conn_pool_connect_server(conn, cm->common_cfg->connect_timeout);
+       params = (SFConnectionParameters *)conn->args;
+       result = fcfs_auth_client_proto_join_server(
+       (FCFSAuthClientContext *)args, conn, params);
+       return result;
+     */
+
+    return 0;
 }
 
 static int check_realloc_group_servers(FCFSAuthServerGroup *server_group)
@@ -79,11 +85,13 @@ static int check_realloc_group_servers(FCFSAuthServerGroup *server_group)
 static ConnectionInfo *get_spec_connection(SFConnectionManager *cm,
         const ConnectionInfo *target, int *err_no)
 {
+    FCFSAuthCMSimpleExtra *extra;
     FCFSAuthServerGroup *cluster_sarray;
     ConnectionInfo *conn;
     ConnectionInfo *end;
 
-    cluster_sarray = ((FCFSAuthCMSimpleExtra *)cm->extra)->cluster_sarray;
+    extra = (FCFSAuthCMSimpleExtra *)cm->extra;
+    cluster_sarray = extra->cluster_sarray;
     end = cluster_sarray->servers + cluster_sarray->count;
     for (conn=cluster_sarray->servers; conn<end; conn++) {
         if (FC_CONNECTION_SERVER_EQUAL1(*conn, *target)) {
@@ -101,10 +109,7 @@ static ConnectionInfo *get_spec_connection(SFConnectionManager *cm,
         conn_pool_set_server_info(conn, target->ip_addr, target->port);
     }
 
-    if ((*err_no=make_connection(cm, conn)) != 0) {
-        return NULL;
-    }
-    return conn;
+    return conn_pool_get_connection(&extra->cpool, target, err_no);
 }
 
 static ConnectionInfo *get_connection(SFConnectionManager *cm,
@@ -139,69 +144,13 @@ static ConnectionInfo *get_connection(SFConnectionManager *cm,
     return NULL;
 }
 
-static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
-        const int group_index, int *err_no)
+static void release_connection(SFConnectionManager *cm,
+        ConnectionInfo *conn)
 {
     FCFSAuthCMSimpleExtra *extra;
-    ConnectionInfo *conn; 
-    FCFSAuthClientServerEntry master;
 
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
-    if (extra->master_cache.conn != NULL) {
-        return extra->master_cache.conn;
-    }
-
-    do {
-        if ((*err_no=fcfs_auth_client_get_master(extra->
-                        client_ctx, &master)) != 0)
-        {
-            break;
-        }
-
-        if ((conn=get_spec_connection(cm, &master.conn,
-                        err_no)) == NULL)
-        {
-            break;
-        }
-
-        extra->master_cache.conn = conn;
-        return conn;
-    } while (0);
-
-    logError("file: "__FILE__", line: %d, "
-            "get_master_connection fail, errno: %d",
-            __LINE__, *err_no);
-    return NULL;
-}
-
-static ConnectionInfo *get_readable_connection(SFConnectionManager *cm,
-        const int group_index, int *err_no)
-{
-    FCFSAuthClientContext *client_ctx;
-    ConnectionInfo *conn; 
-    FCFSAuthClientServerEntry server;
-
-    client_ctx = ((FCFSAuthCMSimpleExtra *)cm->extra)->client_ctx;
-    do {
-        if ((*err_no=fcfs_auth_client_get_readable_server(
-                        client_ctx, &server)) != 0)
-        {
-            break;
-        }
-
-        if ((conn=get_spec_connection(cm, &server.conn,
-                        err_no)) == NULL)
-        {
-            break;
-        }
-
-        return conn;
-    } while (0);
-
-    logError("file: "__FILE__", line: %d, "
-            "get_readable_connection fail, errno: %d",
-            __LINE__, *err_no);
-        return NULL;
+    conn_pool_close_connection_ex(&extra->cpool, conn, false);
 }
 
 static void close_connection(SFConnectionManager *cm,
@@ -213,13 +162,7 @@ static void close_connection(SFConnectionManager *cm,
         extra->master_cache.conn = NULL;
     }
 
-    conn_pool_disconnect_server(conn);
-}
-
-static const struct sf_connection_parameters *get_connection_params(
-        SFConnectionManager *cm, ConnectionInfo *conn)
-{
-    return NULL;
+    conn_pool_close_connection_ex(&extra->cpool, conn, true);
 }
 
 static void copy_to_server_group_array(FCFSAuthClientContext *client_ctx,
@@ -256,9 +199,13 @@ static void copy_to_server_group_array(FCFSAuthClientContext *client_ctx,
 int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
         SFConnectionManager *cm)
 {
+    const int socket_domain = AF_INET;
+    const int max_count_per_entry = 0;
+    const int max_idle_time = 3600;
     FCFSAuthCMSimpleExtra *extra;
     FCFSAuthServerGroup *cluster_sarray;
     int server_count;
+    int htable_init_capacity;
     int result;
 
     cluster_sarray = (FCFSAuthServerGroup *)fc_malloc(sizeof(FCFSAuthServerGroup));
@@ -277,6 +224,20 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
         return ENOMEM;
     }
     memset(extra, 0, sizeof(FCFSAuthCMSimpleExtra));
+
+    htable_init_capacity = 4 * server_count;
+    if (htable_init_capacity < 256) {
+        htable_init_capacity = 256;
+    }
+    if ((result=conn_pool_init_ex1(&extra->cpool, client_ctx->common_cfg.
+                    connect_timeout, max_count_per_entry, max_idle_time,
+                    socket_domain, htable_init_capacity,
+                    connect_done_callback, client_ctx,
+                    sf_cm_validate_connection_callback, cm,
+                    sizeof(SFConnectionParameters))) != 0)
+    {
+        return result;
+    }
     extra->cluster_sarray = cluster_sarray;
     extra->client_ctx = client_ctx;
 
@@ -284,12 +245,11 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
     cm->common_cfg = &client_ctx->common_cfg;
     cm->ops.get_connection = get_connection;
     cm->ops.get_spec_connection = get_spec_connection;
-    cm->ops.get_master_connection = get_master_connection;
-    cm->ops.get_readable_connection = get_readable_connection;
-
-    cm->ops.release_connection = NULL;
+    cm->ops.get_master_connection = NULL;
+    cm->ops.get_readable_connection = NULL;
+    cm->ops.release_connection = release_connection;
     cm->ops.close_connection = close_connection;
-    cm->ops.get_connection_params = get_connection_params;
+    cm->ops.get_connection_params = sf_cm_get_connection_params;
     return 0;
 }
 
