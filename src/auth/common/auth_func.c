@@ -38,11 +38,59 @@ void fcfs_auth_generate_passwd(unsigned char passwd[16])
     get_sysinfo(&input.si);
 #endif
 
-    logInfo("procs: %d, pid: %d, random: %d", input.si.procs, input.pid, input.random);
+    /*
+       logInfo("procs: %d, pid: %d, random: %d",
+        input.si.procs, input.pid, input.random);
+       */
 
     INIT_HASH_CODES4(input.hash_codes);
     CALC_HASH_CODES4(&input, sizeof(input), input.hash_codes);
     FINISH_HASH_CODES4(input.hash_codes);
 
     my_md5_buffer((char *)&input, sizeof(input), passwd);
+}
+
+int fcfs_auth_save_passwd(const char *filename, unsigned char passwd[16])
+{
+    char hex_buff[2 * FCFS_AUTH_PASSWD_LEN + 1];
+
+    bin2hex((char *)passwd, FCFS_AUTH_PASSWD_LEN, hex_buff);
+    return safeWriteToFile(filename, hex_buff,
+            FCFS_AUTH_PASSWD_LEN * 2);
+}
+
+int fcfs_auth_load_passwd(const char *filename, unsigned char passwd[16])
+{
+    int result;
+    int len;
+    int64_t file_size;
+    char hex_buff[2 * FCFS_AUTH_PASSWD_LEN + 1];
+
+    file_size = sizeof(hex_buff);
+    if ((result=getFileContentEx(filename, hex_buff, 0, &file_size)) != 0) {
+        return result;
+    }
+
+    if (file_size != 2 * FCFS_AUTH_PASSWD_LEN) {
+        logError("file: "__FILE__", line: %d, "
+                "invalid secret filename: %s whose file size MUST be: %d",
+                __LINE__, filename, 2 * FCFS_AUTH_PASSWD_LEN);
+        return EINVAL;
+    }
+
+    hex2bin(hex_buff, (char *)passwd, &len);
+    return 0;
+}
+
+int fcfs_auth_replace_filename_with_username(const string_t *src,
+        const string_t *username, FilenameString *new_filename)
+{
+#define USERNAME_VARIABLE_STR  "${username}"
+#define USERNAME_VARIABLE_LEN  (sizeof(USERNAME_VARIABLE_STR) - 1)
+    string_t tag;
+
+    FC_INIT_FILENAME_STRING(*new_filename);
+    FC_SET_STRING_EX(tag, USERNAME_VARIABLE_STR, USERNAME_VARIABLE_LEN);
+    return str_replace(src, &tag, username, &new_filename->s,
+            FC_FILENAME_BUFFER_SIZE(*new_filename));
 }

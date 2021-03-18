@@ -5,7 +5,7 @@ INC_PATH = -I../../common -I../../include -I/usr/local/include
 LIB_PATH = -L.. $(LIBS) -lfcfsauthclient -lfastcommon
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
-STATIC_OBJS =
+STATIC_OBJS = tool_func.o
 
 ALL_PRGS = fcfs_create_user
 

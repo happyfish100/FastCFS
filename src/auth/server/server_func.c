@@ -24,6 +24,7 @@
 #include "sf/sf_global.h"
 #include "sf/sf_service.h"
 #include "common/auth_proto.h"
+#include "common/auth_func.h"
 #include "server_global.h"
 #include "server_session.h"
 #include "server_func.h"
@@ -74,9 +75,7 @@ static int server_load_admin_generate_config(IniContext *ini_context,
     char *mode;
     string_t username;
     string_t secret_key_filename;
-    char new_filename[PATH_MAX];
-    string_t tag;
-    string_t dest;
+    FilenameString new_filename;
     char full_filename[PATH_MAX];
     int result;
 
@@ -100,13 +99,10 @@ static int server_load_admin_generate_config(IniContext *ini_context,
         secret_key_filename.str = "keys/"USERNAME_VARIABLE_STR".key";
     }
     secret_key_filename.len = strlen(secret_key_filename.str);
+    fcfs_auth_replace_filename_with_username(&secret_key_filename,
+            &username, &new_filename);
 
-    FC_SET_STRING_EX(tag, USERNAME_VARIABLE_STR, USERNAME_VARIABLE_LEN);
-    FC_SET_STRING_EX(dest, new_filename, 0);
-    str_replace(&secret_key_filename, &tag, &username,
-            &dest, sizeof(new_filename));
-
-    resolve_path(config_filename, new_filename,
+    resolve_path(config_filename, FC_FILENAME_STRING_PTR(new_filename),
             full_filename, sizeof(full_filename));
     FC_SET_STRING(secret_key_filename, full_filename);
 

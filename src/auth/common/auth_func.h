@@ -41,6 +41,13 @@ extern "C" {
 
     void fcfs_auth_generate_passwd(unsigned char passwd[16]);
 
+    int fcfs_auth_save_passwd(const char *filename, unsigned char passwd[16]);
+
+    int fcfs_auth_load_passwd(const char *filename, unsigned char passwd[16]);
+
+    int fcfs_auth_replace_filename_with_username(const string_t *src,
+            const string_t *username, FilenameString *new_filename);
+
 #ifdef __cplusplus
 }
 #endif

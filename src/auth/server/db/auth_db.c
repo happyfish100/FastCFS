@@ -76,19 +76,19 @@ static AuthDBContext adb_ctx;
 
 static int user_compare(const DBUserInfo *user1, const DBUserInfo *user2)
 {
-    return strcmp(user1->user.name.str, user2->user.name.str);
+    return fc_string_compare(&user1->user.name, &user2->user.name);
 }
 
 static int created_pool_cmp(const DBStoragePoolInfo *pool1,
         const DBStoragePoolInfo *pool2)
 {
-    return strcmp(pool1->pool.name.str, pool2->pool.name.str);
+    return fc_string_compare(&pool1->pool.name, &pool2->pool.name);
 }
 
 static int granted_pool_cmp(const DBStoragePoolGranted *pg1,
         const DBStoragePoolGranted *pg2)
 {
-    return strcmp(pg1->sp->pool.name.str, pg2->sp->pool.name.str);
+    return fc_string_compare(&pg1->sp->pool.name, &pg2->sp->pool.name);
 }
 
 int user_alloc_init(void *element, void *args)
@@ -388,7 +388,6 @@ int adb_check_generate_admin_user(AuthServerContext *server_ctx)
     int result;
     bool need_create;
     unsigned char passwd[FCFS_AUTH_PASSWD_LEN];
-    char hex_buff[2 * FCFS_AUTH_PASSWD_LEN + 1];
     FCFSAuthUserInfo user;
 
     if (ADMIN_GENERATE_MODE == AUTH_ADMIN_GENERATE_MODE_FIRST) {
@@ -404,8 +403,8 @@ int adb_check_generate_admin_user(AuthServerContext *server_ctx)
         FC_SET_STRING_EX(user.passwd, (char *)passwd, FCFS_AUTH_PASSWD_LEN);
         user.priv = FCFS_AUTH_USER_PRIV_ALL;
         if ((result=adb_user_create(server_ctx, &user)) == 0) {
-            if ((result=safeWriteToFile(ADMIN_GENERATE_KEY_FILENAME.str,
-                    hex_buff, user.passwd.len * 2)) == 0)
+            if ((result=fcfs_auth_save_passwd(ADMIN_GENERATE_KEY_FILENAME.
+                            str, passwd)) == 0)
             {
                 logInfo("file: "__FILE__", line: %d, "
                         "scret key for user \"%s\" store to file: %s",

@@ -22,11 +22,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "fastcommon/logger.h"
-#include "fastcfs/auth/fcfs_auth_client.h"
+#include "tool_func.h"
+#include "../../common/auth_func.h"
+#include "../fcfs_auth_client.h"
 
 static void usage(char *argv[])
 {
-    fprintf(stderr, "Usage: %s [-c config_filename="
+    fprintf(stderr, "\nUsage: %s [-c config_filename="
             "/etc/fastcfs/auth/client.conf]\n"
             "\t[-u admin_username=admin]\n"
             "\t[-k admin_secret_key_filename=/etc/fastcfs/auth/keys/"
@@ -34,23 +36,31 @@ static void usage(char *argv[])
             "\t[-p priviledge_list=pool] <username>\n"
             "\t[user_secret_key_filename=keys/${username}.key]\n\n"
             "\tgranted priviledges seperate by comma, priviledges:\n"
-            "\t  user: user management\n"
-            "\t  pool: storage pool management\n"
-            "\t  cluster: cluster monitor\n"
-            "\t  *: for all priviledges\n\n",
-            argv[0]);
+            "\t  %s: user management\n"
+            "\t  %s: create storage pool\n"
+            "\t  %s: monitor cluster\n"
+            "\t  %s: for all priviledges\n\n",
+            argv[0], USER_PRIV_NAME_USER_MANAGE_STR,
+            USER_PRIV_NAME_CREATE_POOL_STR,
+            USER_PRIV_NAME_MONITOR_CLUSTER_STR,
+            USER_PRIV_NAME_ALL_PRIVS_STR);
 }
 
 int main(int argc, char *argv[])
 {
-	int ch;
+    int ch;
     const char *config_filename = "/etc/fastcfs/auth/client.conf";
     FCFSAuthClientUserKeyPair admin;
-    FCFSAuthClientUserKeyPair newuser;
-    char buff[64];
+    FCFSAuthUserInfo user;
+    unsigned char passwd_buff[16];
+    FilenameString admin_key_filename;
+    string_t input_key_filename;
+    FilenameString user_key_filename;
+    char *filename;
+    char abs_path[PATH_MAX];
     string_t passwd;
-    char *priv;
-	int result;
+    string_t privs;
+    int result;
 
     if (argc < 2) {
         usage(argv);
@@ -58,8 +68,9 @@ int main(int argc, char *argv[])
     }
 
     FC_SET_STRING(admin.username, "admin");
-    FC_SET_STRING_NULL(admin.key_filename);
-    priv = NULL;
+    FC_SET_STRING(admin.key_filename,
+            "/etc/fastcfs/auth/keys/${username}.key");
+    FC_SET_STRING_NULL(privs);
     while ((ch=getopt(argc, argv, "hc:u:k:p:")) != -1) {
         switch (ch) {
             case 'h':
@@ -75,7 +86,7 @@ int main(int argc, char *argv[])
                 FC_SET_STRING_EX(admin.key_filename, optarg, strlen(optarg));
                 break;
             case 'p':
-                priv = optarg;
+                FC_SET_STRING(privs, optarg);
                 break;
             default:
                 usage(argv);
@@ -88,35 +99,73 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    srand(time(NULL));
     log_init();
     //g_log_context.log_level = LOG_DEBUG;
 
-    FC_SET_STRING(newuser.username, argv[optind]);
+    FC_SET_STRING(user.name, argv[optind]);
     if (optind + 1 < argc) {
-        FC_SET_STRING(newuser.key_filename, argv[optind + 1]);
+        FC_SET_STRING(input_key_filename, argv[optind + 1]);
+    } else {
+        FC_SET_STRING(input_key_filename, "keys/${username}.key");
     }
 
-    //TODO
+    if (privs.str == NULL) {
+        user.priv = FCFS_AUTH_USER_PRIV_CREATE_POOL;
+    } else {
+        if ((result=fcfs_auth_parse_user_priv(&privs, &user.priv)) != 0) {
+            usage(argv);
+            return 1;
+        }
+    }
+
+    passwd.str = (char *)passwd_buff;
+    passwd.len = 16;
+    fcfs_auth_replace_filename_with_username(&admin.key_filename,
+            &admin.username, &admin_key_filename);
+    if ((result=fcfs_auth_load_passwd(
+                    FC_FILENAME_STRING_PTR(admin_key_filename),
+                    passwd_buff)) != 0)
+    {
+        return result;
+    }
 
     if ((result=fcfs_auth_client_init(config_filename)) != 0) {
         return result;
     }
 
-    //TODO
-    passwd.str = buff;
-    passwd.len = 16;
+    fcfs_auth_replace_filename_with_username(&input_key_filename,
+            &user.name, &user_key_filename);
     if ((result=fcfs_auth_client_user_login(&g_fcfs_auth_client_vars.
                     client_ctx, &admin.username, &passwd)) != 0)
     {
         return result;
     }
 
-    /*
-       fcfs_auth_generate_passwd();
+    filename = FC_FILENAME_STRING_PTR(user_key_filename);
+    getAbsolutePath(filename, abs_path, sizeof(abs_path));
+    if ((result=fc_mkdirs(abs_path, 0755)) != 0) {
+        return result;
+    }
 
-    int fcfs_auth_client_user_create(&g_fcfs_auth_client_vars.client_ctx,
-        const FCFSAuthUserInfo *user);
-        */
+    fcfs_auth_generate_passwd(passwd_buff);
+    FC_SET_STRING_EX(user.passwd, (char *)passwd_buff, FCFS_AUTH_PASSWD_LEN);
+    if ((result=fcfs_auth_client_user_create(&g_fcfs_auth_client_vars.
+                    client_ctx, &user)) == 0)
+    {
+        if ((result=fcfs_auth_save_passwd(filename, passwd_buff)) == 0) {
+            printf("create user %s success, secret key store to file: %s\n",
+                    user.name.str, filename);
+        } else {
+            char hex_buff[2 * FCFS_AUTH_PASSWD_LEN + 1];
 
-    return 0;
+            bin2hex((char *)passwd_buff, FCFS_AUTH_PASSWD_LEN, hex_buff);
+            printf("create user %s success, but secret key store to "
+                    "file: %s fail, the secret key is:\n%s\n",
+                    user.name.str, filename, hex_buff);
+        }
+    } else {
+        printf("create user %s fail\n", user.name.str);
+    }
+    return result;
 }

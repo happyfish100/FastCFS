@@ -94,7 +94,8 @@ static int service_deal_user_login(struct fast_task_info *task)
             fc_string_equal(&user->passwd, &passwd)))
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                "user login fail, username or password not correct");
+                "user login fail, username:%.*s or password not correct, user: %p",
+                username.len, username.str, user);
         return EPERM;
     }
 

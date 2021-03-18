@@ -31,6 +31,7 @@
 #define FCFS_AUTH_USER_STATUS_NORMAL   0
 #define FCFS_AUTH_USER_STATUS_DELETED  1
 
+#define FCFS_AUTH_USER_PRIV_NONE             0
 #define FCFS_AUTH_USER_PRIV_USER_MANAGE      (1 << 0)
 #define FCFS_AUTH_USER_PRIV_CREATE_POOL      (1 << 1)
 #define FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER  (1 << 2)
@@ -38,6 +39,8 @@
 #define FCFS_AUTH_USER_PRIV_ALL  (FCFS_AUTH_USER_PRIV_USER_MANAGE | \
         FCFS_AUTH_USER_PRIV_CREATE_POOL | \
         FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER)
+
+#define FCFS_AUTH_USER_PRIV_COUNT      3
 
 typedef struct fcfs_auth_storage_pool_info {
     int64_t id;
