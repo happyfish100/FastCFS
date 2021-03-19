@@ -33,11 +33,16 @@ extern "C" {
     static inline void fcfs_auth_user_free_array(FCFSAuthUserArray *array)
     {
         if (array->users != array->fixed) {
-            free(array->users);
+            if (array->users != NULL) {
+                free(array->users);
+            }
             array->users = array->fixed;
             array->alloc = FCFS_AUTH_FIXED_USER_COUNT;
         }
     }
+
+    int fcfs_auth_user_check_realloc_array(FCFSAuthUserArray *array,
+            const int target_count);
 
     void fcfs_auth_generate_passwd(unsigned char passwd[16]);
 

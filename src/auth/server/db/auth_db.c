@@ -332,6 +332,30 @@ int adb_user_remove(AuthServerContext *server_ctx, const string_t *username)
     return result;
 }
 
+int adb_user_list(AuthServerContext *server_ctx, FCFSAuthUserArray *array)
+{
+    UniqSkiplistIterator it;
+    DBUserInfo *dbuser;
+    int result;
+
+    result = 0;
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    uniq_skiplist_iterator(adb_ctx.user.sl_pair.skiplist, &it);
+    while ((dbuser=(DBUserInfo *)uniq_skiplist_next(&it)) != NULL) {
+        if (dbuser->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
+            if ((result=fcfs_auth_user_check_realloc_array(array,
+                            array->count + 1)) != 0)
+            {
+                break;
+            }
+            array->users[array->count++] = dbuser->user;
+        }
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return result;
+}
+
 static int convert_user_array(AuthServerContext *server_ctx,
         const FCFSAuthUserArray *user_array)
 {

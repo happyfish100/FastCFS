@@ -30,6 +30,10 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "USER_CREATE_REQ";
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP:
             return "USER_CREATE_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
+            return "USER_LIST_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP:
+            return "USER_LIST_RESP";
         default:
             return sf_get_cmd_caption(cmd);
     }

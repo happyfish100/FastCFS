@@ -123,3 +123,66 @@ int fcfs_auth_client_proto_user_create(FCFSAuthClientContext *client_ctx,
 
     return result;
 }
+
+int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, SFProtoRecvBuffer *buffer,
+        FCFSAuthUserArray *array)
+{
+    FCFSAuthProtoHeader *header;
+    char out_buff[sizeof(FCFSAuthProtoHeader)];
+    SFResponseInfo response;
+    FCFSAuthProtoUserListRespHeader *resp_header;
+    FCFSAuthProtoUserListRespBodyPart *body_part;
+    FCFSAuthUserInfo *user;
+    FCFSAuthUserInfo *end;
+    char *p;
+    int out_bytes;
+    int count;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    out_bytes = sizeof(FCFSAuthProtoHeader);
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_vary_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP, buffer,
+                    sizeof(FCFSAuthProtoUserListRespHeader))) != 0)
+    {
+        sf_log_network_error(&response, conn, result);
+        return result;
+    }
+
+    resp_header = (FCFSAuthProtoUserListRespHeader *)buffer->buff;
+    count = buff2int(resp_header->count);
+    if ((result=fcfs_auth_user_check_realloc_array(array, count)) != 0) {
+        return result;
+    }
+
+    p = (char *)(resp_header + 1);
+    end = array->users + count;
+    for (user=array->users; user<end; user++) {
+        body_part = (FCFSAuthProtoUserListRespBodyPart *)p;
+        user->priv = buff2long(body_part->priv);
+        user->name.len = body_part->username.len;
+        user->name.str = body_part->username.str;
+        p += sizeof(FCFSAuthProtoUserListRespBodyPart) + user->name.len;
+    }
+
+    if (response.header.body_len != p - buffer->buff) {
+        logError("file: "__FILE__", line: %d, "
+                "response body length: %d != expect: %d",
+                __LINE__, response.header.body_len,
+                (int)(p - buffer->buff));
+        return EINVAL;
+    }
+
+    array->count = count;
+    /*
+    sf_init_recv_buffer(&buffer);
+    sf_free_recv_buffer(&buffer);
+    */
+    return result;
+}

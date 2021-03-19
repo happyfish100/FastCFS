@@ -18,6 +18,7 @@
 #define _FCFS_AUTH_CLIENT_PROTO_H
 
 #include "fastcommon/fast_mpool.h"
+#include "sf/sf_proto.h"
 #include "client_types.h"
 
 #ifdef __cplusplus
@@ -30,6 +31,10 @@ int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
 
 int fcfs_auth_client_proto_user_create(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const FCFSAuthUserInfo *user);
+
+int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, SFProtoRecvBuffer *buffer,
+        FCFSAuthUserArray *array);
 
 #ifdef __cplusplus
 }

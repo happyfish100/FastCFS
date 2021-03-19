@@ -94,3 +94,38 @@ int fcfs_auth_replace_filename_with_username(const string_t *src,
     return str_replace(src, &tag, username, &new_filename->s,
             FC_FILENAME_BUFFER_SIZE(*new_filename));
 }
+
+int fcfs_auth_user_check_realloc_array(FCFSAuthUserArray *array,
+        const int target_count)
+{
+    int new_alloc;
+    FCFSAuthUserInfo *new_users;
+
+    if (array->alloc >= target_count) {
+        return 0;
+    }
+
+    new_alloc = array->alloc;
+    while (new_alloc < target_count) {
+        new_alloc *= 2;
+    }
+
+    new_users = (FCFSAuthUserInfo *)fc_malloc(
+            sizeof(FCFSAuthUserInfo) * new_alloc);
+    if (new_users == NULL) {
+        return ENOMEM;
+    }
+
+    if (array->count > 0) {
+        int bytes;
+        bytes = sizeof(FCFSAuthUserInfo) * array->count;
+        memcpy(new_users, array->users, bytes);
+    }
+    if (array->users != array->fixed) {
+        free(array->users);
+    }
+
+    array->users = new_users;
+    array->alloc = new_alloc;
+    return 0;
+}

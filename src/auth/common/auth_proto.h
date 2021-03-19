@@ -23,11 +23,10 @@
 #define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ             9
 #define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP           10
 
-#define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ             9
-#define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP           10
-
 #define FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ           21
 #define FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP          22
+#define FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ             23
+#define FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP            24
 
 typedef SFCommonProtoHeader  FCFSAuthProtoHeader;
 
@@ -52,6 +51,18 @@ typedef struct fcfs_auth_proto_user_create_req {
     char priv[8];
     FCFSAuthProtoUserPasswdPair up_pair;
 } FCFSAuthProtoUserCreateReq;
+
+typedef struct fcfs_auth_proto_user_list_resp_header {
+    char count[8];
+} FCFSAuthProtoUserListRespHeader;
+
+typedef struct fcfs_auth_proto_user_list_resp_body_part {
+    char priv[8];
+    struct {
+        char len;
+        char str[0];
+    } username;
+} FCFSAuthProtoUserListRespBodyPart;
 
 
 #ifdef __cplusplus

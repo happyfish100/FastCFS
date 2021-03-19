@@ -38,6 +38,7 @@
 #include "sf/sf_service.h"
 #include "sf/sf_global.h"
 #include "common/auth_proto.h"
+#include "common/auth_func.h"
 #include "db/dao/dao.h"
 #include "db/auth_db.h"
 #include "server_global.h"
@@ -138,6 +139,45 @@ static int service_deal_user_create(struct fast_task_info *task)
     return adb_user_create(SERVER_CTX, &user);
 }
 
+static int service_deal_user_list(struct fast_task_info *task)
+{
+    FCFSAuthUserArray array;
+    FCFSAuthUserInfo *user;
+    FCFSAuthUserInfo *end;
+    FCFSAuthProtoUserListRespHeader *resp_header;
+    FCFSAuthProtoUserListRespBodyPart *body_part;
+    char *p;
+    int result;
+
+    if ((result=server_expect_body_length(0)) != 0) {
+        return result;
+    }
+
+    fcfs_auth_user_init_array(&array);
+    if ((result=adb_user_list(SERVER_CTX, &array)) != 0) {
+        fcfs_auth_user_free_array(&array);
+        return result;
+    }
+
+    resp_header = (FCFSAuthProtoUserListRespHeader *)REQUEST.body;
+    p = (char *)(resp_header + 1);
+    end = array.users + array.count;
+    for (user=array.users; user<end; user++) {
+        body_part = (FCFSAuthProtoUserListRespBodyPart *)p;
+        long2buff(user->priv, body_part->priv);
+        body_part->username.len = user->name.len;
+        memcpy(body_part->username.str, user->name.str, user->name.len);
+        p += sizeof(FCFSAuthProtoUserListRespBodyPart) + user->name.len;
+    }
+    int2buff(array.count, resp_header->count);
+    RESPONSE.header.body_len = p - REQUEST.body;
+    RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP;
+    TASK_ARG->context.common.response_done = true;
+
+    fcfs_auth_user_free_array(&array);
+    return 0;
+}
+
 int service_deal_task(struct fast_task_info *task, const int stage)
 {
     int result;
@@ -175,6 +215,9 @@ int service_deal_task(struct fast_task_info *task, const int stage)
             case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
                 RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP;
                 result = service_deal_user_create(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
+                result = service_deal_user_list(task);
                 break;
             default:
                 RESPONSE.error.length = sprintf(
