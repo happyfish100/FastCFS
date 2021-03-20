@@ -95,8 +95,7 @@ static int service_deal_user_login(struct fast_task_info *task)
             fc_string_equal(&user->passwd, &passwd)))
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                "user login fail, username:%.*s or password not correct, user: %p",
-                username.len, username.str, user);
+                "user login fail, username or password not correct");
         return EPERM;
     }
 
@@ -142,19 +141,33 @@ static int service_deal_user_create(struct fast_task_info *task)
 static int service_deal_user_list(struct fast_task_info *task)
 {
     FCFSAuthUserArray array;
-    FCFSAuthUserInfo *user;
-    FCFSAuthUserInfo *end;
+    const FCFSAuthUserInfo *user;
+    const FCFSAuthUserInfo *end;
+    string_t username;
+    FCFSAuthProtoUserListReq *req;
     FCFSAuthProtoUserListRespHeader *resp_header;
     FCFSAuthProtoUserListRespBodyPart *body_part;
     char *p;
     int result;
 
-    if ((result=server_expect_body_length(0)) != 0) {
+    if ((result=server_check_body_length(0, NAME_MAX)) != 0) {
         return result;
     }
 
     fcfs_auth_user_init_array(&array);
-    if ((result=adb_user_list(SERVER_CTX, &array)) != 0) {
+    if (REQUEST.header.body_len > 0) {
+        req = (FCFSAuthProtoUserListReq *)REQUEST.body;
+        username.len = REQUEST.header.body_len;
+        username.str = req->username;
+        if ((user=adb_user_get(SERVER_CTX, &username)) == NULL) {
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "username:%.*s not exist", username.len, username.str);
+            fcfs_auth_user_free_array(&array);
+            return ENOENT;
+        }
+        array.users[0] = *user;
+        array.count = 1;
+    } else if ((result=adb_user_list(SERVER_CTX, &array)) != 0) {
         fcfs_auth_user_free_array(&array);
         return result;
     }

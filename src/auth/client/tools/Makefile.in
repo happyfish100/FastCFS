@@ -7,7 +7,7 @@ TARGET_PATH = $(TARGET_PREFIX)/bin
 
 STATIC_OBJS = tool_func.o
 
-ALL_PRGS = fcfs_create_user
+ALL_PRGS = fcfs_user
 
 all: $(STATIC_OBJS) $(ALL_PRGS)
 

@@ -52,6 +52,10 @@ typedef struct fcfs_auth_proto_user_create_req {
     FCFSAuthProtoUserPasswdPair up_pair;
 } FCFSAuthProtoUserCreateReq;
 
+typedef struct fcfs_auth_proto_user_list_req {
+    char username[0];
+} FCFSAuthProtoUserListReq;
+
 typedef struct fcfs_auth_proto_user_list_resp_header {
     char count[8];
 } FCFSAuthProtoUserListRespHeader;

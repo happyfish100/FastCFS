@@ -15,6 +15,53 @@
 
 #include "tool_func.h"
 
+#define FCFS_USER_PRIV_ARRAY_COUNT  (FCFS_AUTH_USER_PRIV_COUNT + 1)
+
+static id_name_pair_t user_priv_list[FCFS_USER_PRIV_ARRAY_COUNT] = {
+    {FCFS_AUTH_USER_PRIV_USER_MANAGE,
+        {USER_PRIV_NAME_USER_MANAGE_STR,
+            USER_PRIV_NAME_USER_MANAGE_LEN}},
+    {FCFS_AUTH_USER_PRIV_CREATE_POOL,
+        {USER_PRIV_NAME_CREATE_POOL_STR,
+            USER_PRIV_NAME_CREATE_POOL_LEN}},
+    {FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER,
+        {USER_PRIV_NAME_MONITOR_CLUSTER_STR,
+            USER_PRIV_NAME_MONITOR_CLUSTER_LEN}},
+    {FCFS_AUTH_USER_PRIV_ALL,
+        {USER_PRIV_NAME_ALL_PRIVS_STR,
+            USER_PRIV_NAME_ALL_PRIVS_LEN}}
+};
+
+static inline int64_t fcfs_auth_get_user_priv(const string_t *str)
+{
+    id_name_pair_t *pair;
+    id_name_pair_t *end;
+
+    end = user_priv_list + FCFS_USER_PRIV_ARRAY_COUNT;
+    for (pair=user_priv_list; pair<end; pair++) {
+        if (fc_string_equal(&pair->name, str)) {
+            return pair->id;
+        }
+    }
+
+    return FCFS_AUTH_USER_PRIV_NONE;
+}
+
+static inline const string_t *fcfs_auth_get_user_priv_name(const int64_t priv)
+{
+    id_name_pair_t *pair;
+    id_name_pair_t *end;
+
+    end = user_priv_list + FCFS_USER_PRIV_ARRAY_COUNT;
+    for (pair=user_priv_list; pair<end; pair++) {
+        if (pair->id == priv) {
+            return &pair->name;
+        }
+    }
+
+    return NULL;
+}
+
 int fcfs_auth_parse_user_priv(const string_t *str, int64_t *priv)
 {
     const bool ignore_empty = true;
@@ -42,4 +89,36 @@ int fcfs_auth_parse_user_priv(const string_t *str, int64_t *priv)
     }
 
     return 0;
+}
+
+const char *fcfs_auth_user_priv_to_string(
+        const int64_t priv, string_t *str)
+{
+    id_name_pair_t *pair;
+    id_name_pair_t *end;
+    char *p;
+    const string_t *name;
+
+    if ((name=fcfs_auth_get_user_priv_name(priv)) != NULL) {
+        memcpy(str->str, name->str, name->len);
+        str->len = name->len;
+    } else {
+        p = str->str;
+        end = user_priv_list + FCFS_USER_PRIV_ARRAY_COUNT;
+        for (pair=user_priv_list; pair<end; pair++) {
+            if ((priv & pair->id) == pair->id) {
+                memcpy(p, pair->name.str, pair->name.len);
+                p += pair->name.len;
+                *p++ = ',';
+            }
+        }
+
+        str->len = p - str->str;
+        if (str->len > 0) {
+            str->len--;  //remove last comma
+        }
+    }
+
+    *(str->str + str->len) = '\0';
+    return str->str;
 }

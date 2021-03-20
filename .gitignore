@@ -37,7 +37,7 @@ src/api/tests/test_file_op
 src/api/tests/test_file_copy
 src/fuse/fcfs_fused
 src/auth/server/fcfs_authd
-src/auth/client/tools/fcfs_create_user
+src/auth/client/tools/fcfs_user
 
 # other
 logs

@@ -25,14 +25,32 @@
 #include "client_global.h"
 #include "client_proto.h"
 
-static inline int pack_user_passwd_pair(const string_t *username,
-        const string_t *passwd, FCFSAuthProtoUserPasswdPair *up_pair)
+#define check_username(username) \
+    check_username_ex(username, true)
+
+static inline int check_username_ex(const string_t *username,
+        const bool required)
 {
-    if (username->len <= 0 || username->len > NAME_MAX) {
+    int min_length;
+
+    min_length = required ? 1 : 0;
+    if (username->len < min_length || username->len > NAME_MAX) {
         logError("file: "__FILE__", line: %d, "
                 "invalid username length: %d, which <= 0 or > %d",
                 __LINE__, username->len, NAME_MAX);
         return EINVAL;
+    }
+
+    return 0;
+}
+
+static inline int pack_user_passwd_pair(const string_t *username,
+        const string_t *passwd, FCFSAuthProtoUserPasswdPair *up_pair)
+{
+    int result;
+
+    if ((result=check_username(username)) != 0) {
+        return result;
     }
 
     if (passwd->len != FCFS_AUTH_PASSWD_LEN) {
@@ -125,11 +143,11 @@ int fcfs_auth_client_proto_user_create(FCFSAuthClientContext *client_ctx,
 }
 
 int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
-        ConnectionInfo *conn, SFProtoRecvBuffer *buffer,
-        FCFSAuthUserArray *array)
+        ConnectionInfo *conn, const string_t *username,
+        SFProtoRecvBuffer *buffer, FCFSAuthUserArray *array)
 {
     FCFSAuthProtoHeader *header;
-    char out_buff[sizeof(FCFSAuthProtoHeader)];
+    char out_buff[sizeof(FCFSAuthProtoHeader) + NAME_MAX];
     SFResponseInfo response;
     FCFSAuthProtoUserListRespHeader *resp_header;
     FCFSAuthProtoUserListRespBodyPart *body_part;
@@ -140,10 +158,19 @@ int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
     int count;
     int result;
 
+    if ((result=check_username_ex(username, false)) != 0) {
+        return result;
+    }
+
     header = (FCFSAuthProtoHeader *)out_buff;
-    out_bytes = sizeof(FCFSAuthProtoHeader);
+    out_bytes = sizeof(FCFSAuthProtoHeader) + username->len;
     SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ,
             out_bytes - sizeof(FCFSAuthProtoHeader));
+    if (username->len > 0) {
+        FCFSAuthProtoUserListReq *req;
+        req = (FCFSAuthProtoUserListReq *)(header + 1);
+        memcpy(req->username, username->str, username->len);
+    }
 
     response.error.length = 0;
     if ((result=sf_send_and_recv_vary_response(conn, out_buff, out_bytes,
@@ -180,9 +207,5 @@ int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
     }
 
     array->count = count;
-    /*
-    sf_init_recv_buffer(&buffer);
-    sf_free_recv_buffer(&buffer);
-    */
     return result;
 }

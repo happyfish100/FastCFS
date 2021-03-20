@@ -42,28 +42,8 @@ extern "C" {
 
     int fcfs_auth_parse_user_priv(const string_t *str, int64_t *priv);
 
-    static inline int64_t fcfs_auth_get_user_priv(const string_t *str)
-    {
-        if (fc_string_equal2(str, USER_PRIV_NAME_USER_MANAGE_STR,
-                    USER_PRIV_NAME_USER_MANAGE_LEN))
-        {
-            return FCFS_AUTH_USER_PRIV_USER_MANAGE;
-        } else if (fc_string_equal2(str, USER_PRIV_NAME_CREATE_POOL_STR,
-                    USER_PRIV_NAME_CREATE_POOL_LEN))
-        {
-            return FCFS_AUTH_USER_PRIV_CREATE_POOL;
-        } else if (fc_string_equal2(str, USER_PRIV_NAME_MONITOR_CLUSTER_STR,
-                    USER_PRIV_NAME_MONITOR_CLUSTER_LEN))
-        {
-            return FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER;
-        } else if (fc_string_equal2(str, USER_PRIV_NAME_ALL_PRIVS_STR,
-                    USER_PRIV_NAME_ALL_PRIVS_LEN))
-        {
-            return FCFS_AUTH_USER_PRIV_ALL;
-        } else {
-            return FCFS_AUTH_USER_PRIV_NONE;
-        }
-    }
+    const char *fcfs_auth_user_priv_to_string(
+            const int64_t priv, string_t *str);
 
 #ifdef __cplusplus
 }

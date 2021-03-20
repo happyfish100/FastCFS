@@ -35,9 +35,10 @@ int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
 }
 
 int fcfs_auth_client_user_list(FCFSAuthClientContext *client_ctx,
-        SFProtoRecvBuffer *buffer, FCFSAuthUserArray *array)
+        const string_t *username, SFProtoRecvBuffer *buffer,
+        FCFSAuthUserArray *array)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
             GET_CONNECTION, 0, fcfs_auth_client_proto_user_list,
-            buffer, array);
+            username, buffer, array);
 }

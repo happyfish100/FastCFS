@@ -33,8 +33,8 @@ int fcfs_auth_client_proto_user_create(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const FCFSAuthUserInfo *user);
 
 int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
-        ConnectionInfo *conn, SFProtoRecvBuffer *buffer,
-        FCFSAuthUserArray *array);
+        ConnectionInfo *conn, const string_t *username,
+        SFProtoRecvBuffer *buffer, FCFSAuthUserArray *array);
 
 #ifdef __cplusplus
 }
