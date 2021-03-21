@@ -42,3 +42,19 @@ int fcfs_auth_client_user_list(FCFSAuthClientContext *client_ctx,
             GET_CONNECTION, 0, fcfs_auth_client_proto_user_list,
             username, buffer, array);
 }
+
+int fcfs_auth_client_user_grant(FCFSAuthClientContext *client_ctx,
+        const string_t *username, const int64_t priv)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_user_grant,
+            username, priv);
+}
+
+int fcfs_auth_client_user_remove(FCFSAuthClientContext *client_ctx,
+        const string_t *username)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_user_remove,
+            username);
+}

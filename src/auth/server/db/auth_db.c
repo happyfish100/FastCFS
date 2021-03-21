@@ -256,6 +256,8 @@ static int user_create(AuthServerContext *server_ctx, DBUserInfo **dbuser,
         {
             return result;
         }
+    } else {
+        (*dbuser)->user.id = user->id;
     }
 
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
@@ -323,6 +325,50 @@ int adb_user_remove(AuthServerContext *server_ctx, const string_t *username)
         {
             user->user.status = FCFS_AUTH_USER_STATUS_DELETED;
             adb_ctx.user.count--;
+        }
+    } else {
+        result = ENOENT;
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return result;
+}
+
+int adb_user_update_priv(AuthServerContext *server_ctx,
+        const string_t *username, const int64_t priv)
+{
+    DBUserInfo *user;
+    int result;
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL && user->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
+        if ((result=dao_user_update_priv(server_ctx->dao_ctx,
+                        user->user.id, priv)) == 0)
+        {
+            user->user.priv = priv;
+        }
+    } else {
+        result = ENOENT;
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return result;
+}
+
+int adb_user_update_passwd(AuthServerContext *server_ctx,
+        const string_t *username, const string_t *passwd)
+{
+    DBUserInfo *user;
+    int result;
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL && user->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
+        if ((result=dao_user_update_passwd(server_ctx->dao_ctx,
+                        user->user.id, passwd)) == 0)
+        {
+            user_set_passwd(user, passwd);
         }
     } else {
         result = ENOENT;

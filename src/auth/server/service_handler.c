@@ -116,8 +116,8 @@ static int service_deal_user_create(struct fast_task_info *task)
     FCFSAuthUserInfo user;
     int result;
 
-    if ((result=server_check_min_body_length(sizeof(
-                        FCFSAuthProtoUserCreateReq) + 1)) != 0)
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoUserCreateReq)
+                    + 1, sizeof(FCFSAuthProtoUserCreateReq) + NAME_MAX)) != 0)
     {
         return result;
     }
@@ -191,6 +191,56 @@ static int service_deal_user_list(struct fast_task_info *task)
     return 0;
 }
 
+static int service_deal_user_grant(struct fast_task_info *task)
+{
+    FCFSAuthProtoUserGrantReq *req;
+    string_t username;
+    int64_t priv;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoUserGrantReq)
+                    + 1, sizeof(FCFSAuthProtoUserGrantReq) + NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoUserGrantReq *)REQUEST.body;
+    FC_SET_STRING_EX(username, req->username.str, req->username.len);
+    priv = buff2long(req->priv);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoUserGrantReq)
+                    + username.len)) != 0)
+    {
+        return result;
+    }
+
+    return adb_user_update_priv(SERVER_CTX, &username, priv);
+}
+
+static int service_deal_user_remove(struct fast_task_info *task)
+{
+    FCFSAuthProtoUserRemoveReq *req;
+    string_t username;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoUserRemoveReq)
+                    + 1, sizeof(FCFSAuthProtoUserRemoveReq) + NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoUserRemoveReq *)REQUEST.body;
+    FC_SET_STRING_EX(username, req->username.str, req->username.len);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoUserRemoveReq)
+                    + username.len)) != 0)
+    {
+        return result;
+    }
+
+    return adb_user_remove(SERVER_CTX, &username);
+}
+
 int service_deal_task(struct fast_task_info *task, const int stage)
 {
     int result;
@@ -231,6 +281,14 @@ int service_deal_task(struct fast_task_info *task, const int stage)
                 break;
             case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
                 result = service_deal_user_list(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_GRANT_RESP;
+                result = service_deal_user_grant(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP;
+                result = service_deal_user_remove(task);
                 break;
             default:
                 RESPONSE.error.length = sprintf(

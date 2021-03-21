@@ -39,7 +39,7 @@ static inline int64_t fcfs_auth_get_user_priv(const string_t *str)
 
     end = user_priv_list + FCFS_USER_PRIV_ARRAY_COUNT;
     for (pair=user_priv_list; pair<end; pair++) {
-        if (fc_string_equal(&pair->name, str)) {
+        if (fc_string_case_equal(&pair->name, str)) {
             return pair->id;
         }
     }

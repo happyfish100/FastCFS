@@ -28,6 +28,7 @@
 
 static int current_index;
 static FCFSAuthUserInfo user;
+static bool priv_set = false;
 
 static void usage(char *argv[])
 {
@@ -92,6 +93,42 @@ static int create_user(int argc, char *argv[])
         }
     } else {
         fprintf(stderr, "create user %s fail\n", user.name.str);
+    }
+
+    return result;
+}
+
+static int grant_privilege(int argc, char *argv[])
+{
+    int result;
+
+    if (!priv_set) {
+        fprintf(stderr, "expect parameter: granted priviledges!\n");
+        usage(argv);
+        return EINVAL;
+    }
+
+    if ((result=fcfs_auth_client_user_grant(&g_fcfs_auth_client_vars.
+                    client_ctx, &user.name, user.priv)) == 0)
+    {
+        printf("grant priviledge success\n");
+    } else {
+        fprintf(stderr, "grant priviledge fail\n");
+    }
+
+    return result;
+}
+
+static int remove_user(int argc, char *argv[])
+{
+    int result;
+
+    if ((result=fcfs_auth_client_user_remove(&g_fcfs_auth_client_vars.
+                    client_ctx, &user.name)) == 0)
+    {
+        printf("remove user %s success\n", user.name.str);
+    } else {
+        fprintf(stderr, "remove user %s fail\n", user.name.str);
     }
 
     return result;
@@ -183,6 +220,7 @@ int main(int argc, char *argv[])
 
     current_index = optind;
     if (current_index >= argc) {
+        fprintf(stderr, "expect operation\n");
         usage(argv);
         return 1;
     }
@@ -192,20 +230,22 @@ int main(int argc, char *argv[])
     //g_log_context.log_level = LOG_DEBUG;
 
     operation = argv[current_index++];
-    if (strcmp(operation, "create") == 0) {
+    if (strcasecmp(operation, "create") == 0) {
         need_username = true;
         need_priv = false;
-    } else if (strcmp(operation, "grant") == 0) {
+    } else if (strcasecmp(operation, "grant") == 0) {
         need_username = true;
         need_priv = true;
-    } else if (strcmp(operation, "delete") == 0) {
+    } else if (strcasecmp(operation, "delete") == 0 ||
+            strcasecmp(operation, "remove") == 0)
+    {
         need_username = true;
         need_priv = false;
-    } else if (strcmp(operation, "list") == 0) {
+    } else if (strcasecmp(operation, "list") == 0) {
         need_username = false;
         need_priv = false;
     } else {
-        fprintf(stderr, "expect operation\n");
+        fprintf(stderr, "unknow operation: %s\n", operation);
         usage(argv);
         return 1;
     }
@@ -228,6 +268,7 @@ int main(int argc, char *argv[])
             usage(argv);
             return 1;
         }
+        priv_set = true;
     }
 
     passwd.str = (char *)passwd_buff;
@@ -251,11 +292,15 @@ int main(int argc, char *argv[])
         return result;
     }
 
-    if (strcmp(operation, "create") == 0) {
+    if (strcasecmp(operation, "create") == 0) {
         return create_user(argc, argv);
-    } else if (strcmp(operation, "grant") == 0) {
-    } else if (strcmp(operation, "delete") == 0) {
-    } else if (strcmp(operation, "list") == 0) {
+    } else if (strcasecmp(operation, "grant") == 0) {
+        return grant_privilege(argc, argv);
+    } else if (strcasecmp(operation, "delete") == 0 ||
+            strcasecmp(operation, "remove") == 0)
+    {
+        return remove_user(argc, argv);
+    } else if (strcasecmp(operation, "list") == 0) {
         return list_user(argc, argv);
     }
 

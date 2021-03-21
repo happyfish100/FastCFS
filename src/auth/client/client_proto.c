@@ -44,27 +44,30 @@ static inline int check_username_ex(const string_t *username,
     return 0;
 }
 
-static inline int pack_user_passwd_pair(const string_t *username,
-        const string_t *passwd, FCFSAuthProtoUserPasswdPair *up_pair)
+static inline int pack_username(const string_t *username,
+        FCFSAuthProtoNameInfo *proto_uname)
 {
     int result;
 
     if ((result=check_username(username)) != 0) {
         return result;
     }
+    memcpy(proto_uname->str, username->str, username->len);
+    proto_uname->len = username->len;
+    return 0;
+}
 
+static inline int pack_user_passwd_pair(const string_t *username,
+        const string_t *passwd, FCFSAuthProtoUserPasswdPair *up_pair)
+{
     if (passwd->len != FCFS_AUTH_PASSWD_LEN) {
         logError("file: "__FILE__", line: %d, "
                 "invalid password length: %d != %d",
                 __LINE__, passwd->len, FCFS_AUTH_PASSWD_LEN);
         return EINVAL;
     }
-
     memcpy(up_pair->passwd, passwd->str, passwd->len);
-    memcpy(up_pair->username.str, username->str, username->len);
-    up_pair->username.len = username->len;
-
-    return 0;
+    return pack_username(username, &up_pair->username);
 }
 
 int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
@@ -207,5 +210,68 @@ int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
     }
 
     array->count = count;
+    return result;
+}
+
+int fcfs_auth_client_proto_user_grant(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *username, const int64_t priv)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoUserGrantReq *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoUserGrantReq) + NAME_MAX];
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoUserGrantReq *)(header + 1);
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + username->len;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+    if ((result=pack_username(username, &req->username)) != 0) {
+        return result;
+    }
+    long2buff(priv, req->priv);
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_USER_GRANT_RESP)) != 0)
+    {
+        sf_log_network_error(&response, conn, result);
+    }
+
+    return result;
+}
+
+int fcfs_auth_client_proto_user_remove(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *username)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoUserRemoveReq *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoUserRemoveReq) + NAME_MAX];
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoUserRemoveReq *)(header + 1);
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + username->len;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+    if ((result=pack_username(username, &req->username)) != 0) {
+        return result;
+    }
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP)) != 0)
+    {
+        sf_log_network_error(&response, conn, result);
+    }
+
     return result;
 }

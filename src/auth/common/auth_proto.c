@@ -34,6 +34,14 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "USER_LIST_REQ";
         case FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP:
             return "USER_LIST_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ:
+            return "USER_GRANT_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_RESP:
+            return "USER_GRANT_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ:
+            return "USER_REMOVE_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP:
+            return "USER_REMOVE_RESP";
         default:
             return sf_get_cmd_caption(cmd);
     }

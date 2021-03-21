@@ -27,16 +27,22 @@
 #define FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP          22
 #define FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ             23
 #define FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP            24
+#define FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ            25
+#define FCFS_AUTH_SERVICE_PROTO_USER_GRANT_RESP           26
+#define FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ           27
+#define FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP          28
 
 typedef SFCommonProtoHeader  FCFSAuthProtoHeader;
 
+typedef struct fcfs_auth_proto_name_info {
+    char padding[7];
+    char len;
+    char str[0];
+} FCFSAuthProtoNameInfo;
+
 typedef struct fcfs_auth_proto_user_passwd_pair {
     char passwd[FCFS_AUTH_PASSWD_LEN];
-    struct {
-        char padding[7];
-        char len;
-        char str[0];
-    } username;
+    FCFSAuthProtoNameInfo username;
 } FCFSAuthProtoUserPasswdPair;
 
 typedef struct fcfs_auth_proto_user_login_req {
@@ -67,6 +73,15 @@ typedef struct fcfs_auth_proto_user_list_resp_body_part {
         char str[0];
     } username;
 } FCFSAuthProtoUserListRespBodyPart;
+
+typedef struct fcfs_auth_proto_user_grant_req {
+    char priv[8];
+    FCFSAuthProtoNameInfo username;
+} FCFSAuthProtoUserGrantReq;
+
+typedef struct fcfs_auth_proto_user_remove_req {
+    FCFSAuthProtoNameInfo username;
+} FCFSAuthProtoUserRemoveReq;
 
 
 #ifdef __cplusplus
