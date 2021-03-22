@@ -7,7 +7,8 @@ TARGET_PATH = $(TARGET_PREFIX)/bin
 
 STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o \
               ../common/auth_func.o ../common/server_session.o \
-              db/dao/dao.o db/dao/func.o db/dao/user.o db/auth_db.o \
+              db/dao/dao.o db/dao/func.o db/dao/user.o \
+              db/dao/storage_pool.o db/auth_db.o \
               server_global.o server_func.o \
               common_handler.o service_handler.o \
 

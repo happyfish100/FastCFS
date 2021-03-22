@@ -31,6 +31,9 @@
 #define FCFS_AUTH_USER_STATUS_NORMAL   0
 #define FCFS_AUTH_USER_STATUS_DELETED  1
 
+#define FCFS_AUTH_POOL_STATUS_NORMAL   0
+#define FCFS_AUTH_POOL_STATUS_DELETED  1
+
 #define FCFS_AUTH_USER_PRIV_NONE             0
 #define FCFS_AUTH_USER_PRIV_USER_MANAGE      (1 << 0)
 #define FCFS_AUTH_USER_PRIV_CREATE_POOL      (1 << 1)
@@ -67,7 +70,7 @@ typedef struct fcfs_auth_user_info {
 } FCFSAuthUserInfo;
 
 typedef struct fcfs_auth_storage_pool_array {
-    FCFSAuthStoragePoolInfo *pools;
+    FCFSAuthStoragePoolInfo *spools;
     FCFSAuthStoragePoolInfo fixed[FCFS_AUTH_FIXED_POOL_COUNT];
     int count;
     int alloc;

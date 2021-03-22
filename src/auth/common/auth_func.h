@@ -41,6 +41,26 @@ extern "C" {
         }
     }
 
+    static inline void fcfs_auth_spool_init_array(
+            FCFSAuthStoragePoolArray *array)
+    {
+        array->spools = array->fixed;
+        array->alloc = FCFS_AUTH_FIXED_USER_COUNT;
+        array->count = 0;
+    }
+
+    static inline void fcfs_auth_spool_free_array(
+            FCFSAuthStoragePoolArray *array)
+    {
+        if (array->spools != array->fixed) {
+            if (array->spools != NULL) {
+                free(array->spools);
+            }
+            array->spools = array->fixed;
+            array->alloc = FCFS_AUTH_FIXED_USER_COUNT;
+        }
+    }
+
     int fcfs_auth_user_check_realloc_array(FCFSAuthUserArray *array,
             const int target_count);
 

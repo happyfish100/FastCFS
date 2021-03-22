@@ -24,6 +24,7 @@
 #include "../../common/auth_func.h"
 #include "../server_global.h"
 #include "dao/user.h"
+#include "dao/storage_pool.h"
 #include "auth_db.h"
 
 #define SKIPLIST_INIT_LEVEL_COUNT   2
@@ -96,10 +97,17 @@ int user_alloc_init(void *element, void *args)
     DBUserInfo *user;
 
     user = (DBUserInfo *)element;
-    user->storage_pools.created = uniq_skiplist_new(&adb_ctx.pool.
-            factories.created, SKIPLIST_INIT_LEVEL_COUNT);
-    user->storage_pools.granted = uniq_skiplist_new(&adb_ctx.pool.
-            factories.granted, SKIPLIST_INIT_LEVEL_COUNT);
+    if ((user->storage_pools.created=uniq_skiplist_new(&adb_ctx.pool.
+                    factories.created, SKIPLIST_INIT_LEVEL_COUNT)) == NULL)
+    {
+        return ENOMEM;
+    }
+    if ((user->storage_pools.granted=uniq_skiplist_new(&adb_ctx.pool.
+                    factories.granted, SKIPLIST_INIT_LEVEL_COUNT)) == NULL)
+    {
+        return ENOMEM;
+    }
+
     return 0;
 }
 
@@ -402,7 +410,101 @@ int adb_user_list(AuthServerContext *server_ctx, FCFSAuthUserArray *array)
     return result;
 }
 
+static int storage_pool_create(AuthServerContext *server_ctx,
+        DBUserInfo *dbuser, DBStoragePoolInfo **dbspool,
+        const FCFSAuthStoragePoolInfo *pool, const bool addto_backend)
+{
+    int result;
+    bool need_insert;
+
+    if (*dbspool == NULL) {
+        *dbspool = (DBStoragePoolInfo *)fast_mblock_alloc_object(
+                &adb_ctx.pool.allocators.created);
+        if (*dbspool == NULL) {
+            return ENOMEM;
+        }
+
+        if ((result=fast_allocator_alloc_string(&adb_ctx.name_acontext,
+                        &(*dbspool)->pool.name, &pool->name)) != 0)
+        {
+            return result;
+        }
+        need_insert = true;
+    } else {
+        need_insert = false;
+    }
+
+    (*dbspool)->pool.quota = pool->quota;
+    if (addto_backend) {
+        if ((result=dao_spool_create(server_ctx->dao_ctx, &dbuser->
+                        user.name, &(*dbspool)->pool)) != 0)
+        {
+            return result;
+        }
+    } else {
+        (*dbspool)->pool.id = pool->id;
+    }
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    (*dbspool)->pool.status = FCFS_AUTH_POOL_STATUS_NORMAL;
+    if (need_insert) {
+        if ((result=uniq_skiplist_insert(dbuser->storage_pools.
+                        created, *dbspool)) == 0)
+        {
+        }
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return 0;
+}
+
+static int convert_spool_array(AuthServerContext *server_ctx,
+        DBUserInfo *dbuser, const FCFSAuthStoragePoolArray *spool_array)
+{
+    const bool addto_backend = false;
+    int result;
+    DBStoragePoolInfo *dbspool;
+    const FCFSAuthStoragePoolInfo *spool;
+    const FCFSAuthStoragePoolInfo *end;
+
+    end = spool_array->spools + spool_array->count;
+    for (spool=spool_array->spools; spool<end; spool++) {
+        dbspool = NULL;
+        if ((result=storage_pool_create(server_ctx, dbuser,
+                        &dbspool, spool, addto_backend)) != 0)
+        {
+            return result;
+        }
+    }
+
+    return 0;
+}
+
+static int load_user_spool(AuthServerContext *server_ctx,
+        struct fast_mpool_man *mpool, DBUserInfo *dbuser)
+{
+    FCFSAuthStoragePoolArray spool_array;
+    int result;
+
+    fcfs_auth_spool_init_array(&spool_array);
+    if ((result=dao_spool_list(server_ctx->dao_ctx, &dbuser->
+                    user.name, mpool, &spool_array)) != 0)
+    {
+        return result;
+    }
+
+    if ((result=convert_spool_array(server_ctx,
+                    dbuser, &spool_array)) != 0)
+    {
+        return result;
+    }
+
+    fcfs_auth_spool_free_array(&spool_array);
+    return 0;
+}
+
 static int convert_user_array(AuthServerContext *server_ctx,
+        struct fast_mpool_man *mpool,
         const FCFSAuthUserArray *user_array)
 {
     const bool addto_backend = false;
@@ -417,6 +519,10 @@ static int convert_user_array(AuthServerContext *server_ctx,
         if ((result=user_create(server_ctx, &dbuser,
                         user, addto_backend)) != 0)
         {
+            return result;
+        }
+
+        if ((result=load_user_spool(server_ctx, mpool, dbuser)) != 0) {
             return result;
         }
 
@@ -447,7 +553,7 @@ int adb_load_data(AuthServerContext *server_ctx)
         return result;
     }
 
-    result = convert_user_array(server_ctx, &user_array);
+    result = convert_user_array(server_ctx, &mpool, &user_array);
     fcfs_auth_user_free_array(&user_array);
     fast_mpool_destroy(&mpool);
     return result;
