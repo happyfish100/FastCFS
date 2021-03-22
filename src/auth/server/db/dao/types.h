@@ -31,22 +31,34 @@ typedef struct auth_full_path {
     FDIRDEntryFullName fullname;
 } AuthFullPath;
 
-#define AUTH_SET_USER_PATH(fp, username, subdir)  \
+#define AUTH_SET_USER_PATH2(fp, username, subdir1, subdir2)  \
     do {  \
         FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
                 AUTH_NAMESPACE_LEN); \
         fp.fullname.path.str = fp.buff;  \
-        if (subdir != NULL) { \
-            fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                    AUTH_BASE_PATH_STR"/%s/%s", (username)->str, subdir); \
-        } else { \
-            fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                    AUTH_BASE_PATH_STR"/%s", (username)->str);   \
-        } \
+        fp.fullname.path.len = sprintf(fp.fullname.path.str, \
+                AUTH_BASE_PATH_STR"/%s/%s/%s",      \
+                (username)->str, subdir1, subdir2); \
+    } while (0)
+
+#define AUTH_SET_USER_PATH1(fp, username, subdir1)  \
+    do {  \
+        FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
+                AUTH_NAMESPACE_LEN); \
+        fp.fullname.path.str = fp.buff;  \
+        fp.fullname.path.len = sprintf(fp.fullname.path.str, \
+                AUTH_BASE_PATH_STR"/%s/%s", (username)->str, subdir1); \
     } while (0)
 
 #define AUTH_SET_USER_HOME(fp, username)  \
-    AUTH_SET_USER_PATH(fp, username, NULL)
+    do {  \
+        FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
+                AUTH_NAMESPACE_LEN); \
+        fp.fullname.path.str = fp.buff;  \
+        fp.fullname.path.len = sprintf(fp.fullname.path.str, \
+                AUTH_BASE_PATH_STR"/%s", (username)->str);   \
+    } while (0)
+
 
 #define AUTH_SET_BASE_PATH(fp)  \
     do { \
