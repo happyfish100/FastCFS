@@ -52,6 +52,8 @@
         FCFS_AUTH_POOL_ACCESS_READ)
 #define FCFS_AUTH_POOL_ACCESS_COUNT      2
 
+#define FCFS_AUTH_UNLIMITED_QUOTA_STR  "unlimited"
+#define FCFS_AUTH_UNLIMITED_QUOTA_VAL  -1
 
 typedef struct fcfs_auth_storage_pool_info {
     int64_t id;

@@ -569,7 +569,7 @@ int adb_spool_list(AuthServerContext *server_ctx, const string_t *username,
         uniq_skiplist_iterator(user->storage_pools.created, &it);
         while ((spool=(DBStoragePoolInfo *)uniq_skiplist_next(&it)) != NULL) {
             if (spool->pool.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
-                if ((result=fcfs_auth_pool_check_realloc_array(array,
+                if ((result=fcfs_auth_spool_check_realloc_array(array,
                                 array->count + 1)) != 0)
                 {
                     break;

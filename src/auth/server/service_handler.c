@@ -145,7 +145,7 @@ static int service_deal_user_list(struct fast_task_info *task)
     const FCFSAuthUserInfo *end;
     string_t username;
     FCFSAuthProtoUserListReq *req;
-    FCFSAuthProtoUserListRespHeader *resp_header;
+    FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoUserListRespBodyPart *body_part;
     char *p;
     int result;
@@ -172,7 +172,7 @@ static int service_deal_user_list(struct fast_task_info *task)
         return result;
     }
 
-    resp_header = (FCFSAuthProtoUserListRespHeader *)REQUEST.body;
+    resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
     p = (char *)(resp_header + 1);
     end = array.users + array.count;
     for (user=array.users; user<end; user++) {
@@ -269,6 +269,79 @@ static int service_deal_spool_create(struct fast_task_info *task)
     return adb_spool_create(SERVER_CTX, &username, &spool);
 }
 
+static int service_deal_spool_list(struct fast_task_info *task)
+{
+    FCFSAuthStoragePoolArray array;
+    const FCFSAuthStoragePoolInfo *spool;
+    const FCFSAuthStoragePoolInfo *end;
+    string_t username;
+    string_t poolname;
+    FCFSAuthProtoSPoolListReq *req;
+    FCFSAuthProtoListRespHeader *resp_header;
+    FCFSAuthProtoSPoolListRespBodyPart *body_part;
+    char *p;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoSPoolListReq),
+                    sizeof(FCFSAuthProtoSPoolListReq) + NAME_MAX * 2)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoSPoolListReq *)REQUEST.body;
+    if (req->username.len == 0) {
+        //TODO
+        FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    } else {
+        username.len = req->username.len;
+        username.str = req->username.str;
+    }
+
+    if ((result=server_expect_body_length(sizeof(FCFSAuthProtoSPoolListReq)
+                    + req->username.len + req->poolname.len)) != 0)
+    {
+        return result;
+    }
+
+    fcfs_auth_spool_init_array(&array);
+    if (req->poolname.len > 0) {
+        poolname.len = req->poolname.len;
+        poolname.str = req->username.str + req->username.len +
+            sizeof(FCFSAuthProtoNameInfo);
+        if ((spool=adb_spool_get(SERVER_CTX, &username, &poolname)) == NULL) {
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "user: %.*s, pool: %.*s not exist", username.len,
+                    username.str, poolname.len, poolname.str);
+            fcfs_auth_spool_free_array(&array);
+            return ENOENT;
+        }
+
+        array.spools[0] = *spool;
+        array.count = 1;
+    } else if ((result=adb_spool_list(SERVER_CTX, &username, &array)) != 0) {
+        fcfs_auth_spool_free_array(&array);
+        return result;
+    }
+
+    resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
+    p = (char *)(resp_header + 1);
+    end = array.spools + array.count;
+    for (spool=array.spools; spool<end; spool++) {
+        body_part = (FCFSAuthProtoSPoolListRespBodyPart *)p;
+        long2buff(spool->quota, body_part->quota);
+        body_part->poolname.len = spool->name.len;
+        memcpy(body_part->poolname.str, spool->name.str, spool->name.len);
+        p += sizeof(FCFSAuthProtoSPoolListRespBodyPart) + spool->name.len;
+    }
+    int2buff(array.count, resp_header->count);
+    RESPONSE.header.body_len = p - REQUEST.body;
+    RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP;
+    TASK_ARG->context.common.response_done = true;
+
+    fcfs_auth_spool_free_array(&array);
+    return 0;
+}
+
 int service_deal_task(struct fast_task_info *task, const int stage)
 {
     int result;
@@ -321,6 +394,9 @@ int service_deal_task(struct fast_task_info *task, const int stage)
             case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ:
                 RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP;
                 result = service_deal_spool_create(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ:
+                result = service_deal_spool_list(task);
                 break;
             default:
                 RESPONSE.error.length = sprintf(

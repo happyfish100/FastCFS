@@ -46,6 +46,10 @@ int fcfs_auth_client_user_remove(FCFSAuthClientContext *client_ctx,
 int fcfs_auth_client_spool_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthStoragePoolInfo *spool);
 
+int fcfs_auth_client_spool_list(FCFSAuthClientContext *client_ctx,
+        const string_t *username, const string_t *poolname,
+        SFProtoRecvBuffer *buffer, FCFSAuthStoragePoolArray *array);
+
 #ifdef __cplusplus
 }
 #endif

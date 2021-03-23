@@ -66,3 +66,12 @@ int fcfs_auth_client_spool_create(FCFSAuthClientContext *client_ctx,
             GET_CONNECTION, 0, fcfs_auth_client_proto_spool_create,
             spool);
 }
+
+int fcfs_auth_client_spool_list(FCFSAuthClientContext *client_ctx,
+        const string_t *username, const string_t *poolname,
+        SFProtoRecvBuffer *buffer, FCFSAuthStoragePoolArray *array)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_list,
+            username, poolname, buffer, array);
+}

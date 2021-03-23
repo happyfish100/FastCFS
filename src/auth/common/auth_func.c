@@ -130,7 +130,7 @@ int fcfs_auth_user_check_realloc_array(FCFSAuthUserArray *array,
     return 0;
 }
 
-int fcfs_auth_pool_check_realloc_array(FCFSAuthStoragePoolArray *array,
+int fcfs_auth_spool_check_realloc_array(FCFSAuthStoragePoolArray *array,
         const int target_count)
 {
     int new_alloc;

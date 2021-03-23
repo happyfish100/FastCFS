@@ -26,12 +26,16 @@
 #include "../../common/auth_func.h"
 #include "../fcfs_auth_client.h"
 
+#define USERNAME_OPTION_INCLUDED   1
+#define USERNAME_OPTION_REQUIRED   2
+
 static int current_index;
 static FCFSAuthStoragePoolInfo spool;
 static struct {
     string_t fdir;
     string_t fstore;
 } privs;
+static string_t username = {0};
 
 static void usage(char *argv[])
 {
@@ -40,17 +44,24 @@ static void usage(char *argv[])
             "\t[-u admin_username=admin]\n"
             "\t[-k admin_secret_key_filename=/etc/fastcfs/auth/keys/"
             "${admin_username}.key]\n"
-            "\t[-d fastdir_access=rw] [-s faststore_access=rw] "
-            "<operation> [pool_name]\n\n"
-            "\toperation are: create, list, grant, quota, delete\n"
+            "\t[-d fastdir_access=rw]\n"
+            "\t[-s faststore_access=rw]\n"
+            "\t<operation> [username] [pool_name] [quota]\n\n"
+            "\tthe operations and following parameters: \n"
+            "\t  create <pool_name> <quota>\n"
+            "\t  quota <pool_name> <quota>\n"
+            "\t  grant <username> <pool_name>\n"
+            "\t  delete <pool_name>\n"
+            "\t  list [username] [pool_name]\n\n"
+            "\tthe quota parameter is required for create and quota operations\n"
+            "\tthe default unit of quota is GB, %s for no limit\n\n"
             "\tFastDIR and FastStore accesses are:\n"
             "\t  %c:  read only\n"
             "\t  %c:  write only\n"
             "\t  %c%c: read and write\n\n",
-            argv[0], POOL_ACCESS_NAME_READ_CHR,
-            POOL_ACCESS_NAME_WRITE_CHR,
-            POOL_ACCESS_NAME_READ_CHR,
-            POOL_ACCESS_NAME_WRITE_CHR);
+            argv[0], FCFS_AUTH_UNLIMITED_QUOTA_STR,
+            POOL_ACCESS_NAME_READ_CHR, POOL_ACCESS_NAME_WRITE_CHR,
+            POOL_ACCESS_NAME_READ_CHR, POOL_ACCESS_NAME_WRITE_CHR);
 }
 
 static int create_spool(int argc, char *argv[])
@@ -138,9 +149,13 @@ static void output_spools(FCFSAuthStoragePoolArray *array)
     printf("%5s %32s %32s\n", "No.", "pool_name", "quota (GB)");
     end = array->spools + array->count;
     for (spool=array->spools; spool<end; spool++) {
+        if (spool->quota == FCFS_AUTH_UNLIMITED_QUOTA_VAL) {
+            strcpy(buff, FCFS_AUTH_UNLIMITED_QUOTA_STR);
+        } else {
+            long_to_comma_str(spool->quota / (1024 * 1024 * 1024), buff);
+        }
         printf("%4d. %32.*s %32s\n", (int)((spool - array->spools) + 1),
-                spool->name.len, spool->name.str, long_to_comma_str(
-                    spool->quota / (1024 * 1024 * 1024), buff));
+                spool->name.len, spool->name.str, buff);
     }
 }
 
@@ -179,15 +194,14 @@ static int list_spool(int argc, char *argv[])
     sf_init_recv_buffer(&buffer);
     fcfs_auth_spool_init_array(&spool_array);
 
-    /*
     if ((result=fcfs_auth_client_spool_list(&g_fcfs_auth_client_vars.
-                    client_ctx, &spool.name, &buffer, &spool_array)) == 0)
+                    client_ctx, &username, &spool.name, &buffer,
+                    &spool_array)) == 0)
     {
         output_spools(&spool_array);
     } else {
-        fprintf(stderr, "list spool fail\n");
+        fprintf(stderr, "list storage pool fail\n");
     }
-    */
     result = 0;
 
     sf_free_recv_buffer(&buffer);
@@ -204,7 +218,9 @@ int main(int argc, char *argv[])
     unsigned char passwd_buff[16];
     FilenameString admin_key_filename;
     string_t passwd;
+    int username_options;
     bool need_poolname;
+    bool need_quota;
     int result;
 
     if (argc < 2) {
@@ -256,19 +272,43 @@ int main(int argc, char *argv[])
 
     operation = argv[current_index++];
     if (strcasecmp(operation, "create") == 0) {
+        username_options = 0;
         need_poolname = true;
+        need_quota = true;
     } else if (strcasecmp(operation, "grant") == 0) {
+        username_options = USERNAME_OPTION_INCLUDED |
+            USERNAME_OPTION_REQUIRED;
         need_poolname = true;
+        need_quota = false;
+    } else if (strcasecmp(operation, "quota") == 0) {
+        username_options = 0;
+        need_poolname = true;
+        need_quota = true;
     } else if (strcasecmp(operation, "delete") == 0 ||
             strcasecmp(operation, "remove") == 0)
     {
+        username_options = 0;
         need_poolname = true;
+        need_quota = false;
     } else if (strcasecmp(operation, "list") == 0) {
+        username_options = USERNAME_OPTION_INCLUDED;
         need_poolname = false;
+        need_quota = false;
     } else {
         fprintf(stderr, "unknow operation: %s\n", operation);
         usage(argv);
         return 1;
+    }
+
+    if ((username_options & USERNAME_OPTION_INCLUDED) != 0) {
+        if (current_index < argc) {
+            FC_SET_STRING(username, argv[current_index]);
+            current_index++;
+        } else if ((username_options & USERNAME_OPTION_REQUIRED) != 0) {
+            fprintf(stderr, "expect username\n");
+            usage(argv);
+            return 1;
+        }
     }
 
     if (current_index < argc) {
@@ -280,6 +320,24 @@ int main(int argc, char *argv[])
         return 1;
     } else {
         FC_SET_STRING_NULL(spool.name);
+    }
+
+    if (current_index < argc) {
+        if (strcasecmp(argv[current_index],
+                    FCFS_AUTH_UNLIMITED_QUOTA_STR) == 0)
+        {
+            spool.quota = FCFS_AUTH_UNLIMITED_QUOTA_VAL;
+        } else if ((result=parse_bytes(argv[current_index],
+                        1024 * 1024 * 1024, &spool.quota)) != 0)
+        {
+            fprintf(stderr, "parse quota fail\n");
+            return 1;
+        }
+        current_index++;
+    } else if (need_quota) {
+        fprintf(stderr, "expect quota\n");
+        usage(argv);
+        return 1;
     }
 
     passwd.str = (char *)passwd_buff;

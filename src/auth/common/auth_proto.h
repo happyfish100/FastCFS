@@ -36,12 +36,14 @@
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP         52
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ            53
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP           54
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_REQ           55
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_RESP          56
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ          57
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP         58
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_REQ           59
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_RESP          60
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ          55
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP         56
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_REQ           57
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_RESP          58
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_REQ           61
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_RESP          62
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ            63
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP           64
 
 
 typedef SFCommonProtoHeader  FCFSAuthProtoHeader;
@@ -74,9 +76,9 @@ typedef struct fcfs_auth_proto_user_list_req {
     char username[0];
 } FCFSAuthProtoUserListReq;
 
-typedef struct fcfs_auth_proto_user_list_resp_header {
+typedef struct fcfs_auth_proto_list_resp_header {
     char count[4];
-} FCFSAuthProtoUserListRespHeader;
+} FCFSAuthProtoListRespHeader;
 
 typedef struct fcfs_auth_proto_user_list_resp_body_part {
     char priv[8];
@@ -102,12 +104,9 @@ typedef struct fcfs_auth_proto_spool_create_req {
 } FCFSAuthProtoSPoolCreateReq;
 
 typedef struct fcfs_auth_proto_spool_list_req {
-    char poolname[0];
+    FCFSAuthProtoNameInfo username;
+    FCFSAuthProtoNameInfo poolname;
 } FCFSAuthProtoSPoolListReq;
-
-typedef struct fcfs_auth_proto_spool_list_resp_header {
-    char count[4];
-} FCFSAuthProtoSPoolListRespHeader;
 
 typedef struct fcfs_auth_proto_spool_list_resp_body_part {
     char quota[8];

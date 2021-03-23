@@ -50,10 +50,6 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "SPOOL_LIST_REQ";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP:
             return "SPOOL_LIST_RESP";
-        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_REQ:
-            return "SPOOL_GRANT_REQ";
-        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_RESP:
-            return "SPOOL_GRANT_RESP";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ:
             return "SPOOL_REMOVE_REQ";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP:
@@ -62,6 +58,14 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "SPOOL_QUOTA_REQ";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_RESP:
             return "SPOOL_QUOTA_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_REQ:
+            return "SPOOL_GRANT_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_RESP:
+            return "SPOOL_GRANT_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
+            return "GPOOL_LIST_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP:
+            return "GPOOL_LIST_RESP";
         default:
             return sf_get_cmd_caption(cmd);
     }

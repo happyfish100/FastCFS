@@ -163,7 +163,7 @@ int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
     FCFSAuthProtoHeader *header;
     char out_buff[sizeof(FCFSAuthProtoHeader) + NAME_MAX];
     SFResponseInfo response;
-    FCFSAuthProtoUserListRespHeader *resp_header;
+    FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoUserListRespBodyPart *body_part;
     FCFSAuthUserInfo *user;
     FCFSAuthUserInfo *end;
@@ -190,13 +190,13 @@ int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
     if ((result=sf_send_and_recv_vary_response(conn, out_buff, out_bytes,
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP, buffer,
-                    sizeof(FCFSAuthProtoUserListRespHeader))) != 0)
+                    sizeof(FCFSAuthProtoListRespHeader))) != 0)
     {
         sf_log_network_error(&response, conn, result);
         return result;
     }
 
-    resp_header = (FCFSAuthProtoUserListRespHeader *)buffer->buff;
+    resp_header = (FCFSAuthProtoListRespHeader *)buffer->buff;
     count = buff2int(resp_header->count);
     if ((result=fcfs_auth_user_check_realloc_array(array, count)) != 0) {
         return result;
@@ -316,5 +316,90 @@ int fcfs_auth_client_proto_spool_create(FCFSAuthClientContext *client_ctx,
         sf_log_network_error(&response, conn, result);
     }
 
+    return result;
+}
+
+int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *username,
+        const string_t *poolname, SFProtoRecvBuffer *buffer,
+        FCFSAuthStoragePoolArray *array)
+{
+    FCFSAuthProtoHeader *header;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoSPoolListReq) + 2 * NAME_MAX];
+    SFResponseInfo response;
+    FCFSAuthProtoSPoolListReq *req;
+    FCFSAuthProtoListRespHeader *resp_header;
+    FCFSAuthProtoSPoolListRespBodyPart *body_part;
+    FCFSAuthStoragePoolInfo *spool;
+    FCFSAuthStoragePoolInfo *end;
+    char *p;
+    int out_bytes;
+    int count;
+    int result;
+
+    if ((result=check_username_ex(username, false)) != 0) {
+        return result;
+    }
+
+    if ((result=check_poolname_ex(poolname, false)) != 0) {
+        return result;
+    }
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    out_bytes = sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoSPoolListReq) +
+        username->len + poolname->len;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+
+    req = (FCFSAuthProtoSPoolListReq *)(header + 1);
+    req->username.len = username->len;
+    if (username->len > 0) {
+        memcpy(req->username.str, username->str, username->len);
+    }
+
+    req->poolname.len = poolname->len;
+    if (poolname->len > 0) {
+        memcpy(req->username.str + req->username.len
+                + sizeof(FCFSAuthProtoNameInfo),
+                poolname->str, poolname->len);
+    }
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_vary_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP, buffer,
+                    sizeof(FCFSAuthProtoListRespHeader))) != 0)
+    {
+        sf_log_network_error(&response, conn, result);
+        return result;
+    }
+
+    resp_header = (FCFSAuthProtoListRespHeader *)buffer->buff;
+    count = buff2int(resp_header->count);
+    if ((result=fcfs_auth_spool_check_realloc_array(array, count)) != 0) {
+        return result;
+    }
+
+    p = (char *)(resp_header + 1);
+    end = array->spools + count;
+    for (spool=array->spools; spool<end; spool++) {
+        body_part = (FCFSAuthProtoSPoolListRespBodyPart *)p;
+        spool->quota = buff2long(body_part->quota);
+        spool->name.len = body_part->poolname.len;
+        spool->name.str = body_part->poolname.str;
+        p += sizeof(FCFSAuthProtoSPoolListRespBodyPart) + spool->name.len;
+    }
+
+    if (response.header.body_len != p - buffer->buff) {
+        logError("file: "__FILE__", line: %d, "
+                "response body length: %d != expect: %d",
+                __LINE__, response.header.body_len,
+                (int)(p - buffer->buff));
+        return EINVAL;
+    }
+
+    array->count = count;
     return result;
 }
