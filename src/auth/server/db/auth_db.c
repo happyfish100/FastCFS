@@ -393,6 +393,7 @@ int adb_user_list(AuthServerContext *server_ctx, FCFSAuthUserArray *array)
     int result;
 
     result = 0;
+    array->count = 0;
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     uniq_skiplist_iterator(adb_ctx.user.sl_pair.skiplist, &it);
     while ((dbuser=(DBUserInfo *)uniq_skiplist_next(&it)) != NULL) {
@@ -456,6 +457,132 @@ static int storage_pool_create(AuthServerContext *server_ctx,
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
     return 0;
+}
+
+static inline DBStoragePoolInfo *storage_pool_get(AuthServerContext
+        *server_ctx, DBUserInfo *user, const string_t *poolname)
+{
+    DBStoragePoolInfo target;
+
+    target.pool.name = *poolname;
+    return (DBStoragePoolInfo *)uniq_skiplist_find(
+            user->storage_pools.created, &target);
+}
+
+int adb_spool_create(AuthServerContext *server_ctx, const string_t
+        *username, const FCFSAuthStoragePoolInfo *pool)
+{
+    const bool addto_backend = true;
+    int result;
+    DBUserInfo *user;
+    DBStoragePoolInfo *dbspool;
+
+    result = ENOENT;
+    dbspool = NULL;
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL) {
+        if (user->user.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+            dbspool = storage_pool_get(server_ctx, user, &pool->name);
+            if (dbspool != NULL && dbspool->pool.status ==
+                    FCFS_AUTH_POOL_STATUS_NORMAL)
+            {
+                result = EEXIST;
+            }
+        } else {
+            user = NULL;
+        }
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    if (user != NULL && result == ENOENT) {
+        return storage_pool_create(server_ctx, user,
+                &dbspool, pool, addto_backend);
+    } else {
+        return result;
+    }
+}
+
+const FCFSAuthStoragePoolInfo *adb_spool_get(AuthServerContext *server_ctx,
+        const string_t *username, const string_t *poolname)
+{
+    DBUserInfo *user;
+    DBStoragePoolInfo *spool;
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL) {
+        spool = storage_pool_get(server_ctx, user, poolname);
+    } else {
+        spool = NULL;
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    if (spool != NULL && spool->pool.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+        return &spool->pool;
+    } else {
+        return NULL;
+    }
+}
+
+int adb_spool_remove(AuthServerContext *server_ctx,
+        const string_t *username, const string_t *poolname)
+{
+    DBUserInfo *user;
+    DBStoragePoolInfo *spool;
+    int result;
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL) {
+        spool = storage_pool_get(server_ctx, user, poolname);
+    } else {
+        spool = NULL;
+    }
+    if (spool != NULL && spool->pool.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+        if ((result=dao_spool_remove(server_ctx->dao_ctx,
+                        spool->pool.id)) == 0)
+        {
+            spool->pool.status = FCFS_AUTH_POOL_STATUS_DELETED;
+        }
+    } else {
+        result = ENOENT;
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return result;
+}
+
+int adb_spool_list(AuthServerContext *server_ctx, const string_t *username,
+        FCFSAuthStoragePoolArray *array)
+{
+    UniqSkiplistIterator it;
+    DBUserInfo *user;
+    DBStoragePoolInfo *spool;
+    int result;
+
+    result = 0;
+    array->count = 0;
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL) {
+        uniq_skiplist_iterator(user->storage_pools.created, &it);
+        while ((spool=(DBStoragePoolInfo *)uniq_skiplist_next(&it)) != NULL) {
+            if (spool->pool.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+                if ((result=fcfs_auth_pool_check_realloc_array(array,
+                                array->count + 1)) != 0)
+                {
+                    break;
+                }
+                array->spools[array->count++] = spool->pool;
+            }
+        }
+    } else {
+        result = ENOENT;
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return result;
 }
 
 static int convert_spool_array(AuthServerContext *server_ctx,

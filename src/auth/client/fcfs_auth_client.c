@@ -58,3 +58,11 @@ int fcfs_auth_client_user_remove(FCFSAuthClientContext *client_ctx,
             GET_CONNECTION, 0, fcfs_auth_client_proto_user_remove,
             username);
 }
+
+int fcfs_auth_client_spool_create(FCFSAuthClientContext *client_ctx,
+        const FCFSAuthStoragePoolInfo *spool)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_create,
+            spool);
+}

@@ -122,3 +122,46 @@ const char *fcfs_auth_user_priv_to_string(
     *(str->str + str->len) = '\0';
     return str->str;
 }
+
+int fcfs_auth_parse_pool_access(const string_t *str, int *priv)
+{
+    const char *p;
+    const char *end;
+
+    *priv = FCFS_AUTH_POOL_ACCESS_NONE;
+    end = str->str + str->len;
+    for (p=str->str; p<end; p++) {
+        switch (*p) {
+            case POOL_ACCESS_NAME_READ_CHR:
+                *priv |= FCFS_AUTH_POOL_ACCESS_READ;
+                break;
+            case POOL_ACCESS_NAME_WRITE_CHR:
+                *priv |= FCFS_AUTH_POOL_ACCESS_WRITE;
+                break;
+            default:
+                logError("file: "__FILE__", line: %d, "
+                        "unkown pool access: %c (0x%02x)",
+                        __LINE__, *p, *p);
+                return EINVAL;
+        }
+    }
+
+    return 0;
+}
+
+const char *fcfs_auth_pool_access_to_string(const int priv, string_t *str)
+{
+    char *p;
+
+    p = str->str;
+    if ((priv & FCFS_AUTH_POOL_ACCESS_READ) != 0) {
+        *p++ = POOL_ACCESS_NAME_READ_CHR;
+    }
+    if ((priv & FCFS_AUTH_POOL_ACCESS_WRITE) != 0) {
+        *p++ = POOL_ACCESS_NAME_WRITE_CHR;
+    }
+
+    *p = '\0';
+    str->len = p - str->str;
+    return str->str;
+}

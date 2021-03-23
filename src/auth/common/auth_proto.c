@@ -42,6 +42,26 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "USER_REMOVE_REQ";
         case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP:
             return "USER_REMOVE_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ:
+            return "SPOOL_CREATE_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP:
+            return "SPOOL_CREATE_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ:
+            return "SPOOL_LIST_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP:
+            return "SPOOL_LIST_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_REQ:
+            return "SPOOL_GRANT_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_RESP:
+            return "SPOOL_GRANT_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ:
+            return "SPOOL_REMOVE_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP:
+            return "SPOOL_REMOVE_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_REQ:
+            return "SPOOL_QUOTA_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_RESP:
+            return "SPOOL_QUOTA_RESP";
         default:
             return sf_get_cmd_caption(cmd);
     }

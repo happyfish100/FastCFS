@@ -241,6 +241,34 @@ static int service_deal_user_remove(struct fast_task_info *task)
     return adb_user_remove(SERVER_CTX, &username);
 }
 
+static int service_deal_spool_create(struct fast_task_info *task)
+{
+    FCFSAuthProtoSPoolCreateReq *req;
+    string_t username;
+    FCFSAuthStoragePoolInfo spool;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoSPoolCreateReq)
+                    + 1, sizeof(FCFSAuthProtoSPoolCreateReq) + NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoSPoolCreateReq *)REQUEST.body;
+    FC_SET_STRING_EX(spool.name, req->poolname.str, req->poolname.len);
+    spool.quota = buff2long(req->quota);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoSPoolCreateReq)
+                    + spool.name.len)) != 0)
+    {
+        return result;
+    }
+
+    //TODO
+    FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    return adb_spool_create(SERVER_CTX, &username, &spool);
+}
+
 int service_deal_task(struct fast_task_info *task, const int stage)
 {
     int result;
@@ -289,6 +317,10 @@ int service_deal_task(struct fast_task_info *task, const int stage)
             case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ:
                 RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP;
                 result = service_deal_user_remove(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP;
+                result = service_deal_spool_create(task);
                 break;
             default:
                 RESPONSE.error.length = sprintf(

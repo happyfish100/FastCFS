@@ -42,6 +42,9 @@ int fcfs_auth_client_proto_user_grant(FCFSAuthClientContext *client_ctx,
 int fcfs_auth_client_proto_user_remove(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username);
 
+int fcfs_auth_client_proto_spool_create(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const FCFSAuthStoragePoolInfo *spool);
+
 #ifdef __cplusplus
 }
 #endif

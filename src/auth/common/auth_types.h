@@ -42,8 +42,16 @@
 #define FCFS_AUTH_USER_PRIV_ALL  (FCFS_AUTH_USER_PRIV_USER_MANAGE | \
         FCFS_AUTH_USER_PRIV_CREATE_POOL | \
         FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER)
-
 #define FCFS_AUTH_USER_PRIV_COUNT      3
+
+#define FCFS_AUTH_POOL_ACCESS_NONE       0
+#define FCFS_AUTH_POOL_ACCESS_WRITE      (1 << 1)
+#define FCFS_AUTH_POOL_ACCESS_READ       (1 << 2)
+
+#define FCFS_AUTH_POOL_ACCESS_ALL  (FCFS_AUTH_POOL_ACCESS_WRITE | \
+        FCFS_AUTH_POOL_ACCESS_READ)
+#define FCFS_AUTH_POOL_ACCESS_COUNT      2
+
 
 typedef struct fcfs_auth_storage_pool_info {
     int64_t id;
@@ -58,7 +66,7 @@ typedef struct fcfs_auth_storage_pool_granted {
     struct {
         int fdir;
         int fstore;
-    } priv;
+    } privs;
 } FCFSAuthStoragePoolGranted;
 
 typedef struct fcfs_auth_user_info {

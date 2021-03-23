@@ -36,6 +36,10 @@
 #define USER_PRIV_NAME_ALL_PRIVS_LEN  \
     (sizeof(USER_PRIV_NAME_ALL_PRIVS_STR) - 1)
 
+
+#define POOL_ACCESS_NAME_READ_CHR       'r'
+#define POOL_ACCESS_NAME_WRITE_CHR      'w'
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,6 +48,10 @@ extern "C" {
 
     const char *fcfs_auth_user_priv_to_string(
             const int64_t priv, string_t *str);
+
+    int fcfs_auth_parse_pool_access(const string_t *str, int *priv);
+
+    const char *fcfs_auth_pool_access_to_string(const int priv, string_t *str);
 
 #ifdef __cplusplus
 }

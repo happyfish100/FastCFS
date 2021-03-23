@@ -45,6 +45,18 @@ int adb_user_update_priv(AuthServerContext *server_ctx,
 int adb_user_update_passwd(AuthServerContext *server_ctx,
         const string_t *username, const string_t *passwd);
 
+int adb_spool_create(AuthServerContext *server_ctx, const string_t
+        *username, const FCFSAuthStoragePoolInfo *pool);
+
+const FCFSAuthStoragePoolInfo *adb_spool_get(AuthServerContext *server_ctx,
+        const string_t *username, const string_t *poolname);
+
+int adb_spool_remove(AuthServerContext *server_ctx,
+        const string_t *username, const string_t *poolname);
+
+int adb_spool_list(AuthServerContext *server_ctx, const string_t *username,
+        FCFSAuthStoragePoolArray *array);
+
 #ifdef __cplusplus
 }
 #endif

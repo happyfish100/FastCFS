@@ -25,35 +25,46 @@
 #include "client_global.h"
 #include "client_proto.h"
 
-#define check_username(username) \
-    check_username_ex(username, true)
+#define check_name(name, caption) check_name_ex(name, caption, true)
 
-static inline int check_username_ex(const string_t *username,
-        const bool required)
+#define check_username_ex(username, required) \
+    check_name_ex(username, "username", required)
+#define check_username(username) check_username_ex(username, true)
+#define pack_username(username, proto_uname) \
+    pack_name(username, "username", proto_uname)
+
+#define check_poolname_ex(poolname, required) \
+    check_name_ex(poolname, "poolname", required)
+#define check_poolname(poolname) check_poolname_ex(poolname, true)
+#define pack_poolname(poolname, proto_pname) \
+    pack_name(poolname, "poolname", proto_pname)
+
+static inline int check_name_ex(const string_t *name,
+        const char *caption, const bool required)
 {
     int min_length;
 
     min_length = required ? 1 : 0;
-    if (username->len < min_length || username->len > NAME_MAX) {
+    if (name->len < min_length || name->len > NAME_MAX) {
         logError("file: "__FILE__", line: %d, "
-                "invalid username length: %d, which <= 0 or > %d",
-                __LINE__, username->len, NAME_MAX);
+                "invalid %s length: %d, which <= 0 or > %d",
+                __LINE__, caption, name->len, NAME_MAX);
         return EINVAL;
     }
 
     return 0;
 }
 
-static inline int pack_username(const string_t *username,
-        FCFSAuthProtoNameInfo *proto_uname)
+static inline int pack_name(const string_t *name, const char *caption,
+        FCFSAuthProtoNameInfo *proto_name)
 {
     int result;
 
-    if ((result=check_username(username)) != 0) {
+    if ((result=check_name(name, caption)) != 0) {
         return result;
     }
-    memcpy(proto_uname->str, username->str, username->len);
-    proto_uname->len = username->len;
+    memcpy(proto_name->str, name->str, name->len);
+    proto_name->len = name->len;
     return 0;
 }
 
@@ -269,6 +280,38 @@ int fcfs_auth_client_proto_user_remove(FCFSAuthClientContext *client_ctx,
     if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP)) != 0)
+    {
+        sf_log_network_error(&response, conn, result);
+    }
+
+    return result;
+}
+
+int fcfs_auth_client_proto_spool_create(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const FCFSAuthStoragePoolInfo *spool)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoSPoolCreateReq *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoSPoolCreateReq) + NAME_MAX];
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoSPoolCreateReq *)(header + 1);
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + spool->name.len;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+    if ((result=pack_poolname(&spool->name, &req->poolname)) != 0) {
+        return result;
+    }
+    long2buff(spool->quota, req->quota);
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP)) != 0)
     {
         sf_log_network_error(&response, conn, result);
     }
