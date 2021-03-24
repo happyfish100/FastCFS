@@ -61,6 +61,26 @@ extern "C" {
         }
     }
 
+    static inline void fcfs_auth_granted_init_array(
+            FCFSAuthGrantedPoolArray *array)
+    {
+        array->gpools = array->fixed;
+        array->alloc = FCFS_AUTH_FIXED_USER_COUNT;
+        array->count = 0;
+    }
+
+    static inline void fcfs_auth_granted_free_array(
+            FCFSAuthGrantedPoolArray *array)
+    {
+        if (array->gpools != array->fixed) {
+            if (array->gpools != NULL) {
+                free(array->gpools);
+            }
+            array->gpools = array->fixed;
+            array->alloc = FCFS_AUTH_FIXED_USER_COUNT;
+        }
+    }
+
     int fcfs_auth_user_check_realloc_array(FCFSAuthUserArray *array,
             const int target_count);
 

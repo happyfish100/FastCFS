@@ -31,6 +31,16 @@ typedef struct auth_full_path {
     FDIRDEntryFullName fullname;
 } AuthFullPath;
 
+#define AUTH_SET_GRANTED_POOL_PATH(fp, username, granted_id)  \
+    do {  \
+        FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
+                AUTH_NAMESPACE_LEN); \
+        fp.fullname.path.str = fp.buff;  \
+        fp.fullname.path.len = sprintf(fp.fullname.path.str, \
+                AUTH_BASE_PATH_STR"/%s/%s/%"PRId64,      \
+                (username)->str, AUTH_DIR_NAME_GRANTED_STR, granted_id); \
+    } while (0)
+
 #define AUTH_SET_USER_PATH2(fp, username, subdir1, subdir2)  \
     do {  \
         FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
