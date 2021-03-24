@@ -539,18 +539,69 @@ int adb_spool_remove(AuthServerContext *server_ctx,
     } else {
         spool = NULL;
     }
-    if (spool != NULL && spool->pool.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
-        if ((result=dao_spool_remove(server_ctx->dao_ctx,
-                        spool->pool.id)) == 0)
-        {
-            spool->pool.status = FCFS_AUTH_POOL_STATUS_DELETED;
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    if (!(spool != NULL && spool->pool.status ==
+            FCFS_AUTH_POOL_STATUS_NORMAL))
+    {
+        return ENOENT;
+    }
+
+    if ((result=dao_spool_remove(server_ctx->dao_ctx,
+                    spool->pool.id)) != 0)
+    {
+        return result;
+    }
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    spool->pool.status = FCFS_AUTH_POOL_STATUS_DELETED;
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return 0;
+}
+
+int adb_spool_set_quota(AuthServerContext *server_ctx,
+        const string_t *username, const string_t *poolname,
+        const int64_t quota)
+{
+    DBUserInfo *user;
+    DBStoragePoolInfo *spool;
+    int64_t old_quota;
+    int result;
+
+    old_quota = 0;
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL) {
+        if ((spool=storage_pool_get(server_ctx, user, poolname)) != NULL) {
+            old_quota = spool->pool.quota;
         }
     } else {
-        result = ENOENT;
+        spool = NULL;
     }
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
-    return result;
+    if (!(spool != NULL && spool->pool.status ==
+                FCFS_AUTH_POOL_STATUS_NORMAL))
+    {
+        return ENOENT;
+    }
+
+    if (old_quota != quota) {
+        if ((result=dao_spool_set_quota(server_ctx->dao_ctx,
+                        spool->pool.id, quota)) != 0)
+        {
+            return result;
+        }
+    }
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    if (old_quota != quota) {
+        spool->pool.quota = quota;
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return 0;
 }
 
 int adb_spool_list(AuthServerContext *server_ctx, const string_t *username,

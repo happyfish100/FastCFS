@@ -24,30 +24,39 @@ int dao_spool_create(FDIRClientContext *client_ctx,
         const string_t *username, FCFSAuthStoragePoolInfo *spool)
 {
     int result;
+    int64_t inode;
     AuthFullPath pool_path;
     FDIRDEntryInfo dentry;
 
     AUTH_SET_USER_PATH2(pool_path, username,
             AUTH_DIR_NAME_CREATED_STR, spool->name.str);
     if ((result=fdir_client_create_dentry(client_ctx,
-            &pool_path.fullname, &DAO_OMP_FILE, &dentry)) != 0)
+            &pool_path.fullname, &DAO_OMP_FILE, &dentry)) == 0)
     {
+        inode = dentry.inode;
+    } else if (result == EEXIST) {
+        if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
+                        &pool_path.fullname, LOG_ERR, &inode)) != 0)
+        {
+            return result;
+        }
+    } else {
         return result;
     }
 
-    if ((result=dao_set_xattr_integer(client_ctx, dentry.inode,
+    if ((result=dao_set_xattr_integer(client_ctx, inode,
                     &AUTH_XTTR_NAME_QUOTA, spool->quota)) != 0)
     {
         return result;
     }
-    if ((result=dao_set_xattr_integer(client_ctx, dentry.inode,
+    if ((result=dao_set_xattr_integer(client_ctx, inode,
                     &AUTH_XTTR_NAME_STATUS,
                     FCFS_AUTH_POOL_STATUS_NORMAL)) != 0)
     {
         return result;
     }
 
-    spool->id = dentry.inode;
+    spool->id = inode;
     return 0;
 }
 
@@ -55,6 +64,13 @@ int dao_spool_remove(FDIRClientContext *client_ctx, const int64_t spool_id)
 {
     return dao_set_xattr_integer(client_ctx, spool_id, &AUTH_XTTR_NAME_STATUS,
             FCFS_AUTH_POOL_STATUS_DELETED);
+}
+
+int dao_spool_set_quota(FDIRClientContext *client_ctx,
+        const int64_t spool_id, const int64_t quota)
+{
+    return dao_set_xattr_integer(client_ctx, spool_id,
+            &AUTH_XTTR_NAME_QUOTA, quota);
 }
 
 static int dump_to_spool_array(FDIRClientContext *client_ctx,

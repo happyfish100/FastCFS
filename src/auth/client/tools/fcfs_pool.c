@@ -79,6 +79,28 @@ static int create_spool(int argc, char *argv[])
     return result;
 }
 
+static int quota_spool(int argc, char *argv[])
+{
+    int result;
+    char buff[64];
+
+    if ((result=fcfs_auth_client_spool_set_quota(&g_fcfs_auth_client_vars.
+                    client_ctx, &spool.name, spool.quota)) == 0)
+    {
+        if (spool.quota == FCFS_AUTH_UNLIMITED_QUOTA_VAL) {
+            strcpy(buff, FCFS_AUTH_UNLIMITED_QUOTA_STR);
+        } else {
+            long_to_comma_str(spool.quota / (1024 * 1024 * 1024), buff);
+            strcat(buff, "GB");
+        }
+        printf("pool %s, set quota to %s success\n", spool.name.str, buff);
+    } else {
+        fprintf(stderr, "pool %s, set quota fail\n", spool.name.str);
+    }
+
+    return result;
+}
+
 static inline int parse_pool_access(const string_t *privs, int *pv)
 {
     if (privs->str == NULL) {
@@ -126,7 +148,6 @@ static int remove_spool(int argc, char *argv[])
 {
     int result;
 
-    /*
     if ((result=fcfs_auth_client_spool_remove(&g_fcfs_auth_client_vars.
                     client_ctx, &spool.name)) == 0)
     {
@@ -134,9 +155,7 @@ static int remove_spool(int argc, char *argv[])
     } else {
         fprintf(stderr, "remove pool %s fail\n", spool.name.str);
     }
-    */
 
-    result = 0;
     return result;
 }
 
@@ -363,6 +382,8 @@ int main(int argc, char *argv[])
 
     if (strcasecmp(operation, "create") == 0) {
         return create_spool(argc, argv);
+    } else if (strcasecmp(operation, "quota") == 0) {
+        return quota_spool(argc, argv);
     } else if (strcasecmp(operation, "grant") == 0) {
         return grant_privilege(argc, argv);
     } else if (strcasecmp(operation, "delete") == 0 ||

@@ -38,8 +38,8 @@
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP           54
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ          55
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP         56
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_REQ           57
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_RESP          58
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ       57
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP      58
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_REQ           61
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_RESP          62
 #define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ            63
@@ -129,10 +129,10 @@ typedef struct fcfs_auth_proto_spool_remove_req {
     FCFSAuthProtoNameInfo poolname;
 } FCFSAuthProtoSPoolRemoveReq;
 
-typedef struct fcfs_auth_proto_spool_quota_req {
+typedef struct fcfs_auth_proto_spool_set_quota_req {
     char quota[8];
     FCFSAuthProtoNameInfo poolname;
-} FCFSAuthProtoSPoolQuotaReq;
+} FCFSAuthProtoSPoolSetQuotaReq;
 
 #ifdef __cplusplus
 extern "C" {

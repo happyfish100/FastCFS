@@ -54,10 +54,10 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "SPOOL_REMOVE_REQ";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP:
             return "SPOOL_REMOVE_RESP";
-        case FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_REQ:
-            return "SPOOL_QUOTA_REQ";
-        case FCFS_AUTH_SERVICE_PROTO_SPOOL_QUOTA_RESP:
-            return "SPOOL_QUOTA_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ:
+            return "SPOOL_SET_QUOTA_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP:
+            return "SPOOL_SET_QUOTA_RESP";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_REQ:
             return "SPOOL_GRANT_REQ";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_RESP:

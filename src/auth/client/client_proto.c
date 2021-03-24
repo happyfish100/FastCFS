@@ -403,3 +403,66 @@ int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
     array->count = count;
     return result;
 }
+
+int fcfs_auth_client_proto_spool_remove(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *poolname)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoSPoolRemoveReq *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoSPoolRemoveReq) + NAME_MAX];
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoSPoolRemoveReq *)(header + 1);
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + poolname->len;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+    if ((result=pack_poolname(poolname, &req->poolname)) != 0) {
+        return result;
+    }
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP)) != 0)
+    {
+        sf_log_network_error(&response, conn, result);
+    }
+
+    return result;
+}
+
+int fcfs_auth_client_proto_spool_set_quota(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *poolname, const int64_t quota)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoSPoolSetQuotaReq *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoSPoolSetQuotaReq) + NAME_MAX];
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoSPoolSetQuotaReq *)(header + 1);
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + poolname->len;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+    if ((result=pack_poolname(poolname, &req->poolname)) != 0) {
+        return result;
+    }
+    long2buff(quota, req->quota);
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP)) != 0)
+    {
+        sf_log_network_error(&response, conn, result);
+    }
+
+    return result;
+}

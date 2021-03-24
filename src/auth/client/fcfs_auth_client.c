@@ -75,3 +75,19 @@ int fcfs_auth_client_spool_list(FCFSAuthClientContext *client_ctx,
             GET_CONNECTION, 0, fcfs_auth_client_proto_spool_list,
             username, poolname, buffer, array);
 }
+
+int fcfs_auth_client_spool_remove(FCFSAuthClientContext *client_ctx,
+        const string_t *poolname)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_remove,
+            poolname);
+}
+
+int fcfs_auth_client_spool_set_quota(FCFSAuthClientContext *client_ctx,
+        const string_t *poolname, const int64_t quota)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_set_quota,
+            poolname, quota);
+}

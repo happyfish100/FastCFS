@@ -342,6 +342,62 @@ static int service_deal_spool_list(struct fast_task_info *task)
     return 0;
 }
 
+static int service_deal_spool_remove(struct fast_task_info *task)
+{
+    FCFSAuthProtoSPoolRemoveReq *req;
+    string_t username;
+    string_t poolname;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoSPoolRemoveReq)
+                    + 1, sizeof(FCFSAuthProtoSPoolRemoveReq) + NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoSPoolRemoveReq *)REQUEST.body;
+    FC_SET_STRING_EX(poolname, req->poolname.str, req->poolname.len);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoSPoolRemoveReq)
+                    + poolname.len)) != 0)
+    {
+        return result;
+    }
+
+    //TODO
+    FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    return adb_spool_remove(SERVER_CTX, &username, &poolname);
+}
+
+static int service_deal_spool_set_quota(struct fast_task_info *task)
+{
+    FCFSAuthProtoSPoolSetQuotaReq *req;
+    string_t username;
+    string_t poolname;
+    int64_t quota;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoSPoolSetQuotaReq)
+                    + 1, sizeof(FCFSAuthProtoSPoolSetQuotaReq) + NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoSPoolSetQuotaReq *)REQUEST.body;
+    FC_SET_STRING_EX(poolname, req->poolname.str, req->poolname.len);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoSPoolSetQuotaReq)
+                    + poolname.len)) != 0)
+    {
+        return result;
+    }
+
+    quota = buff2long(req->quota);
+    //TODO
+    FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    return adb_spool_set_quota(SERVER_CTX, &username, &poolname, quota);
+}
+
 int service_deal_task(struct fast_task_info *task, const int stage)
 {
     int result;
@@ -397,6 +453,14 @@ int service_deal_task(struct fast_task_info *task, const int stage)
                 break;
             case FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ:
                 result = service_deal_spool_list(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP;
+                result = service_deal_spool_remove(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP;
+                result = service_deal_spool_set_quota(task);
                 break;
             default:
                 RESPONSE.error.length = sprintf(

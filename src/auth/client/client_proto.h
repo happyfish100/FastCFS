@@ -50,6 +50,12 @@ int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
         const string_t *poolname, SFProtoRecvBuffer *buffer,
         FCFSAuthStoragePoolArray *array);
 
+int fcfs_auth_client_proto_spool_remove(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *poolname);
+
+int fcfs_auth_client_proto_spool_set_quota(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *poolname, const int64_t quota);
+
 #ifdef __cplusplus
 }
 #endif

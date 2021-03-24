@@ -28,6 +28,9 @@ int dao_spool_create(FDIRClientContext *client_ctx,
 
 int dao_spool_remove(FDIRClientContext *client_ctx, const int64_t spool_id);
 
+int dao_spool_set_quota(FDIRClientContext *client_ctx,
+        const int64_t spool_id, const int64_t quota);
+
 int dao_spool_list(FDIRClientContext *client_ctx, const string_t *username,
         struct fast_mpool_man *mpool, FCFSAuthStoragePoolArray *spool_array);
 
