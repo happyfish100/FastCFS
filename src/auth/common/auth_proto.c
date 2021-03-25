@@ -58,10 +58,14 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "SPOOL_SET_QUOTA_REQ";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP:
             return "SPOOL_SET_QUOTA_RESP";
-        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_REQ:
-            return "SPOOL_GRANT_REQ";
-        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_RESP:
-            return "SPOOL_GRANT_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ:
+            return "GPOOL_GRANT_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_RESP:
+            return "GPOOL_GRANT_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ:
+            return "GPOOL_WITHDRAW_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_RESP:
+            return "GPOOL_WITHDRAW_RESP";
         case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
             return "GPOOL_LIST_REQ";
         case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP:

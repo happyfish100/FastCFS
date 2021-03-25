@@ -40,10 +40,13 @@
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP         56
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ       57
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP      58
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_REQ           61
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_GRANT_RESP          62
-#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ            63
-#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP           64
+
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ           61
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_RESP          62
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ        63
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_RESP       64
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ            65
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP           66
 
 
 typedef SFCommonProtoHeader  FCFSAuthProtoHeader;
@@ -116,15 +119,6 @@ typedef struct fcfs_auth_proto_spool_list_resp_body_part {
     } poolname;
 } FCFSAuthProtoSPoolListRespBodyPart;
 
-typedef struct fcfs_auth_proto_spool_grant_req {
-    struct {
-        char fdir[4];
-        char fstore[4];
-    } privs;
-    FCFSAuthProtoNameInfo poolname;
-    FCFSAuthProtoNameInfo username;
-} FCFSAuthProtoSPoolGrantReq;
-
 typedef struct fcfs_auth_proto_spool_remove_req {
     FCFSAuthProtoNameInfo poolname;
 } FCFSAuthProtoSPoolRemoveReq;
@@ -133,6 +127,39 @@ typedef struct fcfs_auth_proto_spool_set_quota_req {
     char quota[8];
     FCFSAuthProtoNameInfo poolname;
 } FCFSAuthProtoSPoolSetQuotaReq;
+
+typedef struct fcfs_auth_proto_spool_grant_req {
+    struct {
+        char fdir[4];
+        char fstore[4];
+    } privs;
+    FCFSAuthProtoNameInfo username;
+    FCFSAuthProtoNameInfo poolname;
+} FCFSAuthProtoSPoolGrantReq;
+
+typedef struct fcfs_auth_proto_spool_withdraw_req {
+    FCFSAuthProtoNameInfo username;
+    FCFSAuthProtoNameInfo poolname;
+} FCFSAuthProtoSPoolWithdrawReq;
+
+typedef FCFSAuthProtoSPoolListReq FCFSAuthProtoGPoolListReq;
+
+typedef struct fcfs_auth_proto_gpool_list_resp_body_part {
+    struct {
+        char fdir[4];
+        char fstore[4];
+    } privs;
+
+    struct {
+        char len;
+        char str[0];
+    } username;
+
+    struct {
+        char len;
+        char str[0];
+    } poolname;
+} FCFSAuthProtoGPoolListRespBodyPart;
 
 #ifdef __cplusplus
 extern "C" {

@@ -164,3 +164,38 @@ int fcfs_auth_spool_check_realloc_array(FCFSAuthStoragePoolArray *array,
     array->alloc = new_alloc;
     return 0;
 }
+
+int fcfs_auth_gpool_check_realloc_array(FCFSAuthGrantedPoolArray *array,
+        const int target_count)
+{
+    int new_alloc;
+    FCFSAuthGrantedPoolFullInfo *new_gpools;
+
+    if (array->alloc >= target_count) {
+        return 0;
+    }
+
+    new_alloc = array->alloc;
+    while (new_alloc < target_count) {
+        new_alloc *= 2;
+    }
+
+    new_gpools = (FCFSAuthGrantedPoolFullInfo *)fc_malloc(
+            sizeof(FCFSAuthGrantedPoolFullInfo) * new_alloc);
+    if (new_gpools == NULL) {
+        return ENOMEM;
+    }
+
+    if (array->count > 0) {
+        int bytes;
+        bytes = sizeof(FCFSAuthGrantedPoolFullInfo) * array->count;
+        memcpy(new_gpools, array->gpools, bytes);
+    }
+    if (array->gpools != array->fixed) {
+        free(array->gpools);
+    }
+
+    array->gpools = new_gpools;
+    array->alloc = new_alloc;
+    return 0;
+}

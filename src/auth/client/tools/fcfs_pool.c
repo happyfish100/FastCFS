@@ -50,9 +50,11 @@ static void usage(char *argv[])
             "\tthe operations and following parameters: \n"
             "\t  create <pool_name> <quota>\n"
             "\t  quota <pool_name> <quota>\n"
+            "\t  delete | remove <pool_name>\n"
+            "\t  plist | pool_list [username] [pool_name]\n"
             "\t  grant <username> <pool_name>\n"
-            "\t  delete <pool_name>\n"
-            "\t  list [username] [pool_name]\n\n"
+            "\t  cancel | withdraw <username> <pool_name>\n"
+            "\t  glist | grant_list | granted_list [username] [pool_name]\n\n"
             "\tthe quota parameter is required for create and quota operations\n"
             "\tthe default unit of quota is GB, %s for no limit\n\n"
             "\tFastDIR and FastStore accesses are:\n"
@@ -114,9 +116,8 @@ static inline int parse_pool_access(const string_t *privs, int *pv)
 static int grant_privilege(int argc, char *argv[])
 {
     int result;
-    FCFSAuthStoragePoolGranted granted;
+    FCFSAuthGrantedPoolInfo granted;
 
-    granted.pool = spool;
     if ((result=parse_pool_access(&privs.fdir,
                     &granted.privs.fdir)) != 0)
     {
@@ -231,6 +232,7 @@ static int list_spool(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
     int ch;
+    int op_type;
     const char *config_filename = "/etc/fastcfs/auth/client.conf";
     char *operation;
     FCFSAuthClientUserKeyPair admin;
@@ -291,25 +293,48 @@ int main(int argc, char *argv[])
 
     operation = argv[current_index++];
     if (strcasecmp(operation, "create") == 0) {
+        op_type = FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ;
         username_options = 0;
         need_poolname = true;
         need_quota = true;
     } else if (strcasecmp(operation, "grant") == 0) {
+        op_type = FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ;
         username_options = USERNAME_OPTION_INCLUDED |
             USERNAME_OPTION_REQUIRED;
         need_poolname = true;
         need_quota = false;
     } else if (strcasecmp(operation, "quota") == 0) {
+        op_type = FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ;
         username_options = 0;
         need_poolname = true;
         need_quota = true;
     } else if (strcasecmp(operation, "delete") == 0 ||
             strcasecmp(operation, "remove") == 0)
     {
+        op_type = FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ;
         username_options = 0;
         need_poolname = true;
         need_quota = false;
-    } else if (strcasecmp(operation, "list") == 0) {
+    } else if (strcasecmp(operation, "plist") == 0 ||
+            strcasecmp(operation, "pool_list") == 0)
+    {
+        op_type = FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ;
+        username_options = USERNAME_OPTION_INCLUDED;
+        need_poolname = false;
+        need_quota = false;
+    } else if (strcasecmp(operation, "withdraw") == 0 ||
+            strcasecmp(operation, "cancel") == 0)
+    {
+        op_type = FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ;
+        username_options = USERNAME_OPTION_INCLUDED |
+            USERNAME_OPTION_REQUIRED;
+        need_poolname = true;
+        need_quota = false;
+    } else if (strcasecmp(operation, "glist") == 0 ||
+            strcasecmp(operation, "grant_list") == 0 ||
+            strcasecmp(operation, "granted_list") == 0)
+    {
+        op_type = FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ;
         username_options = USERNAME_OPTION_INCLUDED;
         need_poolname = false;
         need_quota = false;
@@ -380,18 +405,23 @@ int main(int argc, char *argv[])
         return result;
     }
 
-    if (strcasecmp(operation, "create") == 0) {
-        return create_spool(argc, argv);
-    } else if (strcasecmp(operation, "quota") == 0) {
-        return quota_spool(argc, argv);
-    } else if (strcasecmp(operation, "grant") == 0) {
-        return grant_privilege(argc, argv);
-    } else if (strcasecmp(operation, "delete") == 0 ||
-            strcasecmp(operation, "remove") == 0)
-    {
-        return remove_spool(argc, argv);
-    } else if (strcasecmp(operation, "list") == 0) {
-        return list_spool(argc, argv);
+    switch (op_type) {
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ:
+            return create_spool(argc, argv);
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ:
+            return list_spool(argc, argv);
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ:
+            return remove_spool(argc, argv);
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ:
+            return quota_spool(argc, argv);
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ:
+            return grant_privilege(argc, argv);
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ:
+            //TODO
+            return 0;
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
+            //TODO
+            return 0;
     }
 
     return 0;

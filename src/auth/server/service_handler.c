@@ -398,6 +398,174 @@ static int service_deal_spool_set_quota(struct fast_task_info *task)
     return adb_spool_set_quota(SERVER_CTX, &username, &poolname, quota);
 }
 
+static int service_deal_spool_grant(struct fast_task_info *task)
+{
+    FCFSAuthProtoSPoolGrantReq *req;
+    struct {
+        string_t my;
+        string_t dest;
+    } usernames;
+    string_t poolname;
+    const FCFSAuthStoragePoolInfo *spool;
+    FCFSAuthGrantedPoolInfo granted;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoSPoolGrantReq)
+                    + 2, sizeof(FCFSAuthProtoSPoolGrantReq)
+                    + 2 * NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoSPoolGrantReq *)REQUEST.body;
+    FC_SET_STRING_EX(usernames.dest, req->username.str, req->username.len);
+    FC_SET_STRING_EX(poolname, req->username.str + req->username.len +
+            sizeof(FCFSAuthProtoNameInfo), req->poolname.len);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoSPoolGrantReq)
+                    + usernames.dest.len + poolname.len)) != 0)
+    {
+        return result;
+    }
+
+    //TODO
+    FC_SET_STRING_EX(usernames.my, "admin", sizeof("admin") - 1);
+    if ((spool=adb_spool_get(SERVER_CTX, &usernames.my, &poolname)) == NULL) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "user: %.*s, pool: %.*s not exist", usernames.my.len,
+                usernames.my.str, poolname.len, poolname.str);
+        return ENOENT;
+    }
+
+    granted.pool_id = spool->id;
+    granted.privs.fdir = buff2int(req->privs.fdir);
+    granted.privs.fstore = buff2int(req->privs.fstore);
+    return adb_granted_create(SERVER_CTX, &usernames.dest, &granted);
+}
+
+static int service_deal_spool_withdraw(struct fast_task_info *task)
+{
+    FCFSAuthProtoSPoolWithdrawReq *req;
+    struct {
+        string_t my;
+        string_t dest;
+    } usernames;
+    string_t poolname;
+    const FCFSAuthStoragePoolInfo *spool;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoSPoolWithdrawReq)
+                    + 2, sizeof(FCFSAuthProtoSPoolWithdrawReq)
+                    + 2 * NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoSPoolWithdrawReq *)REQUEST.body;
+    FC_SET_STRING_EX(usernames.dest, req->username.str, req->username.len);
+    FC_SET_STRING_EX(poolname, req->username.str + req->username.len +
+            sizeof(FCFSAuthProtoNameInfo), req->poolname.len);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoSPoolWithdrawReq)
+                    + usernames.dest.len + poolname.len)) != 0)
+    {
+        return result;
+    }
+
+    //TODO
+    FC_SET_STRING_EX(usernames.my, "admin", sizeof("admin") - 1);
+    if ((spool=adb_spool_get(SERVER_CTX, &usernames.my, &poolname)) == NULL) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "user: %.*s, pool: %.*s not exist", usernames.my.len,
+                usernames.my.str, poolname.len, poolname.str);
+        return ENOENT;
+    }
+
+    return adb_granted_remove(SERVER_CTX, &usernames.dest, spool->id);
+}
+
+static int service_deal_gpool_list(struct fast_task_info *task)
+{
+    FCFSAuthGrantedPoolArray array;
+    const FCFSAuthGrantedPoolFullInfo *gpool;
+    const FCFSAuthGrantedPoolFullInfo *end;
+    char pname_buff[NAME_MAX];
+    string_t username;
+    string_t poolname;
+    FCFSAuthProtoGPoolListReq *req;
+    FCFSAuthProtoListRespHeader *resp_header;
+    FCFSAuthProtoGPoolListRespBodyPart *body_part;
+    char *p;
+    int count;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoGPoolListReq),
+                    sizeof(FCFSAuthProtoGPoolListReq) + NAME_MAX * 2)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoGPoolListReq *)REQUEST.body;
+    if (req->username.len == 0) {
+        //TODO
+        FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    } else {
+        username.len = req->username.len;
+        username.str = req->username.str;
+    }
+
+    if ((result=server_expect_body_length(sizeof(FCFSAuthProtoGPoolListReq)
+                    + req->username.len + req->poolname.len)) != 0)
+    {
+        return result;
+    }
+
+    poolname.str = pname_buff;
+    fcfs_auth_granted_init_array(&array);
+    if (req->poolname.len > 0) {
+        poolname.len = req->poolname.len;
+        memcpy(poolname.str, req->username.str + req->username.len +
+            sizeof(FCFSAuthProtoNameInfo), poolname.len);
+    } else {
+        poolname.len = 0;
+    }
+
+    if ((result=adb_granted_list(SERVER_CTX, &username, &array)) != 0) {
+        fcfs_auth_granted_free_array(&array);
+        return result;
+    }
+
+    count = 0;
+    resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
+    p = (char *)(resp_header + 1);
+    end = array.gpools + array.count;
+    for (gpool=array.gpools; gpool<end; gpool++) {
+        if (poolname.len == 0 || fc_string_equals(
+                    &gpool->pool_name, &poolname))
+        {
+            body_part = (FCFSAuthProtoGPoolListRespBodyPart *)p;
+            int2buff(gpool->granted.privs.fdir, body_part->privs.fdir);
+            int2buff(gpool->granted.privs.fstore, body_part->privs.fstore);
+            body_part->username.len = gpool->username.len;
+            body_part->poolname.len = gpool->pool_name.len;
+            memcpy(body_part->username.str, gpool->username.str,
+                    gpool->username.len);
+            memcpy(body_part->poolname.str + gpool->username.len,
+                    gpool->pool_name.str, gpool->pool_name.len);
+            p += sizeof(FCFSAuthProtoGPoolListRespBodyPart) +
+                gpool->username.len + gpool->pool_name.len;
+            count++;
+        }
+    }
+    int2buff(count, resp_header->count);
+    RESPONSE.header.body_len = p - REQUEST.body;
+    RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP;
+    TASK_ARG->context.common.response_done = true;
+
+    fcfs_auth_granted_free_array(&array);
+    return 0;
+}
+
 int service_deal_task(struct fast_task_info *task, const int stage)
 {
     int result;
@@ -461,6 +629,17 @@ int service_deal_task(struct fast_task_info *task, const int stage)
             case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ:
                 RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP;
                 result = service_deal_spool_set_quota(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_RESP;
+                result = service_deal_spool_grant(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_RESP;
+                result = service_deal_spool_withdraw(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
+                result = service_deal_gpool_list(task);
                 break;
             default:
                 RESPONSE.error.length = sprintf(

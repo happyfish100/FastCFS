@@ -43,7 +43,7 @@ static void usage(char *argv[])
             "\tthe operations and parameters are: \n"
             "\t  create <username> [user_secret_key_filename]\n"
             "\t  grant <username>, the option <-p priviledges> is required\n"
-            "\t  delete <username>\n\n"
+            "\t  delete | remove <username>\n\n"
             "\t  list [username]\n"
             "\tgranted priviledges seperate by comma, priviledges:\n"
             "\t  %s: user management\n"

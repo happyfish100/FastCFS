@@ -87,6 +87,9 @@ extern "C" {
     int fcfs_auth_spool_check_realloc_array(FCFSAuthStoragePoolArray *array,
             const int target_count);
 
+    int fcfs_auth_gpool_check_realloc_array(FCFSAuthGrantedPoolArray *array,
+            const int target_count);
+
     void fcfs_auth_generate_passwd(unsigned char passwd[16]);
 
     int fcfs_auth_save_passwd(const char *filename, unsigned char passwd[16]);

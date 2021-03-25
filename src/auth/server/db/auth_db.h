@@ -69,8 +69,11 @@ int adb_granted_create(AuthServerContext *server_ctx, const string_t *username,
 int adb_granted_remove(AuthServerContext *server_ctx,
         const string_t *username, const int64_t pool_id);
 
+int adb_granted_get(AuthServerContext *server_ctx, const string_t *username,
+        const int64_t pool_id, FCFSAuthGrantedPoolFullInfo *gf);
+
 int adb_granted_list(AuthServerContext *server_ctx, const string_t *username,
-        FCFSAuthGrantedPoolArray *granted_array);
+        FCFSAuthGrantedPoolArray *array);
 
 #ifdef __cplusplus
 }

@@ -74,13 +74,14 @@ static int dump_to_granted_array(FDIRClientContext *client_ctx,
     const FDIRClientDentry *entry;
     const FDIRClientDentry *end;
     char *endptr;
-    FCFSAuthGrantedPoolInfo *new_gpools;
-    FCFSAuthGrantedPoolInfo *gpool;
+    FCFSAuthGrantedPoolFullInfo *new_gpools;
+    FCFSAuthGrantedPoolFullInfo *gpool;
+    FCFSAuthGrantedPoolInfo *granted;
     int result;
 
     if (darray->count > parray->alloc) {
-        new_gpools = (FCFSAuthGrantedPoolInfo *)fc_malloc(
-                sizeof(FCFSAuthGrantedPoolInfo) * darray->count);
+        new_gpools = (FCFSAuthGrantedPoolFullInfo *)fc_malloc(
+                sizeof(FCFSAuthGrantedPoolFullInfo) * darray->count);
         if (new_gpools == NULL) {
             return ENOMEM;
         }
@@ -96,15 +97,16 @@ static int dump_to_granted_array(FDIRClientContext *client_ctx,
     for (entry=darray->entries, gpool=parray->gpools;
             entry<end; entry++, gpool++)
     {
-        gpool->id = entry->dentry.inode;
-        gpool->pool_id = strtoll(entry->name.str, &endptr, 10);
-        if ((result=dao_get_xattr_int32(client_ctx, gpool->id,
-                        &AUTH_XTTR_NAME_FDIR, &gpool->privs.fdir)) != 0)
+        granted = &gpool->granted;
+        granted->id = entry->dentry.inode;
+        granted->pool_id = strtoll(entry->name.str, &endptr, 10);
+        if ((result=dao_get_xattr_int32(client_ctx, granted->id,
+                        &AUTH_XTTR_NAME_FDIR, &granted->privs.fdir)) != 0)
         {
             return result;
         }
-        if ((result=dao_get_xattr_int32(client_ctx, gpool->id,
-                        &AUTH_XTTR_NAME_FSTORE, &gpool->privs.fstore)) != 0)
+        if ((result=dao_get_xattr_int32(client_ctx, granted->id,
+                        &AUTH_XTTR_NAME_FSTORE, &granted->privs.fstore)) != 0)
         {
             return result;
         }

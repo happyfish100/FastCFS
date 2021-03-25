@@ -30,15 +30,6 @@
 
 #define SKIPLIST_INIT_LEVEL_COUNT   2
 
-typedef struct db_storage_pool_info {
-    FCFSAuthStoragePoolInfo pool;
-} DBStoragePoolInfo;
-
-typedef struct db_granted_pool_info {
-    FCFSAuthGrantedPoolInfo granted;
-    DBStoragePoolInfo *sp;
-} DBGrantedPoolInfo;
-
 typedef struct db_user_info {
     FCFSAuthUserInfo user;
     struct {
@@ -46,6 +37,16 @@ typedef struct db_user_info {
         struct uniq_skiplist *granted;  //element: DBGrantedPoolInfo
     } storage_pools;
 } DBUserInfo;
+
+typedef struct db_storage_pool_info {
+    FCFSAuthStoragePoolInfo pool;
+    DBUserInfo *user;
+} DBStoragePoolInfo;
+
+typedef struct db_granted_pool_info {
+    FCFSAuthGrantedPoolInfo granted;
+    DBStoragePoolInfo *sp;
+} DBGrantedPoolInfo;
 
 typedef struct auth_db_context {
     pthread_mutex_t lock;
@@ -437,6 +438,7 @@ static int storage_pool_create(AuthServerContext *server_ctx,
         {
             return result;
         }
+        (*dbspool)->user = dbuser;
         need_insert = true;
     } else {
         need_insert = false;
@@ -744,13 +746,13 @@ static int convert_granted_array(AuthServerContext *server_ctx,
 {
     const bool addto_backend = false;
     int result;
-    const FCFSAuthGrantedPoolInfo *granted;
-    const FCFSAuthGrantedPoolInfo *end;
+    const FCFSAuthGrantedPoolFullInfo *gf;
+    const FCFSAuthGrantedPoolFullInfo *end;
 
     end = granted_array->gpools + granted_array->count;
-    for (granted=granted_array->gpools; granted<end; granted++) {
+    for (gf=granted_array->gpools; gf<end; gf++) {
         if ((result=granted_pool_create(server_ctx, dbuser,
-                        granted, addto_backend)) != 0)
+                        &gf->granted, addto_backend)) != 0)
         {
             return result;
         }
@@ -879,13 +881,13 @@ int adb_check_generate_admin_user(AuthServerContext *server_ctx)
 }
 
 static inline DBGrantedPoolInfo *granted_pool_get(
-        DBUserInfo *user, const int64_t pool_id)
+        DBUserInfo *dbuser, const int64_t pool_id)
 {
     DBGrantedPoolInfo target;
 
     target.granted.id = pool_id;
     return (DBGrantedPoolInfo *)uniq_skiplist_find(
-            user->storage_pools.granted, &target);
+            dbuser->storage_pools.granted, &target);
 }
 
 int adb_granted_create(AuthServerContext *server_ctx, const string_t *username,
@@ -917,4 +919,99 @@ int adb_granted_create(AuthServerContext *server_ctx, const string_t *username,
     } else {
         return result;
     }
+}
+
+int adb_granted_remove(AuthServerContext *server_ctx,
+        const string_t *username, const int64_t pool_id)
+{
+    int result;
+    DBUserInfo *dbuser;
+    DBGrantedPoolInfo *dbgranted;
+
+    dbgranted = NULL;
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    dbuser = user_get(server_ctx, username);
+    if (dbuser != NULL) {
+        if (dbuser->user.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+            dbgranted = granted_pool_get(dbuser, pool_id);
+        }
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    if (dbgranted != NULL) {
+        if ((result=dao_granted_remove(server_ctx->dao_ctx,
+                        username, pool_id)) == 0)
+        {
+            PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+            uniq_skiplist_delete(dbuser->storage_pools.granted, dbgranted);
+            PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+        }
+        return result;
+    } else {
+        return ENOENT;
+    }
+}
+
+static inline void set_gpool_full_info(FCFSAuthGrantedPoolFullInfo *gf,
+        DBGrantedPoolInfo *dbgpool)
+{
+    gf->granted = dbgpool->granted;
+    gf->username = dbgpool->sp->user->user.name;
+    gf->pool_name = dbgpool->sp->pool.name;
+}
+
+int adb_granted_get(AuthServerContext *server_ctx, const string_t *username,
+        const int64_t pool_id, FCFSAuthGrantedPoolFullInfo *gf)
+{
+    DBUserInfo *dbuser;
+    DBGrantedPoolInfo *dbgranted;
+
+    dbgranted = NULL;
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    dbuser = user_get(server_ctx, username);
+    if (dbuser != NULL) {
+        if (dbuser->user.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+            dbgranted = granted_pool_get(dbuser, pool_id);
+        }
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    if (dbgranted != NULL) {
+        set_gpool_full_info(gf, dbgranted);
+        return 0;
+    } else {
+        return ENOENT;
+    }
+}
+
+int adb_granted_list(AuthServerContext *server_ctx, const string_t *username,
+        FCFSAuthGrantedPoolArray *array)
+{
+    UniqSkiplistIterator it;
+    DBUserInfo *user;
+    DBGrantedPoolInfo *dbgpool;
+    int result;
+
+    result = 0;
+    array->count = 0;
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    user = user_get(server_ctx, username);
+    if (user != NULL) {
+        uniq_skiplist_iterator(user->storage_pools.granted, &it);
+        while ((dbgpool=(DBGrantedPoolInfo *)uniq_skiplist_next(&it)) != NULL) {
+            if ((result=fcfs_auth_gpool_check_realloc_array(
+                            array, array->count + 1)) != 0)
+            {
+                break;
+            }
+
+            set_gpool_full_info(array->gpools + array->count, dbgpool);
+            array->count++;
+        }
+    } else {
+        result = ENOENT;
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return result;
 }

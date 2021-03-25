@@ -71,6 +71,12 @@ typedef struct fcfs_auth_granted_pool_info {
     } privs;
 } FCFSAuthGrantedPoolInfo;
 
+typedef struct fcfs_auth_granted_pool_full_info {
+    FCFSAuthGrantedPoolInfo granted;
+    string_t username;
+    string_t pool_name;
+} FCFSAuthGrantedPoolFullInfo;
+
 typedef struct fcfs_auth_user_info {
     int64_t id;
     string_t name;
@@ -87,8 +93,8 @@ typedef struct fcfs_auth_storage_pool_array {
 } FCFSAuthStoragePoolArray;
 
 typedef struct fcfs_auth_granted_pool_array {
-    FCFSAuthGrantedPoolInfo *gpools;
-    FCFSAuthGrantedPoolInfo fixed[FCFS_AUTH_FIXED_POOL_COUNT];
+    FCFSAuthGrantedPoolFullInfo *gpools;
+    FCFSAuthGrantedPoolFullInfo fixed[FCFS_AUTH_FIXED_POOL_COUNT];
     int count;
     int alloc;
 } FCFSAuthGrantedPoolArray;
