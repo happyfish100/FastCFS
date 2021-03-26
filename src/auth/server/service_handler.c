@@ -289,25 +289,20 @@ static int service_deal_spool_list(struct fast_task_info *task)
     }
 
     req = (FCFSAuthProtoSPoolListReq *)REQUEST.body;
-    if (req->username.len == 0) {
-        //TODO
-        FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
-    } else {
-        username.len = req->username.len;
-        username.str = req->username.str;
-    }
-
+    fcfs_auth_parse_user_pool_pair(&req->up_pair, &username, &poolname);
     if ((result=server_expect_body_length(sizeof(FCFSAuthProtoSPoolListReq)
-                    + req->username.len + req->poolname.len)) != 0)
+                    + username.len + poolname.len)) != 0)
     {
         return result;
     }
 
+    if (username.len == 0) {
+        //TODO
+        FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    }
+
     fcfs_auth_spool_init_array(&array);
-    if (req->poolname.len > 0) {
-        poolname.len = req->poolname.len;
-        poolname.str = req->username.str + req->username.len +
-            sizeof(FCFSAuthProtoNameInfo);
+    if (poolname.len > 0) {
         if ((spool=adb_spool_get(SERVER_CTX, &username, &poolname)) == NULL) {
             RESPONSE.error.length = sprintf(RESPONSE.error.message,
                     "user: %.*s, pool: %.*s not exist", username.len,
@@ -418,9 +413,7 @@ static int service_deal_spool_grant(struct fast_task_info *task)
     }
 
     req = (FCFSAuthProtoSPoolGrantReq *)REQUEST.body;
-    FC_SET_STRING_EX(usernames.dest, req->username.str, req->username.len);
-    FC_SET_STRING_EX(poolname, req->username.str + req->username.len +
-            sizeof(FCFSAuthProtoNameInfo), req->poolname.len);
+    fcfs_auth_parse_user_pool_pair(&req->up_pair, &usernames.dest, &poolname);
     if ((result=server_expect_body_length(
                     sizeof(FCFSAuthProtoSPoolGrantReq)
                     + usernames.dest.len + poolname.len)) != 0)
@@ -440,6 +433,20 @@ static int service_deal_spool_grant(struct fast_task_info *task)
     granted.pool_id = spool->id;
     granted.privs.fdir = buff2int(req->privs.fdir);
     granted.privs.fstore = buff2int(req->privs.fstore);
+    if ((granted.privs.fdir == FCFS_AUTH_POOL_ACCESS_NONE) &&
+            (granted.privs.fstore == FCFS_AUTH_POOL_ACCESS_NONE))
+    {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "no access priviledges to grant");
+        return EINVAL;
+    }
+
+    logInfo("sizeof(FCFSAuthProtoSPoolGrantReq): %d, dest: %.*s(%d), "
+            "poolname: %.*s, pool_id: %"PRId64,
+            (int)sizeof(FCFSAuthProtoSPoolGrantReq),
+            usernames.dest.len, usernames.dest.str, usernames.dest.len,
+            poolname.len, poolname.str, granted.pool_id);
+
     return adb_granted_create(SERVER_CTX, &usernames.dest, &granted);
 }
 
@@ -462,9 +469,7 @@ static int service_deal_spool_withdraw(struct fast_task_info *task)
     }
 
     req = (FCFSAuthProtoSPoolWithdrawReq *)REQUEST.body;
-    FC_SET_STRING_EX(usernames.dest, req->username.str, req->username.len);
-    FC_SET_STRING_EX(poolname, req->username.str + req->username.len +
-            sizeof(FCFSAuthProtoNameInfo), req->poolname.len);
+    fcfs_auth_parse_user_pool_pair(&req->up_pair, &usernames.dest, &poolname);
     if ((result=server_expect_body_length(
                     sizeof(FCFSAuthProtoSPoolWithdrawReq)
                     + usernames.dest.len + poolname.len)) != 0)
@@ -506,28 +511,22 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     }
 
     req = (FCFSAuthProtoGPoolListReq *)REQUEST.body;
-    if (req->username.len == 0) {
-        //TODO
-        FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
-    } else {
-        username.len = req->username.len;
-        username.str = req->username.str;
-    }
-
+    fcfs_auth_parse_user_pool_pair(&req->up_pair, &username, &poolname);
     if ((result=server_expect_body_length(sizeof(FCFSAuthProtoGPoolListReq)
-                    + req->username.len + req->poolname.len)) != 0)
+                    + username.len + poolname.len)) != 0)
     {
         return result;
     }
 
-    poolname.str = pname_buff;
+    if (username.len == 0) {
+        //TODO
+        FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    }
+
     fcfs_auth_granted_init_array(&array);
-    if (req->poolname.len > 0) {
-        poolname.len = req->poolname.len;
-        memcpy(poolname.str, req->username.str + req->username.len +
-            sizeof(FCFSAuthProtoNameInfo), poolname.len);
-    } else {
-        poolname.len = 0;
+    if (poolname.len > 0) {
+        memcpy(pname_buff, poolname.str, poolname.len);
+        poolname.str = pname_buff;
     }
 
     if ((result=adb_granted_list(SERVER_CTX, &username, &array)) != 0) {
@@ -546,12 +545,8 @@ static int service_deal_gpool_list(struct fast_task_info *task)
             body_part = (FCFSAuthProtoGPoolListRespBodyPart *)p;
             int2buff(gpool->granted.privs.fdir, body_part->privs.fdir);
             int2buff(gpool->granted.privs.fstore, body_part->privs.fstore);
-            body_part->username.len = gpool->username.len;
-            body_part->poolname.len = gpool->pool_name.len;
-            memcpy(body_part->username.str, gpool->username.str,
-                    gpool->username.len);
-            memcpy(body_part->poolname.str + gpool->username.len,
-                    gpool->pool_name.str, gpool->pool_name.len);
+            fcfs_auth_pack_user_pool_pair(&gpool->username,
+                    &gpool->pool_name, &body_part->up_pair);
             p += sizeof(FCFSAuthProtoGPoolListRespBodyPart) +
                 gpool->username.len + gpool->pool_name.len;
             count++;

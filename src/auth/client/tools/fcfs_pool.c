@@ -103,11 +103,12 @@ static int quota_spool(int argc, char *argv[])
     return result;
 }
 
-static inline int parse_pool_access(const string_t *privs, int *pv)
+static inline int parse_pool_access(const string_t *privs,
+        const char *caption, int *pv)
 {
     if (privs->str == NULL) {
-        *pv = FCFS_AUTH_POOL_ACCESS_ALL;
-        return 0;
+         *pv = FCFS_AUTH_POOL_ACCESS_ALL;
+         return 0;
     } else {
         return fcfs_auth_parse_pool_access(privs, pv);
     }
@@ -116,32 +117,63 @@ static inline int parse_pool_access(const string_t *privs, int *pv)
 static int grant_privilege(int argc, char *argv[])
 {
     int result;
-    FCFSAuthGrantedPoolInfo granted;
+    FILE *fp;
+    char prompt[32];
+    FCFSAuthSPoolPriviledges pvs;
 
-    if ((result=parse_pool_access(&privs.fdir,
-                    &granted.privs.fdir)) != 0)
+    if ((result=parse_pool_access(&privs.fdir, "FastDIR", &pvs.fdir)) != 0) {
+        usage(argv);
+        return result;
+    }
+
+    if ((result=parse_pool_access(&privs.fstore, "FastStore",
+                    &pvs.fstore)) != 0)
     {
         usage(argv);
         return result;
     }
 
-    if ((result=parse_pool_access(&privs.fstore,
-                    &granted.privs.fstore)) != 0)
+    if ((pvs.fdir == FCFS_AUTH_POOL_ACCESS_NONE) && 
+            (pvs.fstore == FCFS_AUTH_POOL_ACCESS_NONE))
     {
+        fprintf(stderr, "no access priviledges to grant\n");
         usage(argv);
-        return result;
+        return ENOENT;
     }
 
-    /*
-    if ((result=fcfs_auth_client_spool_grant(&g_fcfs_auth_client_vars.
-                    client_ctx, &spool.name, spool.priv)) == 0)
+    if ((result=fcfs_auth_client_spool_access_grant(&g_fcfs_auth_client_vars.
+                    client_ctx, &username, &spool.name, &pvs)) == 0)
     {
-        printf("grant priviledge success\n");
+        strcpy(prompt, "success");
+        fp = stdout;
     } else {
-        fprintf(stderr, "grant priviledge fail\n");
+        strcpy(prompt, "fail");
+        fp = stderr;
     }
-    */
 
+    fprintf(fp, "grant access priviledge of pool %.*s to user %.*s %s\n",
+            spool.name.len, spool.name.str, username.len, username.str, prompt);
+    return result;
+}
+
+static int withdraw_privilege(int argc, char *argv[])
+{
+    int result;
+    FILE *fp;
+    char prompt[32];
+
+    if ((result=fcfs_auth_client_spool_access_withdraw(&g_fcfs_auth_client_vars.
+                    client_ctx, &username, &spool.name)) == 0)
+    {
+        strcpy(prompt, "success");
+        fp = stdout;
+    } else {
+        strcpy(prompt, "fail");
+        fp = stderr;
+    }
+
+    fprintf(fp, "withdraw access priviledge of pool %.*s from user %.*s %s\n",
+            spool.name.len, spool.name.str, username.len, username.str, prompt);
     return result;
 }
 
@@ -179,31 +211,31 @@ static void output_spools(FCFSAuthStoragePoolArray *array)
     }
 }
 
-/*
-static void output_spools(FCFSAuthStoragePoolArray *array)
+static void output_gpools(FCFSAuthGrantedPoolArray *array)
 {
-    FCFSAuthStoragePoolInfo *spool;
-    FCFSAuthStoragePoolInfo *end;
+    FCFSAuthGrantedPoolFullInfo *gpool;
+    FCFSAuthGrantedPoolFullInfo *end;
     char buff1[64];
     char buff2[64];
     string_t priv_names_fdir;
     string_t priv_names_fstore;
 
-    printf("%5s %32s %16s %16s\n", "No.", "pool_name",
+    printf("%5s %32s %32s %16s %16s\n", "No.", "owner_name", "pool_name",
             "fdir_priv", "fstore_priv");
     priv_names_fdir.str = buff1;
     priv_names_fstore.str = buff2;
-    end = array->spools + array->count;
-    for (spool=array->spools; spool<end; spool++) {
-        printf("%4d. %32.*s %16s %16s\n", (int)((spool - array->spools) + 1),
-                spool->name.len, spool->name.str,
-                fcfs_auth_pool_access_to_string(spool->privs.fdir,
-                    &priv_fdir_names),
-                fcfs_auth_pool_access_to_string(spool->privs.fstore,
-                    &priv_fstore_names));
+    end = array->gpools + array->count;
+    for (gpool=array->gpools; gpool<end; gpool++) {
+        printf("%4d. %32.*s %32.*s %16s %16s\n",
+                (int)((gpool - array->gpools) + 1),
+                gpool->username.len, gpool->username.str,
+                gpool->pool_name.len, gpool->pool_name.str,
+                fcfs_auth_pool_access_to_string(gpool->
+                    granted.privs.fdir, &priv_names_fdir),
+                fcfs_auth_pool_access_to_string(gpool->
+                    granted.privs.fstore, &priv_names_fstore));
     }
 }
-*/
 
 static int list_spool(int argc, char *argv[])
 {
@@ -226,6 +258,30 @@ static int list_spool(int argc, char *argv[])
 
     sf_free_recv_buffer(&buffer);
     fcfs_auth_spool_free_array(&spool_array);
+    return result;
+}
+
+static int list_gpool(int argc, char *argv[])
+{
+    SFProtoRecvBuffer buffer;
+    FCFSAuthGrantedPoolArray gpool_array;
+    int result;
+
+    sf_init_recv_buffer(&buffer);
+    fcfs_auth_granted_init_array(&gpool_array);
+
+    if ((result=fcfs_auth_client_spool_access_list(&g_fcfs_auth_client_vars.
+                    client_ctx, &username, &spool.name, &buffer,
+                    &gpool_array)) == 0)
+    {
+        output_gpools(&gpool_array);
+    } else {
+        fprintf(stderr, "list storage pool fail\n");
+    }
+    result = 0;
+
+    sf_free_recv_buffer(&buffer);
+    fcfs_auth_granted_free_array(&gpool_array);
     return result;
 }
 
@@ -417,11 +473,9 @@ int main(int argc, char *argv[])
         case FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ:
             return grant_privilege(argc, argv);
         case FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ:
-            //TODO
-            return 0;
+            return withdraw_privilege(argc, argv);
         case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
-            //TODO
-            return 0;
+            return list_gpool(argc, argv);
     }
 
     return 0;

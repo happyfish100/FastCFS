@@ -91,3 +91,29 @@ int fcfs_auth_client_spool_set_quota(FCFSAuthClientContext *client_ctx,
             GET_CONNECTION, 0, fcfs_auth_client_proto_spool_set_quota,
             poolname, quota);
 }
+
+int fcfs_auth_client_spool_access_grant(FCFSAuthClientContext *client_ctx,
+        const string_t *username, const string_t *poolname,
+        const FCFSAuthSPoolPriviledges *privs)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_access_grant,
+            username, poolname, privs);
+}
+
+int fcfs_auth_client_spool_access_withdraw(FCFSAuthClientContext *client_ctx,
+        const string_t *username, const string_t *poolname)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_access_withdraw,
+            username, poolname);
+}
+
+int fcfs_auth_client_spool_access_list(FCFSAuthClientContext *client_ctx,
+        const string_t *username, const string_t *poolname,
+        SFProtoRecvBuffer *buffer, FCFSAuthGrantedPoolArray *array)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_access_list,
+            username, poolname, buffer, array);
+}

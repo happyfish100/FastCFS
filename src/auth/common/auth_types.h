@@ -55,6 +55,11 @@
 #define FCFS_AUTH_UNLIMITED_QUOTA_STR  "unlimited"
 #define FCFS_AUTH_UNLIMITED_QUOTA_VAL  -1
 
+typedef struct fcfs_auth_spool_priviledges {
+    int fdir;
+    int fstore;
+} FCFSAuthSPoolPriviledges;
+
 typedef struct fcfs_auth_storage_pool_info {
     int64_t id;
     string_t name;
@@ -65,10 +70,7 @@ typedef struct fcfs_auth_storage_pool_info {
 typedef struct fcfs_auth_granted_pool_info {
     int64_t id;
     int64_t pool_id;
-    struct {
-        int fdir;
-        int fstore;
-    } privs;
+    FCFSAuthSPoolPriviledges privs;
 } FCFSAuthGrantedPoolInfo;
 
 typedef struct fcfs_auth_granted_pool_full_info {

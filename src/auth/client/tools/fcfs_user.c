@@ -116,9 +116,9 @@ static int grant_privilege(int argc, char *argv[])
     if ((result=fcfs_auth_client_user_grant(&g_fcfs_auth_client_vars.
                     client_ctx, &user.name, user.priv)) == 0)
     {
-        printf("grant priviledge success\n");
+        printf("grant user priviledge success\n");
     } else {
-        fprintf(stderr, "grant priviledge fail\n");
+        fprintf(stderr, "grant user priviledge fail\n");
     }
 
     return result;

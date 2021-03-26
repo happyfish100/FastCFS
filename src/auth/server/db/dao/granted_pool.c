@@ -29,18 +29,19 @@ int dao_granted_create(FDIRClientContext *client_ctx, const string_t *username,
     FDIRDEntryInfo dentry;
 
     AUTH_SET_GRANTED_POOL_PATH(pool_path, username, granted->pool_id);
-    if ((result=fdir_client_create_dentry(client_ctx,
-            &pool_path.fullname, &DAO_OMP_FILE, &dentry)) == 0)
+    if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
+                    &pool_path.fullname, LOG_DEBUG, &inode)) != 0)
     {
-        inode = dentry.inode;
-    } else if (result == EEXIST) {
-        if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
-                        &pool_path.fullname, LOG_ERR, &inode)) != 0)
+        if (result != ENOENT) {
+            return result;
+        }
+
+        if ((result=fdir_client_create_dentry(client_ctx, &pool_path.
+                        fullname, &DAO_OMP_FILE, &dentry)) != 0)
         {
             return result;
         }
-    } else {
-        return result;
+        inode = dentry.inode;
     }
 
     if ((result=dao_set_xattr_integer(client_ctx, inode,

@@ -52,8 +52,7 @@
 typedef SFCommonProtoHeader  FCFSAuthProtoHeader;
 
 typedef struct fcfs_auth_proto_name_info {
-    char padding[7];
-    char len;
+    unsigned char len;
     char str[0];
 } FCFSAuthProtoNameInfo;
 
@@ -61,6 +60,11 @@ typedef struct fcfs_auth_proto_user_passwd_pair {
     char passwd[FCFS_AUTH_PASSWD_LEN];
     FCFSAuthProtoNameInfo username;
 } FCFSAuthProtoUserPasswdPair;
+
+typedef struct fcfs_auth_proto_user_pool_pair {
+    FCFSAuthProtoNameInfo username;
+    FCFSAuthProtoNameInfo poolname;
+} FCFSAuthProtoUserPoolPair;
 
 typedef struct fcfs_auth_proto_user_login_req {
     FCFSAuthProtoUserPasswdPair up_pair;
@@ -85,10 +89,7 @@ typedef struct fcfs_auth_proto_list_resp_header {
 
 typedef struct fcfs_auth_proto_user_list_resp_body_part {
     char priv[8];
-    struct {
-        char len;
-        char str[0];
-    } username;
+    FCFSAuthProtoNameInfo username;
 } FCFSAuthProtoUserListRespBodyPart;
 
 typedef struct fcfs_auth_proto_user_grant_req {
@@ -107,16 +108,12 @@ typedef struct fcfs_auth_proto_spool_create_req {
 } FCFSAuthProtoSPoolCreateReq;
 
 typedef struct fcfs_auth_proto_spool_list_req {
-    FCFSAuthProtoNameInfo username;
-    FCFSAuthProtoNameInfo poolname;
+    FCFSAuthProtoUserPoolPair up_pair;
 } FCFSAuthProtoSPoolListReq;
 
 typedef struct fcfs_auth_proto_spool_list_resp_body_part {
     char quota[8];
-    struct {
-        char len;
-        char str[0];
-    } poolname;
+    FCFSAuthProtoNameInfo poolname;
 } FCFSAuthProtoSPoolListRespBodyPart;
 
 typedef struct fcfs_auth_proto_spool_remove_req {
@@ -133,13 +130,11 @@ typedef struct fcfs_auth_proto_spool_grant_req {
         char fdir[4];
         char fstore[4];
     } privs;
-    FCFSAuthProtoNameInfo username;
-    FCFSAuthProtoNameInfo poolname;
+    FCFSAuthProtoUserPoolPair up_pair;
 } FCFSAuthProtoSPoolGrantReq;
 
 typedef struct fcfs_auth_proto_spool_withdraw_req {
-    FCFSAuthProtoNameInfo username;
-    FCFSAuthProtoNameInfo poolname;
+    FCFSAuthProtoUserPoolPair up_pair;
 } FCFSAuthProtoSPoolWithdrawReq;
 
 typedef FCFSAuthProtoSPoolListReq FCFSAuthProtoGPoolListReq;
@@ -150,15 +145,7 @@ typedef struct fcfs_auth_proto_gpool_list_resp_body_part {
         char fstore[4];
     } privs;
 
-    struct {
-        char len;
-        char str[0];
-    } username;
-
-    struct {
-        char len;
-        char str[0];
-    } poolname;
+    FCFSAuthProtoUserPoolPair up_pair;
 } FCFSAuthProtoGPoolListRespBodyPart;
 
 #ifdef __cplusplus
@@ -168,6 +155,37 @@ extern "C" {
 void fcfs_auth_proto_init();
 
 const char *fcfs_auth_get_cmd_caption(const int cmd);
+
+static inline void fcfs_auth_parse_user_pool_pair(FCFSAuthProtoUserPoolPair
+        *up_pair, string_t *username, string_t *poolname)
+{
+    FCFSAuthProtoNameInfo *proto_pname;
+
+    FC_SET_STRING_EX(*username, up_pair->username.str,
+            up_pair->username.len);
+    proto_pname = (FCFSAuthProtoNameInfo *)(up_pair->username.str +
+            up_pair->username.len);
+    FC_SET_STRING_EX(*poolname, proto_pname->str, proto_pname->len);
+}
+
+static inline void fcfs_auth_pack_user_pool_pair(const string_t *username,
+        const string_t *poolname, FCFSAuthProtoUserPoolPair *up_pair)
+{
+    FCFSAuthProtoNameInfo *proto_pname;
+
+    up_pair->username.len = username->len;
+    if (username->len > 0) {
+        memcpy(up_pair->username.str, username->str, username->len);
+    }
+
+    proto_pname = (FCFSAuthProtoNameInfo *)(up_pair->
+            username.str + username->len);
+    proto_pname->len = poolname->len;
+    if (poolname->len > 0) {
+        memcpy(proto_pname->str, poolname->str, poolname->len);
+    }
+}
+
 
 #ifdef __cplusplus
 }

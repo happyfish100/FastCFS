@@ -80,16 +80,22 @@ static int user_compare(const DBUserInfo *user1, const DBUserInfo *user2)
     return fc_string_compare(&user1->user.name, &user2->user.name);
 }
 
-static int created_pool_cmp(const DBStoragePoolInfo *pool1,
-        const DBStoragePoolInfo *pool2)
+static int pool_name_cmp(const DBStoragePoolInfo *sp1,
+        const DBStoragePoolInfo *sp2)
 {
-    return fc_string_compare(&pool1->pool.name, &pool2->pool.name);
+    return fc_string_compare(&sp1->pool.name, &sp2->pool.name);
+}
+
+static int pool_id_cmp(const DBStoragePoolInfo *sp1,
+        const DBStoragePoolInfo *sp2)
+{
+    return fc_compare_int64(sp1->pool.id, sp2->pool.id);
 }
 
 static int granted_pool_cmp(const DBGrantedPoolInfo *pg1,
         const DBGrantedPoolInfo *pg2)
 {
-    return fc_compare_int64(pg1->granted.id, pg2->granted.id);
+    return fc_compare_int64(pg1->granted.pool_id, pg2->granted.pool_id);
 }
 
 int user_alloc_init(void *element, void *args)
@@ -166,7 +172,7 @@ static int init_skiplists()
     }
 
     if ((result=uniq_skiplist_init_ex(&adb_ctx.pool.factories.created,
-                    max_level_count, (skiplist_compare_func)created_pool_cmp,
+                    max_level_count, (skiplist_compare_func)pool_name_cmp,
                     NULL, alloc_skiplist_once, min_alloc_elements_once,
                     delay_free_seconds)) != 0)
     {
@@ -183,7 +189,7 @@ static int init_skiplists()
 
     if ((result=uniq_skiplist_init_pair(&adb_ctx.pool.all,
                     SKIPLIST_INIT_LEVEL_COUNT, max_level_count,
-                    (skiplist_compare_func)granted_pool_cmp, NULL,
+                    (skiplist_compare_func)pool_id_cmp, NULL,
                     min_alloc_elements_once, delay_free_seconds)) != 0)
     {
         return result;
@@ -702,41 +708,49 @@ static inline DBStoragePoolInfo *get_spool_by_id(const int64_t pool_id)
 }
 
 static int granted_pool_create(AuthServerContext *server_ctx,
-        DBUserInfo *dbuser, const FCFSAuthGrantedPoolInfo *granted,
-        const bool addto_backend)
+        DBUserInfo *dbuser, DBGrantedPoolInfo **dbgranted,
+        const FCFSAuthGrantedPoolInfo *granted, const bool addto_backend)
 {
     int result;
-    DBGrantedPoolInfo *dbgranted;
+    bool need_insert;
 
-    dbgranted = (DBGrantedPoolInfo *)fast_mblock_alloc_object(
-            &adb_ctx.pool.allocators.granted);
-    if (dbgranted == NULL) {
-        return ENOMEM;
+    if (*dbgranted == NULL) {
+        *dbgranted = (DBGrantedPoolInfo *)fast_mblock_alloc_object(
+                &adb_ctx.pool.allocators.granted);
+        if (*dbgranted == NULL) {
+            return ENOMEM;
+        }
+        need_insert = true;
+    } else {
+        need_insert = false;
     }
 
-    dbgranted->granted.pool_id = granted->pool_id;
-    dbgranted->granted.privs = granted->privs;
+    (*dbgranted)->granted.pool_id = granted->pool_id;
+    (*dbgranted)->granted.privs = granted->privs;
     if (addto_backend) {
         if ((result=dao_granted_create(server_ctx->dao_ctx, &dbuser->
-                        user.name, &dbgranted->granted)) != 0)
+                        user.name, &(*dbgranted)->granted)) != 0)
         {
             return result;
         }
     } else {
-        dbgranted->granted.id = granted->id;
+        (*dbgranted)->granted.id = granted->id;
+        result = 0;
     }
 
-    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
-    if ((dbgranted->sp=get_spool_by_id(granted->pool_id)) != NULL) {
-        result = uniq_skiplist_insert(dbuser->storage_pools.
-                granted, dbgranted);
-    } else {
-        logError("file: "__FILE__", line: %d, "
-                "storage pool not exist, pool id: %"PRId64,
-                __LINE__, granted->pool_id);
-        result = ENOENT;
+    if (need_insert) {
+        PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+        if (((*dbgranted)->sp=get_spool_by_id(granted->pool_id)) != NULL) {
+            result = uniq_skiplist_insert(dbuser->storage_pools.
+                    granted, *dbgranted);
+        } else {
+            logError("file: "__FILE__", line: %d, "
+                    "storage pool not exist, pool id: %"PRId64,
+                    __LINE__, granted->pool_id);
+            result = ENOENT;
+        }
+        PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
     }
-    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
     return result;
 }
@@ -746,12 +760,14 @@ static int convert_granted_array(AuthServerContext *server_ctx,
 {
     const bool addto_backend = false;
     int result;
+    DBGrantedPoolInfo *dbgranted;
     const FCFSAuthGrantedPoolFullInfo *gf;
     const FCFSAuthGrantedPoolFullInfo *end;
 
     end = granted_array->gpools + granted_array->count;
     for (gf=granted_array->gpools; gf<end; gf++) {
-        if ((result=granted_pool_create(server_ctx, dbuser,
+        dbgranted = NULL;
+        if ((result=granted_pool_create(server_ctx, dbuser, &dbgranted,
                         &gf->granted, addto_backend)) != 0)
         {
             return result;
@@ -885,7 +901,7 @@ static inline DBGrantedPoolInfo *granted_pool_get(
 {
     DBGrantedPoolInfo target;
 
-    target.granted.id = pool_id;
+    target.granted.pool_id = pool_id;
     return (DBGrantedPoolInfo *)uniq_skiplist_find(
             dbuser->storage_pools.granted, &target);
 }
@@ -899,23 +915,24 @@ int adb_granted_create(AuthServerContext *server_ctx, const string_t *username,
     DBGrantedPoolInfo *dbgranted;
 
     result = ENOENT;
+    dbgranted = NULL;
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     user = user_get(server_ctx, username);
     if (user != NULL) {
         if (user->user.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
-            dbgranted = granted_pool_get(user, granted->id);
-            if (dbgranted != NULL) {
-                result = EEXIST;
-            }
+            dbgranted = granted_pool_get(user, granted->pool_id);
         } else {
             user = NULL;
         }
     }
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
-    if (user != NULL && result == ENOENT) {
+    logInfo("username: %.*s, ptr: %p, dbgranted: %p", username->len,
+            username->str, user, dbgranted);
+
+    if (user != NULL) {
         return granted_pool_create(server_ctx, user,
-                granted, addto_backend);
+                &dbgranted, granted, addto_backend);
     } else {
         return result;
     }
