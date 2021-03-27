@@ -43,6 +43,10 @@
 #define AUTH_XTTR_NAME_FSTORE_STR  "fstore"
 #define AUTH_XTTR_NAME_FSTORE_LEN  (sizeof(AUTH_XTTR_NAME_FSTORE_STR) - 1)
 
+#define AUTH_XTTR_NAME_POOL_NEXT_ID_STR  "pnext"
+#define AUTH_XTTR_NAME_POOL_NEXT_ID_LEN  \
+    (sizeof(AUTH_XTTR_NAME_POOL_NEXT_ID_STR) - 1)
+
 typedef struct {
     string_t ns;
 
@@ -58,12 +62,16 @@ typedef struct {
         string_t quota;
         string_t fdir;
         string_t fstore;
+        string_t pool_next_id;
     } xttr_names;
+
+    int64_t base_path_inode;
 } FCFSAuthDAOVariables;
 
 #define DAO_NAMESPACE g_auth_dao_vars.ns
 #define DAO_OMP_DIR   g_auth_dao_vars.omps.dir
 #define DAO_OMP_FILE  g_auth_dao_vars.omps.file
+#define DAO_BASE_PATH_INODE  g_auth_dao_vars.base_path_inode
 
 #define AUTH_XTTR_NAME_PASSWD g_auth_dao_vars.xttr_names.passwd
 #define AUTH_XTTR_NAME_PRIV   g_auth_dao_vars.xttr_names.priv
@@ -71,6 +79,7 @@ typedef struct {
 #define AUTH_XTTR_NAME_QUOTA  g_auth_dao_vars.xttr_names.quota
 #define AUTH_XTTR_NAME_FDIR   g_auth_dao_vars.xttr_names.fdir
 #define AUTH_XTTR_NAME_FSTORE g_auth_dao_vars.xttr_names.fstore
+#define AUTH_XTTR_NAME_POOL_NEXT_ID g_auth_dao_vars.xttr_names.pool_next_id
 
 #ifdef __cplusplus
 extern "C" {

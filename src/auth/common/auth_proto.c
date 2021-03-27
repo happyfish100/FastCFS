@@ -42,6 +42,14 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "USER_REMOVE_REQ";
         case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP:
             return "USER_REMOVE_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_REQ:
+            return "SPOOL_NEXT_ID_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_RESP:
+            return "SPOOL_NEXT_ID_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_REQ:
+            return "SPOOL_ACCESS_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_RESP:
+            return "SPOOL_ACCESS_RESP";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ:
             return "SPOOL_CREATE_REQ";
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP:

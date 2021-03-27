@@ -43,6 +43,13 @@ int fcfs_auth_client_user_grant(FCFSAuthClientContext *client_ctx,
 int fcfs_auth_client_user_remove(FCFSAuthClientContext *client_ctx,
         const string_t *username);
 
+/* storage pool operations */
+int fcfs_auth_client_spool_next_id(FCFSAuthClientContext *client_ctx,
+        int64_t *next_id);
+
+int fcfs_auth_client_spool_access(FCFSAuthClientContext *client_ctx,
+        const string_t *poolname);
+
 int fcfs_auth_client_spool_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthStoragePoolInfo *spool);
 
@@ -56,14 +63,15 @@ int fcfs_auth_client_spool_remove(FCFSAuthClientContext *client_ctx,
 int fcfs_auth_client_spool_set_quota(FCFSAuthClientContext *client_ctx,
         const string_t *poolname, const int64_t quota);
 
-int fcfs_auth_client_spool_access_grant(FCFSAuthClientContext *client_ctx,
+/* pool granted operations */
+int fcfs_auth_client_gpool_grant(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *poolname,
         const FCFSAuthSPoolPriviledges *privs);
 
-int fcfs_auth_client_spool_access_withdraw(FCFSAuthClientContext *client_ctx,
+int fcfs_auth_client_gpool_withdraw(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *poolname);
 
-int fcfs_auth_client_spool_access_list(FCFSAuthClientContext *client_ctx,
+int fcfs_auth_client_gpool_list(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *poolname,
         SFProtoRecvBuffer *buffer, FCFSAuthGrantedPoolArray *array);
 

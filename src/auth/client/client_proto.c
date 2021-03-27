@@ -476,7 +476,7 @@ int fcfs_auth_client_proto_spool_set_quota(FCFSAuthClientContext *client_ctx,
     return result;
 }
 
-int fcfs_auth_client_proto_spool_access_grant(FCFSAuthClientContext *client_ctx,
+int fcfs_auth_client_proto_gpool_grant(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username, const string_t
         *poolname, const FCFSAuthSPoolPriviledges *privs)
 {
@@ -494,8 +494,6 @@ int fcfs_auth_client_proto_spool_access_grant(FCFSAuthClientContext *client_ctx,
         username->len + poolname->len;
     SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ,
             out_bytes - sizeof(FCFSAuthProtoHeader));
-
-    logInfo("username: %.*s", username->len, username->str);
 
     req = (FCFSAuthProtoSPoolGrantReq *)(header + 1);
     if ((result=pack_user_pool_pair(username, poolname,
@@ -517,7 +515,7 @@ int fcfs_auth_client_proto_spool_access_grant(FCFSAuthClientContext *client_ctx,
     return result;
 }
 
-int fcfs_auth_client_proto_spool_access_withdraw(FCFSAuthClientContext
+int fcfs_auth_client_proto_gpool_withdraw(FCFSAuthClientContext
         *client_ctx, ConnectionInfo *conn, const string_t *username,
         const string_t *poolname)
 {
@@ -554,7 +552,7 @@ int fcfs_auth_client_proto_spool_access_withdraw(FCFSAuthClientContext
     return result;
 }
 
-int fcfs_auth_client_proto_spool_access_list(FCFSAuthClientContext
+int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
         *client_ctx, ConnectionInfo *conn, const string_t *username,
         const string_t *poolname, SFProtoRecvBuffer *buffer,
         FCFSAuthGrantedPoolArray *array)
@@ -624,5 +622,66 @@ int fcfs_auth_client_proto_spool_access_list(FCFSAuthClientContext
     }
 
     array->count = count;
+    return result;
+}
+
+int fcfs_auth_client_proto_spool_next_id(FCFSAuthClientContext
+        *client_ctx, ConnectionInfo *conn, int64_t *next_id)
+{
+    FCFSAuthProtoHeader *header;
+    char out_buff[sizeof(FCFSAuthProtoHeader)];
+    FCFSAuthProtoSPoolNextIdResp resp;
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    out_bytes = sizeof(FCFSAuthProtoHeader);
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_RESP,
+                    (char *)&resp, sizeof(resp))) == 0)
+    {
+        *next_id = buff2long(resp.next_id);
+    } else {
+        sf_log_network_error(&response, conn, result);
+    }
+
+    return result;
+}
+
+int fcfs_auth_client_proto_spool_access(FCFSAuthClientContext
+        *client_ctx, ConnectionInfo *conn, const string_t *poolname)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoNameInfo *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoNameInfo) + NAME_MAX];
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoNameInfo *)(header + 1);
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + poolname->len;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+    if ((result=pack_poolname(poolname, req)) != 0) {
+        return result;
+    }
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_RESP)) != 0)
+    {
+        sf_log_network_error_ex(&response, conn, result,
+                (result == ENOENT ? LOG_DEBUG : LOG_ERR));
+    }
+
     return result;
 }

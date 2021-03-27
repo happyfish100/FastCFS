@@ -145,3 +145,24 @@ int dao_spool_list(FDIRClientContext *client_ctx, const string_t *username,
     fdir_client_dentry_array_free(&dentry_array);
     return result;
 }
+
+int dao_spool_set_base_path_inode(FDIRClientContext *client_ctx)
+{
+    AuthFullPath fp;
+
+    AUTH_SET_BASE_PATH(fp);
+    return fdir_client_lookup_inode_by_path(client_ctx,
+            &fp.fullname, &DAO_BASE_PATH_INODE);
+}
+
+int dao_spool_get_next_id(FDIRClientContext *client_ctx, int64_t *next_id)
+{
+    return dao_get_xattr_int64(client_ctx, DAO_BASE_PATH_INODE,
+            &AUTH_XTTR_NAME_POOL_NEXT_ID, next_id);
+}
+
+int dao_spool_set_next_id(FDIRClientContext *client_ctx, const int64_t next_id)
+{
+    return dao_set_xattr_integer(client_ctx, DAO_BASE_PATH_INODE,
+            &AUTH_XTTR_NAME_POOL_NEXT_ID, next_id);
+}

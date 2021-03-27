@@ -26,8 +26,11 @@
 #include "../../common/auth_func.h"
 #include "../fcfs_auth_client.h"
 
-#define USERNAME_OPTION_INCLUDED   1
-#define USERNAME_OPTION_REQUIRED   2
+#define PARAM_OPTION_INCLUDED   1
+#define PARAM_OPTION_REQUIRED   2
+
+#define AUTO_ID_TAG_STR  "${auto_id}"
+#define AUTO_ID_TAG_LEN  (sizeof(AUTO_ID_TAG_STR) - 1)
 
 static int current_index;
 static FCFSAuthStoragePoolInfo spool;
@@ -48,36 +51,96 @@ static void usage(char *argv[])
             "\t[-s faststore_access=rw]\n"
             "\t<operation> [username] [pool_name] [quota]\n\n"
             "\tthe operations and following parameters: \n"
-            "\t  create <pool_name> <quota>\n"
+            "\t  create [pool_name='%s'] <quota>\n"
             "\t  quota <pool_name> <quota>\n"
             "\t  delete | remove <pool_name>\n"
             "\t  plist | pool_list [username] [pool_name]\n"
             "\t  grant <username> <pool_name>\n"
             "\t  cancel | withdraw <username> <pool_name>\n"
             "\t  glist | grant_list | granted_list [username] [pool_name]\n\n"
+            "\tthe pool name can contain %s for auto generated id when "
+            "create pool, such as 'pool-%s'\n"
             "\tthe quota parameter is required for create and quota operations\n"
             "\tthe default unit of quota is GB, %s for no limit\n\n"
             "\tFastDIR and FastStore accesses are:\n"
             "\t  %c:  read only\n"
             "\t  %c:  write only\n"
             "\t  %c%c: read and write\n\n",
-            argv[0], FCFS_AUTH_UNLIMITED_QUOTA_STR,
+            argv[0], AUTO_ID_TAG_STR, AUTO_ID_TAG_STR,
+            AUTO_ID_TAG_STR, FCFS_AUTH_UNLIMITED_QUOTA_STR,
             POOL_ACCESS_NAME_READ_CHR, POOL_ACCESS_NAME_WRITE_CHR,
             POOL_ACCESS_NAME_READ_CHR, POOL_ACCESS_NAME_WRITE_CHR);
+}
+
+static int generate_spool_name(string_t *pool_name, const int name_size)
+{
+    int result;
+    int64_t next_id;
+    char id_buff[32];
+    string_t auto_id_tag;
+    string_t pool_id;
+
+    FC_SET_STRING_EX(auto_id_tag, AUTO_ID_TAG_STR, AUTO_ID_TAG_LEN);
+    pool_id.str = id_buff;
+    do {
+        if ((result=fcfs_auth_client_spool_next_id(
+                        &g_fcfs_auth_client_vars.
+                        client_ctx, &next_id)) != 0)
+        {
+            fprintf(stderr, "get next id from server fail\n");
+            return result;
+        }
+
+        pool_id.len = sprintf(pool_id.str, "%"PRId64, next_id);
+        if ((result=str_replace(&spool.name, &auto_id_tag,
+                        &pool_id, pool_name, name_size)) != 0)
+        {
+            fprintf(stderr, "invalid pool name: %.*s\n",
+                    spool.name.len, spool.name.str);
+            return result;
+        }
+
+        result = fcfs_auth_client_spool_access(
+                &g_fcfs_auth_client_vars.client_ctx, pool_name);
+    } while (result == 0);
+
+    return result == ENOENT ? 0 : result;
 }
 
 static int create_spool(int argc, char *argv[])
 {
     int result;
+    char name_buff[NAME_MAX + 1];
+    string_t pool_name;
+    FILE *fp;
+    char prompt[32];
+
+    if (spool.name.len >= AUTO_ID_TAG_LEN &&
+            strstr(spool.name.str, AUTO_ID_TAG_STR) != NULL)
+    {
+        pool_name.str = name_buff;
+        if ((result=generate_spool_name(&pool_name,
+                        sizeof(name_buff))) != 0)
+        {
+            return result;
+        }
+        spool.name = pool_name;
+    } else {
+        pool_name = spool.name;
+    }
 
     if ((result=fcfs_auth_client_spool_create(&g_fcfs_auth_client_vars.
                     client_ctx, &spool)) == 0)
     {
-        printf("create pool %s success\n", spool.name.str);
+        strcpy(prompt, "success");
+        fp = stdout;
     } else {
-        fprintf(stderr, "create pool %s fail\n", spool.name.str);
+        strcpy(prompt, "fail");
+        fp = stderr;
     }
 
+    fprintf(fp, "create pool %.*s %s\n", pool_name.len,
+            pool_name.str, prompt);
     return result;
 }
 
@@ -141,7 +204,7 @@ static int grant_privilege(int argc, char *argv[])
         return ENOENT;
     }
 
-    if ((result=fcfs_auth_client_spool_access_grant(&g_fcfs_auth_client_vars.
+    if ((result=fcfs_auth_client_gpool_grant(&g_fcfs_auth_client_vars.
                     client_ctx, &username, &spool.name, &pvs)) == 0)
     {
         strcpy(prompt, "success");
@@ -162,7 +225,7 @@ static int withdraw_privilege(int argc, char *argv[])
     FILE *fp;
     char prompt[32];
 
-    if ((result=fcfs_auth_client_spool_access_withdraw(&g_fcfs_auth_client_vars.
+    if ((result=fcfs_auth_client_gpool_withdraw(&g_fcfs_auth_client_vars.
                     client_ctx, &username, &spool.name)) == 0)
     {
         strcpy(prompt, "success");
@@ -270,7 +333,7 @@ static int list_gpool(int argc, char *argv[])
     sf_init_recv_buffer(&buffer);
     fcfs_auth_granted_init_array(&gpool_array);
 
-    if ((result=fcfs_auth_client_spool_access_list(&g_fcfs_auth_client_vars.
+    if ((result=fcfs_auth_client_gpool_list(&g_fcfs_auth_client_vars.
                     client_ctx, &username, &spool.name, &buffer,
                     &gpool_array)) == 0)
     {
@@ -296,7 +359,7 @@ int main(int argc, char *argv[])
     FilenameString admin_key_filename;
     string_t passwd;
     int username_options;
-    bool need_poolname;
+    int poolname_options;
     bool need_quota;
     int result;
 
@@ -351,48 +414,58 @@ int main(int argc, char *argv[])
     if (strcasecmp(operation, "create") == 0) {
         op_type = FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ;
         username_options = 0;
-        need_poolname = true;
+        if (current_index + 1 < argc) {
+            poolname_options = PARAM_OPTION_INCLUDED |
+                PARAM_OPTION_REQUIRED;
+        } else {
+            poolname_options = 0;
+            FC_SET_STRING_EX(spool.name, AUTO_ID_TAG_STR, AUTO_ID_TAG_LEN);
+        }
         need_quota = true;
     } else if (strcasecmp(operation, "grant") == 0) {
         op_type = FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ;
-        username_options = USERNAME_OPTION_INCLUDED |
-            USERNAME_OPTION_REQUIRED;
-        need_poolname = true;
+        username_options = PARAM_OPTION_INCLUDED |
+            PARAM_OPTION_REQUIRED;
+        poolname_options = PARAM_OPTION_INCLUDED |
+            PARAM_OPTION_REQUIRED;
         need_quota = false;
     } else if (strcasecmp(operation, "quota") == 0) {
         op_type = FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ;
         username_options = 0;
-        need_poolname = true;
+        poolname_options = PARAM_OPTION_INCLUDED |
+            PARAM_OPTION_REQUIRED;
         need_quota = true;
     } else if (strcasecmp(operation, "delete") == 0 ||
             strcasecmp(operation, "remove") == 0)
     {
         op_type = FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ;
         username_options = 0;
-        need_poolname = true;
+        poolname_options = PARAM_OPTION_INCLUDED |
+            PARAM_OPTION_REQUIRED;
         need_quota = false;
     } else if (strcasecmp(operation, "plist") == 0 ||
             strcasecmp(operation, "pool_list") == 0)
     {
         op_type = FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ;
-        username_options = USERNAME_OPTION_INCLUDED;
-        need_poolname = false;
+        username_options = PARAM_OPTION_INCLUDED;
+        poolname_options = PARAM_OPTION_INCLUDED;
         need_quota = false;
     } else if (strcasecmp(operation, "withdraw") == 0 ||
             strcasecmp(operation, "cancel") == 0)
     {
         op_type = FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ;
-        username_options = USERNAME_OPTION_INCLUDED |
-            USERNAME_OPTION_REQUIRED;
-        need_poolname = true;
+        username_options = PARAM_OPTION_INCLUDED |
+            PARAM_OPTION_REQUIRED;
+        poolname_options = PARAM_OPTION_INCLUDED |
+            PARAM_OPTION_REQUIRED;
         need_quota = false;
     } else if (strcasecmp(operation, "glist") == 0 ||
             strcasecmp(operation, "grant_list") == 0 ||
             strcasecmp(operation, "granted_list") == 0)
     {
         op_type = FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ;
-        username_options = USERNAME_OPTION_INCLUDED;
-        need_poolname = false;
+        username_options = PARAM_OPTION_INCLUDED;
+        poolname_options = PARAM_OPTION_INCLUDED;
         need_quota = false;
     } else {
         fprintf(stderr, "unknow operation: %s\n", operation);
@@ -400,26 +473,28 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if ((username_options & USERNAME_OPTION_INCLUDED) != 0) {
+    if ((username_options & PARAM_OPTION_INCLUDED) != 0) {
         if (current_index < argc) {
             FC_SET_STRING(username, argv[current_index]);
             current_index++;
-        } else if ((username_options & USERNAME_OPTION_REQUIRED) != 0) {
+        } else if ((username_options & PARAM_OPTION_REQUIRED) != 0) {
             fprintf(stderr, "expect username\n");
             usage(argv);
             return 1;
         }
     }
 
-    if (current_index < argc) {
-        FC_SET_STRING(spool.name, argv[current_index]);
-        current_index++;
-    } else if (need_poolname) {
-        fprintf(stderr, "expect pool name\n");
-        usage(argv);
-        return 1;
-    } else {
-        FC_SET_STRING_NULL(spool.name);
+    if ((poolname_options & PARAM_OPTION_INCLUDED) != 0) {
+        if (current_index < argc) {
+            FC_SET_STRING(spool.name, argv[current_index]);
+            current_index++;
+        } else if ((poolname_options & PARAM_OPTION_REQUIRED) != 0) {
+            fprintf(stderr, "expect pool name\n");
+            usage(argv);
+            return 1;
+        } else {
+            FC_SET_STRING_NULL(spool.name);
+        }
     }
 
     if (current_index < argc) {

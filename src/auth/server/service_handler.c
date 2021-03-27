@@ -337,6 +337,50 @@ static int service_deal_spool_list(struct fast_task_info *task)
     return 0;
 }
 
+static int service_deal_gpool_next_id(struct fast_task_info *task)
+{
+    FCFSAuthProtoSPoolNextIdResp *resp;
+    int result;
+    int64_t next_id;
+
+    if ((result=server_expect_body_length(0)) != 0) {
+        return result;
+    }
+
+    if ((result=adb_spool_next_id(SERVER_CTX, &next_id)) != 0) {
+        return result;
+    }
+    resp = (FCFSAuthProtoSPoolNextIdResp *)REQUEST.body;
+    long2buff(next_id, resp->next_id);
+    RESPONSE.header.body_len = sizeof(FCFSAuthProtoSPoolNextIdResp);
+    TASK_ARG->context.common.response_done = true;
+    return 0;
+}
+
+static int service_deal_gpool_access(struct fast_task_info *task)
+{
+    FCFSAuthProtoNameInfo *req;
+    string_t poolname;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoNameInfo) + 1,
+                    sizeof(FCFSAuthProtoNameInfo) + NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoNameInfo *)REQUEST.body;
+    FC_SET_STRING_EX(poolname, req->str, req->len);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoNameInfo)
+                    + poolname.len)) != 0)
+    {
+        return result;
+    }
+
+    return adb_spool_access(SERVER_CTX, &poolname);
+}
+
 static int service_deal_spool_remove(struct fast_task_info *task)
 {
     FCFSAuthProtoSPoolRemoveReq *req;
@@ -441,11 +485,13 @@ static int service_deal_spool_grant(struct fast_task_info *task)
         return EINVAL;
     }
 
+    /*
     logInfo("sizeof(FCFSAuthProtoSPoolGrantReq): %d, dest: %.*s(%d), "
             "poolname: %.*s, pool_id: %"PRId64,
             (int)sizeof(FCFSAuthProtoSPoolGrantReq),
             usernames.dest.len, usernames.dest.str, usernames.dest.len,
             poolname.len, poolname.str, granted.pool_id);
+            */
 
     return adb_granted_create(SERVER_CTX, &usernames.dest, &granted);
 }
@@ -635,6 +681,14 @@ int service_deal_task(struct fast_task_info *task, const int stage)
                 break;
             case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
                 result = service_deal_gpool_list(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_RESP;
+                result = service_deal_gpool_next_id(task);
+                break;
+            case FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_REQ:
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_RESP;
+                result = service_deal_gpool_access(task);
                 break;
             default:
                 RESPONSE.error.length = sprintf(
