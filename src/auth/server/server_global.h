@@ -33,6 +33,11 @@ typedef struct server_global_vars {
         string_t secret_key_filename;
     } admin_generate;
 
+    struct {
+        int64_t auto_id_initial;
+        string_t pool_name_template;
+    } pool_generate;
+
     char *fdir_client_cfg_filename;
     SFSlowLogContext slow_log;
 } AuthServerGlobalVars;
@@ -42,6 +47,10 @@ typedef struct server_global_vars {
 #define ADMIN_GENERATE_BUFF          ADMIN_GENERATE.buff
 #define ADMIN_GENERATE_USERNAME      ADMIN_GENERATE.username
 #define ADMIN_GENERATE_KEY_FILENAME  ADMIN_GENERATE.secret_key_filename
+
+#define POOL_GENERATE           g_server_global_vars.pool_generate
+#define AUTO_ID_INITIAL         POOL_GENERATE.auto_id_initial
+#define POOL_NAME_TEMPLATE      POOL_GENERATE.pool_name_template
 
 #define SLOW_LOG                g_server_global_vars.slow_log
 #define SLOW_LOG_CFG            SLOW_LOG.cfg

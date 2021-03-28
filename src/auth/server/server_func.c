@@ -92,6 +92,9 @@ static int server_load_admin_generate_config(IniContext *ini_context,
         username.str = "admin";
     }
     username.len = strlen(username.str);
+    if ((result=fc_check_filename(&username, "username")) != 0) {
+        return result;
+    }
 
     secret_key_filename.str = iniGetStrValue(SECTION_NAME_ADMIN_GENERATE,
             "secret_key_filename", ini_context);
@@ -137,6 +140,44 @@ static int server_load_admin_generate_config(IniContext *ini_context,
     return 0;
 }
 
+static int server_load_pool_generate_config(IniContext *ini_context,
+        const char *config_filename)
+{
+#define SECTION_NAME_POOL_GENERATE  "pool_generate"
+
+    char *name_template;
+    int result;
+
+    AUTO_ID_INITIAL = iniGetInt64Value(SECTION_NAME_POOL_GENERATE,
+            "auto_id_initial", ini_context, 1);
+
+    name_template = iniGetStrValue(SECTION_NAME_POOL_GENERATE,
+            "pool_name_template", ini_context);
+    if (name_template == NULL || *name_template == '\0') {
+        name_template = FCFS_AUTH_AUTO_ID_TAG_STR;
+    } else if (strstr(name_template, FCFS_AUTH_AUTO_ID_TAG_STR) == NULL) {
+        logError("file: "__FILE__", line: %d, "
+                "config file: %s, pool_name_template: %s is invalid, "
+                "must contains %s", __LINE__, config_filename,
+                name_template, FCFS_AUTH_AUTO_ID_TAG_STR);
+        return EINVAL;
+    }
+
+    POOL_NAME_TEMPLATE.len = strlen(name_template);
+    POOL_NAME_TEMPLATE.str = (char *)fc_malloc(POOL_NAME_TEMPLATE.len + 1);
+    if (POOL_NAME_TEMPLATE.str == NULL) {
+        return ENOMEM;
+    }
+    memcpy(POOL_NAME_TEMPLATE.str, name_template, POOL_NAME_TEMPLATE.len + 1);
+    if ((result=fc_check_filename(&POOL_NAME_TEMPLATE,
+                    "pool_name_template")) != 0)
+    {
+        return result;
+    }
+
+    return 0;
+}
+
 static void server_log_configs()
 {
     char sz_server_config[512];
@@ -152,11 +193,13 @@ static void server_log_configs()
 
     snprintf(sz_server_config, sizeof(sz_server_config),
             "admin_generate {mode: %s, username: %s, "
-            "secret_key_filename: %s}, "
+            "secret_key_filename: %s}, pool_generate: "
+            "{auto_id_initial: %"PRId64", pool_name_template: %s}, "
             "FastDIR client_config_filename: %s",
             (ADMIN_GENERATE_MODE == AUTH_ADMIN_GENERATE_MODE_FIRST ?
              "first" : "always"), ADMIN_GENERATE_USERNAME.str,
-            ADMIN_GENERATE_KEY_FILENAME.str,
+            ADMIN_GENERATE_KEY_FILENAME.str, AUTO_ID_INITIAL,
+            POOL_NAME_TEMPLATE.str,
             g_server_global_vars.fdir_client_cfg_filename);
 
     logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s",
@@ -196,6 +239,12 @@ int server_load_config(const char *filename)
     }
 
     if ((result=server_load_admin_generate_config(
+                    &ini_context, filename)) != 0)
+    {
+        return result;
+    }
+
+    if ((result=server_load_pool_generate_config(
                     &ini_context, filename)) != 0)
     {
         return result;

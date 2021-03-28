@@ -55,6 +55,9 @@
 #define FCFS_AUTH_UNLIMITED_QUOTA_STR  "unlimited"
 #define FCFS_AUTH_UNLIMITED_QUOTA_VAL  -1
 
+#define FCFS_AUTH_AUTO_ID_TAG_STR  "${auto_id}"
+#define FCFS_AUTH_AUTO_ID_TAG_LEN  (sizeof(FCFS_AUTH_AUTO_ID_TAG_STR) - 1)
+
 typedef struct fcfs_auth_spool_priviledges {
     int fdir;
     int fstore;
