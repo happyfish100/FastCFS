@@ -44,14 +44,10 @@ int fcfs_auth_client_user_remove(FCFSAuthClientContext *client_ctx,
         const string_t *username);
 
 /* storage pool operations */
-int fcfs_auth_client_spool_next_id(FCFSAuthClientContext *client_ctx,
-        int64_t *next_id);
-
-int fcfs_auth_client_spool_access(FCFSAuthClientContext *client_ctx,
-        const string_t *poolname);
 
 int fcfs_auth_client_spool_create(FCFSAuthClientContext *client_ctx,
-        const FCFSAuthStoragePoolInfo *spool);
+        FCFSAuthStoragePoolInfo *spool, const int name_size,
+        const bool dryrun);
 
 int fcfs_auth_client_spool_list(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *poolname,

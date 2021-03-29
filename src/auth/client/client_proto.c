@@ -31,15 +31,15 @@
     check_name_ex(username, "username", required)
 #define check_username(username) check_username_ex(username, true)
 #define pack_username(username, proto_uname) \
-    pack_name_ex(username, "username", proto_uname, 0)
+    pack_name_ex(username, "username", proto_uname, 0, true)
 
 #define check_poolname_ex(poolname, required) \
     check_name_ex(poolname, "poolname", required)
 #define check_poolname(poolname) check_poolname_ex(poolname, true)
-#define pack_poolname_ex(poolname, proto_pname, str_offset) \
-    pack_name_ex(poolname, "poolname", proto_pname, str_offset)
+#define pack_poolname_ex(poolname, proto_pname, str_offset, required) \
+    pack_name_ex(poolname, "poolname", proto_pname, str_offset, required)
 #define pack_poolname(poolname, proto_pname) \
-    pack_poolname_ex(poolname, proto_pname, 0)
+    pack_poolname_ex(poolname, proto_pname, 0, true)
 
 #define pack_user_pool_pair(username, poolname, up_pair) \
     pack_user_pool_pair_ex(username, poolname, up_pair, true)
@@ -61,14 +61,17 @@ static inline int check_name_ex(const string_t *name,
 }
 
 static inline int pack_name_ex(const string_t *name, const char *caption,
-        FCFSAuthProtoNameInfo *proto_name, const int str_offset)
+        FCFSAuthProtoNameInfo *proto_name, const int str_offset,
+        const bool required)
 {
     int result;
 
-    if ((result=check_name(name, caption)) != 0) {
+    if ((result=check_name_ex(name, caption, required)) != 0) {
         return result;
     }
-    memcpy(proto_name->str + str_offset, name->str, name->len);
+    if (name->len > 0) {
+        memcpy(proto_name->str + str_offset, name->str, name->len);
+    }
     proto_name->len = name->len;
     return 0;
 }
@@ -311,14 +314,19 @@ int fcfs_auth_client_proto_user_remove(FCFSAuthClientContext *client_ctx,
 }
 
 int fcfs_auth_client_proto_spool_create(FCFSAuthClientContext *client_ctx,
-        ConnectionInfo *conn, const FCFSAuthStoragePoolInfo *spool)
+        ConnectionInfo *conn, FCFSAuthStoragePoolInfo *spool,
+        const int name_size, const bool dryrun)
 {
     FCFSAuthProtoHeader *header;
     FCFSAuthProtoSPoolCreateReq *req;
+    FCFSAuthProtoSPoolCreateResp *resp;
     char out_buff[sizeof(FCFSAuthProtoHeader) +
         sizeof(FCFSAuthProtoSPoolCreateReq) + NAME_MAX];
+    char in_buff[sizeof(FCFSAuthProtoSPoolCreateResp) + NAME_MAX];
     SFResponseInfo response;
     int out_bytes;
+    int body_len;
+    int buff_size;
     int result;
 
     header = (FCFSAuthProtoHeader *)out_buff;
@@ -326,20 +334,40 @@ int fcfs_auth_client_proto_spool_create(FCFSAuthClientContext *client_ctx,
     out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + spool->name.len;
     SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ,
             out_bytes - sizeof(FCFSAuthProtoHeader));
-    if ((result=pack_poolname(&spool->name, &req->poolname)) != 0) {
+    if ((result=pack_poolname_ex(&spool->name,
+                    &req->poolname, 0, false)) != 0)
+    {
         return result;
     }
     long2buff(spool->quota, req->quota);
+    req->dryrun = (dryrun ? 1 : 0);
 
+    if (name_size < sizeof(in_buff) - sizeof(*resp)) {
+        buff_size = name_size;
+    } else {
+        buff_size = sizeof(in_buff);
+    }
     response.error.length = 0;
-    if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
+    if ((result=sf_send_and_recv_response_ex1(conn, out_buff, out_bytes,
                     &response, client_ctx->common_cfg.network_timeout,
-                    FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP)) != 0)
+                    FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP, in_buff,
+                    buff_size, &body_len)) != 0)
     {
         sf_log_network_error(&response, conn, result);
+        return result;
     }
 
-    return result;
+    resp = (FCFSAuthProtoSPoolCreateResp *)in_buff;
+    if (body_len != sizeof(*resp) + resp->poolname.len) {
+        logError("file: "__FILE__", line: %d, "
+                "response body length: %d != expect: %d", __LINE__,
+                body_len, (int)sizeof(*resp) + resp->poolname.len);
+        return EINVAL;
+    }
+
+    spool->name.len = resp->poolname.len;
+    memcpy(spool->name.str, resp->poolname.str, spool->name.len);
+    return 0;
 }
 
 int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
@@ -622,66 +650,5 @@ int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
     }
 
     array->count = count;
-    return result;
-}
-
-int fcfs_auth_client_proto_spool_next_id(FCFSAuthClientContext
-        *client_ctx, ConnectionInfo *conn, int64_t *next_id)
-{
-    FCFSAuthProtoHeader *header;
-    char out_buff[sizeof(FCFSAuthProtoHeader)];
-    FCFSAuthProtoSPoolNextIdResp resp;
-    SFResponseInfo response;
-    int out_bytes;
-    int result;
-
-    header = (FCFSAuthProtoHeader *)out_buff;
-    out_bytes = sizeof(FCFSAuthProtoHeader);
-    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_REQ,
-            out_bytes - sizeof(FCFSAuthProtoHeader));
-
-    response.error.length = 0;
-    if ((result=sf_send_and_recv_response(conn, out_buff, out_bytes,
-                    &response, client_ctx->common_cfg.network_timeout,
-                    FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_RESP,
-                    (char *)&resp, sizeof(resp))) == 0)
-    {
-        *next_id = buff2long(resp.next_id);
-    } else {
-        sf_log_network_error(&response, conn, result);
-    }
-
-    return result;
-}
-
-int fcfs_auth_client_proto_spool_access(FCFSAuthClientContext
-        *client_ctx, ConnectionInfo *conn, const string_t *poolname)
-{
-    FCFSAuthProtoHeader *header;
-    FCFSAuthProtoNameInfo *req;
-    char out_buff[sizeof(FCFSAuthProtoHeader) +
-        sizeof(FCFSAuthProtoNameInfo) + NAME_MAX];
-    SFResponseInfo response;
-    int out_bytes;
-    int result;
-
-    header = (FCFSAuthProtoHeader *)out_buff;
-    req = (FCFSAuthProtoNameInfo *)(header + 1);
-    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + poolname->len;
-    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_REQ,
-            out_bytes - sizeof(FCFSAuthProtoHeader));
-    if ((result=pack_poolname(poolname, req)) != 0) {
-        return result;
-    }
-
-    response.error.length = 0;
-    if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
-                    &response, client_ctx->common_cfg.network_timeout,
-                    FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_RESP)) != 0)
-    {
-        sf_log_network_error_ex(&response, conn, result,
-                (result == ENOENT ? LOG_DEBUG : LOG_ERR));
-    }
-
     return result;
 }

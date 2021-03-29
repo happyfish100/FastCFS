@@ -60,7 +60,7 @@ typedef struct auth_db_context {
     } user;
 
     struct {
-        volatile int64_t next_id;
+        volatile int64_t auto_id;
         struct {
             UniqSkiplistFactory created;
             UniqSkiplistFactory granted;
@@ -160,6 +160,18 @@ static int init_allocators()
     return 0;
 }
 
+static void free_storage_pool_func(void *ptr, const int delay_seconds)
+{
+    DBStoragePoolInfo *dbspool;
+
+    dbspool = (DBStoragePoolInfo *)ptr;
+    uniq_skiplist_delete(adb_ctx.pool.sl_pairs.by_id.skiplist, dbspool);
+    uniq_skiplist_delete(adb_ctx.pool.sl_pairs.by_name.skiplist, dbspool);
+
+    fast_allocator_free(&adb_ctx.name_acontext, dbspool->pool.name.str);
+    fast_mblock_free_object(&adb_ctx.pool.allocators.created, dbspool);
+}
+
 static int init_skiplists()
 {
     const int max_level_count = 12;
@@ -178,8 +190,8 @@ static int init_skiplists()
 
     if ((result=uniq_skiplist_init_ex(&adb_ctx.pool.factories.created,
                     max_level_count, (skiplist_compare_func)pool_name_cmp,
-                    NULL, alloc_skiplist_once, min_alloc_elements_once,
-                    delay_free_seconds)) != 0)
+                    free_storage_pool_func, alloc_skiplist_once,
+                    min_alloc_elements_once, delay_free_seconds)) != 0)
     {
         return result;
     }
@@ -467,6 +479,19 @@ static inline DBStoragePoolInfo *user_spool_get(AuthServerContext
             user->storage_pools.created, &target);
 }
 
+static inline int spool_global_skiplists_insert(DBStoragePoolInfo *dbspool)
+{
+    int result;
+    if ((result=uniq_skiplist_insert(adb_ctx.pool.sl_pairs.
+                    by_id.skiplist, dbspool)) == 0)
+    {
+        result = uniq_skiplist_insert(adb_ctx.pool.
+                sl_pairs.by_name.skiplist, dbspool);
+    }
+
+    return result;
+}
+
 static int storage_pool_create(AuthServerContext *server_ctx,
         DBUserInfo *dbuser, DBStoragePoolInfo **dbspool,
         const FCFSAuthStoragePoolInfo *pool, const bool addto_backend)
@@ -489,6 +514,7 @@ static int storage_pool_create(AuthServerContext *server_ctx,
         (*dbspool)->user = dbuser;
         need_insert = true;
     } else {
+        result = 0;
         need_insert = false;
     }
 
@@ -497,28 +523,34 @@ static int storage_pool_create(AuthServerContext *server_ctx,
         if ((result=dao_spool_create(server_ctx->dao_ctx, &dbuser->
                         user.name, &(*dbspool)->pool)) != 0)
         {
+            fast_allocator_free(&adb_ctx.name_acontext,
+                    (*dbspool)->pool.name.str);
+            fast_mblock_free_object(&adb_ctx.pool.
+                    allocators.created, *dbspool);
             return result;
         }
     } else {
         (*dbspool)->pool.id = pool->id;
-        result = 0;
     }
 
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     (*dbspool)->pool.status = FCFS_AUTH_POOL_STATUS_NORMAL;
     if (need_insert) {
-        if ((result=uniq_skiplist_insert(dbuser->storage_pools.
-                        created, *dbspool)) == 0)
-        {
-            if ((result=uniq_skiplist_insert(adb_ctx.pool.sl_pairs.
-                            by_id.skiplist, *dbspool)) == 0)
-            {
-                result = uniq_skiplist_insert(adb_ctx.pool.
-                        sl_pairs.by_name.skiplist, *dbspool);
-            }
+        if ((result=spool_global_skiplists_insert(*dbspool)) == 0) {
+            result = uniq_skiplist_insert(dbuser->storage_pools.
+                    created, *dbspool);
         }
     }
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    if (result != 0) {
+        dao_spool_remove(server_ctx->dao_ctx, (*dbspool)->pool.id);  //rollback
+
+        fast_allocator_free(&adb_ctx.name_acontext,
+                (*dbspool)->pool.name.str);
+        fast_mblock_free_object(&adb_ctx.pool.
+                allocators.created, *dbspool);
+    }
 
     return result;
 }
@@ -866,20 +898,24 @@ static int convert_user_array(AuthServerContext *server_ctx,
     return 0;
 }
 
-static int load_pool_next_id(AuthServerContext *server_ctx)
+static int load_pool_auto_id(AuthServerContext *server_ctx)
 {
     int result;
-    int64_t next_id;
+    int64_t auto_id;
 
     if ((result=dao_spool_set_base_path_inode(server_ctx->dao_ctx)) != 0) {
         return result;
     }
 
-    if ((result=dao_spool_get_next_id(server_ctx->dao_ctx, &next_id)) == 0) {
-        FC_ATOMIC_SET(adb_ctx.pool.next_id, next_id);
+    if ((result=dao_spool_get_auto_id(server_ctx->dao_ctx, &auto_id)) != 0) {
+        return result;
     }
 
-    return result;
+    if (AUTO_ID_INITIAL > auto_id) {
+        auto_id = AUTO_ID_INITIAL;
+    }
+    FC_ATOMIC_SET(adb_ctx.pool.auto_id, auto_id);
+    return 0;
 }
 
 int adb_load_data(AuthServerContext *server_ctx)
@@ -910,7 +946,7 @@ int adb_load_data(AuthServerContext *server_ctx)
     if (result != 0) {
         return result;
     }
-    return load_pool_next_id(server_ctx);
+    return load_pool_auto_id(server_ctx);
 }
 
 int adb_check_generate_admin_user(AuthServerContext *server_ctx)
@@ -1087,10 +1123,22 @@ int adb_granted_list(AuthServerContext *server_ctx, const string_t *username,
     return result;
 }
 
-int adb_spool_next_id(AuthServerContext *server_ctx, int64_t *next_id)
+int64_t adb_spool_get_auto_id(AuthServerContext *server_ctx)
 {
-    *next_id = __sync_add_and_fetch(&adb_ctx.pool.next_id, 1);
-    return dao_spool_set_next_id(server_ctx->dao_ctx, *next_id);
+    return __sync_add_and_fetch(&adb_ctx.pool.auto_id, 0);
+}
+
+int adb_spool_inc_auto_id(AuthServerContext *server_ctx)
+{
+    int64_t auto_id;
+    auto_id = __sync_add_and_fetch(&adb_ctx.pool.auto_id, 1);
+    return dao_spool_set_auto_id(server_ctx->dao_ctx, auto_id);
+}
+
+int adb_spool_next_auto_id(AuthServerContext *server_ctx, int64_t *auto_id)
+{
+    *auto_id = __sync_add_and_fetch(&adb_ctx.pool.auto_id, 1);
+    return dao_spool_set_auto_id(server_ctx->dao_ctx, *auto_id);
 }
 
 int adb_spool_access(AuthServerContext *server_ctx, const string_t *poolname)

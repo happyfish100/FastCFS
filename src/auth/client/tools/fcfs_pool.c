@@ -29,6 +29,8 @@
 #define PARAM_OPTION_INCLUDED   1
 #define PARAM_OPTION_REQUIRED   2
 
+#define DRY_RUN_OPTION_STR  "--dryrun"
+
 static int current_index;
 static FCFSAuthStoragePoolInfo spool;
 static struct {
@@ -36,6 +38,7 @@ static struct {
     string_t fstore;
 } privs;
 static string_t username = {0};
+static bool dryrun;
 
 static void usage(char *argv[])
 {
@@ -48,94 +51,48 @@ static void usage(char *argv[])
             "\t[-s faststore_access=rw]\n"
             "\t<operation> [username] [pool_name] [quota]\n\n"
             "\tthe operations and following parameters: \n"
-            "\t  create [pool_name] <quota>\n"
+            "\t  create [pool_name] <quota> [%s]\n"
             "\t  quota <pool_name> <quota>\n"
             "\t  delete | remove <pool_name>\n"
             "\t  plist | pool-list [username] [pool_name]\n"
             "\t  grant <username> <pool_name>\n"
             "\t  cancel | withdraw <username> <pool_name>\n"
             "\t  glist | grant-list | granted-list [username] [pool_name]\n\n"
-            "\t  config-setid | cfg-setid <initial_pool_id_for_auto_increment>\n"
-            "\t  config-setname | cfg-setname <pool_name_template>\n"
-            "\t  config-list | cfg-list\n\n"
             "\t* the pool name can contain %s for auto generated id when "
-            "create pool, such as 'pool-%s',\n"
-            "\t  you can set global pool id by \"config-setid\" once,\n"
-            "\t  eg. \"config-setid 100000\" before first create to generate "
-            "six digital initial pool id.\n\n"
-            "\t  you can set your pool name template by \"config-setname\",\n"
-            "\t  the default pool name template is \"%s\".\n\n"
+            "create pool, such as 'pool-%s'\n"
+            "\t  the pool name template configurated in the server side "
+            "will be used when not specify the pool name\n"
+            "\t  you can set the initial value of auto increment id and "
+            "the pool name template in server.conf of the server side\n\n"
             "\t* the quota parameter is required for create and quota operations\n\n"
             "\t* the default unit of quota is GB, %s for no limit\n\n"
             "\tFastDIR and FastStore accesses are:\n"
             "\t  %c:  read only\n"
             "\t  %c:  write only\n"
             "\t  %c%c: read and write\n\n",
-            argv[0], FCFS_AUTH_AUTO_ID_TAG_STR, FCFS_AUTH_AUTO_ID_TAG_STR,
+            argv[0], DRY_RUN_OPTION_STR, FCFS_AUTH_AUTO_ID_TAG_STR,
             FCFS_AUTH_AUTO_ID_TAG_STR, FCFS_AUTH_UNLIMITED_QUOTA_STR,
             POOL_ACCESS_NAME_READ_CHR, POOL_ACCESS_NAME_WRITE_CHR,
             POOL_ACCESS_NAME_READ_CHR, POOL_ACCESS_NAME_WRITE_CHR);
 }
 
-static int generate_spool_name(string_t *pool_name, const int name_size)
-{
-    int result;
-    int64_t next_id;
-    char id_buff[32];
-    string_t auto_id_tag;
-    string_t pool_id;
-
-    FC_SET_STRING_EX(auto_id_tag, FCFS_AUTH_AUTO_ID_TAG_STR, FCFS_AUTH_AUTO_ID_TAG_LEN);
-    pool_id.str = id_buff;
-    do {
-        if ((result=fcfs_auth_client_spool_next_id(
-                        &g_fcfs_auth_client_vars.
-                        client_ctx, &next_id)) != 0)
-        {
-            fprintf(stderr, "get next id from server fail\n");
-            return result;
-        }
-
-        pool_id.len = sprintf(pool_id.str, "%"PRId64, next_id);
-        if ((result=str_replace(&spool.name, &auto_id_tag,
-                        &pool_id, pool_name, name_size)) != 0)
-        {
-            fprintf(stderr, "invalid pool name: %.*s\n",
-                    spool.name.len, spool.name.str);
-            return result;
-        }
-
-        result = fcfs_auth_client_spool_access(
-                &g_fcfs_auth_client_vars.client_ctx, pool_name);
-    } while (result == 0);
-
-    return result == ENOENT ? 0 : result;
-}
-
 static int create_spool(int argc, char *argv[])
 {
     int result;
-    char name_buff[NAME_MAX + 1];
-    string_t pool_name;
     FILE *fp;
+    char name_buff[NAME_MAX];
     char prompt[32];
 
-    if (spool.name.len >= FCFS_AUTH_AUTO_ID_TAG_LEN &&
-            strstr(spool.name.str, FCFS_AUTH_AUTO_ID_TAG_STR) != NULL)
-    {
-        pool_name.str = name_buff;
-        if ((result=generate_spool_name(&pool_name,
-                        sizeof(name_buff))) != 0)
-        {
-            return result;
-        }
-        spool.name = pool_name;
-    } else {
-        pool_name = spool.name;
+    if (spool.name.len > sizeof(name_buff)) {
+        fprintf(stderr, "pool name length: %d is too large, exceeds %d",
+                spool.name.len, (int)sizeof(name_buff));
+        return ENAMETOOLONG;
     }
 
+    memcpy(name_buff, spool.name.str, spool.name.len);
+    spool.name.str = name_buff;
     if ((result=fcfs_auth_client_spool_create(&g_fcfs_auth_client_vars.
-                    client_ctx, &spool)) == 0)
+                    client_ctx, &spool, sizeof(name_buff), dryrun)) == 0)
     {
         strcpy(prompt, "success");
         fp = stdout;
@@ -144,8 +101,8 @@ static int create_spool(int argc, char *argv[])
         fp = stderr;
     }
 
-    fprintf(fp, "create pool %.*s %s\n", pool_name.len,
-            pool_name.str, prompt);
+    fprintf(fp, "%screate pool %.*s %s\n", (dryrun ? "[DRYRUN] " : ""),
+            spool.name.len, spool.name.str, prompt);
     return result;
 }
 
@@ -416,6 +373,15 @@ int main(int argc, char *argv[])
     //g_log_context.log_level = LOG_DEBUG;
 
     operation = argv[current_index++];
+    if (current_index < argc) {
+        char *last;
+        last = argv[argc - 1];
+        dryrun = (strcasecmp(last, DRY_RUN_OPTION_STR) == 0);
+        if (dryrun) {
+            --argc;  //remove the last parameter
+        }
+    }
+
     if (strcasecmp(operation, "create") == 0) {
         op_type = FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ;
         username_options = 0;
@@ -424,7 +390,6 @@ int main(int argc, char *argv[])
                 PARAM_OPTION_REQUIRED;
         } else {
             poolname_options = 0;
-            FC_SET_STRING_EX(spool.name, FCFS_AUTH_AUTO_ID_TAG_STR, FCFS_AUTH_AUTO_ID_TAG_LEN);
         }
         need_quota = true;
     } else if (strcasecmp(operation, "grant") == 0) {

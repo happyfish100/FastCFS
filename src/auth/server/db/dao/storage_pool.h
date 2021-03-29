@@ -25,9 +25,9 @@ extern "C" {
 
 int dao_spool_set_base_path_inode(FDIRClientContext *client_ctx);
 
-int dao_spool_get_next_id(FDIRClientContext *client_ctx, int64_t *next_id);
+int dao_spool_get_auto_id(FDIRClientContext *client_ctx, int64_t *auto_id);
 
-int dao_spool_set_next_id(FDIRClientContext *client_ctx, const int64_t next_id);
+int dao_spool_set_auto_id(FDIRClientContext *client_ctx, const int64_t auto_id);
 
 int dao_spool_create(FDIRClientContext *client_ctx,
         const string_t *username, FCFSAuthStoragePoolInfo *spool);

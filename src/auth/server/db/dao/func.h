@@ -43,9 +43,9 @@
 #define AUTH_XTTR_NAME_FSTORE_STR  "fstore"
 #define AUTH_XTTR_NAME_FSTORE_LEN  (sizeof(AUTH_XTTR_NAME_FSTORE_STR) - 1)
 
-#define AUTH_XTTR_NAME_POOL_NEXT_ID_STR  "pnext"
-#define AUTH_XTTR_NAME_POOL_NEXT_ID_LEN  \
-    (sizeof(AUTH_XTTR_NAME_POOL_NEXT_ID_STR) - 1)
+#define AUTH_XTTR_NAME_POOL_AUTO_ID_STR  "auto_pid"
+#define AUTH_XTTR_NAME_POOL_AUTO_ID_LEN  \
+    (sizeof(AUTH_XTTR_NAME_POOL_AUTO_ID_STR) - 1)
 
 typedef struct {
     string_t ns;
@@ -62,7 +62,7 @@ typedef struct {
         string_t quota;
         string_t fdir;
         string_t fstore;
-        string_t pool_next_id;
+        string_t pool_auto_id;
     } xttr_names;
 
     int64_t base_path_inode;
@@ -79,7 +79,7 @@ typedef struct {
 #define AUTH_XTTR_NAME_QUOTA  g_auth_dao_vars.xttr_names.quota
 #define AUTH_XTTR_NAME_FDIR   g_auth_dao_vars.xttr_names.fdir
 #define AUTH_XTTR_NAME_FSTORE g_auth_dao_vars.xttr_names.fstore
-#define AUTH_XTTR_NAME_POOL_NEXT_ID g_auth_dao_vars.xttr_names.pool_next_id
+#define AUTH_XTTR_NAME_POOL_AUTO_ID g_auth_dao_vars.xttr_names.pool_auto_id
 
 #ifdef __cplusplus
 extern "C" {

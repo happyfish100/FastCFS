@@ -59,28 +59,13 @@ int fcfs_auth_client_user_remove(FCFSAuthClientContext *client_ctx,
             username);
 }
 
-int fcfs_auth_client_spool_next_id(FCFSAuthClientContext *client_ctx,
-        int64_t *next_id)
-{
-    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_next_id,
-            next_id);
-}
-
-int fcfs_auth_client_spool_access(FCFSAuthClientContext *client_ctx,
-        const string_t *poolname)
-{
-    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_access,
-            poolname);
-}
-
 int fcfs_auth_client_spool_create(FCFSAuthClientContext *client_ctx,
-        const FCFSAuthStoragePoolInfo *spool)
+        FCFSAuthStoragePoolInfo *spool, const int name_size,
+        const bool dryrun)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
             GET_CONNECTION, 0, fcfs_auth_client_proto_spool_create,
-            spool);
+            spool, name_size, dryrun);
 }
 
 int fcfs_auth_client_spool_list(FCFSAuthClientContext *client_ctx,

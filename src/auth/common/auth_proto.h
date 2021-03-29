@@ -31,19 +31,6 @@
 #define FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ           27
 #define FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP          28
 
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_CFG_SET_ID_REQ      51
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_CFG_SET_ID_RESP     52
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_CFG_SET_NAME_REQ    53
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_CFG_SET_NAME_RESP   54
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_CFG_GET_NAME_REQ    55
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_CFG_GET_NAME_RESP   56
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_CFG_LIST_REQ        57
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_CFG_LIST_RESP       58
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_REQ         61
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_NEXT_ID_RESP        62
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_REQ          63
-#define FCFS_AUTH_SERVICE_PROTO_SPOOL_ACCESS_RESP         64
-
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ          71
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP         72
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ            73
@@ -114,14 +101,15 @@ typedef struct fcfs_auth_proto_user_remove_req {
 } FCFSAuthProtoUserRemoveReq;
 
 
-typedef struct fcfs_auth_proto_spool_next_id_resp {
-    char next_id[8];
-} FCFSAuthProtoSPoolNextIdResp;
-
 typedef struct fcfs_auth_proto_spool_create_req {
     char quota[8];
+    char dryrun;
     FCFSAuthProtoNameInfo poolname;
 } FCFSAuthProtoSPoolCreateReq;
+
+typedef struct fcfs_auth_proto_spool_create_resp {
+    FCFSAuthProtoNameInfo poolname;
+} FCFSAuthProtoSPoolCreateResp;
 
 typedef struct fcfs_auth_proto_spool_list_req {
     FCFSAuthProtoUserPoolPair up_pair;

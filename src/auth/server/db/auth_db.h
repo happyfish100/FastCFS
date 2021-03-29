@@ -46,7 +46,9 @@ int adb_user_update_passwd(AuthServerContext *server_ctx,
         const string_t *username, const string_t *passwd);
 
 /* storage pool */
-int adb_spool_next_id(AuthServerContext *server_ctx, int64_t *next_id);
+int64_t adb_spool_get_auto_id(AuthServerContext *server_ctx);
+int adb_spool_inc_auto_id(AuthServerContext *server_ctx);
+int adb_spool_next_auto_id(AuthServerContext *server_ctx, int64_t *next_id);
 
 int adb_spool_access(AuthServerContext *server_ctx, const string_t *poolname);
 

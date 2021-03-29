@@ -42,14 +42,9 @@ int fcfs_auth_client_proto_user_grant(FCFSAuthClientContext *client_ctx,
 int fcfs_auth_client_proto_user_remove(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username);
 
-int fcfs_auth_client_proto_spool_next_id(FCFSAuthClientContext
-        *client_ctx, ConnectionInfo *conn, int64_t *next_id);
-
-int fcfs_auth_client_proto_spool_access(FCFSAuthClientContext
-        *client_ctx, ConnectionInfo *conn, const string_t *poolname);
-
 int fcfs_auth_client_proto_spool_create(FCFSAuthClientContext *client_ctx,
-        ConnectionInfo *conn, const FCFSAuthStoragePoolInfo *spool);
+        ConnectionInfo *conn, FCFSAuthStoragePoolInfo *spool,
+        const int name_size, const bool dryrun);
 
 int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username,
