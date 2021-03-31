@@ -44,38 +44,11 @@ static int fcfs_auth_load_server_config(FCFSAuthClientContext *client_ctx,
         IniFullContext *ini_ctx)
 {
     int result;
-    char *server_config_filename;
-    char full_servers_filename[PATH_MAX];
-    const int min_hosts_each_group = 1;
-    const bool share_between_groups = true;
 
-    server_config_filename = iniGetStrValue(ini_ctx->section_name,
-            "server_config_filename", ini_ctx->context);
-    if (server_config_filename == NULL ||
-            *server_config_filename == '\0')
-    {
-        logError("file: "__FILE__", line: %d, "
-                "config file: %s, item \"server_config_filename\" "
-                "not exist or empty", __LINE__, ini_ctx->filename);
-        return ENOENT;
-    }
-
-    resolve_path(ini_ctx->filename, server_config_filename,
-            full_servers_filename, sizeof(full_servers_filename));
-    if ((result=fc_server_load_from_file_ex(&client_ctx->server_cfg,
-                    full_servers_filename, FCFS_AUTH_DEFAULT_SERVICE_PORT,
-                    min_hosts_each_group, share_between_groups)) != 0)
+    if ((result=sf_load_cluster_config(&client_ctx->cluster, ini_ctx,
+                    FCFS_AUTH_DEFAULT_CLUSTER_PORT)) != 0)
     {
         return result;
-    }
-
-    client_ctx->service_group_index = fc_server_get_group_index(
-            &client_ctx->server_cfg, "service");
-    if (client_ctx->service_group_index < 0) {
-        logError("file: "__FILE__", line: %d, "
-                "servers config file: %s, service group not configurated",
-                __LINE__, full_servers_filename);
-        return ENOENT;
     }
 
     return 0;
@@ -154,7 +127,7 @@ void fcfs_auth_client_log_config_ex(FCFSAuthClientContext *client_ctx,
             g_fcfs_auth_client_vars.base_path,
             client_ctx->common_cfg.connect_timeout,
             client_ctx->common_cfg.network_timeout,
-            net_retry_output, FC_SID_SERVER_COUNT(client_ctx->server_cfg),
+            net_retry_output, FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg),
             extra_config != NULL ? ", " : "",
             extra_config != NULL ? extra_config : "");
 }
@@ -175,7 +148,9 @@ int fcfs_auth_client_load_from_file_ex1(FCFSAuthClientContext *client_ctx,
         ini_ctx->context = &iniContext;
     }
 
-    result = fcfs_auth_client_do_init_ex(client_ctx, ini_ctx);
+    if ((result=fcfs_auth_client_do_init_ex(client_ctx, ini_ctx)) == 0) {
+        client_ctx->inited = true;
+    }
 
     if (ini_ctx->context == &iniContext) {
         iniFreeContext(&iniContext);
@@ -208,7 +183,7 @@ int fcfs_auth_client_init_ex1(FCFSAuthClientContext *client_ctx,
 
 void fcfs_auth_client_destroy_ex(FCFSAuthClientContext *client_ctx)
 {
-    fc_server_destroy(&client_ctx->server_cfg);
+    fc_server_destroy(&client_ctx->cluster.server_cfg);
     fcfs_auth_simple_connection_manager_destroy(&client_ctx->cm);
     memset(client_ctx, 0, sizeof(FCFSAuthClientContext));
 }

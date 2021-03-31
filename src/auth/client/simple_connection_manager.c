@@ -25,10 +25,12 @@
 
 typedef struct fcfs_auth_cm_simple_extra {
     /* master connection cache */
+    /*
     struct {
         ConnectionInfo *conn;
         ConnectionInfo holder;
     } master_cache;
+    */
     ConnectionPool cpool;
     FCFSAuthClientContext *client_ctx;
     FCFSAuthServerGroup *cluster_sarray;
@@ -158,9 +160,11 @@ static void close_connection(SFConnectionManager *cm,
 {
     FCFSAuthCMSimpleExtra *extra;
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
+    /*
     if (extra->master_cache.conn == conn) {
         extra->master_cache.conn = NULL;
     }
+    */
 
     conn_pool_close_connection_ex(&extra->cpool, conn, true);
 }
@@ -173,13 +177,13 @@ static void copy_to_server_group_array(FCFSAuthClientContext *client_ctx,
     ConnectionInfo *conn;
     int server_count;
 
-    server_count = FC_SID_SERVER_COUNT(client_ctx->server_cfg);
+    server_count = FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg);
     conn = server_group->servers;
-    end = FC_SID_SERVERS(client_ctx->server_cfg) + server_count;
-    for (server=FC_SID_SERVERS(client_ctx->server_cfg); server<end;
+    end = FC_SID_SERVERS(client_ctx->cluster.server_cfg) + server_count;
+    for (server=FC_SID_SERVERS(client_ctx->cluster.server_cfg); server<end;
             server++, conn++)
     {
-        *conn = server->group_addrs[client_ctx->service_group_index].
+        *conn = server->group_addrs[client_ctx->cluster.service_group_index].
             address_array.addrs[0]->conn;
     }
     server_group->count = server_count;
@@ -208,13 +212,16 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
     int htable_init_capacity;
     int result;
 
-    cluster_sarray = (FCFSAuthServerGroup *)fc_malloc(sizeof(FCFSAuthServerGroup));
+    cluster_sarray = (FCFSAuthServerGroup *)fc_malloc(
+            sizeof(FCFSAuthServerGroup));
     if (cluster_sarray == NULL) {
         return ENOMEM;
     }
 
-    server_count = FC_SID_SERVER_COUNT(client_ctx->server_cfg);
-    if ((result=fcfs_auth_alloc_group_servers(cluster_sarray, server_count)) != 0) {
+    server_count = FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg);
+    if ((result=fcfs_auth_alloc_group_servers(cluster_sarray,
+                    server_count)) != 0)
+    {
         return result;
     }
     copy_to_server_group_array(client_ctx, cluster_sarray);

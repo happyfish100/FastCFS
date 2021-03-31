@@ -49,8 +49,8 @@ int fcfs_auth_client_load_from_file_ex1(FCFSAuthClientContext *client_ctx,
 *       section_name: the section name, NULL or empty for global section
 * return: 0 success, != 0 fail, return the error code
 **/
-static inline int fcfs_auth_client_load_from_file_ex(FCFSAuthClientContext *client_ctx,
-        const char *config_filename, const char *section_name)
+static inline int fcfs_auth_client_load_from_file_ex(FCFSAuthClientContext
+        *client_ctx, const char *config_filename, const char *section_name)
 {
     IniFullContext ini_ctx;
 

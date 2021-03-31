@@ -19,6 +19,7 @@
 #include "fastcommon/common_define.h"
 #include "sf/sf_types.h"
 
+#define FCFS_AUTH_DEFAULT_CLUSTER_PORT  31011
 #define FCFS_AUTH_DEFAULT_SERVICE_PORT  31012
 
 #define FCFS_AUTH_USERNAME_MAX_LEN   64

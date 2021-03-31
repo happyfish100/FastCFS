@@ -19,6 +19,7 @@
 #include "fastcommon/common_define.h"
 #include "sf/sf_configs.h"
 #include "sf/sf_connection_manager.h"
+#include "sf/sf_cluster_cfg.h"
 #include "auth_types.h"
 
 typedef struct fcfs_auth_client_user_key_pair {
@@ -38,10 +39,19 @@ typedef struct fcfs_auth_server_group {
     ConnectionInfo *servers;
 } FCFSAuthServerGroup;
 
+typedef struct fcfs_auth_client_common_cfg {
+    string_t username;
+    string_t passwd;
+    string_t secret_key_filename;
+    unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN];
+    char *buff;  //for username and secret_key_filename
+} FCFSAuthClientCommonCfg;
+
 typedef struct fcfs_auth_client_context {
-    FCServerConfig server_cfg;
-    int service_group_index;
+    bool inited;
+    SFClusterConfig cluster;
     SFConnectionManager cm;
+    FCFSAuthClientCommonCfg auth;
     SFClientCommonConfig common_cfg;
     char session_id[FCFS_AUTH_SESSION_ID_LEN];
 } FCFSAuthClientContext;

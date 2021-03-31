@@ -36,15 +36,15 @@ static void usage(char *argv[])
             "/etc/fastcfs/auth/client.conf]\n"
             "\t[-u admin_username=admin]\n"
             "\t[-k admin_secret_key_filename=/etc/fastcfs/auth/keys/"
-            "${admin_username}.key]\n"
+            "${username}.key]\n"
             "\t[-p priviledge_list=pool]\n"
             "\t<operation> [username]\n"
             "\t[user_secret_key_filename=keys/${username}.key]\n\n"
             "\tthe operations and parameters are: \n"
             "\t  create <username> [user_secret_key_filename]\n"
             "\t  grant <username>, the option <-p priviledges> is required\n"
-            "\t  delete | remove <username>\n\n"
-            "\t  list [username]\n"
+            "\t  delete | remove <username>\n"
+            "\t  list [username]\n\n"
             "\tgranted priviledges seperate by comma, priviledges:\n"
             "\t  %s: user management\n"
             "\t  %s: create storage pool\n"
@@ -60,7 +60,7 @@ static int create_user(int argc, char *argv[])
 {
     string_t input_key_filename;
     FilenameString user_key_filename;
-    unsigned char passwd_buff[16];
+    unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN];
     char *filename;
     char abs_path[PATH_MAX];
     int result;
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     const char *config_filename = "/etc/fastcfs/auth/client.conf";
     char *operation;
     FCFSAuthClientUserKeyPair admin;
-    unsigned char passwd_buff[16];
+    unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN];
     FilenameString admin_key_filename;
     string_t passwd;
     string_t privs;
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
     }
 
     passwd.str = (char *)passwd_buff;
-    passwd.len = 16;
+    passwd.len = FCFS_AUTH_PASSWD_LEN;
     fcfs_auth_replace_filename_with_username(&admin.key_filename,
             &admin.username, &admin_key_filename);
     if ((result=fcfs_auth_load_passwd(
