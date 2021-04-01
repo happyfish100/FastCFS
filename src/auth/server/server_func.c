@@ -25,8 +25,8 @@
 #include "sf/sf_service.h"
 #include "common/auth_proto.h"
 #include "common/auth_func.h"
+#include "common/server_session.h"
 #include "server_global.h"
-#include "server_session.h"
 #include "server_func.h"
 
 static int server_load_fdir_client_config(IniContext *ini_context,
@@ -184,12 +184,15 @@ static void server_log_configs()
     char sz_global_config[512];
     char sz_slowlog_config[256];
     char sz_service_config[128];
+    char sz_session_config[128];
 
     sf_global_config_to_string(sz_global_config, sizeof(sz_global_config));
     sf_slow_log_config_to_string(&SLOW_LOG_CFG, "slow_log",
             sz_slowlog_config, sizeof(sz_slowlog_config));
     sf_context_config_to_string(&g_sf_context,
             sz_service_config, sizeof(sz_service_config));
+    server_session_cfg_to_string(sz_session_config,
+            sizeof(sz_session_config));
 
     snprintf(sz_server_config, sizeof(sz_server_config),
             "admin_generate {mode: %s, username: %s, "
@@ -202,12 +205,14 @@ static void server_log_configs()
             POOL_NAME_TEMPLATE.str,
             g_server_global_vars.fdir_client_cfg_filename);
 
-    logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s",
+    logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s, "
+            "session: {%s}",
             g_fcfs_auth_global_vars.version.major,
             g_fcfs_auth_global_vars.version.minor,
             g_fcfs_auth_global_vars.version.patch,
             sz_global_config, sz_slowlog_config,
-            sz_service_config, sz_server_config);
+            sz_service_config, sz_server_config,
+            sz_session_config);
     log_local_host_ip_addrs();
 }
 

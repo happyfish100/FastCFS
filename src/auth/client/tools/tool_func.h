@@ -19,16 +19,20 @@
 #include "sf/sf_proto.h"
 #include "auth_types.h"
 
-#define USER_PRIV_NAME_USER_MANAGE_STR     "user"
-#define USER_PRIV_NAME_CREATE_POOL_STR     "pool"
-#define USER_PRIV_NAME_MONITOR_CLUSTER_STR "cluster"
-#define USER_PRIV_NAME_ALL_PRIVS_STR       "*"
+#define USER_PRIV_NAME_USER_MANAGE_STR      "user"
+#define USER_PRIV_NAME_CREATE_POOL_STR      "pool"
+#define USER_PRIV_NAME_VALIDATE_SESSION_STR "session"
+#define USER_PRIV_NAME_MONITOR_CLUSTER_STR  "cluster"
+#define USER_PRIV_NAME_ALL_PRIVS_STR        "*"
 
 #define USER_PRIV_NAME_USER_MANAGE_LEN  \
     (sizeof(USER_PRIV_NAME_USER_MANAGE_STR) - 1)
 
 #define USER_PRIV_NAME_CREATE_POOL_LEN  \
     (sizeof(USER_PRIV_NAME_CREATE_POOL_STR) - 1)
+
+#define USER_PRIV_NAME_VALIDATE_SESSION_LEN  \
+    (sizeof(USER_PRIV_NAME_VALIDATE_SESSION_STR) - 1)
 
 #define USER_PRIV_NAME_MONITOR_CLUSTER_LEN  \
     (sizeof(USER_PRIV_NAME_MONITOR_CLUSTER_STR) - 1)

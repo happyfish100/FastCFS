@@ -60,7 +60,58 @@ int service_handler_destroy()
 
 void service_task_finish_cleanup(struct fast_task_info *task)
 {
+    if (TASK_SESSION != NULL) {
+        server_session_delete(TASK_SESSION->session_id);
+        TASK_SESSION = NULL;
+    }
     sf_task_finish_clean_up(task);
+}
+
+static int check_user_priv(struct fast_task_info *task)
+{
+    int64_t the_priv;
+
+    switch (REQUEST.header.cmd) {
+        case SF_PROTO_ACTIVE_TEST_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
+            return 0;
+        case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ:
+            the_priv = FCFS_AUTH_USER_PRIV_USER_MANAGE;
+            break;
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ:
+            the_priv = FCFS_AUTH_USER_PRIV_CREATE_POOL;
+            break;
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
+            the_priv = 0;
+            break;
+        default:
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "unkown cmd: %d", REQUEST.header.cmd);
+            return -EINVAL;
+    }
+
+    if (TASK_SESSION == NULL) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "please login first!");
+        return EPERM;
+    }
+
+    if ((the_priv != 0) && ((TASK_SESSION->user_priv & the_priv) == 0)) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "permission denied");
+        return EPERM;
+    }
+
+    return 0;
 }
 
 static int service_deal_user_login(struct fast_task_info *task)
@@ -70,7 +121,7 @@ static int service_deal_user_login(struct fast_task_info *task)
     const FCFSAuthUserInfo *user;
     string_t username;
     string_t passwd;
-    int64_t session_id;
+    ServerSessionEntry session;
     int result;
 
     if ((result=server_check_min_body_length(sizeof(
@@ -91,6 +142,12 @@ static int service_deal_user_login(struct fast_task_info *task)
         return result;
     }
 
+    if (TASK_SESSION != NULL) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "user already logined");
+        return EEXIST;
+    }
+
     if (!((user=adb_user_get(SERVER_CTX, &username)) != NULL &&
             fc_string_equal(&user->passwd, &passwd)))
     {
@@ -99,11 +156,17 @@ static int service_deal_user_login(struct fast_task_info *task)
         return EPERM;
     }
 
-    //TODO
-    session_id = 123456;
+    session.session_id = 0;
+    session.pool_id = 0;
+    session.pool_priv.fdir = session.pool_priv.fstore = 0;
+    session.user_id = user->id;
+    session.user_priv = user->priv;
+    if ((TASK_SESSION=server_session_add(&session)) == 0) {
+        return ENOMEM;
+    }
 
     resp = (FCFSAuthProtoUserLoginResp *)REQUEST.body;
-    long2buff(session_id, resp->session_id);
+    long2buff(TASK_SESSION->session_id, resp->session_id);
     RESPONSE.header.body_len = sizeof(FCFSAuthProtoUserLoginResp);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP;
     TASK_ARG->context.common.response_done = true;
@@ -409,6 +472,13 @@ static int service_deal_spool_list(struct fast_task_info *task)
     if (username.len == 0) {
         //TODO
         FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    } else {
+        if ((TASK_SESSION->user_priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
+            RESPONSE.error.length = sprintf(
+                    RESPONSE.error.message,
+                    "permission denied");
+            return EPERM;
+        }
     }
 
     fcfs_auth_spool_init_array(&array);
@@ -633,6 +703,13 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     if (username.len == 0) {
         //TODO
         FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    } else {
+        if ((TASK_SESSION->user_priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
+            RESPONSE.error.length = sprintf(
+                    RESPONSE.error.message,
+                    "permission denied");
+            return EPERM;
+        }
     }
 
     fcfs_auth_granted_init_array(&array);
@@ -673,6 +750,51 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     return 0;
 }
 
+static int service_process(struct fast_task_info *task)
+{
+    switch (REQUEST.header.cmd) {
+        case SF_PROTO_ACTIVE_TEST_REQ:
+            RESPONSE.header.cmd = SF_PROTO_ACTIVE_TEST_RESP;
+            return sf_proto_deal_active_test(task, &REQUEST, &RESPONSE);
+        case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
+            return service_deal_user_login(task);
+        case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
+            RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP;
+            return service_deal_user_create(task);
+        case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
+            return service_deal_user_list(task);
+        case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ:
+            RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_GRANT_RESP;
+            return service_deal_user_grant(task);
+        case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ:
+            RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP;
+            return service_deal_user_remove(task);
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ:
+            return service_deal_spool_create(task);
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ:
+            return service_deal_spool_list(task);
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ:
+            RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP;
+            return service_deal_spool_remove(task);
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ:
+            RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP;
+            return service_deal_spool_set_quota(task);
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ:
+            RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_RESP;
+            return service_deal_spool_grant(task);
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ:
+            RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_RESP;
+            return service_deal_spool_withdraw(task);
+        case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
+            return service_deal_gpool_list(task);
+        default:
+            RESPONSE.error.length = sprintf(
+                    RESPONSE.error.message,
+                    "unkown cmd: %d", REQUEST.header.cmd);
+            return -EINVAL;
+    }
+}
+
 int service_deal_task(struct fast_task_info *task, const int stage)
 {
     int result;
@@ -699,60 +821,8 @@ int service_deal_task(struct fast_task_info *task, const int stage)
         }
     } else {
         sf_proto_init_task_context(task, &TASK_CTX.common);
-        switch (REQUEST.header.cmd) {
-            case SF_PROTO_ACTIVE_TEST_REQ:
-                RESPONSE.header.cmd = SF_PROTO_ACTIVE_TEST_RESP;
-                result = sf_proto_deal_active_test(task, &REQUEST, &RESPONSE);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
-                result = service_deal_user_login(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
-                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP;
-                result = service_deal_user_create(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
-                result = service_deal_user_list(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ:
-                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_GRANT_RESP;
-                result = service_deal_user_grant(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ:
-                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP;
-                result = service_deal_user_remove(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ:
-                result = service_deal_spool_create(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ:
-                result = service_deal_spool_list(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_REQ:
-                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP;
-                result = service_deal_spool_remove(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ:
-                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP;
-                result = service_deal_spool_set_quota(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ:
-                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_RESP;
-                result = service_deal_spool_grant(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ:
-                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_RESP;
-                result = service_deal_spool_withdraw(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
-                result = service_deal_gpool_list(task);
-                break;
-            default:
-                RESPONSE.error.length = sprintf(
-                        RESPONSE.error.message,
-                        "unkown cmd: %d", REQUEST.header.cmd);
-                result = -EINVAL;
-                break;
+        if ((result=check_user_priv(task)) == 0) {
+            result = service_process(task);
         }
     }
 

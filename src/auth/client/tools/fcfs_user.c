@@ -49,10 +49,12 @@ static void usage(char *argv[])
             "\t  %s: user management\n"
             "\t  %s: create storage pool\n"
             "\t  %s: monitor cluster\n"
+            "\t  %s: validate session for FastDIR and FastStore server side\n"
             "\t  %s: for all priviledges\n\n",
             argv[0], USER_PRIV_NAME_USER_MANAGE_STR,
             USER_PRIV_NAME_CREATE_POOL_STR,
             USER_PRIV_NAME_MONITOR_CLUSTER_STR,
+            USER_PRIV_NAME_VALIDATE_SESSION_STR,
             USER_PRIV_NAME_ALL_PRIVS_STR);
 }
 

@@ -83,25 +83,73 @@ void server_session_get_cfg(ServerSessionConfig *cfg)
     cfg->hashtable_capacity = session_ctx.htable.capacity;
 }
 
-static void load_session_config(IniFullContext *ini_ctx)
+void server_session_cfg_to_string(char *buff, const int size)
 {
+    snprintf(buff, size, "shared_allocator_count: %d, "
+            "shared_lock_count: %d, hashtable_capacity: %d",
+            session_ctx.allocator_array.count,
+            session_ctx.lock_array.count,
+            session_ctx.htable.capacity);
+}
+
+static int do_load_session_cfg(const char *session_filename)
+{
+    IniContext ini_context;
+    IniFullContext ini_ctx;
+    int result;
+
+    if ((result=iniLoadFromFile(session_filename, &ini_context)) != 0) {
+        logError("file: "__FILE__", line: %d, "
+                "load session config file \"%s\" fail, ret code: %d",
+                __LINE__, session_filename, result);
+        return result;
+    }
+
+    FAST_INI_SET_FULL_CTX_EX(ini_ctx, session_filename, NULL, &ini_context);
     session_ctx.allocator_array.count = iniGetIntCorrectValue(
-            ini_ctx, "shared_allocator_count",
+            &ini_ctx, "shared_allocator_count",
             SESSION_DEFAULT_SHARED_ALLOCATOR_COUNT,
             SESSION_MIN_SHARED_ALLOCATOR_COUNT,
             SESSION_MAX_SHARED_ALLOCATOR_COUNT);
 
     session_ctx.lock_array.count = iniGetInt64CorrectValue(
-            ini_ctx, "shared_lock_count",
+            &ini_ctx, "shared_lock_count",
             SESSION_DEFAULT_SHARED_LOCK_COUNT,
             SESSION_MIN_SHARED_LOCK_COUNT,
             SESSION_MAX_SHARED_LOCK_COUNT);
 
     session_ctx.htable.capacity = iniGetIntCorrectValue(
-            ini_ctx, "hashtable_capacity",
+            &ini_ctx, "hashtable_capacity",
             SESSION_DEFAULT_HASHTABLE_CAPACITY,
             SESSION_MIN_HASHTABLE_CAPACITY,
             SESSION_MAX_HASHTABLE_CAPACITY);
+
+    iniFreeContext(&ini_context);
+    return 0;
+}
+
+static int load_session_config(IniFullContext *ini_ctx)
+{
+    char *session_config_filename;
+    char full_session_filename[PATH_MAX];
+
+    session_config_filename = iniGetStrValue(NULL,
+            "session_config_filename", ini_ctx->context);
+    if (session_config_filename == NULL || *session_config_filename == '\0') {
+        logWarning("file: "__FILE__", line: %d, "
+                "config file: %s, item \"session_config_filename\" "
+                "not exist or empty", __LINE__, ini_ctx->filename);
+
+        session_ctx.allocator_array.count =
+            SESSION_DEFAULT_SHARED_ALLOCATOR_COUNT;
+        session_ctx.lock_array.count = SESSION_DEFAULT_SHARED_LOCK_COUNT;
+        session_ctx.htable.capacity = SESSION_DEFAULT_HASHTABLE_CAPACITY;
+        return 0;
+    }
+
+    resolve_path(ini_ctx->filename, session_config_filename,
+            full_session_filename, sizeof(full_session_filename));
+    return do_load_session_cfg(full_session_filename);
 }
 
 static int server_session_alloc_init(ServerSessionHashEntry *session,
@@ -181,7 +229,9 @@ int server_session_init(IniFullContext *ini_ctx)
 {
     int result;
 
-    load_session_config(ini_ctx);
+    if ((result=load_session_config(ini_ctx)) != 0) {
+        return result;
+    }
 
     if ((result=init_allocator_array(&session_ctx.
                     allocator_array)) != 0)
@@ -264,7 +314,7 @@ static int session_htable_insert(ServerSessionHashEntry *se, const bool replace)
     return result;
 }
 
-int server_session_add(ServerSessionEntry *entry)
+ServerSessionEntry *server_session_add(ServerSessionEntry *entry)
 {
     int result;
     bool replace;
@@ -276,7 +326,7 @@ int server_session_add(ServerSessionEntry *entry)
          session_ctx.allocator_array.count);
     se = (ServerSessionHashEntry *)fast_mblock_alloc_object(allocator);
     if (se == NULL) {
-        return ENOMEM;
+        return NULL;
     }
 
     se->entry = *entry;
@@ -289,10 +339,10 @@ int server_session_add(ServerSessionEntry *entry)
         } while (result == EEXIST);
     } else {
         replace = true;
-        result = session_htable_insert(se, replace);
+        session_htable_insert(se, replace);
     }
 
-    return result;
+    return &se->entry;
 }
 
 int server_session_user_priv_granted(const uint64_t session_id,

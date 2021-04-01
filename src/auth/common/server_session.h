@@ -44,7 +44,9 @@ int server_session_init(IniFullContext *ini_ctx);
 
 void server_session_get_cfg(ServerSessionConfig *cfg);
 
-int server_session_add(ServerSessionEntry *entry);
+void server_session_cfg_to_string(char *buff, const int size);
+
+ServerSessionEntry *server_session_add(ServerSessionEntry *entry);
 
 int server_session_user_priv_granted(const uint64_t session_id,
         const int64_t the_priv);

@@ -20,10 +20,12 @@
 #include "fastcommon/uniq_skiplist.h"
 #include "sf/sf_types.h"
 #include "common/auth_types.h"
+#include "common/server_session.h"
 
 #define TASK_STATUS_CONTINUE           12345
 #define TASK_ARG          ((AuthServerTaskArg *)task->arg)
 #define TASK_CTX          TASK_ARG->context
+#define TASK_SESSION      TASK_CTX.session
 #define REQUEST           TASK_CTX.common.request
 #define RESPONSE          TASK_CTX.common.response
 #define RESPONSE_STATUS   RESPONSE.header.status
@@ -36,6 +38,7 @@ typedef struct server_task_arg {
     struct {
         SFCommonTaskContext common;
         int task_type;
+        ServerSessionEntry *session;
     } context;
 } AuthServerTaskArg;
 
