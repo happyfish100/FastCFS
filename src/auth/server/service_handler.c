@@ -60,9 +60,9 @@ int service_handler_destroy()
 
 void service_task_finish_cleanup(struct fast_task_info *task)
 {
-    if (TASK_SESSION != NULL) {
-        server_session_delete(TASK_SESSION->session_id);
-        TASK_SESSION = NULL;
+    if (SESSION_ENTRY != NULL) {
+        server_session_delete(SESSION_ENTRY->session_id);
+        SESSION_ENTRY = NULL;
     }
     sf_task_finish_clean_up(task);
 }
@@ -98,14 +98,14 @@ static int check_user_priv(struct fast_task_info *task)
             return -EINVAL;
     }
 
-    if (TASK_SESSION == NULL) {
+    if (SESSION_ENTRY == NULL) {
         RESPONSE.error.length = sprintf(
                 RESPONSE.error.message,
                 "please login first!");
         return EPERM;
     }
 
-    if ((the_priv != 0) && ((TASK_SESSION->user_priv & the_priv) == 0)) {
+    if ((the_priv != 0) && ((SESSION_ENTRY->user_priv & the_priv) == 0)) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "permission denied");
         return EPERM;
@@ -118,7 +118,6 @@ static int service_deal_user_login(struct fast_task_info *task)
 {
     FCFSAuthProtoUserLoginReq *req;
     FCFSAuthProtoUserLoginResp *resp;
-    const FCFSAuthUserInfo *user;
     string_t username;
     string_t passwd;
     ServerSessionEntry session;
@@ -142,14 +141,14 @@ static int service_deal_user_login(struct fast_task_info *task)
         return result;
     }
 
-    if (TASK_SESSION != NULL) {
+    if (SESSION_ENTRY != NULL) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "user already logined");
         return EEXIST;
     }
 
-    if (!((user=adb_user_get(SERVER_CTX, &username)) != NULL &&
-            fc_string_equal(&user->passwd, &passwd)))
+    if (!((SESSION_USER=adb_user_get(SERVER_CTX, &username)) != NULL &&
+            fc_string_equal(&SESSION_USER->passwd, &passwd)))
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "user login fail, username or password not correct");
@@ -159,14 +158,14 @@ static int service_deal_user_login(struct fast_task_info *task)
     session.session_id = 0;
     session.pool_id = 0;
     session.pool_priv.fdir = session.pool_priv.fstore = 0;
-    session.user_id = user->id;
-    session.user_priv = user->priv;
-    if ((TASK_SESSION=server_session_add(&session)) == 0) {
+    session.user_id = SESSION_USER->id;
+    session.user_priv = SESSION_USER->priv;
+    if ((SESSION_ENTRY=server_session_add(&session)) == NULL) {
         return ENOMEM;
     }
 
     resp = (FCFSAuthProtoUserLoginResp *)REQUEST.body;
-    long2buff(TASK_SESSION->session_id, resp->session_id);
+    long2buff(SESSION_ENTRY->session_id, resp->session_id);
     RESPONSE.header.body_len = sizeof(FCFSAuthProtoUserLoginResp);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP;
     TASK_ARG->context.common.response_done = true;
@@ -394,8 +393,6 @@ static int service_deal_spool_create(struct fast_task_info *task)
         return result;
     }
 
-    logInfo("pool name length ==== %d", spool.name.len);
-
     if (spool.name.len == 0) {
         spool.name = POOL_NAME_TEMPLATE;
     } else if ((result=fc_check_filename_ex(&spool.name, "pool name",
@@ -405,8 +402,7 @@ static int service_deal_spool_create(struct fast_task_info *task)
         return result;
     }
 
-    //TODO
-    FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    username = SESSION_USER->name;
     if (spool.name.len >= FCFS_AUTH_AUTO_ID_TAG_LEN &&
             strstr(spool.name.str, FCFS_AUTH_AUTO_ID_TAG_STR) != NULL)
     {
@@ -470,10 +466,9 @@ static int service_deal_spool_list(struct fast_task_info *task)
     }
 
     if (username.len == 0) {
-        //TODO
-        FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+        username = SESSION_USER->name;
     } else {
-        if ((TASK_SESSION->user_priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
+        if ((SESSION_ENTRY->user_priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
                     "permission denied");
@@ -539,8 +534,7 @@ static int service_deal_spool_remove(struct fast_task_info *task)
         return result;
     }
 
-    //TODO
-    FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    username = SESSION_USER->name;
     return adb_spool_remove(SERVER_CTX, &username, &poolname);
 }
 
@@ -568,8 +562,7 @@ static int service_deal_spool_set_quota(struct fast_task_info *task)
     }
 
     quota = buff2long(req->quota);
-    //TODO
-    FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+    username = SESSION_USER->name;
     return adb_spool_set_quota(SERVER_CTX, &username, &poolname, quota);
 }
 
@@ -601,8 +594,7 @@ static int service_deal_spool_grant(struct fast_task_info *task)
         return result;
     }
 
-    //TODO
-    FC_SET_STRING_EX(usernames.my, "admin", sizeof("admin") - 1);
+    usernames.my = SESSION_USER->name;
     if ((spool=adb_spool_get(SERVER_CTX, &usernames.my, &poolname)) == NULL) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "user: %.*s, pool: %.*s not exist", usernames.my.len,
@@ -659,8 +651,7 @@ static int service_deal_spool_withdraw(struct fast_task_info *task)
         return result;
     }
 
-    //TODO
-    FC_SET_STRING_EX(usernames.my, "admin", sizeof("admin") - 1);
+    usernames.my = SESSION_USER->name;
     if ((spool=adb_spool_get(SERVER_CTX, &usernames.my, &poolname)) == NULL) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "user: %.*s, pool: %.*s not exist", usernames.my.len,
@@ -701,10 +692,9 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     }
 
     if (username.len == 0) {
-        //TODO
-        FC_SET_STRING_EX(username, "admin", sizeof("admin") - 1);
+        username = SESSION_USER->name;
     } else {
-        if ((TASK_SESSION->user_priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
+        if ((SESSION_ENTRY->user_priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
                     "permission denied");

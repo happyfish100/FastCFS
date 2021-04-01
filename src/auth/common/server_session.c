@@ -57,12 +57,13 @@ typedef struct {
 } ServerSessionLockArray;
 
 typedef struct {
+    volatile uint16_t sn;  //for generate session id
     ServerSessionAllocatorArray allocator_array;
     ServerSessionLockArray lock_array;
     ServerSessionHashtable htable;
 } ServerSessionContext;
 
-static ServerSessionContext session_ctx = {{0, 0, NULL}};
+static ServerSessionContext session_ctx = {0, {0, 0, NULL}};
 
 #define SESSION_SET_HASHTABLE_LOCK(htable, session_id) \
     int32_t bucket_index;  \
@@ -317,6 +318,8 @@ static int session_htable_insert(ServerSessionHashEntry *se, const bool replace)
 ServerSessionEntry *server_session_add(ServerSessionEntry *entry)
 {
     int result;
+    uint16_t rn;
+    uint16_t sn;
     bool replace;
     struct fast_mblock_man *allocator;
     ServerSessionHashEntry *se;
@@ -333,8 +336,14 @@ ServerSessionEntry *server_session_add(ServerSessionEntry *entry)
     if (se->entry.session_id == 0) {
         replace = false;
         do {
+            rn = (int64_t)rand() * 65536LL / RAND_MAX;
+            sn = __sync_add_and_fetch(&session_ctx.sn, 1);
             se->entry.session_id = ((int64_t)g_current_time << 32) |
-                (int64_t)rand();
+                ((int64_t)rn << 16) | (int64_t)sn;
+            /*
+            logInfo("session_id: %"PRId64", rand: %d, sn: %d",
+                    se->entry.session_id, rn, sn);
+                    */
             result = session_htable_insert(se, replace);
         } while (result == EEXIST);
     } else {
