@@ -66,7 +66,9 @@ typedef struct fcfs_auth_proto_user_pool_pair {
 } FCFSAuthProtoUserPoolPair;
 
 typedef struct fcfs_auth_proto_user_login_req {
+    unsigned char flags;
     FCFSAuthProtoUserPasswdPair up_pair;
+    FCFSAuthProtoNameInfo poolname;
 } FCFSAuthProtoUserLoginReq;
 
 typedef struct fcfs_auth_proto_user_login_resp {

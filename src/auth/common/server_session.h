@@ -25,8 +25,7 @@ typedef struct server_session_config {
     int hashtable_capacity;
 } ServerSessionConfig;
 
-typedef struct server_session_entry {
-    uint64_t session_id;
+typedef struct session_synced_fields {
     int64_t user_id;
     int64_t user_priv;
     int64_t pool_id;
@@ -34,25 +33,30 @@ typedef struct server_session_entry {
         int fdir;
         int fstore;
     } pool_priv;
+} SessionSyncedFields;
+
+typedef struct server_session_entry {
+    uint64_t session_id;
+    char fields[0];
 } ServerSessionEntry;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int server_session_init(IniFullContext *ini_ctx);
+int server_session_init(IniFullContext *ini_ctx, const int fields_size);
 
 void server_session_get_cfg(ServerSessionConfig *cfg);
 
 void server_session_cfg_to_string(char *buff, const int size);
 
-ServerSessionEntry *server_session_add(ServerSessionEntry *entry);
+ServerSessionEntry *server_session_add(const ServerSessionEntry *entry);
 
 int server_session_user_priv_granted(const uint64_t session_id,
         const int64_t the_priv);
 
 int server_session_fstore_priv_granted(const uint64_t session_id,
-        const int the_priv);
+        const int64_t pool_id, const int the_priv);
 
 int server_session_fdir_priv_granted(const uint64_t session_id,
         const int64_t pool_id, const int the_priv);

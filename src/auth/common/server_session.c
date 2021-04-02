@@ -57,13 +57,14 @@ typedef struct {
 } ServerSessionLockArray;
 
 typedef struct {
+    int fields_size;
     volatile uint16_t sn;  //for generate session id
     ServerSessionAllocatorArray allocator_array;
     ServerSessionLockArray lock_array;
     ServerSessionHashtable htable;
 } ServerSessionContext;
 
-static ServerSessionContext session_ctx = {0, {0, 0, NULL}};
+static ServerSessionContext session_ctx = {0, 0, {0, 0, NULL}};
 
 #define SESSION_SET_HASHTABLE_LOCK(htable, session_id) \
     int32_t bucket_index;  \
@@ -164,6 +165,7 @@ static int init_allocator_array(ServerSessionAllocatorArray *array)
 {
     int result;
     int bytes;
+    int element_size;
     struct fast_mblock_man *mblock;
     struct fast_mblock_man *end;
 
@@ -173,10 +175,11 @@ static int init_allocator_array(ServerSessionAllocatorArray *array)
         return ENOMEM;
     }
 
+    element_size = sizeof(ServerSessionHashEntry) + session_ctx.fields_size;
     end = array->allocators + array->count;
     for (mblock=array->allocators; mblock<end; mblock++) {
         if ((result=fast_mblock_init_ex1(mblock, "session_entry",
-                        sizeof(ServerSessionHashEntry), 4096, 0,
+                        element_size, 4096, 0,
                         (fast_mblock_alloc_init_func)
                         server_session_alloc_init,
                         mblock, true)) != 0)
@@ -226,7 +229,7 @@ static int init_hashtable(ServerSessionHashtable *htable)
     return 0;
 }
 
-int server_session_init(IniFullContext *ini_ctx)
+int server_session_init(IniFullContext *ini_ctx, const int fields_size)
 {
     int result;
 
@@ -234,9 +237,8 @@ int server_session_init(IniFullContext *ini_ctx)
         return result;
     }
 
-    if ((result=init_allocator_array(&session_ctx.
-                    allocator_array)) != 0)
-    {
+    session_ctx.fields_size = fields_size;
+    if ((result=init_allocator_array(&session_ctx.allocator_array)) != 0) {
         return result;
     }
 
@@ -315,7 +317,7 @@ static int session_htable_insert(ServerSessionHashEntry *se, const bool replace)
     return result;
 }
 
-ServerSessionEntry *server_session_add(ServerSessionEntry *entry)
+ServerSessionEntry *server_session_add(const ServerSessionEntry *entry)
 {
     int result;
     uint16_t rn;
@@ -332,8 +334,8 @@ ServerSessionEntry *server_session_add(ServerSessionEntry *entry)
         return NULL;
     }
 
-    se->entry = *entry;
-    if (se->entry.session_id == 0) {
+    memcpy(se->entry.fields, entry->fields, session_ctx.fields_size);
+    if (entry->session_id == 0) {
         replace = false;
         do {
             rn = (int64_t)rand() * 65536LL / RAND_MAX;
@@ -348,6 +350,7 @@ ServerSessionEntry *server_session_add(ServerSessionEntry *entry)
         } while (result == EEXIST);
     } else {
         replace = true;
+        se->entry.session_id = entry->session_id;
         session_htable_insert(se, replace);
     }
 
@@ -360,13 +363,15 @@ int server_session_user_priv_granted(const uint64_t session_id,
     int result;
     ServerSessionHashEntry *previous;
     ServerSessionHashEntry *found;
+    SessionSyncedFields *fields;
 
     SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session_id);
     PTHREAD_MUTEX_LOCK(lock);
     if ((found=session_htable_find(bucket, session_id,
                     &previous)) != NULL)
     {
-        if ((found->entry.user_priv & the_priv) != 0) {
+        fields = (SessionSyncedFields *)found->entry.fields;
+        if ((fields->user_priv & the_priv) != 0) {
             result = 0;
         } else {
             result = EPERM;
@@ -380,18 +385,22 @@ int server_session_user_priv_granted(const uint64_t session_id,
 }
 
 int server_session_fstore_priv_granted(const uint64_t session_id,
-        const int the_priv)
+        const int64_t pool_id, const int the_priv)
 {
     int result;
     ServerSessionHashEntry *previous;
     ServerSessionHashEntry *found;
+    SessionSyncedFields *fields;
 
     SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session_id);
     PTHREAD_MUTEX_LOCK(lock);
     if ((found=session_htable_find(bucket, session_id,
                     &previous)) != NULL)
     {
-        if ((found->entry.pool_priv.fstore & the_priv) != 0) {
+        fields = (SessionSyncedFields *)found->entry.fields;
+        if (fields->pool_id != pool_id) {
+            result = EACCES;
+        } else if ((fields->pool_priv.fstore & the_priv) != 0) {
             result = 0;
         } else {
             result = EPERM;
@@ -410,15 +419,17 @@ int server_session_fdir_priv_granted(const uint64_t session_id,
     int result;
     ServerSessionHashEntry *previous;
     ServerSessionHashEntry *found;
+    SessionSyncedFields *fields;
 
     SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session_id);
     PTHREAD_MUTEX_LOCK(lock);
     if ((found=session_htable_find(bucket, session_id,
                     &previous)) != NULL)
     {
-        if (found->entry.pool_id != pool_id) {
+        fields = (SessionSyncedFields *)found->entry.fields;
+        if (fields->pool_id != pool_id) {
             result = EACCES;
-        } else if ((found->entry.pool_priv.fdir & the_priv) != 0) {
+        } else if ((fields->pool_priv.fdir & the_priv) != 0) {
             result = 0;
         } else {
             result = EPERM;

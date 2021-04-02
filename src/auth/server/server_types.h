@@ -25,8 +25,10 @@
 #define TASK_STATUS_CONTINUE           12345
 #define TASK_ARG          ((AuthServerTaskArg *)task->arg)
 #define TASK_CTX          TASK_ARG->context
-#define SESSION_ENTRY     TASK_CTX.session.entry
-#define SESSION_USER      TASK_CTX.session.user
+#define SESSION_ENTRY     TASK_CTX.session
+#define SESSION_FIELDS    ((ServerSessionFields *)TASK_CTX.session->fields)
+#define SESSION_USER      SESSION_FIELDS->user
+#define SESSION_DBPOOL    SESSION_FIELDS->dbpool
 #define REQUEST           TASK_CTX.common.request
 #define RESPONSE          TASK_CTX.common.response
 #define RESPONSE_STATUS   RESPONSE.header.status
@@ -34,20 +36,26 @@
 #define SERVER_TASK_TYPE  TASK_CTX.task_type
 
 #define SERVER_CTX        ((AuthServerContext *)task->thread_data->arg)
+#define SESSION_HOLDER    SERVER_CTX->session_holder
+
+struct db_storage_pool_info;
+typedef struct server_session_fields {
+    bool publish;
+    const FCFSAuthUserInfo *user;
+    const struct db_storage_pool_info *dbpool;
+} ServerSessionFields;
 
 typedef struct server_task_arg {
     struct {
         SFCommonTaskContext common;
         int task_type;
-        struct {
-            const FCFSAuthUserInfo *user;
-            ServerSessionEntry *entry;
-        } session;
+        ServerSessionEntry *session;
     } context;
 } AuthServerTaskArg;
 
 typedef struct auth_server_context {
     void *dao_ctx;
+    ServerSessionEntry *session_holder;
 } AuthServerContext;
 
 #endif

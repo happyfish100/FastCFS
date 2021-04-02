@@ -19,6 +19,24 @@
 
 #include "../server_types.h"
 
+typedef struct db_user_info {
+    FCFSAuthUserInfo user;
+    struct {
+        struct uniq_skiplist *created;  //element: DBStoragePoolInfo
+        struct uniq_skiplist *granted;  //element: DBGrantedPoolInfo
+    } storage_pools;
+} DBUserInfo;
+
+typedef struct db_storage_pool_info {
+    FCFSAuthStoragePoolInfo pool;
+    DBUserInfo *user;
+} DBStoragePoolInfo;
+
+typedef struct db_granted_pool_info {
+    FCFSAuthGrantedPoolInfo granted;
+    DBStoragePoolInfo *sp;
+} DBGrantedPoolInfo;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,7 +68,14 @@ int64_t adb_spool_get_auto_id(AuthServerContext *server_ctx);
 int adb_spool_inc_auto_id(AuthServerContext *server_ctx);
 int adb_spool_next_auto_id(AuthServerContext *server_ctx, int64_t *next_id);
 
-int adb_spool_access(AuthServerContext *server_ctx, const string_t *poolname);
+const DBStoragePoolInfo *adb_spool_global_get(AuthServerContext
+        *server_ctx, const string_t *poolname);
+
+static inline int adb_spool_access(AuthServerContext
+        *server_ctx, const string_t *poolname)
+{
+    return adb_spool_global_get(server_ctx, poolname) != NULL ? 0 : ENOENT;
+}
 
 int adb_spool_create(AuthServerContext *server_ctx, const string_t
         *username, const FCFSAuthStoragePoolInfo *pool);
@@ -75,8 +100,16 @@ int adb_granted_create(AuthServerContext *server_ctx, const string_t *username,
 int adb_granted_remove(AuthServerContext *server_ctx,
         const string_t *username, const int64_t pool_id);
 
-int adb_granted_get(AuthServerContext *server_ctx, const string_t *username,
-        const int64_t pool_id, FCFSAuthGrantedPoolFullInfo *gf);
+int adb_granted_full_get(AuthServerContext *server_ctx, const string_t
+        *username, const int64_t pool_id, FCFSAuthGrantedPoolFullInfo *gf);
+
+/*
+int adb_granted_privs_get(AuthServerContext *server_ctx, DBUserInfo *dbuser,
+        const int64_t pool_id, FCFSAuthSPoolPriviledges *privs);
+        */
+
+int adb_granted_privs_get(AuthServerContext *server_ctx, const string_t
+        *username, const int64_t pool_id, FCFSAuthSPoolPriviledges *privs);
 
 int adb_granted_list(AuthServerContext *server_ctx, const string_t *username,
         FCFSAuthGrantedPoolArray *array);

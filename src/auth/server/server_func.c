@@ -239,7 +239,9 @@ int server_load_config(const char *filename)
     }
 
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, filename, "session", &ini_context);
-    if ((result=server_session_init(&ini_ctx)) != 0) {
+    if ((result=server_session_init(&ini_ctx,
+                    sizeof(ServerSessionFields))) != 0)
+    {
         return result;
     }
 

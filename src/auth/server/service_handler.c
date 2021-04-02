@@ -105,7 +105,7 @@ static int check_user_priv(struct fast_task_info *task)
         return EPERM;
     }
 
-    if ((the_priv != 0) && ((SESSION_ENTRY->user_priv & the_priv) == 0)) {
+    if ((the_priv != 0) && ((SESSION_USER->priv & the_priv) == 0)) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "permission denied");
         return EPERM;
@@ -118,9 +118,12 @@ static int service_deal_user_login(struct fast_task_info *task)
 {
     FCFSAuthProtoUserLoginReq *req;
     FCFSAuthProtoUserLoginResp *resp;
+    ServerSessionFields *fields;
+    FCFSAuthProtoNameInfo *proto_poolname;
     string_t username;
     string_t passwd;
-    ServerSessionEntry session;
+    string_t poolname;
+    int flags;
     int result;
 
     if ((result=server_check_min_body_length(sizeof(
@@ -134,33 +137,52 @@ static int service_deal_user_login(struct fast_task_info *task)
             req->up_pair.username.len);
     FC_SET_STRING_EX(passwd, req->up_pair.passwd,
             FCFS_AUTH_PASSWD_LEN);
+
+    proto_poolname = (FCFSAuthProtoNameInfo *)(req->
+            up_pair.username.str + username.len);
+    FC_SET_STRING_EX(poolname, proto_poolname->str, proto_poolname->len);
     if ((result=server_expect_body_length(
                     sizeof(FCFSAuthProtoUserLoginReq)
-                    + username.len)) != 0)
+                    + username.len + poolname.len)) != 0)
     {
         return result;
     }
 
     if (SESSION_ENTRY != NULL) {
-        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
                 "user already logined");
         return EEXIST;
     }
 
-    if (!((SESSION_USER=adb_user_get(SERVER_CTX, &username)) != NULL &&
-            fc_string_equal(&SESSION_USER->passwd, &passwd)))
+    fields = (ServerSessionFields *)(SESSION_HOLDER->fields);
+    if (!((fields->user=adb_user_get(SERVER_CTX, &username)) != NULL &&
+            fc_string_equal(&fields->user->passwd, &passwd)))
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "user login fail, username or password not correct");
         return EPERM;
     }
 
-    session.session_id = 0;
-    session.pool_id = 0;
-    session.pool_priv.fdir = session.pool_priv.fstore = 0;
-    session.user_id = SESSION_USER->id;
-    session.user_priv = SESSION_USER->priv;
-    if ((SESSION_ENTRY=server_session_add(&session)) == NULL) {
+    if (poolname.len > 0) {
+        if ((fields->dbpool=adb_spool_global_get(SERVER_CTX,
+                        &poolname)) == NULL)
+        {
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "pool %.*s not exist", poolname.len, poolname.str);
+            return ENOENT;
+        }
+
+        //if (fields->dbpool->user
+        //TODO check if pool granted
+    } else {
+        fields->dbpool = NULL;
+    }
+
+    flags = req->flags;
+    fields->publish = (flags & FCFS_AUTH_SESSION_FLAGS_PUBLISH) != 0;
+    SESSION_HOLDER->session_id = 0;
+    if ((SESSION_ENTRY=server_session_add(SESSION_HOLDER)) == NULL) {
         return ENOMEM;
     }
 
@@ -468,7 +490,7 @@ static int service_deal_spool_list(struct fast_task_info *task)
     if (username.len == 0) {
         username = SESSION_USER->name;
     } else {
-        if ((SESSION_ENTRY->user_priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
+        if ((SESSION_USER->priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
                     "permission denied");
@@ -694,7 +716,7 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     if (username.len == 0) {
         username = SESSION_USER->name;
     } else {
-        if ((SESSION_ENTRY->user_priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
+        if ((SESSION_USER->priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
                     "permission denied");
@@ -827,9 +849,12 @@ int service_deal_task(struct fast_task_info *task, const int stage)
 void *service_alloc_thread_extra_data(const int thread_index)
 {
     int alloc_size;
+    int dao_context_size;
     AuthServerContext *server_context;
 
-    alloc_size = sizeof(AuthServerContext) + dao_get_context_size();
+    dao_context_size = dao_get_context_size();
+    alloc_size = sizeof(AuthServerContext) + dao_context_size +
+        sizeof(ServerSessionEntry) + sizeof(ServerSessionFields);
     server_context = (AuthServerContext *)fc_malloc(alloc_size);
     if (server_context == NULL) {
         return NULL;
@@ -841,6 +866,8 @@ void *service_alloc_thread_extra_data(const int thread_index)
         sf_terminate_myself();
         return NULL;
     }
+    server_context->session_holder = (ServerSessionEntry *)((char *)
+            server_context->dao_ctx + dao_context_size);
 
     return server_context;
 }
