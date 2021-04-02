@@ -30,8 +30,19 @@ extern "C" {
 int fcfs_auth_load_config(FCFSAuthClientContext *client_ctx,
         bool *auth_enabled, IniFullContext *ini_ctx);
 
-int fcfs_auth_client_user_login(FCFSAuthClientContext *client_ctx,
-        const string_t *username, const string_t *passwd);
+int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,
+        const string_t *username, const string_t *passwd,
+        const string_t *poolname, const int flags);
+
+static inline int fcfs_auth_client_user_login(
+        FCFSAuthClientContext *client_ctx,
+        const string_t *username, const string_t *passwd)
+{
+    const string_t poolname = {NULL, 0};
+    const int flags = 0;
+    return fcfs_auth_client_user_login_ex(client_ctx,
+            username, passwd, &poolname, flags);
+}
 
 int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthUserInfo *user);

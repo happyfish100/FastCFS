@@ -50,7 +50,7 @@ int adb_check_generate_admin_user(AuthServerContext *server_ctx);
 int adb_user_create(AuthServerContext *server_ctx,
         const FCFSAuthUserInfo *user);
 
-const FCFSAuthUserInfo *adb_user_get(AuthServerContext *server_ctx,
+const DBUserInfo *adb_user_get(AuthServerContext *server_ctx,
         const string_t *username);
 
 int adb_user_remove(AuthServerContext *server_ctx, const string_t *username);
@@ -103,13 +103,9 @@ int adb_granted_remove(AuthServerContext *server_ctx,
 int adb_granted_full_get(AuthServerContext *server_ctx, const string_t
         *username, const int64_t pool_id, FCFSAuthGrantedPoolFullInfo *gf);
 
-/*
-int adb_granted_privs_get(AuthServerContext *server_ctx, DBUserInfo *dbuser,
-        const int64_t pool_id, FCFSAuthSPoolPriviledges *privs);
-        */
-
-int adb_granted_privs_get(AuthServerContext *server_ctx, const string_t
-        *username, const int64_t pool_id, FCFSAuthSPoolPriviledges *privs);
+int adb_granted_privs_get(AuthServerContext *server_ctx,
+        const DBUserInfo *dbuser, const DBStoragePoolInfo *dbpool,
+        FCFSAuthSPoolPriviledges *privs);
 
 int adb_granted_list(AuthServerContext *server_ctx, const string_t *username,
         FCFSAuthGrantedPoolArray *array);

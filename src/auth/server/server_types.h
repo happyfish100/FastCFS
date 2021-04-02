@@ -27,8 +27,9 @@
 #define TASK_CTX          TASK_ARG->context
 #define SESSION_ENTRY     TASK_CTX.session
 #define SESSION_FIELDS    ((ServerSessionFields *)TASK_CTX.session->fields)
-#define SESSION_USER      SESSION_FIELDS->user
+#define SESSION_DBUSER    SESSION_FIELDS->dbuser
 #define SESSION_DBPOOL    SESSION_FIELDS->dbpool
+#define SESSION_USER      SESSION_FIELDS->dbuser->user
 #define REQUEST           TASK_CTX.common.request
 #define RESPONSE          TASK_CTX.common.response
 #define RESPONSE_STATUS   RESPONSE.header.status
@@ -38,11 +39,13 @@
 #define SERVER_CTX        ((AuthServerContext *)task->thread_data->arg)
 #define SESSION_HOLDER    SERVER_CTX->session_holder
 
+struct db_user_info;
 struct db_storage_pool_info;
 typedef struct server_session_fields {
     bool publish;
-    const FCFSAuthUserInfo *user;
+    const struct db_user_info *dbuser;
     const struct db_storage_pool_info *dbpool;
+    FCFSAuthSPoolPriviledges pool_privs;
 } ServerSessionFields;
 
 typedef struct server_task_arg {

@@ -325,7 +325,7 @@ int adb_user_create(AuthServerContext *server_ctx,
     return result;
 }
 
-const FCFSAuthUserInfo *adb_user_get(AuthServerContext *server_ctx,
+const DBUserInfo *adb_user_get(AuthServerContext *server_ctx,
         const string_t *username)
 {
     DBUserInfo *user;
@@ -335,7 +335,7 @@ const FCFSAuthUserInfo *adb_user_get(AuthServerContext *server_ctx,
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
     if (user != NULL && user->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
-        return &user->user;
+        return user;
     } else {
         return NULL;
     }
@@ -967,7 +967,7 @@ int adb_check_generate_admin_user(AuthServerContext *server_ctx)
 }
 
 static inline DBGrantedPoolInfo *granted_pool_get(
-        DBUserInfo *dbuser, const int64_t pool_id)
+        const DBUserInfo *dbuser, const int64_t pool_id)
 {
     DBGrantedPoolInfo target;
 
@@ -1042,7 +1042,7 @@ int adb_granted_remove(AuthServerContext *server_ctx,
 }
 
 static inline void set_gpool_full_info(FCFSAuthGrantedPoolFullInfo *gf,
-        DBGrantedPoolInfo *dbgpool)
+        const DBGrantedPoolInfo *dbgpool)
 {
     gf->granted = dbgpool->granted;
     gf->username = dbgpool->sp->user->user.name;
@@ -1070,25 +1070,28 @@ int adb_granted_full_get(AuthServerContext *server_ctx, const string_t
     return (dbgranted != NULL) ? 0 : ENOENT;
 }
 
-int adb_granted_privs_get(AuthServerContext *server_ctx, const string_t
-        *username, const int64_t pool_id, FCFSAuthSPoolPriviledges *privs)
+int adb_granted_privs_get(AuthServerContext *server_ctx,
+        const DBUserInfo *dbuser, const DBStoragePoolInfo *dbpool,
+        FCFSAuthSPoolPriviledges *privs)
 {
-    DBUserInfo *dbuser;
     DBGrantedPoolInfo *dbgranted;
+    int result;
 
-    dbgranted = NULL;
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
-    dbuser = user_get(server_ctx, username);
-    if (dbuser != NULL) {
-        if (dbuser->user.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
-            if ((dbgranted=granted_pool_get(dbuser, pool_id)) != NULL) {
-                *privs = dbgranted->granted.privs;
-            }
-        }
+    if (dbpool->user == dbuser) {
+        privs->fdir = privs->fstore = FCFS_AUTH_POOL_ACCESS_ALL;
+        result = 0;
+    } else if ((dbgranted=granted_pool_get(dbuser,
+                    dbpool->pool.id)) != NULL)
+    {
+        *privs = dbgranted->granted.privs;
+        result = 0;
+    } else {
+        result = ENOENT;
     }
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
-    return (dbgranted != NULL) ? 0 : ENOENT;
+    return result;
 }
 
 int adb_granted_list(AuthServerContext *server_ctx, const string_t *username,

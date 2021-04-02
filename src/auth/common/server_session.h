@@ -18,6 +18,7 @@
 #define _FCFS_AUTH_SERVER_SESSION_H
 
 #include "fastcommon/ini_file_reader.h"
+#include "auth_types.h"
 
 typedef struct server_session_config {
     int shared_allocator_count;
@@ -26,18 +27,20 @@ typedef struct server_session_config {
 } ServerSessionConfig;
 
 typedef struct session_synced_fields {
-    int64_t user_id;
-    int64_t user_priv;
-    int64_t pool_id;
     struct {
-        int fdir;
-        int fstore;
-    } pool_priv;
+        int64_t id;
+        int64_t priv;
+    } user;
+
+    struct {
+        int64_t id;
+        FCFSAuthSPoolPriviledges privs;
+    } pool;
 } SessionSyncedFields;
 
 typedef struct server_session_entry {
     uint64_t session_id;
-    char fields[0];
+    void *fields;
 } ServerSessionEntry;
 
 #ifdef __cplusplus

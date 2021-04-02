@@ -105,7 +105,7 @@ static int check_user_priv(struct fast_task_info *task)
         return EPERM;
     }
 
-    if ((the_priv != 0) && ((SESSION_USER->priv & the_priv) == 0)) {
+    if ((the_priv != 0) && ((SESSION_USER.priv & the_priv) == 0)) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "permission denied");
         return EPERM;
@@ -156,8 +156,8 @@ static int service_deal_user_login(struct fast_task_info *task)
     }
 
     fields = (ServerSessionFields *)(SESSION_HOLDER->fields);
-    if (!((fields->user=adb_user_get(SERVER_CTX, &username)) != NULL &&
-            fc_string_equal(&fields->user->passwd, &passwd)))
+    if (!((fields->dbuser=adb_user_get(SERVER_CTX, &username)) != NULL &&
+            fc_string_equal(&fields->dbuser->user.passwd, &passwd)))
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "user login fail, username or password not correct");
@@ -173,8 +173,13 @@ static int service_deal_user_login(struct fast_task_info *task)
             return ENOENT;
         }
 
-        //if (fields->dbpool->user
-        //TODO check if pool granted
+        if ((result=adb_granted_privs_get(SERVER_CTX, fields->dbuser,
+                        fields->dbpool, &fields->pool_privs)) != 0)
+        {
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "pool %.*s, not priviledge", poolname.len, poolname.str);
+            return EPERM;
+        }
     } else {
         fields->dbpool = NULL;
     }
@@ -232,6 +237,7 @@ static int service_deal_user_create(struct fast_task_info *task)
 static int service_deal_user_list(struct fast_task_info *task)
 {
     FCFSAuthUserArray array;
+    const DBUserInfo *dbuser;
     const FCFSAuthUserInfo *user;
     const FCFSAuthUserInfo *end;
     string_t username;
@@ -250,13 +256,13 @@ static int service_deal_user_list(struct fast_task_info *task)
         req = (FCFSAuthProtoUserListReq *)REQUEST.body;
         username.len = REQUEST.header.body_len;
         username.str = req->username;
-        if ((user=adb_user_get(SERVER_CTX, &username)) == NULL) {
+        if ((dbuser=adb_user_get(SERVER_CTX, &username)) == NULL) {
             RESPONSE.error.length = sprintf(RESPONSE.error.message,
                     "username:%.*s not exist", username.len, username.str);
             fcfs_auth_user_free_array(&array);
             return ENOENT;
         }
-        array.users[0] = *user;
+        array.users[0] = dbuser->user;
         array.count = 1;
     } else if ((result=adb_user_list(SERVER_CTX, &array)) != 0) {
         fcfs_auth_user_free_array(&array);
@@ -424,7 +430,7 @@ static int service_deal_spool_create(struct fast_task_info *task)
         return result;
     }
 
-    username = SESSION_USER->name;
+    username = SESSION_USER.name;
     if (spool.name.len >= FCFS_AUTH_AUTO_ID_TAG_LEN &&
             strstr(spool.name.str, FCFS_AUTH_AUTO_ID_TAG_STR) != NULL)
     {
@@ -488,9 +494,9 @@ static int service_deal_spool_list(struct fast_task_info *task)
     }
 
     if (username.len == 0) {
-        username = SESSION_USER->name;
+        username = SESSION_USER.name;
     } else {
-        if ((SESSION_USER->priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
+        if ((SESSION_USER.priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
                     "permission denied");
@@ -556,7 +562,7 @@ static int service_deal_spool_remove(struct fast_task_info *task)
         return result;
     }
 
-    username = SESSION_USER->name;
+    username = SESSION_USER.name;
     return adb_spool_remove(SERVER_CTX, &username, &poolname);
 }
 
@@ -584,7 +590,7 @@ static int service_deal_spool_set_quota(struct fast_task_info *task)
     }
 
     quota = buff2long(req->quota);
-    username = SESSION_USER->name;
+    username = SESSION_USER.name;
     return adb_spool_set_quota(SERVER_CTX, &username, &poolname, quota);
 }
 
@@ -616,7 +622,7 @@ static int service_deal_spool_grant(struct fast_task_info *task)
         return result;
     }
 
-    usernames.my = SESSION_USER->name;
+    usernames.my = SESSION_USER.name;
     if ((spool=adb_spool_get(SERVER_CTX, &usernames.my, &poolname)) == NULL) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "user: %.*s, pool: %.*s not exist", usernames.my.len,
@@ -673,7 +679,7 @@ static int service_deal_spool_withdraw(struct fast_task_info *task)
         return result;
     }
 
-    usernames.my = SESSION_USER->name;
+    usernames.my = SESSION_USER.name;
     if ((spool=adb_spool_get(SERVER_CTX, &usernames.my, &poolname)) == NULL) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "user: %.*s, pool: %.*s not exist", usernames.my.len,
@@ -714,9 +720,9 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     }
 
     if (username.len == 0) {
-        username = SESSION_USER->name;
+        username = SESSION_USER.name;
     } else {
-        if ((SESSION_USER->priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
+        if ((SESSION_USER.priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
                     "permission denied");
@@ -866,8 +872,10 @@ void *service_alloc_thread_extra_data(const int thread_index)
         sf_terminate_myself();
         return NULL;
     }
-    server_context->session_holder = (ServerSessionEntry *)((char *)
-            server_context->dao_ctx + dao_context_size);
+    server_context->session_holder = (ServerSessionEntry *)(((char *)
+                server_context->dao_ctx) + dao_context_size);
+    server_context->session_holder->fields =
+        server_context->session_holder + 1;
 
     return server_context;
 }

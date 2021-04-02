@@ -158,6 +158,7 @@ static int server_session_alloc_init(ServerSessionHashEntry *session,
         struct fast_mblock_man *allocator)
 {
     session->allocator = allocator;
+    session->entry.fields = session + 1;
     return 0;
 }
 
@@ -238,6 +239,8 @@ int server_session_init(IniFullContext *ini_ctx, const int fields_size)
     }
 
     session_ctx.fields_size = fields_size;
+    logInfo("fields_size: %d", session_ctx.fields_size);
+
     if ((result=init_allocator_array(&session_ctx.allocator_array)) != 0) {
         return result;
     }
@@ -334,6 +337,8 @@ ServerSessionEntry *server_session_add(const ServerSessionEntry *entry)
         return NULL;
     }
 
+    logInfo("fields_size: %d", session_ctx.fields_size);
+
     memcpy(se->entry.fields, entry->fields, session_ctx.fields_size);
     if (entry->session_id == 0) {
         replace = false;
@@ -371,7 +376,7 @@ int server_session_user_priv_granted(const uint64_t session_id,
                     &previous)) != NULL)
     {
         fields = (SessionSyncedFields *)found->entry.fields;
-        if ((fields->user_priv & the_priv) != 0) {
+        if ((fields->user.priv & the_priv) != 0) {
             result = 0;
         } else {
             result = EPERM;
@@ -398,9 +403,9 @@ int server_session_fstore_priv_granted(const uint64_t session_id,
                     &previous)) != NULL)
     {
         fields = (SessionSyncedFields *)found->entry.fields;
-        if (fields->pool_id != pool_id) {
+        if (fields->pool.id != pool_id) {
             result = EACCES;
-        } else if ((fields->pool_priv.fstore & the_priv) != 0) {
+        } else if ((fields->pool.privs.fstore & the_priv) != 0) {
             result = 0;
         } else {
             result = EPERM;
@@ -427,9 +432,9 @@ int server_session_fdir_priv_granted(const uint64_t session_id,
                     &previous)) != NULL)
     {
         fields = (SessionSyncedFields *)found->entry.fields;
-        if (fields->pool_id != pool_id) {
+        if (fields->pool.id != pool_id) {
             result = EACCES;
-        } else if ((fields->pool_priv.fdir & the_priv) != 0) {
+        } else if ((fields->pool.privs.fdir & the_priv) != 0) {
             result = 0;
         } else {
             result = EPERM;

@@ -109,10 +109,12 @@ static inline int pack_user_passwd_pair(const string_t *username,
 
 int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username,
-        const string_t *passwd)
+        const string_t *passwd, const string_t *poolname,
+        const int flags)
 {
     FCFSAuthProtoHeader *header;
     FCFSAuthProtoUserLoginReq *req;
+    FCFSAuthProtoNameInfo *proto_pname;
     char out_buff[sizeof(FCFSAuthProtoHeader) +
         sizeof(FCFSAuthProtoUserLoginReq) +
         NAME_MAX + FCFS_AUTH_PASSWD_LEN];
@@ -123,12 +125,20 @@ int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
 
     header = (FCFSAuthProtoHeader *)out_buff;
     req = (FCFSAuthProtoUserLoginReq *)(header + 1);
-    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + username->len;
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) +
+        username->len + poolname->len;
     SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ,
             out_bytes - sizeof(FCFSAuthProtoHeader));
+    req->flags = flags;
     if ((result=pack_user_passwd_pair(username,
                     passwd, &req->up_pair)) != 0)
     {
+        return result;
+    }
+
+    proto_pname = (FCFSAuthProtoNameInfo *)(req->
+            up_pair.username.str + username->len);
+    if ((result=pack_poolname_ex(poolname, proto_pname, 0, false)) != 0) {
         return result;
     }
 

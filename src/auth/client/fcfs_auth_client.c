@@ -145,12 +145,13 @@ int fcfs_auth_load_config(FCFSAuthClientContext *client_ctx,
     return load_auth_config(client_ctx, auth_enabled, full_auth_filename);
 }
 
-int fcfs_auth_client_user_login(FCFSAuthClientContext *client_ctx,
-        const string_t *username, const string_t *passwd)
+int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,
+        const string_t *username, const string_t *passwd,
+        const string_t *poolname, const int flags)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
             GET_CONNECTION, 0, fcfs_auth_client_proto_user_login,
-            username, passwd);
+            username, passwd, poolname, flags);
 }
 
 int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
