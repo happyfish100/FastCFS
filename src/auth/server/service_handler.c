@@ -60,10 +60,20 @@ int service_handler_destroy()
 
 void service_task_finish_cleanup(struct fast_task_info *task)
 {
-    if (SESSION_ENTRY != NULL) {
-        server_session_delete(SESSION_ENTRY->session_id);
-        SESSION_ENTRY = NULL;
+    switch (SERVER_TASK_TYPE) {
+        case AUTH_SERVER_TASK_TYPE_SESSION:
+            if (SESSION_ENTRY != NULL) {
+                server_session_delete(SESSION_ENTRY->session_id);
+                SESSION_ENTRY = NULL;
+            }
+            break;
+        case AUTH_SERVER_TASK_TYPE_SUBSCRIBE:
+            //TODO
+            break;
+        default:
+            break;
     }
+
     sf_task_finish_clean_up(task);
 }
 
@@ -75,6 +85,9 @@ static int check_user_priv(struct fast_task_info *task)
         case SF_PROTO_ACTIVE_TEST_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
             return 0;
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ:
+            the_priv = FCFS_AUTH_USER_PRIV_SUBSCRIBE_SESSION;
+            break;
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ:
@@ -148,6 +161,13 @@ static int service_deal_user_login(struct fast_task_info *task)
         return result;
     }
 
+    if (SERVER_TASK_TYPE != SF_SERVER_TASK_TYPE_NONE) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "task type: %d != %d", SERVER_TASK_TYPE,
+                SF_SERVER_TASK_TYPE_NONE);
+        return EEXIST;
+    }
+
     if (SESSION_ENTRY != NULL) {
         RESPONSE.error.length = sprintf(
                 RESPONSE.error.message,
@@ -190,12 +210,59 @@ static int service_deal_user_login(struct fast_task_info *task)
     if ((SESSION_ENTRY=server_session_add(SESSION_HOLDER)) == NULL) {
         return ENOMEM;
     }
+    SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_SESSION;
 
     resp = (FCFSAuthProtoUserLoginResp *)REQUEST.body;
     long2buff(SESSION_ENTRY->session_id, resp->session_id);
     RESPONSE.header.body_len = sizeof(FCFSAuthProtoUserLoginResp);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP;
     TASK_ARG->context.common.response_done = true;
+    return 0;
+}
+
+static int service_deal_session_subscribe(struct fast_task_info *task)
+{
+    FCFSAuthProtoSessionSubscribeReq *req;
+    const DBUserInfo *dbuser;
+    string_t username;
+    string_t passwd;
+    int result;
+
+    if ((result=server_check_min_body_length(sizeof(
+                        FCFSAuthProtoSessionSubscribeReq) + 1)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoSessionSubscribeReq *)REQUEST.body;
+    FC_SET_STRING_EX(username, req->up_pair.username.str,
+            req->up_pair.username.len);
+    FC_SET_STRING_EX(passwd, req->up_pair.passwd,
+            FCFS_AUTH_PASSWD_LEN);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoSessionSubscribeReq)
+                    + username.len)) != 0)
+    {
+        return result;
+    }
+
+    if (SERVER_TASK_TYPE != SF_SERVER_TASK_TYPE_NONE) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "task type: %d != %d", SERVER_TASK_TYPE,
+                SF_SERVER_TASK_TYPE_NONE);
+        return EEXIST;
+    }
+
+    if (!((dbuser=adb_user_get(SERVER_CTX, &username)) != NULL &&
+            fc_string_equal(&dbuser->user.passwd, &passwd)))
+    {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "user login fail, username or password not correct");
+        return EPERM;
+    }
+
+    SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_SUBSCRIBE;
+    RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_RESP;
     return 0;
 }
 
@@ -776,6 +843,8 @@ static int service_process(struct fast_task_info *task)
             return sf_proto_deal_active_test(task, &REQUEST, &RESPONSE);
         case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
             return service_deal_user_login(task);
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ:
+            return service_deal_session_subscribe(task);
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
             RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP;
             return service_deal_user_create(task);

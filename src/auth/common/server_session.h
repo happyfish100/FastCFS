@@ -34,6 +34,7 @@ typedef struct session_synced_fields {
 
     struct {
         int64_t id;
+        bool available;
         FCFSAuthSPoolPriviledges privs;
     } pool;
 } SessionSyncedFields;

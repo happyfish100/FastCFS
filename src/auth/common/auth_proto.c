@@ -26,6 +26,14 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "USER_LOGIN_REQ";
         case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP:
             return "USER_LOGIN_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ:
+            return "SESSION_SUBSCRIBE_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_RESP:
+            return "SESSION_SUBSCRIBE_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_REQ:
+            return "SESSION_PUSH_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_RESP:
+            return "SESSION_PUSH_RESP";
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
             return "USER_CREATE_REQ";
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP:

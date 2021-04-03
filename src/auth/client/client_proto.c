@@ -117,7 +117,7 @@ int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
     FCFSAuthProtoNameInfo *proto_pname;
     char out_buff[sizeof(FCFSAuthProtoHeader) +
         sizeof(FCFSAuthProtoUserLoginReq) +
-        NAME_MAX + FCFS_AUTH_PASSWD_LEN];
+        2 * NAME_MAX + FCFS_AUTH_PASSWD_LEN];
     SFResponseInfo response;
     FCFSAuthProtoUserLoginResp login_resp;
     int out_bytes;
@@ -151,6 +151,42 @@ int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
         memcpy(client_ctx->session_id, login_resp.session_id,
                 FCFS_AUTH_SESSION_ID_LEN);
     } else {
+        sf_log_network_error(&response, conn, result);
+    }
+
+    return result;
+}
+
+int fcfs_auth_client_proto_session_subscribe(
+        FCFSAuthClientContext *client_ctx, ConnectionInfo *conn,
+        const string_t *username, const string_t *passwd)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoSessionSubscribeReq *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoSessionSubscribeReq) +
+        NAME_MAX + FCFS_AUTH_PASSWD_LEN];
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoSessionSubscribeReq *)(header + 1);
+    out_bytes = sizeof(FCFSAuthProtoHeader) +
+        sizeof(*req) + username->len;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+    if ((result=pack_user_passwd_pair(username,
+                    passwd, &req->up_pair)) != 0)
+    {
+        return result;
+    }
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_none_body_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_RESP)) != 0)
+    {
         sf_log_network_error(&response, conn, result);
     }
 

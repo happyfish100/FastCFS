@@ -44,6 +44,9 @@ static inline int fcfs_auth_client_user_login(
             username, passwd, &poolname, flags);
 }
 
+int fcfs_auth_client_session_subscribe(FCFSAuthClientContext
+        *client_ctx, const string_t *username, const string_t *passwd);
+
 int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthUserInfo *user);
 

@@ -37,16 +37,16 @@
 #define FCFS_AUTH_POOL_STATUS_NORMAL   0
 #define FCFS_AUTH_POOL_STATUS_DELETED  1
 
-#define FCFS_AUTH_USER_PRIV_NONE             0
-#define FCFS_AUTH_USER_PRIV_USER_MANAGE      (1 << 0)
-#define FCFS_AUTH_USER_PRIV_CREATE_POOL      (1 << 1)
-#define FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER  (1 << 2)
-#define FCFS_AUTH_USER_PRIV_VALIDATE_SESSION (1 << 3)
+#define FCFS_AUTH_USER_PRIV_NONE              0
+#define FCFS_AUTH_USER_PRIV_USER_MANAGE       (1 << 0)
+#define FCFS_AUTH_USER_PRIV_CREATE_POOL       (1 << 1)
+#define FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER   (1 << 2)
+#define FCFS_AUTH_USER_PRIV_SUBSCRIBE_SESSION (1 << 3)
 
 #define FCFS_AUTH_USER_PRIV_ALL  (FCFS_AUTH_USER_PRIV_USER_MANAGE | \
         FCFS_AUTH_USER_PRIV_CREATE_POOL |     \
         FCFS_AUTH_USER_PRIV_MONITOR_CLUSTER | \
-        FCFS_AUTH_USER_PRIV_VALIDATE_SESSION)
+        FCFS_AUTH_USER_PRIV_SUBSCRIBE_SESSION)
 
 #define FCFS_AUTH_USER_PRIV_COUNT      4
 
@@ -64,6 +64,10 @@
 #define FCFS_AUTH_AUTO_ID_TAG_STR  "${auto_id}"
 #define FCFS_AUTH_AUTO_ID_TAG_LEN  (sizeof(FCFS_AUTH_AUTO_ID_TAG_STR) - 1)
 
+#define FCFS_AUTH_PUSH_OPERATION_CREATE_SESSION   'C'
+#define FCFS_AUTH_PUSH_OPERATION_UPDATE_SESSION   'U'
+#define FCFS_AUTH_PUSH_OPERATION_REMOVE_SESSION   'R'
+
 typedef struct fcfs_auth_spool_priviledges {
     int fdir;
     int fstore;
@@ -72,7 +76,8 @@ typedef struct fcfs_auth_spool_priviledges {
 typedef struct fcfs_auth_storage_pool_info {
     int64_t id;
     string_t name;
-    int64_t quota;
+    int64_t quota; //bytes
+    int64_t used;  //bytes, TODO
     int status;
 } FCFSAuthStoragePoolInfo;
 

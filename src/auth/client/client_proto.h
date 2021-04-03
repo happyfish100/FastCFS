@@ -30,6 +30,10 @@ int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
         const string_t *passwd, const string_t *poolname,
         const int flags);
 
+int fcfs_auth_client_proto_session_subscribe(
+        FCFSAuthClientContext *client_ctx, ConnectionInfo *conn,
+        const string_t *username, const string_t *passwd);
+
 int fcfs_auth_client_proto_user_create(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const FCFSAuthUserInfo *user);
 

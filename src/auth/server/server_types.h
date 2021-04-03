@@ -36,6 +36,9 @@
 #define REQUEST_STATUS    REQUEST.header.status
 #define SERVER_TASK_TYPE  TASK_CTX.task_type
 
+#define AUTH_SERVER_TASK_TYPE_SESSION     1
+#define AUTH_SERVER_TASK_TYPE_SUBSCRIBE   2
+
 #define SERVER_CTX        ((AuthServerContext *)task->thread_data->arg)
 #define SESSION_HOLDER    SERVER_CTX->session_holder
 

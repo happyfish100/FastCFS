@@ -154,6 +154,14 @@ int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,
             username, passwd, poolname, flags);
 }
 
+int fcfs_auth_client_session_subscribe(FCFSAuthClientContext
+        *client_ctx, const string_t *username, const string_t *passwd)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_session_subscribe,
+            username, passwd);
+}
+
 int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthUserInfo *user)
 {

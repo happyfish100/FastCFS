@@ -22,6 +22,11 @@
 #define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ             9
 #define FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP           10
 
+#define FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ     11
+#define FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_RESP    12
+#define FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_REQ          13
+#define FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_RESP         14
+
 #define FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ           21
 #define FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP          22
 #define FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ             23
@@ -65,6 +70,11 @@ typedef struct fcfs_auth_proto_user_pool_pair {
     FCFSAuthProtoNameInfo poolname;
 } FCFSAuthProtoUserPoolPair;
 
+typedef struct fcfs_auth_proto_pool_priviledges {
+    char fdir[4];
+    char fstore[4];
+} FCFSAuthProtoPoolPriviledges;
+
 typedef struct fcfs_auth_proto_user_login_req {
     unsigned char flags;
     FCFSAuthProtoUserPasswdPair up_pair;
@@ -74,6 +84,33 @@ typedef struct fcfs_auth_proto_user_login_req {
 typedef struct fcfs_auth_proto_user_login_resp {
     char session_id[FCFS_AUTH_SESSION_ID_LEN];
 } FCFSAuthProtoUserLoginResp;
+
+typedef struct fcfs_auth_proto_session_subscribe_req {
+    FCFSAuthProtoUserPasswdPair up_pair;
+} FCFSAuthProtoSessionSubscribeReq;
+
+typedef struct fcfs_auth_proto_session_push_resp_header {
+    char count[4];
+} FCFSAuthProtoSessionPushRespHeader;
+
+typedef struct fcfs_auth_proto_session_push_entry {
+    struct {
+        char available;
+        char id[8];
+        FCFSAuthProtoPoolPriviledges privs;
+    } pool;
+
+    struct {
+        char id[8];
+        char priv[8];
+    } user;
+} FCFSAuthProtoSessionPushEntry;
+
+typedef struct fcfs_auth_proto_session_push_resp_body_part {
+    char session_id[FCFS_AUTH_SESSION_ID_LEN];
+    char operation;
+    FCFSAuthProtoSessionPushEntry entry[0];
+} FCFSAuthProtoSessionPushRespBodyPart;
 
 typedef struct fcfs_auth_proto_user_create_req {
     char priv[8];
@@ -132,10 +169,7 @@ typedef struct fcfs_auth_proto_spool_set_quota_req {
 } FCFSAuthProtoSPoolSetQuotaReq;
 
 typedef struct fcfs_auth_proto_spool_grant_req {
-    struct {
-        char fdir[4];
-        char fstore[4];
-    } privs;
+    FCFSAuthProtoPoolPriviledges privs;
     FCFSAuthProtoUserPoolPair up_pair;
 } FCFSAuthProtoSPoolGrantReq;
 
@@ -146,11 +180,7 @@ typedef struct fcfs_auth_proto_spool_withdraw_req {
 typedef FCFSAuthProtoSPoolListReq FCFSAuthProtoGPoolListReq;
 
 typedef struct fcfs_auth_proto_gpool_list_resp_body_part {
-    struct {
-        char fdir[4];
-        char fstore[4];
-    } privs;
-
+    FCFSAuthProtoPoolPriviledges privs;
     FCFSAuthProtoUserPoolPair up_pair;
 } FCFSAuthProtoGPoolListRespBodyPart;
 
