@@ -264,16 +264,16 @@ static void output_gpools(FCFSAuthGrantedPoolArray *array)
 
 static int list_spool(int argc, char *argv[])
 {
-    SFProtoRecvBuffer buffer;
+    SFProtoRBufferFixedWrapper buffer_wrapper;
     FCFSAuthStoragePoolArray spool_array;
     int result;
 
-    sf_init_recv_buffer(&buffer);
+    sf_init_recv_buffer_by_wrapper(&buffer_wrapper);
     fcfs_auth_spool_init_array(&spool_array);
 
     if ((result=fcfs_auth_client_spool_list(&g_fcfs_auth_client_vars.
-                    client_ctx, &username, &spool.name, &buffer,
-                    &spool_array)) == 0)
+                    client_ctx, &username, &spool.name,
+                    &buffer_wrapper.buffer, &spool_array)) == 0)
     {
         output_spools(&spool_array);
     } else {
@@ -281,23 +281,23 @@ static int list_spool(int argc, char *argv[])
     }
     result = 0;
 
-    sf_free_recv_buffer(&buffer);
+    sf_free_recv_buffer(&buffer_wrapper.buffer);
     fcfs_auth_spool_free_array(&spool_array);
     return result;
 }
 
 static int list_gpool(int argc, char *argv[])
 {
-    SFProtoRecvBuffer buffer;
+    SFProtoRBufferFixedWrapper buffer_wrapper;
     FCFSAuthGrantedPoolArray gpool_array;
     int result;
 
-    sf_init_recv_buffer(&buffer);
+    sf_init_recv_buffer_by_wrapper(&buffer_wrapper);
     fcfs_auth_granted_init_array(&gpool_array);
 
     if ((result=fcfs_auth_client_gpool_list(&g_fcfs_auth_client_vars.
-                    client_ctx, &username, &spool.name, &buffer,
-                    &gpool_array)) == 0)
+                    client_ctx, &username, &spool.name,
+                    &buffer_wrapper.buffer, &gpool_array)) == 0)
     {
         output_gpools(&gpool_array);
     } else {
@@ -305,7 +305,7 @@ static int list_gpool(int argc, char *argv[])
     }
     result = 0;
 
-    sf_free_recv_buffer(&buffer);
+    sf_free_recv_buffer(&buffer_wrapper.buffer);
     fcfs_auth_granted_free_array(&gpool_array);
     return result;
 }

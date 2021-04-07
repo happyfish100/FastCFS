@@ -160,21 +160,22 @@ static void output_users(FCFSAuthUserArray *array)
 
 static int list_user(int argc, char *argv[])
 {
-    SFProtoRecvBuffer buffer;
+    SFProtoRBufferFixedWrapper buffer_wrapper;
     FCFSAuthUserArray user_array;
     int result;
 
-    sf_init_recv_buffer(&buffer);
+    sf_init_recv_buffer_by_wrapper(&buffer_wrapper);
     fcfs_auth_user_init_array(&user_array);
     if ((result=fcfs_auth_client_user_list(&g_fcfs_auth_client_vars.
-                    client_ctx, &user.name, &buffer, &user_array)) == 0)
+                    client_ctx, &user.name, &buffer_wrapper.buffer,
+                    &user_array)) == 0)
     {
         output_users(&user_array);
     } else {
         fprintf(stderr, "list user fail\n");
     }
 
-    sf_free_recv_buffer(&buffer);
+    sf_free_recv_buffer(&buffer_wrapper.buffer);
     fcfs_auth_user_free_array(&user_array);
     return result;
 }

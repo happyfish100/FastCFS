@@ -233,7 +233,7 @@ static inline int fcfs_api_modify_dentry_stat_ex(FCFSAPIContext *ctx,
         const int64_t inode, const struct stat *attr, const int64_t flags,
         FDIRDEntryInfo *dentry)
 {
-    FDIRDEntryStatus stat;
+    FDIRDEntryStat stat;
 
     if (ctx->async_report.enabled) {
         inode_htable_check_conflict_and_wait(inode);

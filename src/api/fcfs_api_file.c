@@ -1270,7 +1270,7 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
 {
     int result;
     FSClusterSpaceStat sstat;
-    FDIRInodeStat istat;
+    FDIRClientNamespaceStat nstat;
 
     if ((result=fs_api_cluster_space_stat(ctx->
                     contexts.fsapi, &sstat)) != 0)
@@ -1279,7 +1279,7 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
     }
 
     if ((result=fdir_client_namespace_stat(ctx->contexts.
-                    fdir, &ctx->ns, &istat)) != 0)
+                    fdir, &ctx->ns, &nstat)) != 0)
     {
         return result;
     }
@@ -1293,9 +1293,9 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
     }
     stbuf->f_bavail = sstat.avail / stbuf->f_frsize;
 
-    stbuf->f_files = istat.total;
-    stbuf->f_ffree = istat.total - istat.used;
-    stbuf->f_favail = istat.avail;
+    stbuf->f_files = nstat.inode.total;
+    stbuf->f_ffree = nstat.inode.total - nstat.inode.used;
+    stbuf->f_favail = nstat.inode.avail;
 
     stbuf->f_namemax = NAME_MAX;
     stbuf->f_fsid = 0;
