@@ -40,7 +40,7 @@
 #include "sf/sf_util.h"
 #include "common/auth_proto.h"
 #include "db/auth_db.h"
-#include "server_types.h"
+#include "db/pool_usage_updater.h"
 #include "server_global.h"
 #include "server_func.h"
 #include "common_handler.h"
@@ -142,6 +142,9 @@ int main(int argc, char *argv[])
         if ((result=adb_load_data((AuthServerContext *)
                         sf_get_random_thread_data()->arg)) != 0)
         {
+            break;
+        }
+        if ((result=pool_usage_updater_init()) != 0) {
             break;
         }
 

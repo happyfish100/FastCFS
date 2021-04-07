@@ -185,9 +185,7 @@ static int service_deal_user_login(struct fast_task_info *task)
     }
 
     if (poolname.len > 0) {
-        if ((fields->dbpool=adb_spool_global_get(SERVER_CTX,
-                        &poolname)) == NULL)
-        {
+        if ((fields->dbpool=adb_spool_global_get(&poolname)) == NULL) {
             RESPONSE.error.length = sprintf(RESPONSE.error.message,
                     "pool %.*s not exist", poolname.len, poolname.str);
             return ENOENT;

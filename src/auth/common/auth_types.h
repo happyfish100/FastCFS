@@ -77,7 +77,7 @@ typedef struct fcfs_auth_storage_pool_info {
     int64_t id;
     string_t name;
     int64_t quota; //bytes
-    int64_t used;  //bytes, TODO
+    int64_t used;  //bytes
     int status;
 } FCFSAuthStoragePoolInfo;
 

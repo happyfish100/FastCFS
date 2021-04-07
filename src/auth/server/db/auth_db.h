@@ -68,13 +68,12 @@ int64_t adb_spool_get_auto_id(AuthServerContext *server_ctx);
 int adb_spool_inc_auto_id(AuthServerContext *server_ctx);
 int adb_spool_next_auto_id(AuthServerContext *server_ctx, int64_t *next_id);
 
-const DBStoragePoolInfo *adb_spool_global_get(AuthServerContext
-        *server_ctx, const string_t *poolname);
+DBStoragePoolInfo *adb_spool_global_get(const string_t *poolname);
 
 static inline int adb_spool_access(AuthServerContext
         *server_ctx, const string_t *poolname)
 {
-    return adb_spool_global_get(server_ctx, poolname) != NULL ? 0 : ENOENT;
+    return adb_spool_global_get(poolname) != NULL ? 0 : ENOENT;
 }
 
 int adb_spool_create(AuthServerContext *server_ctx, const string_t
@@ -92,6 +91,9 @@ int adb_spool_set_quota(AuthServerContext *server_ctx,
 
 int adb_spool_list(AuthServerContext *server_ctx, const string_t *username,
         FCFSAuthStoragePoolArray *array);
+
+int adb_spool_set_used_bytes(const string_t *poolname,
+        const int64_t used_bytes);
 
 /* granted pool */
 int adb_granted_create(AuthServerContext *server_ctx, const string_t *username,

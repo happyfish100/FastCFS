@@ -39,6 +39,8 @@ typedef struct server_global_vars {
     } pool_generate;
 
     char *fdir_client_cfg_filename;
+    int pool_usage_refresh_interval;
+
     SFSlowLogContext slow_log;
 } AuthServerGlobalVars;
 
@@ -51,6 +53,9 @@ typedef struct server_global_vars {
 #define POOL_GENERATE           g_server_global_vars.pool_generate
 #define AUTO_ID_INITIAL         POOL_GENERATE.auto_id_initial
 #define POOL_NAME_TEMPLATE      POOL_GENERATE.pool_name_template
+
+#define POOL_USAGE_REFRESH_INTERVAL g_server_global_vars. \
+    pool_usage_refresh_interval
 
 #define SLOW_LOG                g_server_global_vars.slow_log
 #define SLOW_LOG_CFG            SLOW_LOG.cfg

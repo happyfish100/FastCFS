@@ -676,6 +676,19 @@ int adb_spool_set_quota(AuthServerContext *server_ctx,
     return 0;
 }
 
+int adb_spool_set_used_bytes(const string_t *poolname,
+        const int64_t used_bytes)
+{
+    DBStoragePoolInfo *dbpool;
+
+    if ((dbpool=adb_spool_global_get(poolname)) == NULL) {
+        return ENOENT;
+    }
+
+    dbpool->pool.used = used_bytes;
+    return 0;
+}
+
 int adb_spool_list(AuthServerContext *server_ctx, const string_t *username,
         FCFSAuthStoragePoolArray *array)
 {
@@ -1144,8 +1157,7 @@ int adb_spool_next_auto_id(AuthServerContext *server_ctx, int64_t *auto_id)
     return dao_spool_set_auto_id(server_ctx->dao_ctx, *auto_id);
 }
 
-const DBStoragePoolInfo *adb_spool_global_get(AuthServerContext
-        *server_ctx, const string_t *poolname)
+DBStoragePoolInfo *adb_spool_global_get(const string_t *poolname)
 {
     DBStoragePoolInfo *dbpool;
 

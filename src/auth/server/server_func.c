@@ -29,17 +29,18 @@
 #include "server_global.h"
 #include "server_func.h"
 
+#define SECTION_NAME_FASTDIR  "FastDIR"
+
 static int server_load_fdir_client_config(IniContext *ini_context,
         const char *config_filename)
 {
-#define FASTDIR_SECTION_NAME  "FastDIR"
 #define ITEM_NAME_FDIR_CLIENT_CFG_FILENAME  "client_config_filename"
 
     char full_filename[PATH_MAX];
     char *client_cfg_filename;
     int result;
 
-    if ((client_cfg_filename=iniGetRequiredStrValue(FASTDIR_SECTION_NAME,
+    if ((client_cfg_filename=iniGetRequiredStrValue(SECTION_NAME_FASTDIR,
                     ITEM_NAME_FDIR_CLIENT_CFG_FILENAME, ini_context)) == NULL)
     {
         return ENOENT;
@@ -198,12 +199,14 @@ static void server_log_configs()
             "admin_generate {mode: %s, username: %s, "
             "secret_key_filename: %s}, pool_generate: "
             "{auto_id_initial: %"PRId64", pool_name_template: %s}, "
-            "FastDIR client_config_filename: %s",
+            "FastDIR {client_config_filename: %s, "
+            "pool_usage_refresh_interval: %d}",
             (ADMIN_GENERATE_MODE == AUTH_ADMIN_GENERATE_MODE_FIRST ?
              "first" : "always"), ADMIN_GENERATE_USERNAME.str,
             ADMIN_GENERATE_KEY_FILENAME.str, AUTO_ID_INITIAL,
             POOL_NAME_TEMPLATE.str,
-            g_server_global_vars.fdir_client_cfg_filename);
+            g_server_global_vars.fdir_client_cfg_filename,
+            POOL_USAGE_REFRESH_INTERVAL);
 
     logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s, "
             "session: {%s}",
@@ -261,6 +264,12 @@ int server_load_config(const char *filename)
                     &ini_context, filename)) != 0)
     {
         return result;
+    }
+
+    POOL_USAGE_REFRESH_INTERVAL = iniGetIntValue(SECTION_NAME_FASTDIR,
+            "pool_usage_refresh_interval", &ini_context, 3);
+    if (POOL_USAGE_REFRESH_INTERVAL <= 0) {
+        POOL_USAGE_REFRESH_INTERVAL = 1;
     }
 
     if ((result=sf_load_slow_log_config(filename, &ini_context,
