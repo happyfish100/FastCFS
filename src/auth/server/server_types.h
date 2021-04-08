@@ -18,23 +18,27 @@
 #define _SERVER_TYPES_H
 
 #include "fastcommon/uniq_skiplist.h"
+#include "fastcommon/fc_list.h"
+#include "fastcommon/fc_queue.h"
+#include "fastcommon/fast_mblock.h"
 #include "sf/sf_types.h"
 #include "common/auth_types.h"
 #include "common/server_session.h"
 
 #define TASK_STATUS_CONTINUE           12345
-#define TASK_ARG          ((AuthServerTaskArg *)task->arg)
-#define TASK_CTX          TASK_ARG->context
-#define SESSION_ENTRY     TASK_CTX.session
-#define SESSION_FIELDS    ((ServerSessionFields *)TASK_CTX.session->fields)
-#define SESSION_DBUSER    SESSION_FIELDS->dbuser
-#define SESSION_DBPOOL    SESSION_FIELDS->dbpool
-#define SESSION_USER      SESSION_FIELDS->dbuser->user
-#define REQUEST           TASK_CTX.common.request
-#define RESPONSE          TASK_CTX.common.response
-#define RESPONSE_STATUS   RESPONSE.header.status
-#define REQUEST_STATUS    REQUEST.header.status
-#define SERVER_TASK_TYPE  TASK_CTX.task_type
+#define TASK_ARG           ((AuthServerTaskArg *)task->arg)
+#define TASK_CTX           TASK_ARG->context
+#define SESSION_ENTRY      TASK_CTX.session
+#define SESSION_FIELDS     ((ServerSessionFields *)TASK_CTX.session->fields)
+#define SESSION_DBUSER     SESSION_FIELDS->dbuser
+#define SESSION_DBPOOL     SESSION_FIELDS->dbpool
+#define SESSION_USER       SESSION_FIELDS->dbuser->user
+#define SESSION_SUBSCRIBER TASK_CTX.subscriber
+#define REQUEST            TASK_CTX.common.request
+#define RESPONSE           TASK_CTX.common.response
+#define RESPONSE_STATUS    RESPONSE.header.status
+#define REQUEST_STATUS     REQUEST.header.status
+#define SERVER_TASK_TYPE   TASK_CTX.task_type
 
 #define AUTH_SERVER_TASK_TYPE_SESSION     1
 #define AUTH_SERVER_TASK_TYPE_SUBSCRIBE   2
@@ -49,13 +53,22 @@ typedef struct server_session_fields {
     const struct db_user_info *dbuser;
     const struct db_storage_pool_info *dbpool;
     FCFSAuthSPoolPriviledges pool_privs;
+    struct fc_list_head dlink;  //for publish list
 } ServerSessionFields;
+
+typedef struct server_session_subscriber {
+    struct fc_queue queue;      //element: ServerSessionSubscribeEntry
+    struct fc_list_head dlink;  //for subscriber's chain
+} ServerSessionSubscriber;
 
 typedef struct server_task_arg {
     struct {
         SFCommonTaskContext common;
         int task_type;
-        ServerSessionEntry *session;
+        union {
+            ServerSessionEntry *session;
+            ServerSessionSubscriber *subscriber;
+        };
     } context;
 } AuthServerTaskArg;
 

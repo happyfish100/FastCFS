@@ -43,6 +43,7 @@
 #include "db/auth_db.h"
 #include "server_global.h"
 #include "server_func.h"
+#include "session_subscribe.h"
 #include "common_handler.h"
 #include "service_handler.h"
 
@@ -66,9 +67,14 @@ void service_task_finish_cleanup(struct fast_task_info *task)
                 server_session_delete(SESSION_ENTRY->session_id);
                 SESSION_ENTRY = NULL;
             }
+            SERVER_TASK_TYPE = SF_SERVER_TASK_TYPE_NONE;
             break;
         case AUTH_SERVER_TASK_TYPE_SUBSCRIBE:
-            //TODO
+            if (SESSION_SUBSCRIBER != NULL) {
+                session_subscribe_unregister(SESSION_SUBSCRIBER);
+                SESSION_SUBSCRIBER = NULL;
+            }
+            SERVER_TASK_TYPE = SF_SERVER_TASK_TYPE_NONE;
             break;
         default:
             break;
@@ -119,7 +125,8 @@ static int check_user_priv(struct fast_task_info *task)
     }
 
     if ((the_priv != 0) && ((SESSION_USER.priv & the_priv) == 0)) {
-        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
                 "permission denied");
         return EPERM;
     }
@@ -257,6 +264,19 @@ static int service_deal_session_subscribe(struct fast_task_info *task)
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "user login fail, username or password not correct");
         return EPERM;
+    }
+
+    if ((dbuser->user.priv & FCFS_AUTH_USER_PRIV_SUBSCRIBE_SESSION) == 0) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "permission denied");
+        return EPERM;
+    }
+
+    if ((SESSION_SUBSCRIBER=session_subscribe_register()) == NULL) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "session subscribe register fail");
+        return ENOMEM;
     }
 
     SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_SUBSCRIBE;
@@ -939,6 +959,7 @@ void *service_alloc_thread_extra_data(const int thread_index)
         sf_terminate_myself();
         return NULL;
     }
+
     server_context->session_holder = (ServerSessionEntry *)(((char *)
                 server_context->dao_ctx) + dao_context_size);
     server_context->session_holder->fields =

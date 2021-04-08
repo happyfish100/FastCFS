@@ -27,6 +27,7 @@
 #include "common/auth_func.h"
 #include "common/server_session.h"
 #include "server_global.h"
+#include "session_subscribe.h"
 #include "server_func.h"
 
 #define SECTION_NAME_FASTDIR  "FastDIR"
@@ -242,8 +243,8 @@ int server_load_config(const char *filename)
     }
 
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, filename, "session", &ini_context);
-    if ((result=server_session_init(&ini_ctx,
-                    sizeof(ServerSessionFields))) != 0)
+    if ((result=server_session_init_ex(&ini_ctx, sizeof(ServerSessionFields),
+                    &g_server_session_callbacks)) != 0)
     {
         return result;
     }

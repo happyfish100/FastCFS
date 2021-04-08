@@ -62,6 +62,7 @@ typedef struct {
     ServerSessionAllocatorArray allocator_array;
     ServerSessionLockArray lock_array;
     ServerSessionHashtable htable;
+    ServerSessionCallbacks callbacks;
 } ServerSessionContext;
 
 static ServerSessionContext session_ctx = {0, 0, {0, 0, NULL}};
@@ -230,7 +231,8 @@ static int init_hashtable(ServerSessionHashtable *htable)
     return 0;
 }
 
-int server_session_init(IniFullContext *ini_ctx, const int fields_size)
+int server_session_init_ex(IniFullContext *ini_ctx, const int fields_size,
+        ServerSessionCallbacks *callbacks)
 {
     int result;
 
@@ -239,8 +241,6 @@ int server_session_init(IniFullContext *ini_ctx, const int fields_size)
     }
 
     session_ctx.fields_size = fields_size;
-    logInfo("fields_size: %d", session_ctx.fields_size);
-
     if ((result=init_allocator_array(&session_ctx.allocator_array)) != 0) {
         return result;
     }
@@ -251,6 +251,13 @@ int server_session_init(IniFullContext *ini_ctx, const int fields_size)
 
     if ((result=init_hashtable(&session_ctx.htable)) != 0) {
         return result;
+    }
+
+    if (callbacks != NULL) {
+        session_ctx.callbacks =  *callbacks;
+    } else {
+        session_ctx.callbacks.add_func = NULL;
+        session_ctx.callbacks.del_func = NULL;
     }
 
     srand(time(NULL));
@@ -359,6 +366,9 @@ ServerSessionEntry *server_session_add(const ServerSessionEntry *entry)
         session_htable_insert(se, replace);
     }
 
+    if (session_ctx.callbacks.add_func != NULL) {
+        session_ctx.callbacks.add_func(&se->entry);
+    }
     return &se->entry;
 }
 
@@ -449,7 +459,6 @@ int server_session_fdir_priv_granted(const uint64_t session_id,
 
 int server_session_delete(const uint64_t session_id)
 {
-    int result;
     ServerSessionHashEntry *previous;
     ServerSessionHashEntry *found;
 
@@ -463,14 +472,17 @@ int server_session_delete(const uint64_t session_id)
         } else {
             previous->next = found->next;
         }
-        result = 0;
-    } else {
-        result = ENOENT;
     }
     PTHREAD_MUTEX_UNLOCK(lock);
 
     if (found != NULL) {
+        if (session_ctx.callbacks.del_func != NULL) {
+            session_ctx.callbacks.del_func(&found->entry);
+        }
+
         fast_mblock_free_object(found->allocator, found);
+        return 0;
+    } else {
+        return ENOENT;
     }
-    return result;
 }

@@ -44,11 +44,18 @@ typedef struct server_session_entry {
     void *fields;
 } ServerSessionEntry;
 
+typedef void (*server_session_callback)(ServerSessionEntry *session);
+typedef struct server_session_callbacks {
+    server_session_callback add_func;
+    server_session_callback del_func;
+} ServerSessionCallbacks;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int server_session_init(IniFullContext *ini_ctx, const int fields_size);
+int server_session_init_ex(IniFullContext *ini_ctx, const int fields_size,
+        ServerSessionCallbacks *callbacks);
 
 void server_session_get_cfg(ServerSessionConfig *cfg);
 
