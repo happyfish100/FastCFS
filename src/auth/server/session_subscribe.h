@@ -35,9 +35,13 @@ extern "C" {
     int session_subscribe_init();
     void session_subscribe_destroy();
 
-    ServerSessionSubscriber *session_subscribe_register();
+    ServerSessionSubscriber *session_subscribe_alloc();
+
+    void session_subscribe_register(ServerSessionSubscriber *subscriber);
 
     void session_subscribe_unregister(ServerSessionSubscriber *subscriber);
+
+    void session_subscribe_release(ServerSessionSubscriber *subscriber);
 
 #ifdef __cplusplus
 }

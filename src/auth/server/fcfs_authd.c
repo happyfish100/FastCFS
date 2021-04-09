@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
         //sched_print_all_entries();
 
         result = sf_service_init_ex(&g_sf_context,
-                service_alloc_thread_extra_data, NULL,
+                service_alloc_thread_extra_data, service_thread_loop,
                 NULL, sf_proto_set_body_length, service_deal_task,
                 service_task_finish_cleanup, NULL, 1000,
                 sizeof(FCFSAuthProtoHeader), sizeof(AuthServerTaskArg));

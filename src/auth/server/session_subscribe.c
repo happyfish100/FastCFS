@@ -19,25 +19,21 @@
 #include "fastcommon/shared_func.h"
 #include "fastcommon/sched_thread.h"
 #include "fastcommon/logger.h"
+#include "fastcommon/locked_list.h"
 #include "sf/sf_global.h"
 #include "db/auth_db.h"
 #include "server_global.h"
 #include "session_subscribe.h"
-
-typedef struct {
-    struct fc_list_head head;
-    pthread_mutex_t lock;
-} AuthServerDLinkChain;
 
 typedef struct server_session_subscribe_context {
     struct fast_mblock_man entry_allocator; //element: ServerSessionSubscribeEntry
     struct fast_mblock_man subs_allocator;  //element: ServerSessionSubscriber
 
     /* queue element: ServerSessionSubscriber */
-    AuthServerDLinkChain subscribers;
+    FCLockedList subscribers;
 
     /* queue element: ServerSessionFields */
-    AuthServerDLinkChain sessions;   //publish session only
+    FCLockedList sessions;   //publish session only
 } ServerSessionSubscribeContext;
 
 static ServerSessionSubscribeContext subscribe_ctx;
@@ -48,9 +44,7 @@ static void server_session_add_callback(ServerSessionEntry *session)
 
     fields = (ServerSessionFields *)(session->fields);
     if (fields->publish) {
-        PTHREAD_MUTEX_LOCK(&subscribe_ctx.sessions.lock);
-        fc_list_add_tail(&fields->dlink, &subscribe_ctx.sessions.head);
-        PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.sessions.lock);
+        locked_list_add_tail(&fields->dlink, &subscribe_ctx.sessions);
     }
 }
 
@@ -60,9 +54,7 @@ static void server_session_del_callback(ServerSessionEntry *session)
 
     fields = (ServerSessionFields *)(session->fields);
     if (fields->publish) {
-        PTHREAD_MUTEX_LOCK(&subscribe_ctx.sessions.lock);
-        fc_list_del_init(&fields->dlink);
-        PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.sessions.lock);
+        locked_list_del(&fields->dlink, &subscribe_ctx.sessions);
     }
 }
 
@@ -251,18 +243,6 @@ int subscriber_alloc_init_func(ServerSessionSubscriber *subscriber, void *args)
             (&((ServerSessionSubscribeEntry *)NULL)->next));
 }
 
-
-static inline int init_dlink_chain(AuthServerDLinkChain *chain)
-{
-    int result;
-    if ((result=init_pthread_lock(&chain->lock)) != 0) {
-        return result;
-    }
-
-    FC_INIT_LIST_HEAD(&chain->head);
-    return 0;
-}
-
 int session_subscribe_init()
 {
     int result;
@@ -282,11 +262,11 @@ int session_subscribe_init()
         return result;
     }
 
-    if ((result=init_dlink_chain(&subscribe_ctx.subscribers)) != 0) {
+    if ((result=locked_list_init(&subscribe_ctx.subscribers)) != 0) {
         return result;
     }
 
-    if ((result=init_dlink_chain(&subscribe_ctx.sessions)) != 0) {
+    if ((result=locked_list_init(&subscribe_ctx.sessions)) != 0) {
         return result;
     }
 
@@ -297,31 +277,28 @@ void session_subscribe_destroy()
 {
 }
 
-ServerSessionSubscriber *session_subscribe_register()
+ServerSessionSubscriber *session_subscribe_alloc()
 {
-    ServerSessionSubscriber *subscriber;
-
-    subscriber = (ServerSessionSubscriber *)fast_mblock_alloc_object(
+    return (ServerSessionSubscriber *)fast_mblock_alloc_object(
             &subscribe_ctx.subs_allocator);
-    if (subscriber != NULL) {
-        push_all_sessions_to_queue(subscriber);
+}
 
-        PTHREAD_MUTEX_LOCK(&subscribe_ctx.subscribers.lock);
-        fc_list_add_tail(&subscriber->dlink,
-                &subscribe_ctx.subscribers.head);
-        PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.subscribers.lock);
-    }
-    return subscriber;
+void session_subscribe_register(ServerSessionSubscriber *subscriber)
+{
+    push_all_sessions_to_queue(subscriber);
+    locked_list_add_tail(&subscriber->dlink,
+            &subscribe_ctx.subscribers);
 }
 
 void session_subscribe_unregister(ServerSessionSubscriber *subscriber)
 {
+    locked_list_del(&subscriber->dlink, &subscribe_ctx.subscribers);
+}
+
+void session_subscribe_release(ServerSessionSubscriber *subscriber)
+{
     ServerSessionSubscribeEntry *entry;
     ServerSessionSubscribeEntry *current;
-
-    PTHREAD_MUTEX_LOCK(&subscribe_ctx.subscribers.lock);
-    fc_list_del_init(&subscriber->dlink);
-    PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.subscribers.lock);
 
     entry = (ServerSessionSubscribeEntry *)fc_queue_try_pop_all(
             &subscriber->queue);

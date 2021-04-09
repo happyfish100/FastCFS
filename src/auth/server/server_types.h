@@ -18,9 +18,9 @@
 #define _SERVER_TYPES_H
 
 #include "fastcommon/uniq_skiplist.h"
-#include "fastcommon/fc_list.h"
 #include "fastcommon/fc_queue.h"
 #include "fastcommon/fast_mblock.h"
+#include "fastcommon/locked_list.h"
 #include "sf/sf_types.h"
 #include "common/auth_types.h"
 #include "common/server_session.h"
@@ -61,7 +61,12 @@ typedef struct server_session_fields {
 
 typedef struct server_session_subscriber {
     struct fc_queue queue;     //element: ServerSessionSubscribeEntry
-    struct fc_list_head dlink; //for subscriber's chain
+    struct fc_list_head dlink; //for global subscriber's chain
+    struct {
+        volatile int in_queue;
+        struct fast_task_info *task;
+        struct fc_list_head dlink; //for nio thread subscriber's chain
+    } nio;
 } ServerSessionSubscriber;
 
 typedef struct server_task_arg {
@@ -76,6 +81,7 @@ typedef struct server_task_arg {
 } AuthServerTaskArg;
 
 typedef struct auth_server_context {
+    FCLockedList subscribers;   //element: ServerSessionSubscriber
     void *dao_ctx;
     ServerSessionEntry *session_holder;
 } AuthServerContext;

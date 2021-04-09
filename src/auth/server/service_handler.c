@@ -59,6 +59,19 @@ int service_handler_destroy()
     return 0;
 }
 
+static void session_subscriber_cleanup(AuthServerContext *server_ctx,
+        ServerSessionSubscriber *subscriber)
+{
+    session_subscribe_unregister(subscriber);
+
+    if (__sync_bool_compare_and_swap(&subscriber->nio.in_queue, 1, 0)) {
+        locked_list_del(&subscriber->nio.dlink,
+                &server_ctx->subscribers);
+    }
+
+    session_subscribe_release(subscriber);
+}
+
 void service_task_finish_cleanup(struct fast_task_info *task)
 {
     switch (SERVER_TASK_TYPE) {
@@ -71,7 +84,7 @@ void service_task_finish_cleanup(struct fast_task_info *task)
             break;
         case AUTH_SERVER_TASK_TYPE_SUBSCRIBE:
             if (SESSION_SUBSCRIBER != NULL) {
-                session_subscribe_unregister(SESSION_SUBSCRIBER);
+                session_subscriber_cleanup(SERVER_CTX, SESSION_SUBSCRIBER);
                 SESSION_SUBSCRIBER = NULL;
             }
             SERVER_TASK_TYPE = SF_SERVER_TASK_TYPE_NONE;
@@ -225,6 +238,19 @@ static int service_deal_user_login(struct fast_task_info *task)
     return 0;
 }
 
+void push_subscriber_to_service_thread_queue(
+        ServerSessionSubscriber *subscriber)
+{
+    AuthServerContext *server_ctx;
+
+    if (__sync_bool_compare_and_swap(&subscriber->nio.in_queue, 0, 1)) {
+        server_ctx = (AuthServerContext *)subscriber->
+            nio.task->thread_data->arg;
+        locked_list_add_tail(&subscriber->nio.dlink,
+                &server_ctx->subscribers);
+    }
+}
+
 static int service_deal_session_subscribe(struct fast_task_info *task)
 {
     FCFSAuthProtoSessionSubscribeReq *req;
@@ -273,10 +299,17 @@ static int service_deal_session_subscribe(struct fast_task_info *task)
         return EPERM;
     }
 
-    if ((SESSION_SUBSCRIBER=session_subscribe_register()) == NULL) {
+    if ((SESSION_SUBSCRIBER=session_subscribe_alloc()) == NULL) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "session subscribe register fail");
         return ENOMEM;
+    }
+
+
+    SESSION_SUBSCRIBER->nio.task = task;
+    session_subscribe_register(SESSION_SUBSCRIBER);
+    if (!fc_queue_empty(&SESSION_SUBSCRIBER->queue)) {
+        push_subscriber_to_service_thread_queue(SESSION_SUBSCRIBER);
     }
 
     SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_SUBSCRIBE;
@@ -939,6 +972,12 @@ int service_deal_task(struct fast_task_info *task, const int stage)
     }
 }
 
+int service_thread_loop(struct nio_thread_data *thread_data)
+{
+    //TODO
+    return 0;
+}
+
 void *service_alloc_thread_extra_data(const int thread_index)
 {
     int alloc_size;
@@ -954,6 +993,10 @@ void *service_alloc_thread_extra_data(const int thread_index)
     }
 
     memset(server_context, 0, alloc_size);
+    if (locked_list_init(&server_context->subscribers) != 0) {
+        return NULL;
+    }
+
     server_context->dao_ctx = (void *)(server_context + 1);
     if (dao_init_context(server_context->dao_ctx) != 0) {
         sf_terminate_myself();
