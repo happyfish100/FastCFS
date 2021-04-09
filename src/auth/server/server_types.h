@@ -48,17 +48,20 @@
 
 struct db_user_info;
 struct db_storage_pool_info;
+//struct db_granted_pool_info;
+
 typedef struct server_session_fields {
     bool publish;
     const struct db_user_info *dbuser;
     const struct db_storage_pool_info *dbpool;
     FCFSAuthSPoolPriviledges pool_privs;
-    struct fc_list_head dlink;  //for publish list
+
+    struct fc_list_head dlink; //for publish list
 } ServerSessionFields;
 
 typedef struct server_session_subscriber {
-    struct fc_queue queue;      //element: ServerSessionSubscribeEntry
-    struct fc_list_head dlink;  //for subscriber's chain
+    struct fc_queue queue;     //element: ServerSessionSubscribeEntry
+    struct fc_list_head dlink; //for subscriber's chain
 } ServerSessionSubscriber;
 
 typedef struct server_task_arg {

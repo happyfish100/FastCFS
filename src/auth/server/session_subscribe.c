@@ -70,7 +70,13 @@ ServerSessionCallbacks g_server_session_callbacks = {
     server_session_add_callback, server_session_del_callback
 };
 
-static void set_session_entry(const ServerSessionEntry *session,
+typedef struct {
+    int64_t user_id;
+    int64_t pool_id;
+    const FCFSAuthSPoolPriviledges *pool_privs;
+} ServerSessionMatchParam;
+
+static void set_session_subscribe_entry(const ServerSessionEntry *session,
         ServerSessionSubscribeEntry *subs_entry)
 {
     ServerSessionFields *fields;
@@ -82,11 +88,118 @@ static void set_session_entry(const ServerSessionEntry *session,
     subs_entry->fields.user.priv = fields->dbuser->user.priv;
 
     subs_entry->fields.pool.id = fields->dbpool->pool.id;
-    subs_entry->fields.pool.available = (fields->dbpool->pool.quota ==
-            FCFS_AUTH_UNLIMITED_QUOTA_VAL) || (fields->dbpool->pool.used <
-                fields->dbpool->pool.quota);
+    subs_entry->fields.pool.available = FCFS_AUTH_POOL_AVAILABLE(
+            fields->dbpool->pool);
     subs_entry->fields.pool.privs = fields->pool_privs;
 }
+
+static int publish_session_to_all_subscribers(
+        const ServerSessionSubscribeEntry *src_entry)
+{
+    int result;
+    bool notify;
+    ServerSessionSubscriber *subscriber;
+    ServerSessionSubscribeEntry *subs_entry;
+
+    result = 0;
+    PTHREAD_MUTEX_LOCK(&subscribe_ctx.subscribers.lock);
+    fc_list_for_each_entry(subscriber, &subscribe_ctx.
+            subscribers.head, dlink)
+    {
+        subs_entry = (ServerSessionSubscribeEntry *)
+            fast_mblock_alloc_object(&subscribe_ctx.entry_allocator);
+        if (subs_entry == NULL) {
+            result = ENOMEM;
+            break;
+        }
+
+        *subs_entry = *src_entry;
+        fc_queue_push_ex(&subscriber->queue, subs_entry, &notify);
+        if (notify) {
+            //TODO
+        }
+    }
+    PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.subscribers.lock);
+
+    return result;
+}
+
+static void publish_matched_server_sessions(
+        const ServerSessionMatchParam *mparam)
+{
+    ServerSessionFields *fields;
+    ServerSessionEntry *session;
+    ServerSessionSubscribeEntry subs_entry;
+
+    if (fc_list_empty(&subscribe_ctx.subscribers.head)) {
+        return;
+    }
+
+    PTHREAD_MUTEX_LOCK(&subscribe_ctx.sessions.lock);
+    fc_list_for_each_entry(fields, &subscribe_ctx.sessions.head, dlink) {
+        session = ((ServerSessionEntry *)fields) - 1;
+        if (mparam->user_id != 0) {
+            if (fields->dbuser->user.id != mparam->user_id) {
+                continue;
+            }
+        }
+
+        if (mparam->pool_id != 0) {
+            if (!(fields->dbpool != NULL && fields->dbpool->
+                        pool.id == mparam->pool_id))
+            {
+                continue;
+            }
+        }
+
+        if (mparam->pool_privs != NULL) {
+            fields->pool_privs = *mparam->pool_privs;
+        }
+
+        set_session_subscribe_entry(session, &subs_entry);
+        publish_session_to_all_subscribers(&subs_entry);
+    }
+    PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.sessions.lock);
+}
+
+static void user_priv_change_callback(const int64_t user_id,
+        const int64_t new_priv)
+{
+    ServerSessionMatchParam mparam;
+
+    mparam.user_id = user_id;
+    mparam.pool_id = 0;
+    mparam.pool_privs = NULL;
+    publish_matched_server_sessions(&mparam);
+}
+
+static void pool_priv_change_callback(const int64_t user_id,
+    const int64_t pool_id, const FCFSAuthSPoolPriviledges *pool_privs)
+{
+    ServerSessionMatchParam mparam;
+
+    mparam.user_id = user_id;
+    mparam.pool_id = pool_id;
+    mparam.pool_privs = pool_privs;
+    publish_matched_server_sessions(&mparam);
+}
+
+static void pool_quota_avail_change_callback(
+        const int64_t pool_id, const bool available)
+{
+    ServerSessionMatchParam mparam;
+
+    mparam.user_id = 0;
+    mparam.pool_id = pool_id;
+    mparam.pool_privs = NULL;
+    publish_matched_server_sessions(&mparam);
+}
+
+DBPrivChangeCallbacks g_db_priv_change_callbacks = {
+    user_priv_change_callback,
+    pool_priv_change_callback,
+    pool_quota_avail_change_callback
+};
 
 static int push_all_sessions_to_queue(ServerSessionSubscriber *subscriber)
 {
@@ -109,7 +222,7 @@ static int push_all_sessions_to_queue(ServerSessionSubscriber *subscriber)
         }
 
         session = ((ServerSessionEntry *)fields) - 1;
-        set_session_entry(session, subs_entry);
+        set_session_subscribe_entry(session, subs_entry);
 
         if (head == NULL) {
             head = subs_entry;

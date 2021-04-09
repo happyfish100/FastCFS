@@ -68,6 +68,10 @@
 #define FCFS_AUTH_PUSH_OPERATION_UPDATE_SESSION   'U'
 #define FCFS_AUTH_PUSH_OPERATION_REMOVE_SESSION   'R'
 
+#define FCFS_AUTH_POOL_AVAILABLE(pool)  \
+    ((pool.quota == FCFS_AUTH_UNLIMITED_QUOTA_VAL) || \
+     (pool.used < pool.quota))
+
 typedef struct fcfs_auth_spool_priviledges {
     int fdir;
     int fstore;

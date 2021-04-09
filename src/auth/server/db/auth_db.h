@@ -37,9 +37,25 @@ typedef struct db_granted_pool_info {
     DBStoragePoolInfo *sp;
 } DBGrantedPoolInfo;
 
+typedef void (*adb_user_priv_change_callback)(
+        const int64_t user_id, const int64_t new_priv);
+typedef void (*adb_pool_priv_change_callback)(const int64_t user_id,
+        const int64_t pool_id, const FCFSAuthSPoolPriviledges *privs);
+typedef void (*adb_pool_quota_avail_change_callback)(
+        const int64_t pool_id, const bool available);
+
+typedef struct db_priv_change_callbacks {
+    adb_user_priv_change_callback user_priv_changed;
+    adb_pool_priv_change_callback pool_priv_changed;
+    adb_pool_quota_avail_change_callback pool_quota_avail_changed;
+} DBPrivChangeCallbacks;
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern DBPrivChangeCallbacks g_db_priv_change_callbacks;
 
 int auth_db_init();
 
