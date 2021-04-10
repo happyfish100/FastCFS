@@ -89,9 +89,9 @@ typedef struct fcfs_auth_proto_session_subscribe_req {
     FCFSAuthProtoUserPasswdPair up_pair;
 } FCFSAuthProtoSessionSubscribeReq;
 
-typedef struct fcfs_auth_proto_session_push_resp_header {
+typedef struct fcfs_auth_proto_session_push_resp_body_header {
     char count[4];
-} FCFSAuthProtoSessionPushRespHeader;
+} FCFSAuthProtoSessionPushRespBodyHeader;
 
 typedef struct fcfs_auth_proto_session_push_entry {
     struct {

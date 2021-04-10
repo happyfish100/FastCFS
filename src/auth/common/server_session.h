@@ -20,6 +20,9 @@
 #include "fastcommon/ini_file_reader.h"
 #include "auth_types.h"
 
+#define FCFS_AUTH_SESSION_OP_TYPE_CREATE   'C'
+#define FCFS_AUTH_SESSION_OP_TYPE_REMOVE   'R'
+
 typedef struct server_session_config {
     int shared_allocator_count;
     int shared_lock_count;

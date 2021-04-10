@@ -21,8 +21,10 @@
 #include "fastcommon/logger.h"
 #include "fastcommon/locked_list.h"
 #include "sf/sf_global.h"
+#include "sf/sf_service.h"
 #include "db/auth_db.h"
 #include "server_global.h"
+#include "service_handler.h"
 #include "session_subscribe.h"
 
 typedef struct server_session_subscribe_context {
@@ -38,41 +40,12 @@ typedef struct server_session_subscribe_context {
 
 static ServerSessionSubscribeContext subscribe_ctx;
 
-static void server_session_add_callback(ServerSessionEntry *session)
-{
-    ServerSessionFields *fields;
-
-    fields = (ServerSessionFields *)(session->fields);
-    if (fields->publish) {
-        locked_list_add_tail(&fields->dlink, &subscribe_ctx.sessions);
-    }
-}
-
-static void server_session_del_callback(ServerSessionEntry *session)
-{
-    ServerSessionFields *fields;
-
-    fields = (ServerSessionFields *)(session->fields);
-    if (fields->publish) {
-        locked_list_del(&fields->dlink, &subscribe_ctx.sessions);
-    }
-}
-
-ServerSessionCallbacks g_server_session_callbacks = {
-    server_session_add_callback, server_session_del_callback
-};
-
-typedef struct {
-    int64_t user_id;
-    int64_t pool_id;
-    const FCFSAuthSPoolPriviledges *pool_privs;
-} ServerSessionMatchParam;
-
 static void set_session_subscribe_entry(const ServerSessionEntry *session,
         ServerSessionSubscribeEntry *subs_entry)
 {
     ServerSessionFields *fields;
 
+    subs_entry->operation = FCFS_AUTH_SESSION_OP_TYPE_CREATE;
     subs_entry->session_id = session->session_id;
 
     fields = (ServerSessionFields *)(session->fields);
@@ -85,7 +58,7 @@ static void set_session_subscribe_entry(const ServerSessionEntry *session,
     subs_entry->fields.pool.privs = fields->pool_privs;
 }
 
-static int publish_session_to_all_subscribers(
+static int publish_entry_to_all_subscribers(
         const ServerSessionSubscribeEntry *src_entry)
 {
     int result;
@@ -108,7 +81,7 @@ static int publish_session_to_all_subscribers(
         *subs_entry = *src_entry;
         fc_queue_push_ex(&subscriber->queue, subs_entry, &notify);
         if (notify) {
-            //TODO
+            service_subscriber_queue_push(subscriber);
         }
     }
     PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.subscribers.lock);
@@ -116,17 +89,64 @@ static int publish_session_to_all_subscribers(
     return result;
 }
 
+static inline int publish_session_to_all_subscribers(
+        const ServerSessionEntry *session)
+{
+    ServerSessionSubscribeEntry subs_entry;
+
+    set_session_subscribe_entry(session, &subs_entry);
+    return publish_entry_to_all_subscribers(&subs_entry);
+}
+
+static void server_session_add_callback(ServerSessionEntry *session)
+{
+    ServerSessionFields *fields;
+
+    fields = (ServerSessionFields *)(session->fields);
+    if (fields->publish) {
+        locked_list_add_tail(&fields->dlink, &subscribe_ctx.sessions);
+        publish_session_to_all_subscribers(session);
+    }
+}
+
+static void server_session_del_callback(ServerSessionEntry *session)
+{
+    ServerSessionFields *fields;
+    ServerSessionSubscribeEntry subs_entry;
+
+    fields = (ServerSessionFields *)(session->fields);
+    if (fields->publish) {
+        locked_list_del(&fields->dlink, &subscribe_ctx.sessions);
+
+        memset(&subs_entry, 0, sizeof(subs_entry));
+        subs_entry.operation = FCFS_AUTH_SESSION_OP_TYPE_REMOVE;
+        subs_entry.session_id = session->session_id;
+        publish_entry_to_all_subscribers(&subs_entry);
+    }
+}
+
+ServerSessionCallbacks g_server_session_callbacks = {
+    server_session_add_callback, server_session_del_callback
+};
+
+typedef struct {
+    int64_t user_id;
+    int64_t pool_id;
+    const FCFSAuthSPoolPriviledges *pool_privs;
+} ServerSessionMatchParam;
+
 static void publish_matched_server_sessions(
         const ServerSessionMatchParam *mparam)
 {
     ServerSessionFields *fields;
     ServerSessionEntry *session;
-    ServerSessionSubscribeEntry subs_entry;
+    int matched_count;
 
     if (fc_list_empty(&subscribe_ctx.subscribers.head)) {
         return;
     }
 
+    matched_count = 0;
     PTHREAD_MUTEX_LOCK(&subscribe_ctx.sessions.lock);
     fc_list_for_each_entry(fields, &subscribe_ctx.sessions.head, dlink) {
         session = ((ServerSessionEntry *)fields) - 1;
@@ -148,10 +168,14 @@ static void publish_matched_server_sessions(
             fields->pool_privs = *mparam->pool_privs;
         }
 
-        set_session_subscribe_entry(session, &subs_entry);
-        publish_session_to_all_subscribers(&subs_entry);
+        ++matched_count;
+        publish_session_to_all_subscribers(session);
     }
     PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.sessions.lock);
+
+    if (matched_count > 0) {
+        sf_notify_all_threads();
+    }
 }
 
 static void user_priv_change_callback(const int64_t user_id,
@@ -295,19 +319,25 @@ void session_subscribe_unregister(ServerSessionSubscriber *subscriber)
     locked_list_del(&subscriber->dlink, &subscribe_ctx.subscribers);
 }
 
-void session_subscribe_release(ServerSessionSubscriber *subscriber)
+void session_subscribe_free_entries(ServerSessionSubscribeEntry *entry)
 {
-    ServerSessionSubscribeEntry *entry;
     ServerSessionSubscribeEntry *current;
-
-    entry = (ServerSessionSubscribeEntry *)fc_queue_try_pop_all(
-            &subscriber->queue);
     while (entry != NULL) {
         current = entry;
         entry = entry->next;
 
         fast_mblock_free_object(&subscribe_ctx.entry_allocator, current);
     }
+}
 
+void session_subscribe_release(ServerSessionSubscriber *subscriber)
+{
+    ServerSessionSubscribeEntry *entry;
+
+    entry = (ServerSessionSubscribeEntry *)fc_queue_try_pop_all(
+            &subscriber->queue);
+    if (entry != NULL) {
+        session_subscribe_free_entries(entry);
+    }
     fast_mblock_free_object(&subscribe_ctx.subs_allocator, subscriber);
 }

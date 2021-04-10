@@ -63,7 +63,7 @@ typedef struct server_session_subscriber {
     struct fc_queue queue;     //element: ServerSessionSubscribeEntry
     struct fc_list_head dlink; //for global subscriber's chain
     struct {
-        volatile int in_queue;
+        volatile int in_queue;   //if in the subscriber queue of NIO thread
         struct fast_task_info *task;
         struct fc_list_head dlink; //for nio thread subscriber's chain
     } nio;

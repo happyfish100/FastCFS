@@ -21,6 +21,7 @@
 #include "server_types.h"
 
 typedef struct auth_session_subscribe_entry {
+    char operation;
     uint64_t session_id;
     SessionSyncedFields fields;
     struct auth_session_subscribe_entry *next;  //for fc_queue
@@ -34,6 +35,8 @@ extern "C" {
 
     int session_subscribe_init();
     void session_subscribe_destroy();
+
+    void session_subscribe_free_entries(ServerSessionSubscribeEntry *entry);
 
     ServerSessionSubscriber *session_subscribe_alloc();
 

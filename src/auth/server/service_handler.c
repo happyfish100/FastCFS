@@ -238,8 +238,7 @@ static int service_deal_user_login(struct fast_task_info *task)
     return 0;
 }
 
-void push_subscriber_to_service_thread_queue(
-        ServerSessionSubscriber *subscriber)
+void service_subscriber_queue_push(ServerSessionSubscriber *subscriber)
 {
     AuthServerContext *server_ctx;
 
@@ -249,6 +248,23 @@ void push_subscriber_to_service_thread_queue(
         locked_list_add_tail(&subscriber->nio.dlink,
                 &server_ctx->subscribers);
     }
+}
+
+static inline ServerSessionSubscriber *service_subscriber_queue_pop(
+        AuthServerContext *server_context)
+{
+    ServerSessionSubscriber *subscriber;
+
+    PTHREAD_MUTEX_LOCK(&server_context->subscribers.lock);
+    subscriber = fc_list_first_entry(&server_context->subscribers.head,
+            ServerSessionSubscriber, nio.dlink);
+    if (subscriber != NULL) {
+        fc_list_del_init(&subscriber->nio.dlink);
+        __sync_bool_compare_and_swap(&subscriber->nio.in_queue, 1, 0);
+    }
+    PTHREAD_MUTEX_UNLOCK(&server_context->subscribers.lock);
+
+    return subscriber;
 }
 
 static int service_deal_session_subscribe(struct fast_task_info *task)
@@ -309,7 +325,7 @@ static int service_deal_session_subscribe(struct fast_task_info *task)
     SESSION_SUBSCRIBER->nio.task = task;
     session_subscribe_register(SESSION_SUBSCRIBER);
     if (!fc_queue_empty(&SESSION_SUBSCRIBER->queue)) {
-        push_subscriber_to_service_thread_queue(SESSION_SUBSCRIBER);
+        service_subscriber_queue_push(SESSION_SUBSCRIBER);
     }
 
     SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_SUBSCRIBE;
@@ -972,9 +988,115 @@ int service_deal_task(struct fast_task_info *task, const int stage)
     }
 }
 
+static int service_deal_queue(AuthServerContext *server_context,
+        ServerSessionSubscriber *subscriber)
+{
+    struct fast_task_info *task;
+    struct fc_queue_info qinfo;
+    ServerSessionSubscribeEntry *previous;
+    ServerSessionSubscribeEntry *entry;
+    FCFSAuthProtoHeader *proto_header;
+    FCFSAuthProtoSessionPushRespBodyHeader *body_header;
+    FCFSAuthProtoSessionPushRespBodyPart *body_part;
+    char *p;
+    char *end;
+    int count;
+    int result;
+
+    task = subscriber->nio.task;
+    if (ioevent_is_canceled(task) || !sf_nio_task_is_idle(
+                subscriber->nio.task))
+    {
+        return EAGAIN;
+    }
+
+    fc_queue_pop_to_queue(&subscriber->queue, &qinfo);
+    if (qinfo.head == NULL) {
+        return 0;
+    }
+
+    entry = NULL;
+    entry = (ServerSessionSubscribeEntry *)qinfo.head;
+    proto_header = (FCFSAuthProtoHeader *)task->data;
+    body_header = (FCFSAuthProtoSessionPushRespBodyHeader *)
+        (proto_header + 1);
+    p = (char *)(body_header + 1);
+    end = task->data + task->size;
+    count = 0;
+    while (entry != NULL) {
+        body_part = (FCFSAuthProtoSessionPushRespBodyPart *)p;
+        if (p + sizeof(FCFSAuthProtoSessionPushRespBodyPart) +
+            sizeof(FCFSAuthProtoSessionPushEntry) > end)
+        {
+            break;
+        }
+
+        long2buff(entry->session_id, body_part->session_id);
+        body_part->operation = entry->operation;
+        if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
+            long2buff(entry->fields.user.id, body_part->entry->user.id);
+            long2buff(entry->fields.user.priv, body_part->entry->user.priv);
+            long2buff(entry->fields.pool.id, body_part->entry->pool.id);
+            body_part->entry->pool.available = entry->fields.pool.available;
+            int2buff(entry->fields.pool.privs.fdir,
+                    body_part->entry->pool.privs.fdir);
+            int2buff(entry->fields.pool.privs.fstore,
+                    body_part->entry->pool.privs.fstore);
+
+            p += sizeof(FCFSAuthProtoSessionPushRespBodyPart) +
+                sizeof(FCFSAuthProtoSessionPushEntry);
+        } else {
+            p += sizeof(FCFSAuthProtoSessionPushRespBodyPart);
+        }
+
+        ++count;
+        previous = entry;
+        entry = entry->next;
+    }
+
+    if (entry == NULL) {
+        result = 0;
+    } else {
+        struct fc_queue_info remain_qinfo;
+
+        previous->next = NULL;
+        remain_qinfo.head = entry;
+        remain_qinfo.tail = qinfo.tail;
+        fc_queue_push_queue_to_head_silence(
+                &subscriber->queue, &remain_qinfo);
+        result = EAGAIN;
+    }
+    session_subscribe_free_entries(qinfo.head);
+
+    int2buff(count, body_header->count);
+    task->length = p - task->data;
+    SF_PROTO_SET_HEADER(proto_header, FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_REQ,
+            task->length - sizeof(FCFSAuthProtoHeader));
+    sf_send_add_event(task);
+    return result;
+}
+
 int service_thread_loop(struct nio_thread_data *thread_data)
 {
-    //TODO
+    AuthServerContext *server_context;
+    ServerSessionSubscriber *subscriber;
+    int count;
+    int i;
+
+    server_context = (AuthServerContext *)thread_data->arg;
+    count = locked_list_count(&server_context->subscribers);
+    for (i=0; i<count; i++) {
+        if ((subscriber=service_subscriber_queue_pop(
+                        server_context)) == NULL)
+        {
+            break;
+        }
+
+        if (service_deal_queue(server_context, subscriber) != 0) {
+            service_subscriber_queue_push(subscriber);
+        }
+    }
+
     return 0;
 }
 

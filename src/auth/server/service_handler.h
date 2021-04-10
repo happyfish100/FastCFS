@@ -35,6 +35,8 @@ void service_task_finish_cleanup(struct fast_task_info *task);
 void *service_alloc_thread_extra_data(const int thread_index);
 int service_thread_loop(struct nio_thread_data *thread_data);
 
+void service_subscriber_queue_push(ServerSessionSubscriber *subscriber);
+
 #ifdef __cplusplus
 }
 #endif
