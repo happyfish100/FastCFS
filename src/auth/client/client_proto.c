@@ -172,8 +172,7 @@ int fcfs_auth_client_proto_session_subscribe(
 
     header = (FCFSAuthProtoHeader *)out_buff;
     req = (FCFSAuthProtoSessionSubscribeReq *)(header + 1);
-    out_bytes = sizeof(FCFSAuthProtoHeader) +
-        sizeof(*req) + username->len;
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + username->len;
     SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ,
             out_bytes - sizeof(FCFSAuthProtoHeader));
     if ((result=pack_user_passwd_pair(username,

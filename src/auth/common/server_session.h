@@ -57,6 +57,9 @@ typedef struct server_session_callbacks {
 extern "C" {
 #endif
 
+#define server_session_init(ini_ctx) \
+    server_session_init_ex(ini_ctx, sizeof(SessionSyncedFields), NULL)
+
 int server_session_init_ex(IniFullContext *ini_ctx, const int fields_size,
         ServerSessionCallbacks *callbacks);
 
