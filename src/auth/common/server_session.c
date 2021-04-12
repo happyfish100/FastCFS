@@ -88,8 +88,8 @@ void server_session_get_cfg(ServerSessionConfig *cfg)
 
 void server_session_cfg_to_string(char *buff, const int size)
 {
-    snprintf(buff, size, "shared_allocator_count: %d, "
-            "shared_lock_count: %d, hashtable_capacity: %d",
+    snprintf(buff, size, "session {shared_allocator_count: %d, "
+            "shared_lock_count: %d, hashtable_capacity: %d}",
             session_ctx.allocator_array.count,
             session_ctx.lock_array.count,
             session_ctx.htable.capacity);

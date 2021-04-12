@@ -28,7 +28,11 @@ extern "C" {
 #endif
 
 int fcfs_auth_load_config(FCFSAuthClientContext *client_ctx,
-        bool *auth_enabled, IniFullContext *ini_ctx);
+        const char *config_filename, const char *section_name,
+        bool *auth_enabled);
+
+void fcfs_auth_config_to_string(FCFSAuthClientContext *client_ctx,
+        const bool auth_enabled, char *output, const int size);
 
 int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *passwd,

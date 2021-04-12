@@ -256,12 +256,17 @@ static void *session_sync_thread_func(void *arg)
 int session_sync_init()
 {
     int result;
-    pthread_t tid;
 
     if ((result=synced_session_array_init(&session_array)) != 0) {
         return result;
     }
 
+    return 0;
+}
+
+int session_sync_start()
+{
+    pthread_t tid;
     return fc_create_thread(&tid, session_sync_thread_func,
             NULL, SF_G_THREAD_STACK_SIZE);
 }

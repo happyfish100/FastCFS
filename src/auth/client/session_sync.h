@@ -23,6 +23,8 @@ extern "C" {
 
 int session_sync_init();
 
+int session_sync_start();
+
 #ifdef __cplusplus
 }
 #endif

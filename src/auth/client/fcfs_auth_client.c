@@ -77,7 +77,7 @@ static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
 }
 
 static int load_auth_config(FCFSAuthClientContext *client_ctx,
-        bool *auth_enabled, const char *auth_config_filename)
+        const char *auth_config_filename, bool *auth_enabled)
 {
     int result;
     IniContext ini_context;
@@ -126,23 +126,46 @@ static int load_auth_config(FCFSAuthClientContext *client_ctx,
 }
 
 int fcfs_auth_load_config(FCFSAuthClientContext *client_ctx,
-        bool *auth_enabled, IniFullContext *ini_ctx)
+        const char *config_filename, const char *section_name,
+        bool *auth_enabled)
 {
+    int result;
+    IniContext ini_context;
     char *auth_config_filename;
     char full_auth_filename[PATH_MAX];
 
-    auth_config_filename = iniGetStrValue(ini_ctx->section_name,
-            "auth_config_filename", ini_ctx->context);
+    if ((result=iniLoadFromFile(config_filename, &ini_context)) != 0) {
+        logError("file: "__FILE__", line: %d, "
+                "load conf file \"%s\" fail, ret code: %d",
+                __LINE__, config_filename, result);
+        return result;
+    }
+
+    auth_config_filename = iniGetStrValue(section_name,
+            "auth_config_filename", &ini_context);
+
     if (auth_config_filename == NULL || *auth_config_filename == '\0') {
         logError("file: "__FILE__", line: %d, "
                 "config file: %s, item \"auth_config_filename\" "
-                "not exist or empty", __LINE__, ini_ctx->filename);
-        return ENOENT;
+                "not exist or empty", __LINE__, config_filename);
+        result = ENOENT;
+    } else {
+        resolve_path(config_filename, auth_config_filename,
+                full_auth_filename, sizeof(full_auth_filename));
+        result = load_auth_config(client_ctx,
+                full_auth_filename, auth_enabled);
     }
 
-    resolve_path(ini_ctx->filename, auth_config_filename,
-            full_auth_filename, sizeof(full_auth_filename));
-    return load_auth_config(client_ctx, auth_enabled, full_auth_filename);
+    iniFreeContext(&ini_context);
+    return result;
+}
+
+void fcfs_auth_config_to_string(FCFSAuthClientContext *client_ctx,
+        const bool auth_enabled, char *output, const int size)
+{
+    snprintf(output, size, "auth_enabled: %d, username: %s, "
+            "secret_key_filename: %s", auth_enabled, client_ctx->auth.
+            username.str, client_ctx->auth.secret_key_filename.str);
 }
 
 int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,

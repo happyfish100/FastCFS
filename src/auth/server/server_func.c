@@ -209,8 +209,7 @@ static void server_log_configs()
             g_server_global_vars.fdir_client_cfg_filename,
             POOL_USAGE_REFRESH_INTERVAL);
 
-    logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s, "
-            "session: {%s}",
+    logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s, %s",
             g_fcfs_auth_global_vars.version.major,
             g_fcfs_auth_global_vars.version.minor,
             g_fcfs_auth_global_vars.version.patch,
