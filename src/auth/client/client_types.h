@@ -51,9 +51,14 @@ typedef struct fcfs_auth_client_context {
     bool inited;
     SFClusterConfig cluster;
     SFConnectionManager cm;
-    FCFSAuthClientCommonCfg auth;
+    FCFSAuthClientCommonCfg auth_cfg;
     SFClientCommonConfig common_cfg;
     char session_id[FCFS_AUTH_SESSION_ID_LEN];
 } FCFSAuthClientContext;
+
+typedef struct fcfs_auth_client_full_context {
+    bool enabled;
+    FCFSAuthClientContext *ctx;
+} FCFSAuthClientFullContext;
 
 #endif

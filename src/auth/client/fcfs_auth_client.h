@@ -23,16 +23,18 @@
 #include "client_global.h"
 #include "client_proto.h"
 
+#define fcfs_auth_load_config(auth, config_filename) \
+    fcfs_auth_load_config_ex(auth, config_filename, NULL)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int fcfs_auth_load_config(FCFSAuthClientContext *client_ctx,
-        const char *config_filename, const char *section_name,
-        bool *auth_enabled);
+int fcfs_auth_load_config_ex(FCFSAuthClientFullContext *auth,
+        const char *config_filename, const char *section_name);
 
-void fcfs_auth_config_to_string(FCFSAuthClientContext *client_ctx,
-        const bool auth_enabled, char *output, const int size);
+void fcfs_auth_config_to_string(const FCFSAuthClientFullContext *auth,
+        char *output, const int size);
 
 int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *passwd,
@@ -46,6 +48,31 @@ static inline int fcfs_auth_client_user_login(
     const int flags = 0;
     return fcfs_auth_client_user_login_ex(client_ctx,
             username, passwd, &poolname, flags);
+}
+
+static inline int fcfs_auth_client_session_create_ex(
+        FCFSAuthClientFullContext *auth, const string_t *poolname)
+{
+    const int flags = FCFS_AUTH_SESSION_FLAGS_PUBLISH;
+
+        logInfo("auth_enabled: %d, username: %s, secret_key_filename: %s",
+                auth->enabled, auth->ctx->auth_cfg.username.str,
+                auth->ctx->auth_cfg.secret_key_filename.str);
+
+    if (auth->enabled) {
+        return fcfs_auth_client_user_login_ex(auth->ctx, &auth->
+                ctx->auth_cfg.username, &auth->ctx->auth_cfg.passwd,
+                poolname, flags);
+    } else {
+        return 0;
+    }
+}
+
+static inline int fcfs_auth_client_session_create(
+        FCFSAuthClientFullContext *auth)
+{
+    const string_t poolname = {NULL, 0};
+    return fcfs_auth_client_session_create_ex(auth, &poolname);
 }
 
 int fcfs_auth_client_session_subscribe(FCFSAuthClientContext

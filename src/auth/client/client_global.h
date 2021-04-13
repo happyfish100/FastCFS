@@ -26,6 +26,12 @@ typedef struct fcfs_auth_client_global_vars {
     FCFSAuthClientContext client_ctx;
 } FCFSAuthClientGlobalVars;
 
+#define fcfs_auth_client_init_full_ctx_ex(auth, client_ctx) \
+    (auth)->ctx = client_ctx
+
+#define fcfs_auth_client_init_full_ctx(auth) \
+    fcfs_auth_client_init_full_ctx_ex(auth, &g_fcfs_auth_client_vars.client_ctx)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

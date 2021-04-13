@@ -238,8 +238,9 @@ static void *session_sync_thread_func(void *arg)
 
         if ((result=fcfs_auth_client_proto_session_subscribe(
                         &g_fcfs_auth_client_vars.client_ctx, conn,
-                        &g_fcfs_auth_client_vars.client_ctx.auth.username,
-                        &g_fcfs_auth_client_vars.client_ctx.auth.passwd)) == 0)
+                        &g_fcfs_auth_client_vars.client_ctx.auth_cfg.
+                        username, &g_fcfs_auth_client_vars.client_ctx.
+                        auth_cfg.passwd)) == 0)
         {
             session_sync(conn);
         } else if (result == ENOENT || result == EPERM) {
