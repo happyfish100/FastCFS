@@ -52,10 +52,17 @@ static void set_session_subscribe_entry(const ServerSessionEntry *session,
     subs_entry->fields.user.id = fields->dbuser->user.id;
     subs_entry->fields.user.priv = fields->dbuser->user.priv;
 
-    subs_entry->fields.pool.id = fields->dbpool->pool.id;
-    subs_entry->fields.pool.available = FCFS_AUTH_POOL_AVAILABLE(
-            fields->dbpool->pool);
-    subs_entry->fields.pool.privs = fields->pool_privs;
+    if (fields->dbpool != NULL) {
+        subs_entry->fields.pool.id = fields->dbpool->pool.id;
+        subs_entry->fields.pool.available = FCFS_AUTH_POOL_AVAILABLE(
+                fields->dbpool->pool);
+        subs_entry->fields.pool.privs = fields->pool_privs;
+    } else {
+        subs_entry->fields.pool.id = 0;
+        subs_entry->fields.pool.available = 0;
+        subs_entry->fields.pool.privs.fdir = 0;
+        subs_entry->fields.pool.privs.fstore = 0;
+    }
 }
 
 static int publish_entry_to_all_subscribers(

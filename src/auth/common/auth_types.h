@@ -72,6 +72,12 @@
     ((pool.quota == FCFS_AUTH_UNLIMITED_QUOTA_VAL) || \
      (pool.used < pool.quota))
 
+typedef enum {
+    fcfs_auth_validate_priv_type_user = 'u',
+    fcfs_auth_validate_priv_type_pool_fdir = 'd',
+    fcfs_auth_validate_priv_type_pool_fstore = 's'
+} FCFSAuthValidatePriviledgeType;
+
 typedef struct fcfs_auth_spool_priviledges {
     int fdir;
     int fstore;

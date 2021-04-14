@@ -26,6 +26,8 @@
 #define FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_RESP    12
 #define FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_REQ          13
 #define FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_RESP         14
+#define FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ      15
+#define FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_RESP     16
 
 #define FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ           21
 #define FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP          22
@@ -88,6 +90,17 @@ typedef struct fcfs_auth_proto_user_login_resp {
 typedef struct fcfs_auth_proto_session_subscribe_req {
     FCFSAuthProtoUserPasswdPair up_pair;
 } FCFSAuthProtoSessionSubscribeReq;
+
+typedef struct fcfs_auth_proto_session_validate_req {
+    char session_id[FCFS_AUTH_SESSION_ID_LEN];
+    char validate_key[FCFS_AUTH_PASSWD_LEN];
+    char priv_type;
+    char priv_required[8];
+} FCFSAuthProtoSessionValidateReq;
+
+typedef struct fcfs_auth_proto_session_validate_resp {
+    char result[4];
+} FCFSAuthProtoSessionValidateResp;
 
 typedef struct fcfs_auth_proto_session_push_resp_body_header {
     char count[4];

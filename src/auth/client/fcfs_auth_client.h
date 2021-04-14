@@ -51,15 +51,17 @@ static inline int fcfs_auth_client_user_login(
 }
 
 static inline int fcfs_auth_client_session_create_ex(
-        FCFSAuthClientFullContext *auth, const string_t *poolname)
+        FCFSAuthClientFullContext *auth, const string_t *poolname,
+        const bool publish)
 {
-    const int flags = FCFS_AUTH_SESSION_FLAGS_PUBLISH;
+    int flags;
 
-        logInfo("auth_enabled: %d, username: %s, secret_key_filename: %s",
-                auth->enabled, auth->ctx->auth_cfg.username.str,
-                auth->ctx->auth_cfg.secret_key_filename.str);
+    logInfo("auth_enabled: %d, username: %s, secret_key_filename: %s",
+            auth->enabled, auth->ctx->auth_cfg.username.str,
+            auth->ctx->auth_cfg.secret_key_filename.str);
 
     if (auth->enabled) {
+        flags = (publish ? FCFS_AUTH_SESSION_FLAGS_PUBLISH : 0);
         return fcfs_auth_client_user_login_ex(auth->ctx, &auth->
                 ctx->auth_cfg.username, &auth->ctx->auth_cfg.passwd,
                 poolname, flags);
@@ -69,14 +71,13 @@ static inline int fcfs_auth_client_session_create_ex(
 }
 
 static inline int fcfs_auth_client_session_create(
-        FCFSAuthClientFullContext *auth)
+        FCFSAuthClientFullContext *auth, const bool publish)
 {
     const string_t poolname = {NULL, 0};
-    return fcfs_auth_client_session_create_ex(auth, &poolname);
+    return fcfs_auth_client_session_create_ex(auth, &poolname, publish);
 }
 
-int fcfs_auth_client_session_subscribe(FCFSAuthClientContext
-        *client_ctx, const string_t *username, const string_t *passwd);
+int fcfs_auth_client_session_subscribe(FCFSAuthClientContext *client_ctx);
 
 int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthUserInfo *user);

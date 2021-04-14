@@ -43,6 +43,7 @@
 #include "db/pool_usage_updater.h"
 #include "server_global.h"
 #include "server_func.h"
+#include "session_subscribe.h"
 #include "common_handler.h"
 #include "service_handler.h"
 
@@ -139,6 +140,9 @@ int main(int argc, char *argv[])
         sf_enable_thread_notify(true);
         sf_set_remove_from_ready_list(false);
 
+        if ((result=session_subscribe_init()) != 0) {
+            break;
+        }
         if ((result=adb_load_data((AuthServerContext *)
                         sf_get_random_thread_data()->arg)) != 0)
         {

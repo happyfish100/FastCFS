@@ -157,6 +157,7 @@ static int parse_session_push(SFResponseInfo *response)
 
 static void deal_session_array()
 {
+    const bool publish = true;
     ServerSessionEntry session;
     char buff[512];
     int len;
@@ -186,7 +187,7 @@ static void deal_session_array()
         if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
             session.session_id = entry->session_id;
             session.fields = &entry->fields;
-            server_session_add(&session);
+            server_session_add(&session, publish);
         } else {
             server_session_delete(entry->session_id);
         }
@@ -237,10 +238,7 @@ static void *session_sync_thread_func(void *arg)
         }
 
         if ((result=fcfs_auth_client_proto_session_subscribe(
-                        &g_fcfs_auth_client_vars.client_ctx, conn,
-                        &g_fcfs_auth_client_vars.client_ctx.auth_cfg.
-                        username, &g_fcfs_auth_client_vars.client_ctx.
-                        auth_cfg.passwd)) == 0)
+                        &g_fcfs_auth_client_vars.client_ctx, conn)) == 0)
         {
             session_sync(conn);
         } else if (result == ENOENT || result == EPERM) {

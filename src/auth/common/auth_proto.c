@@ -34,6 +34,10 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "SESSION_PUSH_REQ";
         case FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_RESP:
             return "SESSION_PUSH_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ:
+            return "SESSION_VALIDATE_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_RESP:
+            return "SESSION_VALIDATE_RESP";
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
             return "USER_CREATE_REQ";
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP:

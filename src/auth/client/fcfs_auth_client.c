@@ -93,7 +93,7 @@ static int load_auth_config(FCFSAuthClientFullContext *auth,
 
     auth->enabled = iniGetBoolValue(NULL, "auth_enabled", &ini_context, false);
     do {
-        if (auth->ctx->inited) {
+        if ((!auth->enabled) || auth->ctx->inited) {
             break;
         }
 
@@ -160,9 +160,14 @@ int fcfs_auth_load_config_ex(FCFSAuthClientFullContext *auth,
 void fcfs_auth_config_to_string(const FCFSAuthClientFullContext *auth,
         char *output, const int size)
 {
-    snprintf(output, size, "auth_enabled: %d, username: %s, "
-            "secret_key_filename: %s", auth->enabled, auth->ctx->auth_cfg.
-            username.str, auth->ctx->auth_cfg.secret_key_filename.str);
+    int len;
+    len = snprintf(output, size, "auth_enabled: %d", auth->enabled);
+    if (auth->enabled) {
+        snprintf(output + len, size - len, ", username: %s, "
+                "secret_key_filename: %s",
+                auth->ctx->auth_cfg.username.str,
+                auth->ctx->auth_cfg.secret_key_filename.str);
+    }
 }
 
 int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,
@@ -174,12 +179,10 @@ int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,
             username, passwd, poolname, flags);
 }
 
-int fcfs_auth_client_session_subscribe(FCFSAuthClientContext
-        *client_ctx, const string_t *username, const string_t *passwd)
+int fcfs_auth_client_session_subscribe(FCFSAuthClientContext *client_ctx)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_session_subscribe,
-            username, passwd);
+            GET_CONNECTION, 0, fcfs_auth_client_proto_session_subscribe);
 }
 
 int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,

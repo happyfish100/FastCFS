@@ -33,11 +33,19 @@ static inline int dao_get_context_size()
 
 static inline int dao_init_context(void *ctx)
 {
+    int result;
     FDIRClientContext *client_ctx;
 
     client_ctx = (FDIRClientContext *)ctx;
-    return fdir_client_simple_init_ex(client_ctx, g_server_global_vars.
-            fdir_client_cfg_filename, NULL);
+    fcfs_auth_client_init_full_ctx(&client_ctx->auth);
+    if ((result=fdir_client_simple_init_ex(client_ctx, g_server_global_vars.
+                    fdir_client_cfg_filename, NULL)) != 0)
+    {
+        return result;
+    }
+
+    //TODO set session id directly
+    return 0;
 }
 
 #ifdef __cplusplus

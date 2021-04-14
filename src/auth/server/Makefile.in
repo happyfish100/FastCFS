@@ -2,7 +2,7 @@
 
 COMPILE = $(CC) $(CFLAGS)
 INC_PATH = -I.. -I../common
-LIB_PATH = $(LIBS) -lfdirclient -lfastcommon -lserverframe
+LIB_PATH = $(LIBS) -lfdirclient -lfastcommon -lserverframe -lfcfsauthclient
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
 STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o \

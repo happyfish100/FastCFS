@@ -87,6 +87,10 @@ void service_task_finish_cleanup(struct fast_task_info *task)
                 session_subscriber_cleanup(SERVER_CTX, SESSION_SUBSCRIBER);
                 SESSION_SUBSCRIBER = NULL;
             }
+
+            logInfo("file: "__FILE__", line: %d, "
+                    "session subscriber %s:%u offline", __LINE__,
+                    task->client_ip, task->port);
             SERVER_TASK_TYPE = SF_SERVER_TASK_TYPE_NONE;
             break;
         default:
@@ -103,10 +107,9 @@ static int check_user_priv(struct fast_task_info *task)
     switch (REQUEST.header.cmd) {
         case SF_PROTO_ACTIVE_TEST_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
-            return 0;
         case FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ:
-            the_priv = FCFS_AUTH_USER_PRIV_SUBSCRIBE_SESSION;
-            break;
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ:
+            return 0;
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ:
@@ -225,7 +228,9 @@ static int service_deal_user_login(struct fast_task_info *task)
     flags = req->flags;
     fields->publish = (flags & FCFS_AUTH_SESSION_FLAGS_PUBLISH) != 0;
     SESSION_HOLDER->session_id = 0;
-    if ((SESSION_ENTRY=server_session_add(SESSION_HOLDER)) == NULL) {
+    if ((SESSION_ENTRY=server_session_add(SESSION_HOLDER,
+                    fields->publish)) == NULL)
+    {
         return ENOMEM;
     }
     SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_SESSION;
@@ -309,9 +314,9 @@ static int service_deal_session_subscribe(struct fast_task_info *task)
     }
 
     if ((dbuser->user.priv & FCFS_AUTH_USER_PRIV_SUBSCRIBE_SESSION) == 0) {
-        RESPONSE.error.length = sprintf(
-                RESPONSE.error.message,
-                "permission denied");
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "username: %.*s, permission denied for session "
+                "subscription", username.len, username.str);
         return EPERM;
     }
 
@@ -328,8 +333,53 @@ static int service_deal_session_subscribe(struct fast_task_info *task)
         service_subscriber_queue_push(SESSION_SUBSCRIBER);
     }
 
+    logInfo("file: "__FILE__", line: %d, "
+            "session subscriber %s:%u joined", __LINE__,
+            task->client_ip, task->port);
+
     SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_SUBSCRIBE;
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_RESP;
+    return 0;
+}
+
+static int service_deal_session_validate(struct fast_task_info *task)
+{
+    FCFSAuthProtoSessionValidateReq *req;
+    FCFSAuthProtoSessionValidateResp *resp;
+    int64_t session_id;
+    string_t validate_key;
+    int64_t priv_required;
+    FCFSAuthValidatePriviledgeType priv_type;
+    int result;
+
+    if ((result=server_expect_body_length(sizeof(*req))) != 0) {
+        return result;
+    }
+
+    req = (FCFSAuthProtoSessionValidateReq *)REQUEST.body;
+    session_id = buff2long(req->session_id);
+    FC_SET_STRING_EX(validate_key, req->validate_key, FCFS_AUTH_PASSWD_LEN);
+    priv_type = req->priv_type;
+    priv_required = buff2long(req->priv_required);
+    if (!fc_string_equal(&validate_key, &g_server_session_cfg.validate_key)) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "session validate key not correct");
+        return EACCES;
+    }
+
+    if ((result=server_session_priv_granted(session_id,
+                    priv_type, priv_required)) == ENOENT)
+    {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "session id: %"PRId64" not exist", session_id);
+        return result;
+    }
+
+    resp = (FCFSAuthProtoSessionValidateResp *)REQUEST.body;
+    int2buff(result, resp->result);
+    RESPONSE.header.body_len = sizeof(*resp);
+    RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_RESP;
+    TASK_ARG->context.common.response_done = true;
     return 0;
 }
 
@@ -912,6 +962,8 @@ static int service_process(struct fast_task_info *task)
             return service_deal_user_login(task);
         case FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ:
             return service_deal_session_subscribe(task);
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ:
+            return service_deal_session_validate(task);
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
             RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP;
             return service_deal_user_create(task);

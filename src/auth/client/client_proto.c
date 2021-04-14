@@ -158,8 +158,7 @@ int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
 }
 
 int fcfs_auth_client_proto_session_subscribe(
-        FCFSAuthClientContext *client_ctx, ConnectionInfo *conn,
-        const string_t *username, const string_t *passwd)
+        FCFSAuthClientContext *client_ctx, ConnectionInfo *conn)
 {
     FCFSAuthProtoHeader *header;
     FCFSAuthProtoSessionSubscribeReq *req;
@@ -172,11 +171,12 @@ int fcfs_auth_client_proto_session_subscribe(
 
     header = (FCFSAuthProtoHeader *)out_buff;
     req = (FCFSAuthProtoSessionSubscribeReq *)(header + 1);
-    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + username->len;
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) +
+        client_ctx->auth_cfg.username.len;
     SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ,
             out_bytes - sizeof(FCFSAuthProtoHeader));
-    if ((result=pack_user_passwd_pair(username,
-                    passwd, &req->up_pair)) != 0)
+    if ((result=pack_user_passwd_pair(&client_ctx->auth_cfg.username,
+                    &client_ctx->auth_cfg.passwd, &req->up_pair)) != 0)
     {
         return result;
     }
@@ -186,6 +186,59 @@ int fcfs_auth_client_proto_session_subscribe(
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_RESP)) != 0)
     {
+        sf_log_network_error(&response, conn, result);
+    }
+
+    return result;
+}
+
+int fcfs_auth_client_proto_session_validate(
+        FCFSAuthClientContext *client_ctx, ConnectionInfo *conn,
+        const string_t *session_id, const string_t *validate_key,
+        const FCFSAuthValidatePriviledgeType priv_type,
+        const int64_t priv_required)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoSessionValidateReq *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoSessionValidateReq) +
+        NAME_MAX + FCFS_AUTH_PASSWD_LEN];
+    FCFSAuthProtoSessionValidateResp validate_resp;
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoSessionValidateReq *)(header + 1);
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req);
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+    if (validate_key->len != FCFS_AUTH_PASSWD_LEN) {
+        logError("file: "__FILE__", line: %d, "
+                "invalid session validate key length: %d != %d",
+                __LINE__, validate_key->len, FCFS_AUTH_PASSWD_LEN);
+        return EINVAL;
+    }
+    memcpy(req->validate_key, validate_key->str, validate_key->len);
+
+    if (session_id->len != FCFS_AUTH_SESSION_ID_LEN) {
+        logError("file: "__FILE__", line: %d, "
+                "invalid session id length: %d != %d", __LINE__,
+                session_id->len, FCFS_AUTH_SESSION_ID_LEN);
+        return EINVAL;
+    }
+    memcpy(req->session_id, session_id->str, session_id->len);
+    req->priv_type = priv_type;
+    long2buff(priv_required, req->priv_required);
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_RESP,
+                    (char *)&validate_resp, sizeof(validate_resp))) == 0)
+    {
+        result = buff2int(validate_resp.result);
+    } else {
         sf_log_network_error(&response, conn, result);
     }
 
