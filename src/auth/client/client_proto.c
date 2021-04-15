@@ -196,7 +196,7 @@ int fcfs_auth_client_proto_session_validate(
         FCFSAuthClientContext *client_ctx, ConnectionInfo *conn,
         const string_t *session_id, const string_t *validate_key,
         const FCFSAuthValidatePriviledgeType priv_type,
-        const int64_t priv_required)
+        const int64_t pool_id, const int64_t priv_required)
 {
     FCFSAuthProtoHeader *header;
     FCFSAuthProtoSessionValidateReq *req;
@@ -229,6 +229,7 @@ int fcfs_auth_client_proto_session_validate(
     }
     memcpy(req->session_id, session_id->str, session_id->len);
     req->priv_type = priv_type;
+    long2buff(pool_id, req->pool_id);
     long2buff(priv_required, req->priv_required);
 
     response.error.length = 0;

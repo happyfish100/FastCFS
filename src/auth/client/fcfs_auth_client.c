@@ -185,6 +185,16 @@ int fcfs_auth_client_session_subscribe(FCFSAuthClientContext *client_ctx)
             GET_CONNECTION, 0, fcfs_auth_client_proto_session_subscribe);
 }
 
+int fcfs_auth_client_session_validate(FCFSAuthClientContext *client_ctx,
+        const string_t *session_id, const string_t *validate_key,
+        const FCFSAuthValidatePriviledgeType priv_type,
+        const int64_t pool_id, const int64_t priv_required)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_session_validate,
+            session_id, validate_key, priv_type, pool_id, priv_required);
+}
+
 int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthUserInfo *user)
 {

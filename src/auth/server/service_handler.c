@@ -342,11 +342,51 @@ static int service_deal_session_subscribe(struct fast_task_info *task)
     return 0;
 }
 
+static int session_validate(const int64_t session_id,
+        const FCFSAuthValidatePriviledgeType priv_type,
+        const int64_t pool_id, const int64_t priv_required)
+{
+    int result;
+    int64_t session_priv;
+    ServerSessionFields fields;
+
+    if ((result=server_session_get_fields(session_id, &fields)) != 0) {
+        return result;
+    }
+
+    switch (priv_type) {
+        case fcfs_auth_validate_priv_type_user:
+            session_priv = (fields.dbuser != NULL) ?
+                fields.dbuser->user.priv : 0;
+            break;
+        case fcfs_auth_validate_priv_type_pool_fdir:
+            /*
+            //TODO
+            if (fields.dbpool != NULL) {
+                if (fields.dbpool->pool.id != pool_id) {
+                    return EACCES;
+                }
+            }
+            */
+            session_priv = fields.pool_privs.fdir;
+            break;
+        case fcfs_auth_validate_priv_type_pool_fstore:
+            session_priv = fields.pool_privs.fstore;
+            break;
+        default:
+            session_priv = 0;
+            break;
+    }
+
+    return ((session_priv & priv_required) == priv_required) ? 0 : EPERM;
+}
+
 static int service_deal_session_validate(struct fast_task_info *task)
 {
     FCFSAuthProtoSessionValidateReq *req;
     FCFSAuthProtoSessionValidateResp *resp;
     int64_t session_id;
+    int64_t pool_id;
     string_t validate_key;
     int64_t priv_required;
     FCFSAuthValidatePriviledgeType priv_type;
@@ -360,6 +400,7 @@ static int service_deal_session_validate(struct fast_task_info *task)
     session_id = buff2long(req->session_id);
     FC_SET_STRING_EX(validate_key, req->validate_key, FCFS_AUTH_PASSWD_LEN);
     priv_type = req->priv_type;
+    pool_id = buff2long(req->pool_id);
     priv_required = buff2long(req->priv_required);
     if (!fc_string_equal(&validate_key, &g_server_session_cfg.validate_key)) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
@@ -367,8 +408,8 @@ static int service_deal_session_validate(struct fast_task_info *task)
         return EACCES;
     }
 
-    if ((result=server_session_priv_granted(session_id,
-                    priv_type, priv_required)) == ENOENT)
+    if ((result=session_validate(session_id, priv_type,
+                    pool_id, priv_required)) == ENOENT)
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "session id: %"PRId64" not exist", session_id);
@@ -1152,10 +1193,33 @@ int service_thread_loop(struct nio_thread_data *thread_data)
     return 0;
 }
 
+static int create_session_for_access_fdir(ServerSessionEntry
+        *session_holder, char *session_id)
+{
+    ServerSessionFields *fields;
+    ServerSessionEntry *session;
+
+    fields = (ServerSessionFields *)(session_holder->fields);
+    fields->publish = false;
+    fields->pool_privs.fdir = FCFS_AUTH_POOL_ACCESS_ALL;
+    fields->pool_privs.fstore = FCFS_AUTH_POOL_ACCESS_ALL;
+    session_holder->session_id = 0;
+    if ((session=server_session_add(session_holder,
+                    fields->publish)) == NULL)
+    {
+        return ENOMEM;
+    }
+
+    long2buff(session->session_id, session_id);
+    return 0;
+}
+
 void *service_alloc_thread_extra_data(const int thread_index)
 {
-    int alloc_size;
-    int dao_context_size;
+    short alloc_size;
+    short dao_context_size;
+    static bool dao_session_inited = false;
+    static char dao_session_id[FCFS_AUTH_SESSION_ID_LEN];
     AuthServerContext *server_context;
 
     dao_context_size = dao_get_context_size();
@@ -1172,15 +1236,25 @@ void *service_alloc_thread_extra_data(const int thread_index)
     }
 
     server_context->dao_ctx = (void *)(server_context + 1);
-    if (dao_init_context(server_context->dao_ctx) != 0) {
-        sf_terminate_myself();
-        return NULL;
-    }
-
     server_context->session_holder = (ServerSessionEntry *)(((char *)
                 server_context->dao_ctx) + dao_context_size);
     server_context->session_holder->fields =
         server_context->session_holder + 1;
+    if (!dao_session_inited) {
+        dao_session_inited = true;
+        if (create_session_for_access_fdir(server_context->
+                    session_holder, dao_session_id) != 0)
+        {
+            return NULL;
+        }
+    }
+
+    if (dao_init_context(thread_index, server_context->
+                dao_ctx, dao_session_id) != 0)
+    {
+        sf_terminate_myself();
+        return NULL;
+    }
 
     return server_context;
 }

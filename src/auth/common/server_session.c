@@ -414,41 +414,19 @@ ServerSessionEntry *server_session_add(const ServerSessionEntry *entry,
     return &se->entry;
 }
 
-int server_session_priv_granted(const uint64_t session_id,
-        const FCFSAuthValidatePriviledgeType priv_type,
-        const int64_t the_priv)
+int server_session_get_fields(const uint64_t session_id, void *fields)
 {
     int result;
-    int64_t session_priv;
     ServerSessionHashEntry *previous;
     ServerSessionHashEntry *found;
-    SessionSyncedFields *fields;
 
     SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session_id);
     PTHREAD_MUTEX_LOCK(lock);
     if ((found=session_htable_find(bucket, session_id,
                     &previous)) != NULL)
     {
-        fields = (SessionSyncedFields *)found->entry.fields;
-        switch (priv_type) {
-            case fcfs_auth_validate_priv_type_user:
-                session_priv = fields->user.priv;
-                break;
-            case fcfs_auth_validate_priv_type_pool_fdir:
-                session_priv = fields->pool.privs.fdir;
-                break;
-            case fcfs_auth_validate_priv_type_pool_fstore:
-                session_priv = fields->pool.privs.fstore;
-                break;
-            default:
-                session_priv = 0;
-                break;
-        }
-        if ((session_priv & the_priv) == the_priv) {
-            result = 0;
-        } else {
-            result = EPERM;
-        }
+        memcpy(fields, found->entry.fields, session_ctx.fields_size);
+        result = 0;
     } else {
         result = ENOENT;
     }

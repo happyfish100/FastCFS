@@ -32,7 +32,7 @@ int fcfs_auth_client_proto_session_validate(
         FCFSAuthClientContext *client_ctx, ConnectionInfo *conn,
         const string_t *session_id, const string_t *validate_key,
         const FCFSAuthValidatePriviledgeType priv_type,
-        const int64_t priv_required);
+        const int64_t pool_id, const int64_t priv_required);
 
 int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username,

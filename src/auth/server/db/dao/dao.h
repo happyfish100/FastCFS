@@ -24,14 +24,13 @@
 extern "C" {
 #endif
 
-extern uint64_t g_dao_session_id;  //for request FastDIR
-
 static inline int dao_get_context_size()
 {
     return sizeof(FDIRClientContext);
 }
 
-static inline int dao_init_context(void *ctx)
+static inline int dao_init_context(const int thread_index,
+        void *ctx, char *session_id)
 {
     int result;
     FDIRClientContext *client_ctx;
@@ -44,7 +43,9 @@ static inline int dao_init_context(void *ctx)
         return result;
     }
 
-    //TODO set session id directly
+    if (thread_index == 0) {
+        fdir_client_auth_session_set_ex(client_ctx, session_id);
+    }
     return 0;
 }
 

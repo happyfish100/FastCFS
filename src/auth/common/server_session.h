@@ -83,9 +83,7 @@ void server_session_cfg_to_string(char *buff, const int size);
 ServerSessionEntry *server_session_add(const ServerSessionEntry *entry,
         const bool publish);
 
-int server_session_priv_granted(const uint64_t session_id,
-        const FCFSAuthValidatePriviledgeType priv_type,
-        const int64_t the_priv);
+int server_session_get_fields(const uint64_t session_id, void *fields);
 
 int server_session_user_priv_granted(const uint64_t session_id,
         const int64_t the_priv);

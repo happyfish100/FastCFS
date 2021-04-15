@@ -79,6 +79,11 @@ static inline int fcfs_auth_client_session_create(
 
 int fcfs_auth_client_session_subscribe(FCFSAuthClientContext *client_ctx);
 
+int fcfs_auth_client_session_validate(FCFSAuthClientContext *client_ctx,
+        const string_t *session_id, const string_t *validate_key,
+        const FCFSAuthValidatePriviledgeType priv_type,
+        const int64_t pool_id, const int64_t priv_required);
+
 int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthUserInfo *user);
 

@@ -95,6 +95,8 @@ typedef struct fcfs_auth_proto_session_validate_req {
     char session_id[FCFS_AUTH_SESSION_ID_LEN];
     char validate_key[FCFS_AUTH_PASSWD_LEN];
     char priv_type;
+    char padding[7];
+    char pool_id[8];
     char priv_required[8];
 } FCFSAuthProtoSessionValidateReq;
 
