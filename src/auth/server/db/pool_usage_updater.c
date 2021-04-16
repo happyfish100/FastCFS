@@ -60,10 +60,9 @@ static int nss_fetch(ConnectionInfo *conn)
 static int pool_usage_refresh(ConnectionInfo *conn)
 {
     int result;
-    const int64_t session_id = 0;
 
     if ((result=fdir_client_proto_nss_subscribe(&g_fdir_client_vars.
-                    client_ctx, conn, session_id)) != 0)
+                    client_ctx, conn)) != 0)
     {
         return result;
     }

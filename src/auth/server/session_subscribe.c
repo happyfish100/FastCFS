@@ -24,7 +24,7 @@
 #include "sf/sf_service.h"
 #include "db/auth_db.h"
 #include "server_global.h"
-#include "service_handler.h"
+#include "cluster_handler.h"
 #include "session_subscribe.h"
 
 typedef struct server_session_subscribe_context {
@@ -88,7 +88,7 @@ static int publish_entry_to_all_subscribers(
         *subs_entry = *src_entry;
         fc_queue_push_ex(&subscriber->queue, subs_entry, &notify);
         if (notify) {
-            service_subscriber_queue_push(subscriber);
+            cluster_subscriber_queue_push(subscriber);
         }
     }
     PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.subscribers.lock);
@@ -181,7 +181,7 @@ static void publish_matched_server_sessions(
     PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.sessions.lock);
 
     if (matched_count > 0) {
-        sf_notify_all_threads();
+        sf_notify_all_threads_ex(&CLUSTER_SF_CTX);
     }
 }
 

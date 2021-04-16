@@ -241,6 +241,13 @@ int server_load_config(const char *filename)
     {
         return result;
     }
+    if ((result=sf_load_context_from_config(&CLUSTER_SF_CTX,
+                    filename, &ini_context, "cluster",
+                    FCFS_AUTH_DEFAULT_CLUSTER_PORT,
+                    FCFS_AUTH_DEFAULT_CLUSTER_PORT)) != 0)
+    {
+        return result;
+    }
 
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, filename, "session", &ini_context);
     if ((result=server_session_init_ex(&ini_ctx, sizeof(ServerSessionFields),

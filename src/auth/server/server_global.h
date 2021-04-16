@@ -27,6 +27,10 @@
 
 typedef struct server_global_vars {
     struct {
+        SFContext sf_context;  //for cluster communication
+    } cluster;
+
+    struct {
         int mode;
         char *buff; //space for username and secret_key_filename
         string_t username;
@@ -43,6 +47,8 @@ typedef struct server_global_vars {
 
     SFSlowLogContext slow_log;
 } AuthServerGlobalVars;
+
+#define CLUSTER_SF_CTX         g_server_global_vars.cluster.sf_context
 
 #define ADMIN_GENERATE               g_server_global_vars.admin_generate
 #define ADMIN_GENERATE_MODE          ADMIN_GENERATE.mode

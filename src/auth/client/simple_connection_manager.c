@@ -170,7 +170,7 @@ static void close_connection(SFConnectionManager *cm,
 }
 
 static void copy_to_server_group_array(FCFSAuthClientContext *client_ctx,
-        FCFSAuthServerGroup *server_group)
+        FCFSAuthServerGroup *server_group, const int server_group_index)
 {
     FCServerInfo *server;
     FCServerInfo *end;
@@ -183,7 +183,7 @@ static void copy_to_server_group_array(FCFSAuthClientContext *client_ctx,
     for (server=FC_SID_SERVERS(client_ctx->cluster.server_cfg); server<end;
             server++, conn++)
     {
-        *conn = server->group_addrs[client_ctx->cluster.service_group_index].
+        *conn = server->group_addrs[server_group_index].
             address_array.addrs[0]->conn;
     }
     server_group->count = server_count;
@@ -201,7 +201,7 @@ static void copy_to_server_group_array(FCFSAuthClientContext *client_ctx,
 }
 
 int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
-        SFConnectionManager *cm)
+        SFConnectionManager *cm, const int server_group_index)
 {
     const int socket_domain = AF_INET;
     const int max_count_per_entry = 0;
@@ -224,7 +224,7 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
     {
         return result;
     }
-    copy_to_server_group_array(client_ctx, cluster_sarray);
+    copy_to_server_group_array(client_ctx, cluster_sarray, server_group_index);
 
     extra = (FCFSAuthCMSimpleExtra *)fc_malloc(sizeof(FCFSAuthCMSimpleExtra));
     if (extra == NULL) {
@@ -248,6 +248,7 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
     extra->cluster_sarray = cluster_sarray;
     extra->client_ctx = client_ctx;
 
+    cm->server_group_index = server_group_index;
     cm->extra = extra;
     cm->common_cfg = &client_ctx->common_cfg;
     cm->ops.get_connection = get_connection;

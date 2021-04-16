@@ -160,10 +160,11 @@ int fcfs_auth_client_load_from_file_ex1(FCFSAuthClientContext *client_ctx,
     return result;
 }
 
-int fcfs_auth_client_init_ex1(FCFSAuthClientContext *client_ctx,
-        IniFullContext *ini_ctx)
+int fcfs_auth_client_init_ex2(FCFSAuthClientContext *client_ctx,
+        IniFullContext *ini_ctx, const SFServerGroupIndexType index_type)
 {
     int result;
+    int server_group_index;
 
     if ((result=fcfs_auth_client_load_from_file_ex1(
                     client_ctx, ini_ctx)) != 0)
@@ -171,8 +172,11 @@ int fcfs_auth_client_init_ex1(FCFSAuthClientContext *client_ctx,
         return result;
     }
 
-    if ((result=fcfs_auth_simple_connection_manager_init(
-                    client_ctx, &client_ctx->cm)) != 0)
+    server_group_index = (index_type == sf_server_group_index_type_cluster ?
+            client_ctx->cluster.cluster_group_index :
+            client_ctx->cluster.service_group_index);
+    if ((result=fcfs_auth_simple_connection_manager_init(client_ctx,
+                    &client_ctx->cm, server_group_index)) != 0)
     {
         return result;
     }

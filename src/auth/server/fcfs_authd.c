@@ -45,6 +45,7 @@
 #include "server_func.h"
 #include "session_subscribe.h"
 #include "common_handler.h"
+#include "cluster_handler.h"
 #include "service_handler.h"
 
 static bool daemon_mode = true;
@@ -117,6 +118,9 @@ int main(int argc, char *argv[])
         if ((result=sf_socket_server()) != 0) {
             break;
         }
+        if ((result=sf_socket_server_ex(&CLUSTER_SF_CTX)) != 0) {
+            break;
+        }
 
         if ((result=write_to_pid_file(g_pid_filename)) != 0) {
             break;
@@ -126,11 +130,28 @@ int main(int argc, char *argv[])
             break;
         }
 
+        if ((result=session_subscribe_init()) != 0) {
+            break;
+        }
+
         common_handler_init();
         //sched_print_all_entries();
 
+        result = sf_service_init_ex(&CLUSTER_SF_CTX,
+                cluster_alloc_thread_extra_data,
+                cluster_thread_loop_callback, NULL,
+                sf_proto_set_body_length, cluster_deal_task,
+                cluster_task_finish_cleanup, NULL, 1000,
+                sizeof(FCFSAuthProtoHeader), sizeof(AuthServerTaskArg));
+        if (result != 0) {
+            break;
+        }
+        sf_enable_thread_notify_ex(&CLUSTER_SF_CTX, true);
+        sf_set_remove_from_ready_list_ex(&CLUSTER_SF_CTX, false);
+        sf_accept_loop_ex(&CLUSTER_SF_CTX, false);
+
         result = sf_service_init_ex(&g_sf_context,
-                service_alloc_thread_extra_data, service_thread_loop,
+                service_alloc_thread_extra_data, NULL,
                 NULL, sf_proto_set_body_length, service_deal_task,
                 service_task_finish_cleanup, NULL, 1000,
                 sizeof(FCFSAuthProtoHeader), sizeof(AuthServerTaskArg));
@@ -139,11 +160,7 @@ int main(int argc, char *argv[])
         }
         sf_enable_thread_notify(true);
         sf_set_remove_from_ready_list(false);
-        sf_accept_loop_ex(&g_sf_context, false);
 
-        if ((result=session_subscribe_init()) != 0) {
-            break;
-        }
         if ((result=adb_load_data((AuthServerContext *)
                         sf_get_random_thread_data()->arg)) != 0)
         {
@@ -166,14 +183,8 @@ int main(int argc, char *argv[])
         return result;
     }
 
-    /*
-    sf_service_set_thread_loop_callback_ex(&CLUSTER_SF_CTX,
-            cluster_thread_loop_callback);
-    sf_set_deal_task_func_ex(&CLUSTER_SF_CTX, cluster_deal_task_fully);
-    */
-    //TODO
-
     //sched_print_all_entries();
+    sf_accept_loop();
 
     if (g_schedule_flag) {
         pthread_kill(schedule_tid, SIGINT);

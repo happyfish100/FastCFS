@@ -13,19 +13,30 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _FCFS_AUTH_SIMPLE_CONNECTION_MANAGER_H
-#define _FCFS_AUTH_SIMPLE_CONNECTION_MANAGER_H
+//cluster_handler.h
 
-#include "client_types.h"
+#ifndef FCFS_AUTH_CLUSTER_HANDLER_H
+#define FCFS_AUTH_CLUSTER_HANDLER_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "fastcommon/fast_task_queue.h"
+#include "server_types.h"
 
 #ifdef __cplusplus
+
 extern "C" {
 #endif
 
-int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
-        SFConnectionManager *cm, const int server_group_index);
+int cluster_handler_init();
+int cluster_handler_destroy();
+int cluster_deal_task(struct fast_task_info *task, const int stage);
+void cluster_task_finish_cleanup(struct fast_task_info *task);
+void *cluster_alloc_thread_extra_data(const int thread_index);
+int cluster_thread_loop_callback(struct nio_thread_data *thread_data);
 
-void fcfs_auth_simple_connection_manager_destroy(SFConnectionManager *cm);
+void cluster_subscriber_queue_push(ServerSessionSubscriber *subscriber);
 
 #ifdef __cplusplus
 }

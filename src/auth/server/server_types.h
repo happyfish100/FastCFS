@@ -44,7 +44,7 @@
 #define AUTH_SERVER_TASK_TYPE_SUBSCRIBE   2
 
 #define SERVER_CTX        ((AuthServerContext *)task->thread_data->arg)
-#define SESSION_HOLDER    SERVER_CTX->session_holder
+#define SESSION_HOLDER    SERVER_CTX->service.session_holder
 
 struct db_user_info;
 struct db_storage_pool_info;
@@ -81,9 +81,15 @@ typedef struct server_task_arg {
 } AuthServerTaskArg;
 
 typedef struct auth_server_context {
-    FCLockedList subscribers;   //element: ServerSessionSubscriber
     void *dao_ctx;
-    ServerSessionEntry *session_holder;
+    union {
+        struct {
+            FCLockedList subscribers;   //element: ServerSessionSubscriber
+        } cluster;
+        struct {
+            ServerSessionEntry *session_holder;
+        } service;
+    };
 } AuthServerContext;
 
 #endif

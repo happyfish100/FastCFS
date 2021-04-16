@@ -11,7 +11,7 @@ STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o \
               db/dao/storage_pool.o db/dao/granted_pool.o \
               db/auth_db.o db/pool_usage_updater.o server_global.o \
               server_func.o common_handler.o service_handler.o \
-              session_subscribe.o
+              cluster_handler.o session_subscribe.o
 
 ALL_PRGS = fcfs_authd
 

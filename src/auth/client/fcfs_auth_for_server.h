@@ -35,7 +35,7 @@ static inline int fcfs_auth_for_server_init_ex(FCFSAuthClientFullContext
     int result;
 
     if ((result=fcfs_auth_load_config_ex(auth, cluster_filename,
-                    section_name)) != 0)
+                    section_name, sf_server_group_index_type_cluster)) != 0)
     {
         return result;
     }

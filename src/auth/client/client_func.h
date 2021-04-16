@@ -28,9 +28,13 @@ extern "C" {
     fcfs_auth_client_load_from_file_ex((&g_fcfs_auth_client_vars.client_ctx), \
             filename, NULL)
 
+#define fcfs_auth_client_init_ex(filename, index_type)  \
+    fcfs_auth_client_init_ex1((&g_fcfs_auth_client_vars.client_ctx),  \
+            filename, NULL, index_type)
+
 #define fcfs_auth_client_init(filename)  \
-    fcfs_auth_client_init_ex((&g_fcfs_auth_client_vars.client_ctx),  \
-            filename, NULL)
+    fcfs_auth_client_init_ex(filename,   \
+            sf_server_group_index_type_service)
 
 #define fcfs_auth_client_destroy() \
     fcfs_auth_client_destroy_ex((&g_fcfs_auth_client_vars.client_ctx))
@@ -58,16 +62,17 @@ static inline int fcfs_auth_client_load_from_file_ex(FCFSAuthClientContext
     return fcfs_auth_client_load_from_file_ex1(client_ctx, &ini_ctx);
 }
 
-int fcfs_auth_client_init_ex1(FCFSAuthClientContext *client_ctx,
-        IniFullContext *ini_ctx);
+int fcfs_auth_client_init_ex2(FCFSAuthClientContext *client_ctx,
+        IniFullContext *ini_ctx, const SFServerGroupIndexType index_type);
 
-static inline int fcfs_auth_client_init_ex(FCFSAuthClientContext *client_ctx,
-        const char *config_filename, const char *section_name)
+static inline int fcfs_auth_client_init_ex1(FCFSAuthClientContext *client_ctx,
+        const char *config_filename, const char *section_name,
+        const SFServerGroupIndexType index_type)
 {
     IniFullContext ini_ctx;
 
     FAST_INI_SET_FULL_CTX(ini_ctx, config_filename, section_name);
-    return fcfs_auth_client_init_ex1(client_ctx, &ini_ctx);
+    return fcfs_auth_client_init_ex2(client_ctx, &ini_ctx, index_type);
 }
 
 /**

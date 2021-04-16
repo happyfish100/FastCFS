@@ -23,15 +23,17 @@
 #include "client_global.h"
 #include "client_proto.h"
 
-#define fcfs_auth_load_config(auth, config_filename) \
-    fcfs_auth_load_config_ex(auth, config_filename, NULL)
+#define fcfs_auth_load_config(auth, config_filename)  \
+    fcfs_auth_load_config_ex(auth, config_filename, NULL, \
+            sf_server_group_index_type_service)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 int fcfs_auth_load_config_ex(FCFSAuthClientFullContext *auth,
-        const char *config_filename, const char *section_name);
+        const char *config_filename, const char *section_name,
+        const SFServerGroupIndexType index_type);
 
 void fcfs_auth_config_to_string(const FCFSAuthClientFullContext *auth,
         char *output, const int size);

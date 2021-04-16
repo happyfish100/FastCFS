@@ -77,7 +77,8 @@ static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
 }
 
 static int load_auth_config(FCFSAuthClientFullContext *auth,
-        const char *auth_config_filename)
+        const char *auth_config_filename,
+        const SFServerGroupIndexType index_type)
 {
     int result;
     IniContext ini_context;
@@ -117,8 +118,8 @@ static int load_auth_config(FCFSAuthClientFullContext *auth,
 
         resolve_path(auth_config_filename, client_config_filename,
                 full_config_filename, sizeof(full_config_filename));
-        result = fcfs_auth_client_init_ex(auth->ctx,
-                full_config_filename, NULL);
+        result = fcfs_auth_client_init_ex1(auth->ctx, full_config_filename,
+                NULL, index_type);
     } while (0);
 
     iniFreeContext(&ini_context);
@@ -126,7 +127,8 @@ static int load_auth_config(FCFSAuthClientFullContext *auth,
 }
 
 int fcfs_auth_load_config_ex(FCFSAuthClientFullContext *auth,
-        const char *config_filename, const char *section_name)
+        const char *config_filename, const char *section_name,
+        const SFServerGroupIndexType index_type)
 {
     int result;
     IniContext ini_context;
@@ -150,7 +152,7 @@ int fcfs_auth_load_config_ex(FCFSAuthClientFullContext *auth,
     } else {
         resolve_path(config_filename, auth_config_filename,
                 full_auth_filename, sizeof(full_auth_filename));
-        result = load_auth_config(auth, full_auth_filename);
+        result = load_auth_config(auth, full_auth_filename, index_type);
     }
 
     iniFreeContext(&ini_context);
