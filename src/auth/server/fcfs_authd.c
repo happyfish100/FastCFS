@@ -139,6 +139,7 @@ int main(int argc, char *argv[])
         }
         sf_enable_thread_notify(true);
         sf_set_remove_from_ready_list(false);
+        sf_accept_loop_ex(&g_sf_context, false);
 
         if ((result=session_subscribe_init()) != 0) {
             break;
@@ -165,9 +166,14 @@ int main(int argc, char *argv[])
         return result;
     }
 
-    //sched_print_all_entries();
+    /*
+    sf_service_set_thread_loop_callback_ex(&CLUSTER_SF_CTX,
+            cluster_thread_loop_callback);
+    sf_set_deal_task_func_ex(&CLUSTER_SF_CTX, cluster_deal_task_fully);
+    */
+    //TODO
 
-    sf_accept_loop();
+    //sched_print_all_entries();
 
     if (g_schedule_flag) {
         pthread_kill(schedule_tid, SIGINT);

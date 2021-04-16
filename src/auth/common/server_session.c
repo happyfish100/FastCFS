@@ -34,6 +34,10 @@
 #define SESSION_MAX_SHARED_LOCK_COUNT           10000
 #define SESSION_DEFAULT_SHARED_LOCK_COUNT         163
 
+#define SESSION_MIN_VALIDATE_WITHIN_FRESH_SECONDS            1
+#define SESSION_MAX_VALIDATE_WITHIN_FRESH_SECONDS     31536000
+#define SESSION_DEFAULT_VALIDATE_WITHIN_FRESH_SECONDS        5
+
 typedef struct server_session_hash_entry {
     ServerSessionEntry entry;
     struct fast_mblock_man *allocator;  //for free
@@ -81,15 +85,24 @@ static ServerSessionContext session_ctx = {0, 0, {0, 0, NULL}};
     SESSION_SET_HASHTABLE_LOCK(htable, session_id);  \
     bucket = (htable).buckets + bucket_index
 
-void server_session_cfg_to_string(char *buff, const int size)
+void server_session_cfg_to_string_ex(char *buff,
+        const int size, const bool output_all)
 {
-    snprintf(buff, size, "session {shared_allocator_count: %d, "
+    int len;
+    len = snprintf(buff, size, "session {shared_allocator_count: %d, "
             "shared_lock_count: %d, hashtable_capacity: %d, "
-            "validate_key_filename: %s}",
+            "validate_key_filename: %s",
             g_server_session_cfg.shared_allocator_count,
             g_server_session_cfg.shared_lock_count,
             g_server_session_cfg.hashtable_capacity,
             g_server_session_cfg.validate_key_filename.str);
+    if (output_all) {
+        snprintf(buff + len, size - len,
+                ", validate_within_fresh_seconds: %d}",
+                g_server_session_cfg.validate_within_fresh_seconds);
+    } else {
+        snprintf(buff + len, size - len, "}");
+    }
 }
 
 static int load_session_validate_key(IniFullContext *ini_ctx)
@@ -165,6 +178,12 @@ static int do_load_session_cfg(const char *session_filename)
             SESSION_MIN_HASHTABLE_CAPACITY,
             SESSION_MAX_HASHTABLE_CAPACITY);
 
+    g_server_session_cfg.validate_within_fresh_seconds =
+        iniGetIntCorrectValue(&ini_ctx, "validate_within_fresh_seconds",
+            SESSION_DEFAULT_VALIDATE_WITHIN_FRESH_SECONDS,
+            SESSION_MIN_VALIDATE_WITHIN_FRESH_SECONDS,
+            SESSION_MAX_VALIDATE_WITHIN_FRESH_SECONDS);
+
     g_server_session_cfg.shared_allocator_count =
         session_ctx.allocator_array.count;
     g_server_session_cfg.shared_lock_count = session_ctx.lock_array.count;
@@ -183,15 +202,10 @@ static int load_session_config(IniFullContext *ini_ctx)
     session_config_filename = iniGetStrValue(NULL,
             "session_config_filename", ini_ctx->context);
     if (session_config_filename == NULL || *session_config_filename == '\0') {
-        logWarning("file: "__FILE__", line: %d, "
+        logError("file: "__FILE__", line: %d, "
                 "config file: %s, item \"session_config_filename\" "
                 "not exist or empty", __LINE__, ini_ctx->filename);
-
-        session_ctx.allocator_array.count =
-            SESSION_DEFAULT_SHARED_ALLOCATOR_COUNT;
-        session_ctx.lock_array.count = SESSION_DEFAULT_SHARED_LOCK_COUNT;
-        session_ctx.htable.capacity = SESSION_DEFAULT_HASHTABLE_CAPACITY;
-        return 0;
+        return ENOENT;
     }
 
     resolve_path(ini_ctx->filename, session_config_filename,

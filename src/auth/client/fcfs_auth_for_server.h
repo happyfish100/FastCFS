@@ -55,13 +55,13 @@ static inline int fcfs_auth_for_server_init_ex(FCFSAuthClientFullContext
 static inline void fcfs_auth_for_server_cfg_to_string(const
         FCFSAuthClientFullContext *auth, char *output, const int size)
 {
-    char sz_session_config[128];
+    char sz_session_config[512];
     char sz_auth_config[1024];
 
     fcfs_auth_config_to_string(auth, sz_auth_config, sizeof(sz_auth_config));
     if (auth->enabled) {
-        server_session_cfg_to_string(sz_session_config,
-                sizeof(sz_session_config));
+        server_session_cfg_to_string_ex(sz_session_config,
+                sizeof(sz_session_config), true);
         snprintf(output, size, "auth {%s, %s}",
                 sz_auth_config, sz_session_config);
     } else {

@@ -185,8 +185,8 @@ static void server_log_configs()
     char sz_server_config[512];
     char sz_global_config[512];
     char sz_slowlog_config[256];
-    char sz_service_config[128];
-    char sz_session_config[128];
+    char sz_service_config[256];
+    char sz_session_config[512];
 
     sf_global_config_to_string(sz_global_config, sizeof(sz_global_config));
     sf_slow_log_config_to_string(&SLOW_LOG_CFG, "slow_log",
@@ -199,23 +199,24 @@ static void server_log_configs()
     snprintf(sz_server_config, sizeof(sz_server_config),
             "admin_generate {mode: %s, username: %s, "
             "secret_key_filename: %s}, pool_generate: "
-            "{auto_id_initial: %"PRId64", pool_name_template: %s}, "
-            "FastDIR {client_config_filename: %s, "
-            "pool_usage_refresh_interval: %d}",
+            "{auto_id_initial: %"PRId64", pool_name_template: %s}",
             (ADMIN_GENERATE_MODE == AUTH_ADMIN_GENERATE_MODE_FIRST ?
              "first" : "always"), ADMIN_GENERATE_USERNAME.str,
             ADMIN_GENERATE_KEY_FILENAME.str, AUTO_ID_INITIAL,
-            POOL_NAME_TEMPLATE.str,
-            g_server_global_vars.fdir_client_cfg_filename,
-            POOL_USAGE_REFRESH_INTERVAL);
+            POOL_NAME_TEMPLATE.str);
 
-    logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s, %s",
+    logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s",
             g_fcfs_auth_global_vars.version.major,
             g_fcfs_auth_global_vars.version.minor,
             g_fcfs_auth_global_vars.version.patch,
             sz_global_config, sz_slowlog_config,
-            sz_service_config, sz_server_config,
-            sz_session_config);
+            sz_service_config, sz_server_config);
+
+    logInfo("FastDIR {client_config_filename: %s, "
+            "pool_usage_refresh_interval: %d}, %s",
+            g_server_global_vars.fdir_client_cfg_filename,
+            POOL_USAGE_REFRESH_INTERVAL, sz_session_config);
+
     log_local_host_ip_addrs();
 }
 

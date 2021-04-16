@@ -27,6 +27,7 @@ typedef struct server_session_config {
     int shared_allocator_count;
     int shared_lock_count;
     int hashtable_capacity;
+    int validate_within_fresh_seconds;
     string_t validate_key;
     string_t validate_key_filename;
     unsigned char validate_key_buff[FCFS_AUTH_PASSWD_LEN];
@@ -35,7 +36,7 @@ typedef struct server_session_config {
 typedef union server_session_id_info {
     uint64_t id;
     struct {
-        int ts;
+        unsigned int ts;
         bool publish : 1;
         unsigned int rn : 15;
         unsigned int sn : 16;
@@ -75,10 +76,14 @@ extern ServerSessionConfig g_server_session_cfg;
 #define server_session_init(ini_ctx) \
     server_session_init_ex(ini_ctx, sizeof(SessionSyncedFields), NULL)
 
+#define server_session_cfg_to_string(buff, size) \
+    server_session_cfg_to_string_ex(buff, size, false)
+
 int server_session_init_ex(IniFullContext *ini_ctx, const int fields_size,
         ServerSessionCallbacks *callbacks);
 
-void server_session_cfg_to_string(char *buff, const int size);
+void server_session_cfg_to_string_ex(char *buff,
+        const int size, const bool output_all);
 
 ServerSessionEntry *server_session_add(const ServerSessionEntry *entry,
         const bool publish);
