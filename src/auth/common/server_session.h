@@ -61,11 +61,20 @@ typedef struct server_session_entry {
     void *fields;
 } ServerSessionEntry;
 
+typedef struct server_session_hash_entry {
+    ServerSessionEntry entry;
+    struct fast_mblock_man *allocator;  //for free
+    struct server_session_hash_entry *next;  //for hashtable
+} ServerSessionHashEntry;
+
 typedef void (*server_session_callback)(ServerSessionEntry *session);
 typedef struct server_session_callbacks {
     server_session_callback add_func;
     server_session_callback del_func;
 } ServerSessionCallbacks;
+
+#define FCFS_AUTH_SERVER_SESSION_BY_FIELDS(fields)  \
+    &((ServerSessionHashEntry *)fields - 1)->entry
 
 #ifdef __cplusplus
 extern "C" {

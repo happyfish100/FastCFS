@@ -38,12 +38,6 @@
 #define SESSION_MAX_VALIDATE_WITHIN_FRESH_SECONDS     31536000
 #define SESSION_DEFAULT_VALIDATE_WITHIN_FRESH_SECONDS        5
 
-typedef struct server_session_hash_entry {
-    ServerSessionEntry entry;
-    struct fast_mblock_man *allocator;  //for free
-    struct server_session_hash_entry *next;  //for hashtable
-} ServerSessionHashEntry;
-
 typedef struct {
     ServerSessionHashEntry **buckets;
     int capacity;

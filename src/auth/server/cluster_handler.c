@@ -88,7 +88,8 @@ void cluster_task_finish_cleanup(struct fast_task_info *task)
     sf_task_finish_clean_up(task);
 }
 
-void cluster_subscriber_queue_push(ServerSessionSubscriber *subscriber)
+void cluster_subscriber_queue_push_ex(ServerSessionSubscriber *subscriber,
+        const bool notify)
 {
     AuthServerContext *server_ctx;
 
@@ -97,6 +98,9 @@ void cluster_subscriber_queue_push(ServerSessionSubscriber *subscriber)
             nio.task->thread_data->arg;
         locked_list_add_tail(&subscriber->nio.dlink,
                 &server_ctx->cluster.subscribers);
+        if (notify) {
+            ioevent_notify_thread(subscriber->nio.task->thread_data);
+        }
     }
 }
 
@@ -175,7 +179,7 @@ static int cluster_deal_session_subscribe(struct fast_task_info *task)
     SESSION_SUBSCRIBER->nio.task = task;
     session_subscribe_register(SESSION_SUBSCRIBER);
     if (!fc_queue_empty(&SESSION_SUBSCRIBER->queue)) {
-        cluster_subscriber_queue_push(SESSION_SUBSCRIBER);
+        cluster_subscriber_queue_push_ex(SESSION_SUBSCRIBER, false);
     }
 
     logInfo("file: "__FILE__", line: %d, "
@@ -223,6 +227,11 @@ static int session_validate(const int64_t session_id,
             session_priv = 0;
             break;
     }
+
+    logInfo("session_id: %"PRId64", session_priv: %"PRId64", "
+            "priv_required: %"PRId64", check result: %d",
+            session_id, session_priv, priv_required,
+            ((session_priv & priv_required) == priv_required) ? 0 : EPERM);
 
     return ((session_priv & priv_required) == priv_required) ? 0 : EPERM;
 }
@@ -419,7 +428,7 @@ int cluster_thread_loop_callback(struct nio_thread_data *thread_data)
         }
 
         if (cluster_deal_queue(server_context, subscriber) != 0) {
-            cluster_subscriber_queue_push(subscriber);
+            cluster_subscriber_queue_push_ex(subscriber, false);
         }
     }
 

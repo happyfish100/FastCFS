@@ -25,6 +25,7 @@
 #include "db/auth_db.h"
 #include "server_global.h"
 #include "cluster_handler.h"
+#include "server_session.h"
 #include "session_subscribe.h"
 
 typedef struct server_session_subscribe_context {
@@ -156,7 +157,7 @@ static void publish_matched_server_sessions(
     matched_count = 0;
     PTHREAD_MUTEX_LOCK(&subscribe_ctx.sessions.lock);
     fc_list_for_each_entry(fields, &subscribe_ctx.sessions.head, dlink) {
-        session = ((ServerSessionEntry *)fields) - 1;
+        session = FCFS_AUTH_SERVER_SESSION_BY_FIELDS(fields);
         if (mparam->user_id != 0) {
             if (fields->dbuser->user.id != mparam->user_id) {
                 continue;
@@ -181,7 +182,6 @@ static void publish_matched_server_sessions(
     PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.sessions.lock);
 
     if (matched_count > 0) {
-        sf_notify_all_threads_ex(&CLUSTER_SF_CTX);
     }
 }
 
@@ -244,7 +244,7 @@ static int push_all_sessions_to_queue(ServerSessionSubscriber *subscriber)
             break;
         }
 
-        session = ((ServerSessionEntry *)fields) - 1;
+        session = FCFS_AUTH_SERVER_SESSION_BY_FIELDS(fields);
         set_session_subscribe_entry(session, subs_entry);
 
         if (head == NULL) {

@@ -490,6 +490,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "parse quota fail\n");
             return 1;
         }
+
         current_index++;
     } else if (need_quota) {
         fprintf(stderr, "expect quota\n");

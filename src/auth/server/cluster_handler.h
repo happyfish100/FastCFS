@@ -36,7 +36,11 @@ void cluster_task_finish_cleanup(struct fast_task_info *task);
 void *cluster_alloc_thread_extra_data(const int thread_index);
 int cluster_thread_loop_callback(struct nio_thread_data *thread_data);
 
-void cluster_subscriber_queue_push(ServerSessionSubscriber *subscriber);
+void cluster_subscriber_queue_push_ex(ServerSessionSubscriber *subscriber,
+        const bool notify);
+
+#define cluster_subscriber_queue_push(subscriber)  \
+    cluster_subscriber_queue_push_ex(subscriber, true)
 
 #ifdef __cplusplus
 }

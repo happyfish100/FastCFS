@@ -194,6 +194,8 @@ static int service_deal_user_login(struct fast_task_info *task)
         }
     } else {
         fields->dbpool = NULL;
+        fields->pool_privs.fdir = 0;
+        fields->pool_privs.fstore = 0;
     }
 
     flags = req->flags;
@@ -205,6 +207,13 @@ static int service_deal_user_login(struct fast_task_info *task)
         return ENOMEM;
     }
     SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_SESSION;
+
+    /*
+    logInfo("session id: %"PRId64", pool: %.*s, pool_privs "
+            "{fdir: %d, fstore: %d}", SESSION_ENTRY->session_id,
+            poolname.len, poolname.str,
+            fields->pool_privs.fdir, fields->pool_privs.fstore);
+            */
 
     resp = (FCFSAuthProtoUserLoginResp *)REQUEST.body;
     long2buff(SESSION_ENTRY->session_id, resp->session_id);

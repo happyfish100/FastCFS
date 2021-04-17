@@ -28,6 +28,11 @@
 extern "C" {
 #endif
 
+int fcfs_auth_for_server_check_priv(FCFSAuthClientContext *client_ctx,
+        SFRequestInfo *request, SFResponseInfo *response,
+        const FCFSAuthValidatePriviledgeType priv_type,
+        const int64_t the_priv);
+
 static inline int fcfs_auth_for_server_init_ex(FCFSAuthClientFullContext
         *auth, IniFullContext *ini_ctx, const char *cluster_filename,
         const char *section_name)
