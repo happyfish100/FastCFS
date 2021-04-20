@@ -436,7 +436,7 @@ int server_session_get_fields(const uint64_t session_id, void *fields)
         memcpy(fields, found->entry.fields, session_ctx.fields_size);
         result = 0;
     } else {
-        result = ENOENT;
+        result = SF_SESSION_ERROR_NOT_EXIST;
     }
     PTHREAD_MUTEX_UNLOCK(lock);
 
@@ -463,7 +463,7 @@ int server_session_user_priv_granted(const uint64_t session_id,
             result = EPERM;
         }
     } else {
-        result = ENOENT;
+        result = SF_SESSION_ERROR_NOT_EXIST;
     }
     PTHREAD_MUTEX_UNLOCK(lock);
 
@@ -490,7 +490,7 @@ int server_session_fstore_priv_granted(const uint64_t session_id,
             result = EPERM;
         }
     } else {
-        result = ENOENT;
+        result = SF_SESSION_ERROR_NOT_EXIST;
     }
     PTHREAD_MUTEX_UNLOCK(lock);
 
@@ -517,7 +517,7 @@ int server_session_fdir_priv_granted(const uint64_t session_id,
             result = EPERM;
         }
     } else {
-        result = ENOENT;
+        result = SF_SESSION_ERROR_NOT_EXIST;
     }
     PTHREAD_MUTEX_UNLOCK(lock);
 

@@ -41,7 +41,7 @@ int fcfs_auth_for_server_check_priv(FCFSAuthClientContext *client_ctx,
             result = server_session_fdir_priv_granted(session.id, the_priv);
         }
 
-        if (result == ENOENT) {
+        if (result == SF_SESSION_ERROR_NOT_EXIST) {
             validate = (g_current_time - session.fields.ts <=
                     g_server_session_cfg.validate_within_fresh_seconds);
         } else {
@@ -52,7 +52,6 @@ int fcfs_auth_for_server_check_priv(FCFSAuthClientContext *client_ctx,
     }
 
     if (validate) {
-        logInfo("validate session: %"PRId64, session.id);
         const int64_t pool_id = 0;  //TODO
         FC_SET_STRING_EX(session_id, request->body, FCFS_AUTH_SESSION_ID_LEN);
         result = fcfs_auth_client_session_validate(client_ctx,
@@ -60,8 +59,10 @@ int fcfs_auth_for_server_check_priv(FCFSAuthClientContext *client_ctx,
                 priv_type, pool_id, the_priv);
     }
 
-    logInfo("check priv cmd: %d, session: %"PRId64", "
-            "error no: %d", request->header.cmd, session.id, result);
+    /*
+    logInfo("check priv cmd: %d, session: %"PRId64", validate: %d, "
+            "error no: %d", request->header.cmd, session.id, validate, result);
+            */
     if (result != 0) {
         return result;
     }

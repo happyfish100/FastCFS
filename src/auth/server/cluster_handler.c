@@ -263,8 +263,8 @@ static int cluster_deal_session_validate(struct fast_task_info *task)
         return EACCES;
     }
 
-    if ((result=session_validate(session_id, priv_type,
-                    pool_id, priv_required)) == ENOENT)
+    if ((result=session_validate(session_id, priv_type, pool_id,
+                    priv_required)) == SF_SESSION_ERROR_NOT_EXIST)
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "session id: %"PRId64" not exist", session_id);
