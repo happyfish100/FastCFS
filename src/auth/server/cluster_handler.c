@@ -228,10 +228,12 @@ static int session_validate(const int64_t session_id,
             break;
     }
 
+    /*
     logInfo("session_id: %"PRId64", session_priv: %"PRId64", "
             "priv_required: %"PRId64", check result: %d",
             session_id, session_priv, priv_required,
             ((session_priv & priv_required) == priv_required) ? 0 : EPERM);
+            */
 
     return ((session_priv & priv_required) == priv_required) ? 0 : EPERM;
 }

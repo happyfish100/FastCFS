@@ -45,10 +45,12 @@ static int nss_fetch(ConnectionInfo *conn)
 
         end = nss_array.entries + nss_array.count;
         for (entry=nss_array.entries; entry<end; entry++) {
+            /*
             logInfo("%d. ns name: %.*s, used bytes: %.3lf GB",
                     (int)(entry - nss_array.entries + 1),
                     entry->ns_name.len, entry->ns_name.str,
                     (double)entry->used_bytes / (1024 * 1024 * 1024));
+                    */
             adb_spool_set_used_bytes(&entry->ns_name, entry->used_bytes);
         }
 

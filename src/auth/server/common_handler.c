@@ -34,7 +34,7 @@
 #include "server_global.h"
 #include "common_handler.h"
 
-#define LOG_LEVEL_FOR_DEBUG  LOG_INFO
+#define LOG_LEVEL_FOR_DEBUG  LOG_DEBUG
 
 static int fcfs_auth_get_cmd_log_level(const int cmd)
 {

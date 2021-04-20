@@ -405,9 +405,12 @@ ServerSessionEntry *server_session_add(const ServerSessionEntry *entry,
             sid.fields.rn = (int64_t)rand() * 32768LL / RAND_MAX;
             sid.fields.sn = __sync_add_and_fetch(&session_ctx.sn, 1);
             se->entry.session_id = sid.id;
+
+            /*
             logInfo("session_id: %"PRId64", ts: %d, publish: %d, "
                     "rand: %u, sn: %u", se->entry.session_id, sid.fields.ts,
                     publish, sid.fields.rn, sid.fields.sn);
+                    */
             result = session_htable_insert(se, replace);
         } while (result == EEXIST);
     } else {

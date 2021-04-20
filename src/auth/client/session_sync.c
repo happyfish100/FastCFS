@@ -159,30 +159,31 @@ static void deal_session_array()
 {
     const bool publish = true;
     ServerSessionEntry session;
-    char buff[512];
-    int len;
     SyncedSessionEntry *entry;
     SyncedSessionEntry *end;
 
     end = session_array.entries + session_array.count;
     for (entry=session_array.entries; entry<end; entry++) {
-        len = sprintf(buff, "%d. session id: %"PRId64", operation: %c",
-                (int)(entry - session_array.entries + 1),
-                entry->session_id, entry->operation);
-        if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
-            len += sprintf(buff + len, ", user {id: %"PRId64
-                    ", priv: %"PRId64"}", entry->fields.user.id,
-                    entry->fields.user.priv);
-            if (entry->fields.pool.id != 0) {
-                len += sprintf(buff + len, ", pool {id: %"PRId64
-                        ", avail: %d, privs: {fdir: %d, fstore: %d}}",
-                        entry->fields.pool.id, entry->fields.pool.available,
-                        entry->fields.pool.privs.fdir,
-                        entry->fields.pool.privs.fstore);
+        if (0) {
+            char buff[512];
+            int len;
+            len = sprintf(buff, "%d. session id: %"PRId64", operation: %c",
+                    (int)(entry - session_array.entries + 1),
+                    entry->session_id, entry->operation);
+            if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
+                len += sprintf(buff + len, ", user {id: %"PRId64
+                        ", priv: %"PRId64"}", entry->fields.user.id,
+                        entry->fields.user.priv);
+                if (entry->fields.pool.id != 0) {
+                    len += sprintf(buff + len, ", pool {id: %"PRId64
+                            ", avail: %d, privs: {fdir: %d, fstore: %d}}",
+                            entry->fields.pool.id, entry->fields.pool.available,
+                            entry->fields.pool.privs.fdir,
+                            entry->fields.pool.privs.fstore);
+                }
             }
+            logInfo("%s", buff);
         }
-
-        logInfo("%s", buff);
 
         if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
             session.session_id = entry->session_id;

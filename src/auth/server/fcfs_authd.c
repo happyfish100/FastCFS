@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     }
 
     snprintf(g_pid_filename, sizeof(g_pid_filename), 
-             "%s/serverd.pid", SF_G_BASE_PATH);
+             "%s/authd.pid", SF_G_BASE_PATH);
 
     sf_parse_daemon_mode_and_action(argc, argv, &daemon_mode, &action);
     result = process_action(g_pid_filename, action, &stop);
