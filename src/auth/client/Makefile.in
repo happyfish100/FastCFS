@@ -1,7 +1,7 @@
 .SUFFIXES: .c .o .lo
 
 COMPILE = $(CC) $(CFLAGS)
-INC_PATH = -I../common -Iinclude
+INC_PATH = -I../common
 LIB_PATH = $(LIBS) -lfastcommon -lserverframe
 TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
 
@@ -17,7 +17,7 @@ FAST_STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o \
                    fcfs_auth_client.o  simple_connection_manager.o \
                    session_sync.o fcfs_auth_for_server.o
 
-HEADER_FILES = ../common/auth_global ../common/auth_types.h \
+HEADER_FILES = ../common/auth_global.h ../common/auth_types.h \
                ../common/auth_proto.h ../common/auth_func.h \
                ../common/server_session.h \
                fcfs_auth_client.h client_types.h client_func.h \
