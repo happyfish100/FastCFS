@@ -38,7 +38,7 @@
 #include "fastcommon/sched_thread.h"
 #include "sf/sf_global.h"
 #include "sf/idempotency/client/client_channel.h"
-#include "fastcfs/fcfs_api.h"
+#include "fastcfs/api/fcfs_api.h"
 #include "fuse_wrapper.h"
 #include "global.h"
 
@@ -278,6 +278,7 @@ static const char *get_owner_type_caption(
 int fcfs_fuse_global_init(const char *config_filename)
 {
 #define MIN_THREAD_STACK_SIZE  (320 * 1024)
+    const bool publish = true;
     int result;
     string_t base_path;
     string_t mountpoint;
@@ -339,8 +340,9 @@ int fcfs_fuse_global_init(const char *config_filename)
             break;
         }
 
-        if ((result=fcfs_api_pooled_init1(g_fuse_global_vars.ns,
-                        &ini_ctx)) != 0)
+        if ((result=fcfs_api_pooled_init1_with_auth(
+                        g_fuse_global_vars.ns,
+                        &ini_ctx, publish)) != 0)
         {
             break;
         }

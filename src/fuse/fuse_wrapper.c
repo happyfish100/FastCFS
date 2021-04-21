@@ -1027,6 +1027,128 @@ static void fs_do_fallocate(fuse_req_t req, fuse_ino_t ino, int mode,
     fuse_reply_err(req, result);
 }
 
+static void fs_do_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
+        const char *value, size_t size, int flags)
+{
+    int64_t new_inode;
+    int result;
+    key_value_pair_t xattr;
+
+    if (fs_convert_inode(ino, &new_inode) != 0) {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+
+    FC_SET_STRING(xattr.key, (char *)name);
+    FC_SET_STRING_EX(xattr.value, (char *)value, size);
+    result = fcfs_api_set_xattr_by_inode(new_inode, &xattr, flags);
+    fuse_reply_err(req, result);
+}
+
+static void fs_do_removexattr(fuse_req_t req, fuse_ino_t ino,
+        const char *name)
+{
+    int64_t new_inode;
+    int result;
+    string_t nm;
+
+    if (fs_convert_inode(ino, &new_inode) != 0) {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+
+    FC_SET_STRING(nm, (char *)name);
+    result = fcfs_api_remove_xattr_by_inode(new_inode, &nm);
+    fuse_reply_err(req, result);
+}
+
+static void fs_do_getxattr(fuse_req_t req, fuse_ino_t ino,
+        const char *name, size_t size)
+{
+    int64_t new_inode;
+    int value_size;
+    int result;
+    char v[FDIR_XATTR_MAX_VALUE_SIZE];
+    string_t nm;
+    string_t value;
+
+    if (fs_convert_inode(ino, &new_inode) != 0) {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+
+    /*
+    logInfo("getxattr ino: %"PRId64", name: %s, size: %d, req: %p",
+            ino, name, (int)size, req);
+            */
+
+    if (size == 0) {
+        value_size = FDIR_XATTR_MAX_VALUE_SIZE;
+    } else if (size <= FDIR_XATTR_MAX_VALUE_SIZE) {
+        value_size = size;
+    } else {
+        value_size = FDIR_XATTR_MAX_VALUE_SIZE;
+    }
+
+    value.str = v;
+    FC_SET_STRING(nm, (char *)name);
+    if ((result=fcfs_api_get_xattr_by_inode(new_inode,
+                    &nm, &value, value_size)) != 0)
+    {
+        fuse_reply_err(req, result == EOVERFLOW ? ERANGE : result);
+        return;
+    }
+
+    if (size == 0) {
+        fuse_reply_xattr(req, value.len);
+    } else {
+        fuse_reply_buf(req, value.str, value.len);
+    }
+}
+
+static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
+{
+#define MAX_LIST_SIZE  (8 * 1024)
+
+    int64_t new_inode;
+    int list_size;
+    int result;
+    char v[MAX_LIST_SIZE];
+    string_t list;
+
+    if (fs_convert_inode(ino, &new_inode) != 0) {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+
+    if (size == 0) {
+        list_size = MAX_LIST_SIZE;
+    } else if (size <= MAX_LIST_SIZE) {
+        list_size = size;
+    } else {
+        list_size = MAX_LIST_SIZE;
+    }
+
+    list.str = v;
+    if ((result=fcfs_api_list_xattr_by_inode(new_inode,
+                    &list, list_size)) != 0)
+    {
+        fuse_reply_err(req, result == EOVERFLOW ? ERANGE : result);
+        return;
+    }
+
+    /*
+    logInfo("listxattr ino: %"PRId64", size: %d, list: %.*s, list len: %d",
+            ino, (int)size, list.len, list.str, list.len);
+            */
+
+    if (size == 0) {
+        fuse_reply_xattr(req, list.len);
+    } else {
+        fuse_reply_buf(req, list.str, list.len);
+    }
+}
+
 int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
 {
     int result;
@@ -1068,6 +1190,10 @@ int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
     ops->flock   = fs_do_flock;
     ops->statfs  = fs_do_statfs;
     ops->fallocate = fs_do_fallocate;
+    ops->setxattr = fs_do_setxattr;
+    ops->getxattr = fs_do_getxattr;
+    ops->listxattr = fs_do_listxattr;
+    ops->removexattr = fs_do_removexattr;
 
     return 0;
 }

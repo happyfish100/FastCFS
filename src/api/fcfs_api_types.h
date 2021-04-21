@@ -24,6 +24,8 @@
 #include "fastdir/client/fdir_client.h"
 #include "fastsore/api/fs_api.h"
 
+#define FCFS_FUSE_DEFAULT_CONFIG_FILENAME "/etc/fastcfs/fcfs/fuse.conf"
+
 typedef struct fcfs_api_opendir_session {
     FDIRClientDentryArray array;
     int btype;   //buffer type

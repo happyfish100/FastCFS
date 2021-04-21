@@ -8,15 +8,17 @@
 
 ```
 /etc/fastcfs/
-        |__ fcfs
+        |
+        |__ fcfs: fused服务
         |    |__ fuse.conf: fcfs_fused对应的配置文件
         |
-        |__ fdir
-        |    |__ cluster_servers.conf: 服务器列表，配置服务器ID、IP和端口
+        |__ fdir: FastDIR目录服务
+             |__ servers.conf: 服务器列表，配置服务器ID、IP和端口
+        |    |__ cluster.conf: 集群配置
         |    |__ server.conf: fdir_serverd对应的配置文件
         |    |__ client.conf: 客户端配置文件
         |
-        |__ fstore
+        |__ fstore: faststore存储服务
              |__ servers.conf: 服务器列表，配置服务器ID、IP和端口
              |__ cluster.conf: 配置服务器分组及数据分组之间的对应关系
              |__ storage.conf: 存储路径及空间分配和回收配置
@@ -29,6 +31,7 @@
 
 ```
 /opt/fastcfs/
+        |
         |__ fcfs
         |    |__ fused.pid: 服务进程fcfs_fused的pid文件
         |    |__ logs: 日志文件目录
@@ -42,24 +45,24 @@
         |         |__ slow.log: 慢查询日志
         |
         |__ fstore
-             |__ serverd.pid: 服务进程fs_serverd的pid文件
-             |__ data: 系统数据文件目录，包含集群拓扑结构和binlog
-             |__ logs: 日志文件目录
-                  |__ fs_serverd.log: 错误日志
-                  |__ slow.log: 慢查询日志
+              |__ serverd.pid: 服务进程fs_serverd的pid文件
+              |__ data: 系统数据文件目录，包含集群拓扑结构和binlog
+              |__ logs: 日志文件目录
+                   |__ fs_serverd.log: 错误日志
+                   |__ slow.log: 慢查询日志
 ```
 
-FastCFS集群配置包含如下三部分：
+FastCFS集群配置包含如下四部分：
 
 ### 1. fastDIR server（服务实例）配置
 
 配置文件路径：/etc/fastcfs/fdir
 
-fastDIR集群内各个server配置的cluster_servers.conf必须完全一样。
+fastDIR集群内各个server配置的servers.conf和cluster.conf必须完全一样。
 
 建议配置一次，分发到其他服务器即可。
 
-1.1 把fastDIR集群中的所有服务实例配置到cluster_servers.conf中；
+1.1 把fastDIR集群中的所有服务实例配置到servers.conf中；
 
   每个fastDIR服务实例包含2个服务端口：cluster 和 service
 
@@ -80,11 +83,19 @@ host = 172.16.168.128
 
   * 如果需要修改数据存放路径，修改配置项 data_path 为绝对路径
 
-  * [cluster] 和 [service] 配置的端口（port）必须与cluster_servers.conf中本机的一致，否则启动会报错
+  * [cluster] 和 [service] 配置的端口（port）必须与servers.conf中本机的一致，否则启动会报错
 
-  fastDIR重启及查看日志命令：
+  fastDIR重启：
+```
+/usr/bin/fdir_serverd /etc/fastcfs/fdir/server.conf restart
+```
+或者：
 ```
 sudo systemctl restart fastdir
+```
+
+查看日志：
+```
 tail /opt/fastcfs/fdir/logs/fdir_serverd.log
 ```
 
@@ -100,11 +111,11 @@ faststore集群各个服务实例配置的servers.conf和cluster.conf必须完�
 
   每个faststore服务实例包含3个服务端口：cluster、replica 和 service
 
-  和fastDIR的cluster_servers.conf相比，多了一个replica端口，二者配置方式完全相同。
+  和fastDIR的servers.conf相比，多了一个replica端口，二者配置方式完全相同。
 
 2.2 在cluster.conf中配置服务器分组和数据分组对应关系；
 
- 对于生产环境，为了便于今后扩容，建议数据分组数目至少为256，最好不要超过1024（视业务发展规模而定）
+ 对于生产环境，为了便于今后扩容，建议数据分组数目至少为256，最好不要超过1024（视业务未来5年发展规模而定）
 
 2.3 在storage.conf 中配置存储路径等参数；
 
@@ -125,9 +136,17 @@ path = /opt/faststore/data
 
   * [cluster]、[replica] 和 [service] 配置的端口（port）必须与servers.conf中本机的一致，否则启动会报错
 
-  faststore重启及查看日志命令：
+  faststore重启：
+```
+/usr/bin/fs_serverd /etc/fastcfs/fstore/server.conf restart
+```
+或者：
 ```
 sudo systemctl restart faststore
+```
+
+查看日志：
+```
 tail /opt/fastcfs/fstore/logs/fs_serverd.log
 ```
 
@@ -135,7 +154,7 @@ tail /opt/fastcfs/fstore/logs/fs_serverd.log
 
 fused 配置文件路径：/etc/fastcfs/fcfs
 
-3.1 复制faststore server上的如下两个配置文件到 /etc/fastcfs/fstore/
+3.1 复制faststore server上的如下配置文件到 /etc/fastcfs/fstore/
 ```
 /etc/fastcfs/fstore/servers.conf
 /etc/fastcfs/fstore/cluster.conf
@@ -143,7 +162,8 @@ fused 配置文件路径：/etc/fastcfs/fcfs
 
 3.2 复制fastDIR server上的如下配置文件到 /etc/fastcfs/fdir/
 ```
-/etc/fastcfs/fdir/cluster_servers.conf
+/etc/fastcfs/fdir/servers.conf
+/etc/fastcfs/fdir/cluster.conf
 ```
 
 3.3 如有必要，修改fuse.conf 中的mountpoint（可选）
@@ -151,9 +171,17 @@ fused 配置文件路径：/etc/fastcfs/fcfs
 mountpoint = /opt/fastcfs/fuse
 ```
 
-  fused 重启及查看日志命令：
+  fused 重启：
+```
+/usr/bin/fcfs_fused /etc/fastcfs/fcfs/fuse.conf restart
+```
+或者：
 ```
 sudo systemctl restart fastcfs
+```
+
+查看日志：
+```
 tail /opt/fastcfs/fcfs/logs/fcfs_fused.log
 ```
 
@@ -185,5 +213,10 @@ fs_cluster_stat -N
 df -h
 ```
 至此，mountpoint（如：/opt/fastcfs/fuse）可以作为本地文件目录访问了。
+
+### 4. 认证配置（可选）
+
+如果需要开启存储池或访问权限控制，请参阅 [认证配置文档](AUTH-zh_CN.md)
+
 
 祝顺利！ have a nice day!

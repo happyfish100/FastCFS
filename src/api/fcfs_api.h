@@ -117,6 +117,41 @@ extern "C" {
 
     void fcfs_api_terminate_ex(FCFSAPIContext *ctx);
 
+    int fcfs_api_client_session_create(FCFSAPIContext *ctx, const bool publish);
+
+    static inline int fcfs_api_init_with_auth(const char *ns,
+            const char *config_filename, const bool publish)
+    {
+        int result;
+        if ((result=fcfs_api_init(ns, config_filename)) != 0) {
+            return result;
+        }
+
+        return fcfs_api_client_session_create(&g_fcfs_api_ctx, publish);
+    }
+
+    static inline int fcfs_api_pooled_init_with_auth(const char *ns,
+            const char *config_filename, const bool publish)
+    {
+        int result;
+        if ((result=fcfs_api_pooled_init(ns, config_filename)) != 0) {
+            return result;
+        }
+
+        return fcfs_api_client_session_create(&g_fcfs_api_ctx, publish);
+    }
+
+    static inline int fcfs_api_pooled_init1_with_auth(const char *ns,
+            IniFullContext *ini_ctx, const bool publish)
+    {
+        int result;
+        if ((result=fcfs_api_pooled_init1(ns, ini_ctx)) != 0) {
+            return result;
+        }
+
+        return fcfs_api_client_session_create(&g_fcfs_api_ctx, publish);
+    }
+
     void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
             char *output, const int size);
 

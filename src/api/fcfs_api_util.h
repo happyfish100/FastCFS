@@ -77,6 +77,19 @@ extern "C" {
 #define fcfs_api_modify_dentry_stat(inode, attr, flags, dentry)  \
     fcfs_api_modify_dentry_stat_ex(&g_fcfs_api_ctx, inode, attr, flags, dentry)
 
+#define fcfs_api_set_xattr_by_inode(inode, xattr, flags) \
+    fcfs_api_set_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, xattr, flags)
+
+#define fcfs_api_remove_xattr_by_inode(inode, name) \
+    fcfs_api_remove_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, name)
+
+#define fcfs_api_get_xattr_by_inode(inode, name, value, size) \
+    fcfs_api_get_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, \
+            name, LOG_DEBUG, value, size)
+
+#define fcfs_api_list_xattr_by_inode(inode, list, size) \
+    fcfs_api_list_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, list, size)
+
 #define fcfs_api_list_dentry_by_inode(inode, array)  \
     fcfs_api_list_dentry_by_inode_ex(&g_fcfs_api_ctx, inode, array)
 
@@ -220,7 +233,7 @@ static inline int fcfs_api_modify_dentry_stat_ex(FCFSAPIContext *ctx,
         const int64_t inode, const struct stat *attr, const int64_t flags,
         FDIRDEntryInfo *dentry)
 {
-    FDIRDEntryStatus stat;
+    FDIRDEntryStat stat;
 
     if (ctx->async_report.enabled) {
         inode_htable_check_conflict_and_wait(inode);
@@ -234,6 +247,36 @@ static inline int fcfs_api_modify_dentry_stat_ex(FCFSAPIContext *ctx,
     stat.size = attr->st_size;
     return fdir_client_modify_dentry_stat(ctx->contexts.fdir,
             &ctx->ns, inode, flags, &stat, dentry);
+}
+
+static inline int fcfs_api_set_xattr_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, const key_value_pair_t *xattr,
+        const int flags)
+{
+    return fdir_client_set_xattr_by_inode(ctx->contexts.fdir,
+            &ctx->ns, inode, xattr, flags);
+}
+
+static inline int fcfs_api_remove_xattr_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, const string_t *name)
+{
+    return fdir_client_remove_xattr_by_inode(ctx->contexts.fdir,
+            &ctx->ns, inode, name);
+}
+
+static inline int fcfs_api_get_xattr_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, const string_t *name,
+        const int enoattr_log_level, string_t *value, const int size)
+{
+    return fdir_client_get_xattr_by_inode_ex(ctx->contexts.fdir,
+            inode, name, enoattr_log_level, value, size);
+}
+
+static inline int fcfs_api_list_xattr_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, string_t *list, const int size)
+{
+    return fdir_client_list_xattr_by_inode(ctx->contexts.fdir,
+            inode, list, size);
 }
 
 static inline int fcfs_api_list_dentry_by_inode_ex(FCFSAPIContext *ctx,

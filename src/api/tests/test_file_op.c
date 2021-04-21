@@ -26,15 +26,17 @@
 
 static void usage(char *argv[])
 {
-    fprintf(stderr, "Usage: %s [-c config_filename] "
+    fprintf(stderr, "Usage: %s [-c config_filename=%s] "
             "-n [namespace=fs] \n\t[-o offset=0] [-l length=0 for auto] "
             "[-A append mode] \n\t[-T truncate mode] [-S set file size = -1] "
-            "-i <input_filename> <filename>\n\n", argv[0]);
+            "-i <input_filename> <filename>\n\n", argv[0],
+            FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
 }
 
 int main(int argc, char *argv[])
 {
-    const char *config_filename = "/etc/fastcfs/fuse.conf";
+    const bool publish = false;
+    const char *config_filename = FCFS_FUSE_DEFAULT_CONFIG_FILENAME;
     FCFSAPIFileContext fctx;
 	int ch;
 	int result;
@@ -127,7 +129,9 @@ int main(int argc, char *argv[])
         length = file_size;
     }
 
-    if ((result=fcfs_api_pooled_init(ns, config_filename)) != 0) {
+    if ((result=fcfs_api_pooled_init_with_auth(ns,
+                    config_filename, publish)) != 0)
+    {
         return result;
     }
 

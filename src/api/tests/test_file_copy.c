@@ -24,7 +24,7 @@
 #include "fastcommon/logger.h"
 #include "fastcfs/fcfs_api.h"
 
-const char *config_filename = "/etc/fcfs/fuse.conf";
+const char *config_filename = FCFS_FUSE_DEFAULT_CONFIG_FILENAME;
 static char *ns = "fs";
 static int buffer_size = 128 * 1024;
 static char *input_filename;
@@ -35,11 +35,12 @@ static void usage(char *argv[])
     fprintf(stderr, "Usage: %s [-c config_filename=%s] "
             "[-n namespace=fs] [-b buffer_size=128KB] "
             "<input_local_filename> <fs_filename>\n\n",
-            argv[0], config_filename);
+            argv[0], FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
 }
 
 static int copy_file()
 {
+    const bool publish = false;
 #define FIXED_BUFFEER_SIZE  (128 * 1024)
     FCFSAPIFileContext fctx;
 	int result;
@@ -64,7 +65,9 @@ static int copy_file()
         return result;
     }
 
-    if ((result=fcfs_api_pooled_init(ns, config_filename)) != 0) {
+    if ((result=fcfs_api_pooled_init_with_auth(ns,
+                    config_filename, publish)) != 0)
+    {
         return result;
     }
     if ((result=fcfs_api_start()) != 0) {

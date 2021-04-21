@@ -50,6 +50,21 @@ static int opendir_session_alloc_init(void *element, void *args)
     return 0;
 }
 
+int fcfs_api_client_session_create(FCFSAPIContext *ctx, const bool publish)
+{
+    FCFSAuthClientFullContext *auth;
+
+    if (ctx->contexts.fdir->auth.enabled) {
+        auth = &ctx->contexts.fdir->auth;
+    } else if (ctx->contexts.fsapi->fs->auth.enabled) {
+        auth = &ctx->contexts.fsapi->fs->auth;
+    } else {
+        return 0;
+    }
+
+    return fcfs_auth_client_session_create_ex(auth, &ctx->ns, publish);
+}
+
 static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         FSAPIContext *fsapi, const char *ns, IniFullContext *ini_ctx,
         const char *fdir_section_name, const char *fsapi_section_name,
@@ -131,15 +146,16 @@ int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     int result;
 
     ini_ctx->section_name = fdir_section_name;
-    if ((result=fdir_client_init_ex1(fdir, ini_ctx,
-                    fdir_conn_manager)) != 0)
+    if ((result=fdir_client_init_ex1(fdir, &g_fcfs_auth_client_vars.
+                    client_ctx, ini_ctx, fdir_conn_manager)) != 0)
     {
         return result;
     }
 
     ini_ctx->section_name = fs_section_name;
-    if ((result=fs_client_init_ex1(fsapi->fs, ini_ctx,
-                    fs_conn_manager, bg_thread_enabled)) != 0)
+    if ((result=fs_client_init_ex1(fsapi->fs, &g_fcfs_auth_client_vars.
+                    client_ctx, ini_ctx, fs_conn_manager,
+                    bg_thread_enabled)) != 0)
     {
         return result;
     }
@@ -210,9 +226,11 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
 
     ini_ctx->section_name = fdir_section_name;
     if (conn_manager_type == conn_manager_type_simple) {
-        result = fdir_client_simple_init_ex1(fdir, ini_ctx);
+        result = fdir_client_simple_init_ex1(fdir,
+                &g_fcfs_auth_client_vars.client_ctx, ini_ctx);
     } else if (conn_manager_type == conn_manager_type_pooled) {
-        result = fdir_client_pooled_init_ex1(fdir, ini_ctx,
+        result = fdir_client_pooled_init_ex1(fdir,
+                &g_fcfs_auth_client_vars.client_ctx, ini_ctx,
                 max_count_per_entry, max_idle_time, bg_thread_enabled);
     } else {
         result = EINVAL;
@@ -222,8 +240,9 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     ini_ctx->section_name = fs_section_name;
-    if ((result=fs_client_init_ex1(fsapi->fs, ini_ctx,
-                    fs_conn_manager, bg_thread_enabled)) != 0)
+    if ((result=fs_client_init_ex1(fsapi->fs, &g_fcfs_auth_client_vars.
+                    client_ctx, ini_ctx, fs_conn_manager,
+                    bg_thread_enabled)) != 0)
     {
         return result;
     }
