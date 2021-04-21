@@ -111,10 +111,16 @@ fcfs_pool create fs unlimited
 /etc/fastcfs/auth/keys/session_validate.key
 ```
 
+拷贝完成后重启FastDIR服务（fdir_serverd）
+
 ### 3. FastStore server
 
 参见 2. FastDIR server 部分
+ 
+拷贝完成后重启FastStore服务（fs_serverd）
 
-### 4. FastCFS客户端（used）
+### 4. FastCFS客户端（fused）
 
 参见 2. FastDIR server 部分
+
+拷贝完成后重启fuse服务（fcfs_fused）

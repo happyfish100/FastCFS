@@ -85,9 +85,17 @@ host = 172.16.168.128
 
   * [cluster] 和 [service] 配置的端口（port）必须与servers.conf中本机的一致，否则启动会报错
 
-  fastDIR重启及查看日志命令：
+  fastDIR重启：
+```
+/usr/bin/fdir_serverd /etc/fastcfs/fdir/server.conf restart
+```
+或者：
 ```
 sudo systemctl restart fastdir
+```
+
+查看日志：
+```
 tail /opt/fastcfs/fdir/logs/fdir_serverd.log
 ```
 
@@ -128,9 +136,17 @@ path = /opt/faststore/data
 
   * [cluster]、[replica] 和 [service] 配置的端口（port）必须与servers.conf中本机的一致，否则启动会报错
 
-  faststore重启及查看日志命令：
+  faststore重启：
+```
+/usr/bin/fs_serverd /etc/fastcfs/fstore/server.conf restart
+```
+或者：
 ```
 sudo systemctl restart faststore
+```
+
+查看日志：
+```
 tail /opt/fastcfs/fstore/logs/fs_serverd.log
 ```
 
@@ -155,9 +171,17 @@ fused 配置文件路径：/etc/fastcfs/fcfs
 mountpoint = /opt/fastcfs/fuse
 ```
 
-  fused 重启及查看日志命令：
+  fused 重启：
+```
+/usr/bin/fcfs_fused /etc/fastcfs/fcfs/fuse.conf restart
+```
+或者：
 ```
 sudo systemctl restart fastcfs
+```
+
+查看日志：
+```
 tail /opt/fastcfs/fcfs/logs/fcfs_fused.log
 ```
 

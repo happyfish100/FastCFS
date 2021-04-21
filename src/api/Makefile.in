@@ -2,7 +2,7 @@
 
 COMPILE = $(CC) $(CFLAGS)
 INC_PATH = -I../common -I../include
-LIB_PATH = $(LIBS) -lfsclient -lfsapi -lfdirclient -lfastcommon -lserverframe
+LIB_PATH = $(LIBS) -lfsclient -lfsapi -lfdirclient -lfastcommon -lserverframe -lfcfsauthclient
 TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
 
 FAST_SHARED_OBJS = ../common/fcfs_global.lo fcfs_api.lo fcfs_api_file.lo    \

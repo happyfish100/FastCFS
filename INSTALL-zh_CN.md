@@ -72,24 +72,33 @@ git clone https://github.com/happyfish100/libserverframe.git; cd libserverframe/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-### 3. fastDIR
+### 3. Auth client
+
+```
+git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
+./make.sh clean && ./make.sh --module=auth_client && ./make.sh --module=auth_client install
+```
+
+### 4. fastDIR
 
 ```
 git clone https://github.com/happyfish100/fastDIR.git; cd fastDIR/
 ./make.sh clean && ./make.sh && ./make.sh install
+mkdir -p /etc/fastcfs/fdir/
+cp conf/*.conf /etc/fastcfs/fdir/
 ```
 
-### 4. faststore
+### 5. faststore
 
 ```
 git clone https://github.com/happyfish100/faststore.git; cd faststore/
 ./make.sh clean && ./make.sh && ./make.sh install
-mkdir /etc/fstore/
-cp conf/server.conf conf/client.conf conf/servers.conf conf/cluster.conf conf/storage.conf /etc/fstore/
+mkdir -p /etc/fastcfs/fstore/
+cp conf/*.conf /etc/fastcfs/fstore/
 ```
 
 
-### 5. libfuse
+### 6. libfuse
 
 libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编译和安装。或者执行如下步骤DIY：
 
@@ -142,13 +151,15 @@ ninja && ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 ```
 
-### 6. FastCFS
+### 7. FastCFS
 
+进入之前clone下来的FastCFS目录，然后执行：
 ```
-git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
 ./make.sh clean && ./make.sh && ./make.sh install
-mkdir /etc/fcfs/
-cp conf/fuse.conf /etc/fcfs/
+mkdir -p /etc/fastcfs/fcfs/
+mkdir -p /etc/fastcfs/auth/
+cp conf/*.conf /etc/fastcfs/fcfs/
+cp -R src/auth/conf/* /etc/fastcfs/auth/
 ```
 
 配置参见 [配置文档](CONFIGURE-zh_CN.md)
