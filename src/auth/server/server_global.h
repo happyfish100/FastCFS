@@ -19,7 +19,7 @@
 
 #include "fastcommon/common_define.h"
 #include "sf/sf_global.h"
-#include "common/auth_global.h"
+#include "../../common/fcfs_global.h"
 #include "server_types.h"
 
 #define AUTH_ADMIN_GENERATE_MODE_FIRST  'F'

@@ -1,14 +1,18 @@
-%define FastCFSFused  FastCFS-fused
-%define FastCFSAPI   FastCFS-api-libs
-%define FastCFSDevel FastCFS-api-devel
-%define FastCFSDebuginfo FastCFS-debuginfo
-%define FastCFSConfig FastCFS-fuse-config
+%define FastCFSFused        FastCFS-fused
+%define FastCFSAPI          FastCFS-api-libs
+%define FastCFSAuthServer   FastCFS-auth-server
+%define FastCFSAuthClient   FastCFS-auth-client
+%define FastCFSAPIDevel     FastCFS-api-devel
+%define FastCFSAuthDevel    FastCFS-auth-devel
+%define FastCFSDebuginfo    FastCFS-debuginfo
+%define FastCFSFuseConfig   FastCFS-fuse-config
+%define FastCFSAuthConfig   FastCFS-auth-config
 %define CommitVersion %(echo $COMMIT_VERSION)
 
 Name: FastCFS
 Version: 2.0.0
 Release: 1%{?dist}
-Summary: a high performance cloud native distributed file system for databases
+Summary: a high performance cloud native distributed file system for databases, KVM and K8s
 License: AGPL v3.0
 Group: Arch/Tech
 URL:  http://github.com/happyfish100/FastCFS/
@@ -30,7 +34,7 @@ commit version: %{CommitVersion}
 %package -n %{FastCFSFused}
 Requires: %{FastCFSAPI} = %{version}-%{release}
 Requires: fuse3 >= 3.10.1
-Requires: %{FastCFSConfig} >= 1.0.0
+Requires: %{FastCFSFuseConfig} >= 1.0.0
 Summary: FastCFS fuse
 
 %package -n %{FastCFSAPI}
@@ -38,13 +42,29 @@ Requires: fastDIR-client >= 2.0.0
 Requires: faststore-client >= 2.0.0
 Summary: FastCFS api library
 
-%package -n %{FastCFSDevel}
+%package -n %{FastCFSAPIDevel}
 Requires: %{FastCFSAPI} = %{version}-%{release}
 Summary: header files of FastCFS api library
 
-%package -n %{FastCFSConfig}
+%package -n %{FastCFSAuthDevel}
+Requires: %{FastCFSAuthClient} = %{version}-%{release}
+Summary: header files of FastCFS auth client
+
+%package -n %{FastCFSAuthServer}
+Requires: fastDIR-client >= 2.0.0
+Summary: FastCFS auth server
+
+%package -n %{FastCFSAuthClient}
+Requires: libfastcommon >= 1.0.49
+Requires: libserverframe >= 1.1.6
+Summary: FastCFS auth client
+
+%package -n %{FastCFSFuseConfig}
 Requires: faststore-config >= 1.0.0
 Summary: FastCFS fuse config files for sample
+
+%package -n %{FastCFSAuthConfig}
+Summary: FastCFS auth config files for sample
 
 %description -n %{FastCFSFused}
 FastCFS fuse
@@ -54,12 +74,28 @@ commit version: %{CommitVersion}
 FastCFS api library
 commit version: %{CommitVersion}
 
-%description -n %{FastCFSDevel}
+%description -n %{FastCFSAPIDevel}
 This package provides the header files of libfcfsapi
 commit version: %{CommitVersion}
 
-%description -n %{FastCFSConfig}
+%description -n %{FastCFSAuthDevel}
+This package provides the header files of libfcfsauthclient
+commit version: %{CommitVersion}
+
+%description -n %{FastCFSAuthServer}
+FastCFS auth server
+commit version: %{CommitVersion}
+
+%description -n %{FastCFSAuthClient}
+FastCFS auth client
+commit version: %{CommitVersion}
+
+%description -n %{FastCFSFuseConfig}
 FastCFS fuse config files for sample
+commit version: %{CommitVersion}
+
+%description -n %{FastCFSAuthConfig}
+FastCFS auth config files for sample
 commit version: %{CommitVersion}
 
 
@@ -72,12 +108,16 @@ commit version: %{CommitVersion}
 %install
 rm -rf %{buildroot}
 DESTDIR=$RPM_BUILD_ROOT ./make.sh install
-CONFDIR=%{buildroot}/etc/fastcfs/fcfs/
+FUSE_CONFDIR=%{buildroot}/etc/fastcfs/fcfs/
+AUTH_CONFDIR=%{buildroot}/etc/fastcfs/auth/
 SYSTEMDIR=%{buildroot}/usr/lib/systemd/system/
-mkdir -p $CONFDIR
+mkdir -p $FUSE_CONFDIR
+mkdir -p $AUTH_CONFDIR
 mkdir -p $SYSTEMDIR
-cp conf/*.conf $CONFDIR
+cp conf/*.conf $FUSE_CONFDIR
+cp -R src/auth/conf/* $AUTH_CONFDIR
 cp systemd/fastcfs.service $SYSTEMDIR
+cp systemd/fcfs_authd.service $SYSTEMDIR
 
 %post
 
@@ -102,13 +142,34 @@ mkdir -p /opt/fastcfs/fuse
 %defattr(-,root,root,-)
 /usr/lib64/libfcfsapi.so*
 
-%files -n %{FastCFSDevel}
+%files -n %{FastCFSAPIDevel}
 %defattr(-,root,root,-)
-/usr/include/fastcfs/*
+/usr/include/fastcfs/api/*
 
-%files -n %{FastCFSConfig}
+%post -n %{FastCFSAuthServer}
+mkdir -p /opt/fastcfs/auth
+
+%files -n %{FastCFSAuthServer}
+/usr/bin/fcfs_authd
+%config(noreplace) /usr/lib/systemd/system/fcfs_authd.service
+
+%files -n %{FastCFSAuthClient}
+/usr/lib64/libfcfsauthclient.so*
+/usr/bin/fcfs_user
+/usr/bin/fcfs_pool
+
+%files -n %{FastCFSAuthDevel}
+%defattr(-,root,root,-)
+/usr/include/fastcfs/auth/*
+
+%files -n %{FastCFSFuseConfig}
 %defattr(-,root,root,-)
 %config(noreplace) /etc/fastcfs/fcfs/*.conf
+
+%files -n %{FastCFSAuthConfig}
+%defattr(-,root,root,-)
+%config(noreplace) /etc/fastcfs/auth/*.conf
+%config(noreplace) /etc/fastcfs/auth/keys/*
 
 %changelog
 * Fri Jan 1 2021 YuQing <384681@qq.com>

@@ -1,25 +1,24 @@
 .SUFFIXES: .c .o .lo
 
 COMPILE = $(CC) $(CFLAGS)
-INC_PATH = -I../common
+INC_PATH = -I../common -Iinclude
 LIB_PATH = $(LIBS) -lfastcommon -lserverframe
 TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
 
-FAST_SHARED_OBJS = ../common/auth_global.lo ../common/auth_proto.lo \
+FAST_SHARED_OBJS = ../../common/fcfs_global.lo ../common/auth_proto.lo \
                    ../common/auth_func.lo  ../common/server_session.lo \
                    client_func.lo client_global.lo client_proto.lo \
                    fcfs_auth_client.lo simple_connection_manager.lo \
                    session_sync.lo fcfs_auth_for_server.lo
 
-FAST_STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o \
+FAST_STATIC_OBJS = ../../common/fcfs_global.o ../common/auth_proto.o \
                    ../common/auth_func.o ../common/server_session.o \
                    client_func.o client_global.o client_proto.o \
                    fcfs_auth_client.o  simple_connection_manager.o \
                    session_sync.o fcfs_auth_for_server.o
 
-HEADER_FILES = ../common/auth_types.h ../common/auth_global.h \
-               ../common/auth_proto.h ../common/auth_func.h \
-               ../common/server_session.h \
+HEADER_FILES = ../common/auth_types.h ../common/auth_proto.h \
+               ../common/auth_func.h ../common/server_session.h \
                fcfs_auth_client.h client_types.h client_func.h \
                client_global.h client_proto.h simple_connection_manager.h \
                session_sync.h fcfs_auth_for_server.h

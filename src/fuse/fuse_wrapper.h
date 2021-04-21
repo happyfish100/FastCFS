@@ -22,8 +22,8 @@
 #endif
 
 #include "fastcommon/logger.h"
-#include "fastcfs/fcfs_api.h"
-#include "fastcfs/fcfs_api_util.h"
+#include "fastcfs/api/fcfs_api.h"
+#include "fastcfs/api/fcfs_api_util.h"
 #include "fuse3/fuse_lowlevel.h"
 
 #define FCFS_FUSE_SET_OMP(omp, m, euid, egid) \

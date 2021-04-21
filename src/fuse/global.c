@@ -38,7 +38,7 @@
 #include "fastcommon/sched_thread.h"
 #include "sf/sf_global.h"
 #include "sf/idempotency/client/client_channel.h"
-#include "fastcfs/fcfs_api.h"
+#include "fastcfs/api/fcfs_api.h"
 #include "fuse_wrapper.h"
 #include "global.h"
 

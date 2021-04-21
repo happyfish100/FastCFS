@@ -17,7 +17,7 @@
 #ifndef _FCFS_AUTH_CLIENT_FUNC_H
 #define _FCFS_AUTH_CLIENT_FUNC_H
 
-#include "auth_global.h"
+#include "fastcfs/api/fcfs_global.h"
 #include "client_types.h"
 
 #ifdef __cplusplus

@@ -206,9 +206,9 @@ static void server_log_configs()
             POOL_NAME_TEMPLATE.str);
 
     logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s",
-            g_fcfs_auth_global_vars.version.major,
-            g_fcfs_auth_global_vars.version.minor,
-            g_fcfs_auth_global_vars.version.patch,
+            g_fcfs_global_vars.version.major,
+            g_fcfs_global_vars.version.minor,
+            g_fcfs_global_vars.version.patch,
             sz_global_config, sz_slowlog_config,
             sz_service_config, sz_server_config);
 

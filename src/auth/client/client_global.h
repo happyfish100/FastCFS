@@ -17,7 +17,7 @@
 #ifndef _FCFS_AUTH_CLIENT_GLOBAL_H
 #define _FCFS_AUTH_CLIENT_GLOBAL_H
 
-#include "auth_global.h"
+#include "fastcfs/api/fcfs_global.h"
 #include "client_types.h"
 
 typedef struct fcfs_auth_client_global_vars {
