@@ -5,7 +5,7 @@ INC_PATH = -I.. -I../common
 LIB_PATH = $(LIBS) -lfdirclient -lfastcommon -lserverframe -lfcfsauthclient
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
-STATIC_OBJS = ../../common/fcfs_global.o ../common/auth_proto.o \
+STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o \
               ../common/auth_func.o ../common/server_session.o \
               db/dao/dao.o db/dao/func.o db/dao/user.o \
               db/dao/storage_pool.o db/dao/granted_pool.o \

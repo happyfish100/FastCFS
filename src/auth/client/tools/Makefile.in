@@ -1,7 +1,7 @@
 .SUFFIXES: .c .o .lo
 
 COMPILE = $(CC) $(CFLAGS)
-INC_PATH = -I../../common -I../../include -I/usr/local/include
+INC_PATH = -I../../common -I../include -I/usr/local/include
 LIB_PATH = -L.. $(LIBS) -lfcfsauthclient -lfastcommon
 TARGET_PATH = $(TARGET_PREFIX)/bin
 

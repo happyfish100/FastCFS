@@ -121,9 +121,9 @@ void fcfs_auth_client_log_config_ex(FCFSAuthClientContext *client_ctx,
             "connect_timeout=%d, "
             "network_timeout=%d, "
             "%s, auth_server_count=%d%s%s",
-            g_fcfs_global_vars.version.major,
-            g_fcfs_global_vars.version.minor,
-            g_fcfs_global_vars.version.patch,
+            g_fcfs_auth_global_vars.version.major,
+            g_fcfs_auth_global_vars.version.minor,
+            g_fcfs_auth_global_vars.version.patch,
             g_fcfs_auth_client_vars.base_path,
             client_ctx->common_cfg.connect_timeout,
             client_ctx->common_cfg.network_timeout,

@@ -14,29 +14,20 @@
  */
 
 
-#ifndef _FCFS_AUTH_CLIENT_GLOBAL_H
-#define _FCFS_AUTH_CLIENT_GLOBAL_H
+#ifndef _FCFS_AUTH_GLOBAL_H
+#define _FCFS_AUTH_GLOBAL_H
 
-#include "auth_global.h"
-#include "client_types.h"
+#include "fastcommon/common_define.h"
 
-typedef struct fcfs_auth_client_global_vars {
-    char base_path[MAX_PATH_SIZE];
-
-    FCFSAuthClientContext client_ctx;
-} FCFSAuthClientGlobalVars;
-
-#define fcfs_auth_client_init_full_ctx_ex(auth, client_ctx) \
-    (auth)->ctx = client_ctx
-
-#define fcfs_auth_client_init_full_ctx(auth) \
-    fcfs_auth_client_init_full_ctx_ex(auth, &g_fcfs_auth_client_vars.client_ctx)
+typedef struct fcfs_auth_global_vars {
+    Version version;
+} FCFSAuthGlobalVars;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern FCFSAuthClientGlobalVars g_fcfs_auth_client_vars;
+    extern FCFSAuthGlobalVars g_fcfs_auth_global_vars;
 
 #ifdef __cplusplus
 }
