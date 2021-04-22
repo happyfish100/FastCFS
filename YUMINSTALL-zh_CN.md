@@ -43,6 +43,15 @@ yum install FastCFS-fused -y
    * 第一次安装才需要卸载fuse包，以后就不用执行了。
 ```
 
+### 5. Auth server安装（可选）
+
+如果需要存储池或访问控制，则需要安装本模块。
+
+在需要运行 Auth server的服务器上执行：
+```
+yum install FastCFS-auth-server -y
+```
+
 安装完成后，需要修改对应的配置文件，服务才可以正常启动。请参阅[配置指南](CONFIGURE-zh_CN.md)
 
 FastDFS后台程序可通过systemd管理。systemd服务名称如下：
@@ -50,11 +59,13 @@ FastDFS后台程序可通过systemd管理。systemd服务名称如下：
   * fastdir： 目录服务，对应程序为 fdir_serverd
   * faststore：存储服务，对应程序为 fs_serverd
   * fastcfs： FUSE后台服务，对应程序为 fcfs_fused
+  * fcfs_authd： 认证服务，对应程序为 fcfs_authd
 ```
 
-可以使用标准的systemd命令对上述3个服务进行管理，例如：
+可以使用标准的systemd命令对上述4个服务进行管理，例如：
 ```
 systemctl restart fastdir
 systemctl restart faststore
 systemctl restart fastcfs
+systemctl restart fcfs_authd
 ```

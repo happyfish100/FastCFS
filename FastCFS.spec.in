@@ -45,6 +45,7 @@ Summary: header files of FastCFS api library
 
 %package -n %{FastCFSAuthServer}
 Requires: fastDIR-client >= 2.0.0
+Requires: FastCFS-auth-config >= 2.0.0
 Summary: FastCFS auth server
 
 %package -n %{FastCFSFuseConfig}
