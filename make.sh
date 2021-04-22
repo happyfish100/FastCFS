@@ -5,19 +5,23 @@ TARGET_CONF_PATH=$DESTDIR/etc/fdir
 TARGET_INIT_PATH=$DESTDIR/etc/init.d
 
 module=''
+exclude=''
 for arg do
   case "$arg" in
     --module=*)
       module=${arg#--module=}
     ;;
+    --exclude=*)
+      exclude=${arg#--exclude=}
+    ;;
   esac
 done
 
-if [ -z $module ]; then
+if [ -z $module ] && [ -z $exclude ]; then
   param1=$1
   param2=$2
 else
-  if [ $module = 'all' ]; then
+  if [ "x$module" = 'xall' ]; then
      module=''
   fi
   param1=$2
@@ -154,35 +158,43 @@ replace_makefile()
 base_path=$(pwd)
 
 if [ -z $module ] || [ "$module" = 'auth_server' ]; then
-  cd $base_path/src/auth/server
-  replace_makefile
-  make $param1 $param2
-fi
-
-if [ -z $module ] || [ "$module" = 'auth_client' ]; then
-  cd $base_path/src/auth/client
-  replace_makefile
-  make $param1 $param2
-
-  cd $base_path/src/auth/client/tools
-  replace_makefile
-  make $param1 $param2
-fi
-
-if [ -z $module ] || [ "$module" = 'api' ]; then
-  cd $base_path/src/api
-  replace_makefile
-  make $param1 $param2
-
-  if [ -z $DESTDIR ]; then
-    cd tests || exit
+  if [ "x$exclude" != 'xauth_server' ]; then
+    cd $base_path/src/auth/server
     replace_makefile
     make $param1 $param2
   fi
 fi
 
+if [ -z $module ] || [ "$module" = 'auth_client' ]; then
+  if [ "x$exclude" != 'xauth_client' ]; then
+    cd $base_path/src/auth/client
+    replace_makefile
+    make $param1 $param2
+
+    cd $base_path/src/auth/client/tools
+    replace_makefile
+    make $param1 $param2
+  fi
+fi
+
+if [ -z $module ] || [ "$module" = 'api' ]; then
+  if [ "x$exclude" != 'xapi' ]; then
+    cd $base_path/src/api
+    replace_makefile
+    make $param1 $param2
+
+    if [ -z $DESTDIR ]; then
+      cd tests || exit
+      replace_makefile
+      make $param1 $param2
+    fi
+  fi
+fi
+
 if [ -z $module ] || [ "$module" = 'fuse' ]; then
-  cd $base_path/src/fuse
-  replace_makefile
-  make $param1 $param2
+  if [ "x$exclude" != 'xfuse' ]; then
+    cd $base_path/src/fuse
+    replace_makefile
+    make $param1 $param2
+  fi
 fi
