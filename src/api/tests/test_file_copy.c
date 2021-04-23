@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "fastcommon/logger.h"
-#include "fastcfs/fcfs_api.h"
+#include "fastcfs/api/fcfs_api.h"
 
 const char *config_filename = FCFS_FUSE_DEFAULT_CONFIG_FILENAME;
 static char *ns = "fs";
