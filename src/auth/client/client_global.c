@@ -15,4 +15,6 @@
 
 #include "client_global.h"
 
-FCFSAuthClientGlobalVars g_fcfs_auth_client_vars;
+FCFSAuthClientGlobalVars g_fcfs_auth_client_vars = {
+    {'/', 't', 'm', 'p'}, true, {false}
+};

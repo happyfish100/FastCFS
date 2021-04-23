@@ -48,14 +48,18 @@ static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
             &username, &new_key_filename);
     new_filename.str = FC_FILENAME_STRING_PTR(new_key_filename);
     new_filename.len = strlen(new_filename.str);
-    if ((result=fcfs_auth_load_passwd(new_filename.str,
-                    auth_cfg->passwd_buff)) != 0)
-    {
-        logError("file: "__FILE__", line: %d, "
-                "config file: %s, secret_key_filename: %s, "
-                "load password fail, ret code: %d", __LINE__,
-                auth_config_filename, new_filename.str, result);
-        return result;
+    if (g_fcfs_auth_client_vars.need_load_passwd) {
+        if ((result=fcfs_auth_load_passwd(new_filename.str,
+                        auth_cfg->passwd_buff)) != 0)
+        {
+            logError("file: "__FILE__", line: %d, "
+                    "config file: %s, secret_key_filename: %s, "
+                    "load password fail, ret code: %d", __LINE__,
+                    auth_config_filename, new_filename.str, result);
+            return result;
+        }
+    } else {
+        memset(auth_cfg->passwd_buff, 0, FCFS_AUTH_PASSWD_LEN);
     }
 
     auth_cfg->buff = (char *)fc_malloc(username.len + 1 +

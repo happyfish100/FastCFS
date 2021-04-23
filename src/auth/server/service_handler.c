@@ -48,6 +48,7 @@
 
 int service_handler_init()
 {
+    g_fcfs_auth_client_vars.need_load_passwd = false;
     return auth_db_init();
 }
 

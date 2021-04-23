@@ -22,7 +22,7 @@
 
 typedef struct fcfs_auth_client_global_vars {
     char base_path[MAX_PATH_SIZE];
-
+    bool need_load_passwd;
     FCFSAuthClientContext client_ctx;
 } FCFSAuthClientGlobalVars;
 
