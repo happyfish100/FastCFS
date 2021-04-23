@@ -7,22 +7,23 @@
 #     faststore
 #
 # If no source code in build path, it will git clone from:
-#     https://github.com/happyfish100/libfastcommon.git
-#     https://github.com/happyfish100/libserverframe.git
-#     https://github.com/happyfish100/fastDIR.git
-#     https://github.com/happyfish100/faststore.git
+#     https://gitee.com/fastdfs100/libfastcommon.git
+#     https://gitee.com/fastdfs100/libserverframe.git
+#     https://gitee.com/fastdfs100/fastDIR.git
+#     https://gitee.com/fastdfs100/faststore.git
 #
 
 # FastCFS modules and repositores
 COMMON_LIB="libfastcommon"
-COMMON_LIB_URL="https://github.com/happyfish100/libfastcommon.git"
+COMMON_LIB_URL="https://gitee.com/fastdfs100/libfastcommon.git"
 FRAME_LIB="libserverframe"
-FRAME_LIB_URL="https://github.com/happyfish100/libserverframe.git"
+FRAME_LIB_URL="https://gitee.com/fastdfs100/libserverframe.git"
 FDIR_LIB="fastDIR"
-FDIR_LIB_URL="https://github.com/happyfish100/fastDIR.git"
+FDIR_LIB_URL="https://gitee.com/fastdfs100/fastDIR.git"
 STORE_LIB="faststore"
-STORE_LIB_URL="https://github.com/happyfish100/faststore.git"
+STORE_LIB_URL="https://gitee.com/fastdfs100/faststore.git"
 FASTCFS_LIB="FastCFS"
+AUTHCLIENT_LIB="auth_client"
 
 DEFAULT_CLUSTER_SIZE=3
 DEFAULT_HOST=127.0.0.1
@@ -82,14 +83,23 @@ make_op() {
   module_name=$1
   make_mode=$2
 
-  if [ $module_name = $FASTCFS_LIB ]; then
-    echo "INFO:=====Begin to $make_mode module $module_name...====="
-      command="./$make_shell $make_mode"
+  if [ $module_name = $AUTHCLIENT_LIB ]; then
+      echo "INFO:=====Begin to $make_mode module $module_name...====="
+      command="./$make_shell --module=auth_client $make_mode"
       echo "INFO:Execute command=$command, path=$PWD"
       if [ $make_mode = "make" ]; then
-          result=`./$make_shell`
+          result=`./$make_shell --module=auth_client`
         else
-          result=`./$make_shell $make_mode`
+          result=`./$make_shell --module=auth_client $make_mode`
+      fi
+  elif [ $module_name = $FASTCFS_LIB ]; then
+      echo "INFO:=====Begin to $make_mode module $module_name...====="
+      command="./$make_shell --exclude=auth_client $make_mode"
+      echo "INFO:Execute command=$command, path=$PWD"
+      if [ $make_mode = "make" ]; then
+          result=`./$make_shell --exclude=auth_client`
+        else
+          result=`./$make_shell --exclude=auth_client $make_mode`
       fi
   else
     if ! [ -d $BUILD_PATH/$module_name ]; then
@@ -795,15 +805,23 @@ case "$mode" in
     make_op $COMMON_LIB clean
     make_op $COMMON_LIB make
     make_op $COMMON_LIB install
+
     make_op $FRAME_LIB clean
     make_op $FRAME_LIB make
     make_op $FRAME_LIB install
+
+    make_op $AUTHCLIENT_LIB clean
+    make_op $AUTHCLIENT_LIB make
+    make_op $AUTHCLIENT_LIB install
+
     make_op $FDIR_LIB clean
     make_op $FDIR_LIB make
     make_op $FDIR_LIB install
+
     make_op $STORE_LIB clean
     make_op $STORE_LIB make
     make_op $STORE_LIB install
+
     make_op $FASTCFS_LIB clean
     make_op $FASTCFS_LIB make
     make_op $FASTCFS_LIB install

@@ -53,7 +53,7 @@ $FCFS_SHELL_PATH/fuse.sh restart
 ### 1. libfastcommon
 
 ```
-git clone https://github.com/happyfish100/libfastcommon.git; cd libfastcommon/
+git clone https://gitee.com/fastdfs100/libfastcommon.git; cd libfastcommon/
 git checkout master
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
@@ -68,21 +68,21 @@ git checkout master
 ### 2. libserverframe
 
 ```
-git clone https://github.com/happyfish100/libserverframe.git; cd libserverframe/
+git clone https://gitee.com/fastdfs100/libserverframe.git; cd libserverframe/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
 ### 3. Auth client
 
 ```
-git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
+git clone https://gitee.com/fastdfs100/FastCFS.git; cd FastCFS/
 ./make.sh clean && ./make.sh --module=auth_client && ./make.sh --module=auth_client install
 ```
 
 ### 4. fastDIR
 
 ```
-git clone https://github.com/happyfish100/fastDIR.git; cd fastDIR/
+git clone https://gitee.com/fastdfs100/fastDIR.git; cd fastDIR/
 ./make.sh clean && ./make.sh && ./make.sh install
 mkdir -p /etc/fastcfs/fdir/
 cp conf/*.conf /etc/fastcfs/fdir/
@@ -91,7 +91,7 @@ cp conf/*.conf /etc/fastcfs/fdir/
 ### 5. faststore
 
 ```
-git clone https://github.com/happyfish100/faststore.git; cd faststore/
+git clone https://gitee.com/fastdfs100/faststore.git; cd faststore/
 ./make.sh clean && ./make.sh && ./make.sh install
 mkdir -p /etc/fastcfs/fstore/
 cp conf/*.conf /etc/fastcfs/fstore/
@@ -140,7 +140,7 @@ yum install gcc gcc-c++ -y
 ##### libfuse安装
 
 ```
-git clone https://github.com/libfuse/libfuse.git
+git clone git@github.com:libfuse/libfuse.git || git clone https://github.com/libfuse/libfuse.git
 cd libfuse/
 git checkout fuse-3.10.1
 mkdir build/; cd build/
