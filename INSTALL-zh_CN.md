@@ -1,11 +1,11 @@
 
 ## 一、fastcfs.sh 脚本统一安装
 
-通过执行fastcfs.sh脚本，可自动从github仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
+通过执行fastcfs.sh脚本，可自动从gitee仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
 
 fastcfs.sh 命令参数说明：
 
-* pull -- 从github拉取或更新代码库（拉取到本地build目录）
+* pull -- 从gitee拉取或更新代码库（拉取到本地build目录）
 * makeinstall -- 顺序编译、安装代码库（make clean && make && make install）
 * init -- 初始化集群目录、配置文件（已存在不会重新生成）
 * clean -- 清除已编译程序文件（相当于make clean）
@@ -140,8 +140,7 @@ yum install gcc gcc-c++ -y
 ##### libfuse安装
 
 ```
-git clone git@github.com:libfuse/libfuse.git || git clone https://github.com/libfuse/libfuse.git
-cd libfuse/
+git clone https://gitee.com/mirrors/libfuse.git; cd libfuse/
 git checkout fuse-3.10.1
 mkdir build/; cd build/
 meson ..

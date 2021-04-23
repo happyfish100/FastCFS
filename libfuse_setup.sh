@@ -173,7 +173,7 @@ if [ $? -ne 0 ]; then
 fi
 
 mkdir -p build; cd build
-git clone git@github.com:libfuse/libfuse.git || git clone https://github.com/libfuse/libfuse.git
+git clone https://gitee.com/mirrors/libfuse.git
 cd libfuse/
 git checkout fuse-3.10.1
 rm -rf build/ && mkdir build/ && cd build/

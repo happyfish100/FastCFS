@@ -15,15 +15,15 @@ V2.0.0
 
 ## 4. 依赖
 
-* [libfuse](https://github.com/libfuse/libfuse) (版本 3.9.4 或更高版本)
+* [libfuse](https://gitee.com/mirrors/libfuse) (版本 3.9.4 或更高版本)
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.49)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.6)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V2.0.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V2.0.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V2.0.0)
+* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.49)
+* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.6)
+* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V2.0.0)
+* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V2.0.0)
+* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V2.0.0)
 
 ## 5. 安装
 
@@ -33,7 +33,7 @@ FastCFS包含 libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五
 
 如果你打算快速体验一下FastCFS，可以一键搭建(包括部署和运行)demo环境（需要root身份执行）：
 ```
-git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
+git clone https://gitee.com/fastdfs100/FastCFS.git; cd FastCFS/
 ./helloWorld.sh --prefix=/usr/local/fastcfs-test
 ```
 
