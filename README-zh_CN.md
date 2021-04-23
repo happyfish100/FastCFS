@@ -37,7 +37,7 @@ git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
 ./helloWorld.sh --prefix=/usr/local/fastcfs-test
 ```
 
-上述操作完成后，通过命令 df -h  可以看到FastCFS挂载的文件目录。
+上述操作完成后，通过命令 df -h  可以看到FastCFS挂载的文件目录，你可以当作本地文件系统访问该目录。
 
 ### DIY安装
 
