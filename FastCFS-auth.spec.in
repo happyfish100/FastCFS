@@ -20,6 +20,9 @@ BuildRequires: libserverframe-devel >= 1.1.6
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
 Requires: libfastcommon >= 1.0.49
 Requires: libserverframe >= 1.1.6
+Requires: FastCFS-auth-server = %{version}-%{release}
+Requires: %{FastCFSAuthClient} = %{version}-%{release}
+Requires: %{FastCFSAuthConfig} = %{version}-%{release}
 
 %description
 the auth client library and config files of FastCFS.

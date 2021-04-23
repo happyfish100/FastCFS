@@ -22,7 +22,6 @@ BuildRequires: faststore-devel >= 2.0.0
 BuildRequires: fuse3-devel >= 3.10.1
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
 Requires: %{FastCFSFused} = %{version}-%{release}
-Requires: %{FastCFSAPI} = %{version}-%{release}
 
 %description
 a high performance distributed file system which can be used as the back-end storage of databases and cloud platforms.
