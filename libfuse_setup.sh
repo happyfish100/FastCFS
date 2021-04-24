@@ -102,6 +102,15 @@ else
 fi
 
 if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
+  repo=$(rpm -q FastOSrepo 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    if [ $os_major_version -eq 7 ]; then
+      rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
+    else
+      rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
+    if
+  fi
+
   yum remove fuse -y
   yum install fuse3 -y
   exit 0
