@@ -112,7 +112,7 @@ if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 
   fi
 
   rpm -q fuse >/dev/null && yum remove fuse -y
-  yum install fuse3 -y
+  yum install fuse3-devel -y
   exit 0
 else
   git_version=$(git --version 2>&1 | grep 'version' | awk '{print $3}')
