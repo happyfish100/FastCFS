@@ -89,7 +89,7 @@ static void *pool_usage_refresh_thread_func(void *arg)
     cm = &g_fdir_client_vars.client_ctx.cm;
     while (SF_G_CONTINUE_FLAG) {
         if ((conn=cm->ops.get_master_connection(cm, 0, &result)) == NULL) {
-            sleep(1);
+            sleep(3);
             continue;
         }
 

@@ -96,7 +96,16 @@ if [ $uname = 'Linux' ]; then
             awk -F '"' '{if (NF==3) {print $2} else {print $1}}')
   fi
   os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
+else
+  echo "Unsupport OS: $uname" 1>&2
+  exit 1
+fi
 
+if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
+  yum remove fuse -y
+  yum install fuse3 -y
+  exit 0
+else
   git_version=$(git --version 2>&1 | grep 'version' | awk '{print $3}')
   make_version=$(make --version 2>&1 | grep 'Make' | awk '{print $3}')
   PKG_CONFIG_PRG=$(which pkg-config 2>&1)
@@ -157,9 +166,6 @@ if [ $uname = 'Linux' ]; then
       yum_install_required_gcc
     fi
   fi
-else
-  echo "Unsupport OS: $uname" 1>&2
-  exit 1
 fi
 
 MESON_PRG=$(which meson 2>&1)

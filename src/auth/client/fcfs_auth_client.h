@@ -58,9 +58,12 @@ static inline int fcfs_auth_client_session_create_ex(
 {
     int flags;
 
-    logInfo("auth_enabled: %d, username: %s, secret_key_filename: %s",
-            auth->enabled, auth->ctx->auth_cfg.username.str,
+    /*
+    logInfo("file: "__FILE__", line: %d, "
+            "auth_enabled: %d, username: %s, secret_key_filename: %s",
+            __LINE__, auth->enabled, auth->ctx->auth_cfg.username.str,
             auth->ctx->auth_cfg.secret_key_filename.str);
+            */
 
     if (auth->enabled) {
         flags = (publish ? FCFS_AUTH_SESSION_FLAGS_PUBLISH : 0);
