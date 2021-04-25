@@ -1,0 +1,19 @@
+# enable / disable authentication
+# default value is false
+auth_enabled = false
+
+# the username for login
+# default value is admin
+username = admin
+
+# the secret key filename of the user
+# variable ${username} will be replaced with the value of username
+# default value is /etc/fastcfs/auth/keys/${username}.key
+secret_key_filename = ${SECRET_KEY_PATH}/${username}.key
+
+# the secret key filename for session validation
+# the file content is 32 bytes hex characters
+session_validate_key_filename = ${SESSION_VALIDATE_KEY_FILENAME}
+
+# the config filename of auth client
+client_config_filename = ${CLIENT_CONFIG_FILENAME}

@@ -23,7 +23,7 @@
 # config the id, ip address and port of the servers
 server_config_filename = servers.conf
 
-# the group count of the servers
+# the group count of the servers / instances
 #server_group_count = 1
 server_group_count = ${SERVER_GROUP_COUNT}
 
@@ -33,11 +33,14 @@ server_group_count = ${SERVER_GROUP_COUNT}
 #data_group_count = 64
 data_group_count = ${DATA_GROUP_COUNT}
 
+# config the auth config filename
+auth_config_filename = ${AUTH_CONFIG_FILENAME}
+
 # the server group id based 1
 # the data under the same server group is the same (redundant or backup)
 [server-group-1]
 
-# config one or more server id(s) from store_servers.conf
+# config one or more server id(s) from servers.conf
 ## multiple server ids separated by comma(s).
 ## [start, end] for range, including start and end.
 # this parameter can occurs more than once.

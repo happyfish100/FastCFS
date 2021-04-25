@@ -11,7 +11,7 @@ network_timeout = 60
 base_path = ${BASE_PATH}
 
 # config the cluster servers
-cluster_servers_filename = cluster_servers.conf
+cluster_config_filename = cluster.conf
 
 #standard log level as syslog, case insensitive, value list:
 ### emerg for emergency
