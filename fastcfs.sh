@@ -29,6 +29,11 @@ DEFAULT_CLUSTER_SIZE=3
 DEFAULT_HOST=127.0.0.1
 DEFAULT_BIND_ADDR=
 
+# auth config default properties
+AUTH_DEFAULT_BASE_PATH=/usr/local/fastauth
+AUTH_DEFAULT_CLUSTER_PORT=61011
+AUTH_DEFAULT_SERVICE_PORT=71011
+
 # fastDIR config default properties
 FDIR_DEFAULT_BASE_PATH=/usr/local/fastdir
 FDIR_DEFAULT_CLUSTER_PORT=11011
@@ -141,6 +146,114 @@ placeholder_replace() {
   placeholder=$2
   value=$3
   sed_replace "s#\${$placeholder}#$value#g" $filename
+}
+
+validate_auth_params() {
+  # Validate auth server count
+  if [[ $auth_server_count -le 0 ]]; then
+    echo "INFO:--auth-server-count not specified, would use default size: $DEFAULT_CLUSTER_SIZE"
+    auth_server_count=$DEFAULT_CLUSTER_SIZE
+  fi
+  # Validate auth base_path
+  if [[ ${#auth_pathes[*]} -eq 0 ]]; then
+    echo "INFO:--auth-path not specified, would use default path: $AUTH_DEFAULT_BASE_PATH"
+    for (( i=0; i < $auth_server_count; i++ )); do
+      auth_pathes[$i]="$AUTH_DEFAULT_BASE_PATH/server-$(( $i + 1 ))"
+    done
+  elif [[ ${#auth_pathes[*]} -eq 1 ]] && [[ ${#auth_pathes[*]} -lt $auth_server_count ]]; then
+    tmp_base_path=${auth_pathes[0]}
+    for (( i=0; i < $auth_server_count; i++ )); do
+      auth_pathes[$i]="$tmp_base_path/server-$(( $i + 1 ))"
+    done
+  elif [[ ${#auth_pathes[*]} -ne $auth_server_count ]]; then
+    echo "ERROR:--auth-path must be one base path, or number of it equal to --auth-server-count!"
+    exit 1
+  fi
+  # Validate auth host
+  if [[ ${#auth_hosts[*]} -eq 0 ]]; then
+    echo "INFO:--auth-host not specified, would use default host: $DEFAULT_HOST"
+    for (( i=0; i < $auth_server_count; i++ )); do
+      auth_hosts[$i]=$DEFAULT_HOST
+    done
+    same_host=true
+  elif [[ ${#auth_hosts[*]} -eq 1 ]] && [[ ${#auth_hosts[*]} -lt $auth_server_count ]]; then
+    tmp_host=${auth_hosts[0]}
+    for (( i=0; i < $auth_server_count; i++ )); do
+      auth_hosts[$i]=$tmp_host
+    done
+    same_host=true
+  elif [[ ${#auth_hosts[*]} -ne $auth_server_count ]]; then
+    echo "ERROR:--auth-host must be one IP, or number of it equal to --auth-server-count!"
+    exit 1
+  fi
+  # Validate auth cluster port
+  if [[ ${#auth_cluster_ports[*]} -eq 0 ]]; then
+    echo "INFO:--auth-cluster-port not specified, would use default port: $AUTH_DEFAULT_CLUSTER_PORT,+1,+2..."
+    for (( i=0; i < $auth_server_count; i++ )); do
+      if [[ $same_host = true ]]; then
+        auth_cluster_ports[$i]=$(( $AUTH_DEFAULT_CLUSTER_PORT + $i ))
+      else
+        auth_cluster_ports[$i]=$AUTH_DEFAULT_CLUSTER_PORT
+      fi
+    done
+  elif [[ ${#auth_cluster_ports[*]} -eq 1 ]] && [[ ${#auth_cluster_ports[*]} -lt $auth_server_count ]]; then
+    tmp_port=${auth_cluster_ports[0]}
+    for (( i=0; i < $auth_server_count; i++ )); do
+      if [[ $same_host = true ]]; then
+        auth_cluster_ports[$i]=$(( $tmp_port + $i ))
+      else
+        auth_cluster_ports[$i]=$tmp_port
+      fi
+    done
+  elif [[ ${#auth_cluster_ports[*]} -ne $auth_server_count ]]; then
+    echo "ERROR:--auth-cluster-port must be one port, or number of it equal to --auth-server-count!"
+    exit 1
+  fi
+  # Validate auth service port
+  if [[ ${#auth_service_ports[*]} -eq 0 ]]; then
+    echo "INFO:--auth-service-port not specified, would use default port: $AUTH_DEFAULT_SERVICE_PORT,+1,+2..."
+    for (( i=0; i < $auth_server_count; i++ )); do
+      if [[ $same_host = true ]]; then
+        auth_service_ports[$i]=$(( $AUTH_DEFAULT_SERVICE_PORT + $i ))
+      else
+        auth_service_ports[$i]=$AUTH_DEFAULT_SERVICE_PORT
+      fi
+    done
+  elif [[ ${#auth_service_ports[*]} -eq 1 ]] && [[ ${#auth_service_ports[*]} -lt $auth_server_count ]]; then
+    tmp_port=${auth_service_ports[0]}
+    for (( i=0; i < $auth_server_count; i++ )); do
+      if [[ $same_host = true ]]; then
+        auth_service_ports[$i]=$(( $tmp_port + $i ))
+      else
+        auth_service_ports[$i]=$tmp_port
+      fi
+    done
+  elif [[ ${#auth_service_ports[*]} -ne $auth_server_count ]]; then
+    echo "ERROR:--auth-service-port must be one port, or number of it equal to --auth-server-count!"
+    exit 1
+  fi
+
+  for (( i=0; i < $auth_server_count; i++ )); do
+    if [[ ${auth_cluster_ports[$i]} -eq ${auth_service_ports[$i]} ]]; then
+      echo "ERROR:You must specify different port for --auth-cluster-port and --auth-service-port at same host!"
+      exit 1
+    fi
+  done
+  # Validate auth bind_addr
+  if [[ ${#auth_bind_addrs[*]} -eq 0 ]]; then
+    echo "INFO:--auth-bind-addr not specified, would use default host: $DEFAULT_BIND_ADDR"
+    for (( i=0; i < $auth_server_count; i++ )); do
+      auth_bind_addrs[$i]=$DEFAULT_BIND_ADDR
+    done
+  elif [[ ${#auth_bind_addrs[*]} -eq 1 ]] && [[ ${#auth_bind_addrs[*]} -lt $auth_server_count ]]; then
+    tmp_bind_addr=${auth_bind_addrs[0]}
+    for (( i=0; i < $auth_server_count; i++ )); do
+      auth_bind_addrs[$i]=$tmp_host
+    done
+  elif [[ ${#auth_bind_addrs[*]} -ne $auth_server_count ]]; then
+    echo "ERROR:--auth-bind-addr must be one IP, or number of it equal to --auth-server-count!"
+    exit 1
+  fi
 }
 
 validate_fastdir_params() {
@@ -401,6 +514,24 @@ validate_faststore_params() {
 parse_init_arguments() {
   for arg do
     case "$arg" in
+      --auth-path=*)
+        split_to_array ${arg#--auth-path=} auth_pathes
+      ;;
+      --auth-server-count=*)
+        auth_server_count=${arg#--auth-server-count=}
+      ;;
+      --auth-host=*)
+        split_to_array ${arg#--auth-host=} auth_hosts
+      ;;
+      --auth-cluster-port=*)
+        split_to_array ${arg#--auth-cluster-port=} auth_cluster_ports
+      ;;
+      --auth-service-port=*)
+        split_to_array ${arg#--auth-service-port=} auth_service_ports
+      ;;
+      --auth-bind-addr=*)
+        split_to_array ${arg#--auth-bind-addr=} auth_bind_addrs
+      ;;
       --dir-path=*)
         split_to_array ${arg#--dir-path=} dir_pathes
       ;;
@@ -448,6 +579,7 @@ parse_init_arguments() {
       ;;
     esac
   done
+  validate_auth_params
   validate_fastdir_params
   validate_faststore_params
 }
@@ -459,7 +591,161 @@ check_config_file() {
   fi
 }
 
-t_dir_cluster_servers_conf="cluster_servers.conf"
+fastdir_cluster_auth_config_filename=/etc/fastcfs/auth/auth.conf
+fastdir_server_session_config_filename=/etc/fastcfs/auth/session.conf
+faststore_cluster_auth_config_filename=/etc/fastcfs/auth/auth.conf
+faststore_server_session_config_filename=/etc/fastcfs/auth/session.conf
+
+init_auth_config() {
+  # if [[ ${#auth_pathes[*]} -le 0 ]] || [[ $auth_server_count -le 0 ]]; then
+  #   echo "Parameters --auth-path and auth-server-count not specified, would not config auth"
+  #   exit 1
+  # fi
+  # Init config auth to target path.
+  echo "INFO:Will initialize $auth_server_count instances for auth..."
+
+  A_SESSION_VALIDATE_KEY_TPL="./template/auth/keys/session_validate.key"
+  A_AUTH_TPL="./template/auth/auth.template"
+  A_CLIENT_TPL="./template/auth/client.template"
+  A_CLUSTER_TPL="./template/auth/cluster.template"
+  A_SERVER_TPL="./template/auth/server.template"
+  A_SERVERS_TPL="./template/auth/servers.template"
+  A_SESSION_TPL="./template/auth/session.template"
+
+  check_config_file $A_SESSION_VALIDATE_KEY_TPL
+  check_config_file $A_AUTH_TPL
+  check_config_file $A_CLIENT_TPL
+  check_config_file $A_CLUSTER_TPL
+  check_config_file $A_SERVER_TPL
+  check_config_file $A_SERVERS_TPL
+  check_config_file $A_SESSION_TPL
+
+  # Create auth cluster op shell from template
+  auth_cluster_shell="$BUILD_PATH/shell/fcfsauth-cluster.sh"
+  if [[ -f $CLUSTER_SHELL_TPL ]]; then
+    if cp -f $CLUSTER_SHELL_TPL $auth_cluster_shell; then
+      chmod u+x $auth_cluster_shell
+      placeholder_replace $auth_cluster_shell CLUSTER_NAME "fcfs_auth"
+    else
+      echo "WARNING:Create $auth_cluster_shell from $CLUSTER_SHELL_TPL failed!"
+    fi
+  fi
+
+  for (( i=0; i < $auth_server_count; i++ )); do
+    target_auth=${auth_pathes[$i]}/conf
+    if [ -d $target_auth ]; then
+      echo "WARNING:The $(( $i + 1 ))th fcfs_authd instance conf path \"$target_auth\" have existed, skip!"
+      echo "WARNING:If you want to reconfig it, you must delete it first."
+      continue
+    fi
+
+    if ! mkdir -p $target_auth; then
+      echo "ERROR:Create target conf path failed:$target_auth!"
+      exit 1
+    fi
+
+    ta_server_conf=$target_auth/server.conf
+    if cp -f $A_SERVER_TPL $ta_server_conf; then
+      # Replace placeholders with reality in server template
+      echo "INFO:Begin config $ta_server_conf..."
+      placeholder_replace $ta_server_conf BASE_PATH "${auth_pathes[$i]}"
+      placeholder_replace $ta_server_conf CLUSTER_BIND_ADDR "${auth_bind_addrs[$i]}"
+      placeholder_replace $ta_server_conf CLUSTER_PORT "${auth_cluster_ports[$i]}"
+      placeholder_replace $ta_server_conf SERVICE_BIND_ADDR "${auth_bind_addrs[$i]}"
+      placeholder_replace $ta_server_conf SERVICE_PORT "${auth_service_ports[$i]}"
+      
+      # Add fcfs_authd command to $auth_cluster_shell
+      if [[ -f $auth_cluster_shell ]]; then
+        echo "fcfs_authd $ta_server_conf \$mode" >> $auth_cluster_shell
+      fi
+    else
+      echo "ERROR:Create server.conf from $A_SERVER_TPL failed!"
+    fi
+
+    ta_cluster_conf=$target_auth/cluster.conf
+    if cp -f $A_CLUSTER_TPL $ta_cluster_conf; then
+      # Replace placeholders with reality in auth cluster template
+      echo "INFO:Begin config $ta_cluster_conf..."
+    else
+      echo "ERROR:Create cluster.conf from $A_CLUSTER_TPL for auth failed!"
+    fi
+
+    ta_servers_conf=$target_auth/servers.conf
+    if cp -f $A_SERVERS_TPL $ta_servers_conf; then
+      # Replace placeholders with reality in auth servers template
+      echo "INFO:Begin config $ta_servers_conf..."
+      placeholder_replace $ta_servers_conf CLUSTER_PORT "${auth_cluster_ports[0]}"
+      placeholder_replace $ta_servers_conf SERVICE_PORT "${auth_service_ports[0]}"
+      placeholder_replace $ta_servers_conf SERVER_HOST "${auth_hosts[0]}"
+      for (( j=1; j < $auth_server_count; j++ )); do
+        #增加服务器section
+        #[server-2]
+        #cluster-port = 11013
+        #service-port = 11014
+        #host = myhostname
+        echo "[server-$(( $j + 1 ))]" >> $ta_servers_conf
+        echo "cluster-port = ${auth_cluster_ports[$j]}" >> $ta_servers_conf
+        echo "service-port = ${auth_service_ports[$j]}" >> $ta_servers_conf
+        echo "host = ${auth_hosts[$j]}" >> $ta_servers_conf
+        echo "" >> $ta_servers_conf
+      done
+    else
+      echo "ERROR:Create servers.conf from $A_SERVERS_TPL for auth failed!"
+    fi
+
+    ta_client_conf=$target_auth/client.conf
+    if cp -f $A_CLIENT_TPL $ta_client_conf; then
+      # Replace placeholders with reality in client template
+      echo "INFO:Begin config $ta_client_conf..."
+      placeholder_replace $ta_client_conf BASE_PATH "${auth_pathes[$i]}"
+    else
+      echo "ERROR:Create client.conf from $A_CLIENT_TPL for auth failed!"
+    fi
+
+    ta_keys_path=$target_auth/keys
+    if ! mkdir -p $ta_keys_path; then
+      echo "ERROR:Create target conf/keys path failed:$ta_keys_path!"
+      exit 1
+    fi
+    ta_session_validate_key=$ta_keys_path/session_validate.key
+    if cp -f $A_SESSION_VALIDATE_KEY_TPL $ta_session_validate_key; then
+      # Replace placeholders with reality in auth cluster template
+      echo "INFO:Copy $ta_session_validate_key success."
+    else
+      echo "ERROR:Copy session_validate.key from $A_SESSION_VALIDATE_KEY_TPL for validate key failed!"
+    fi
+
+    ta_auth_conf=$target_auth/auth.conf
+    if cp -f $A_AUTH_TPL $ta_auth_conf; then
+      # Replace placeholders with reality in auth template
+      echo "INFO:Begin config $ta_auth_conf..."
+      placeholder_replace $ta_auth_conf CLIENT_CONFIG_FILENAME "${ta_client_conf}"
+      placeholder_replace $ta_auth_conf SECRET_KEY_PATH "${ta_keys_path}"
+      placeholder_replace $ta_auth_conf SESSION_VALIDATE_KEY_FILENAME "${ta_session_validate_key}"
+    else
+      echo "ERROR:Create auth.conf from $A_AUTH_TPL for auth failed!"
+    fi
+
+    ta_session_conf=$target_auth/session.conf
+    if cp -f $A_SESSION_TPL $ta_session_conf; then
+      # Replace placeholders with reality in session template
+      echo "INFO:Begin config $ta_session_conf..."
+      placeholder_replace $ta_session_conf SESSION_VALIDATE_KEY_FILENAME "${ta_session_validate_key}"
+    else
+      echo "ERROR:Create session.conf from $A_SESSION_TPL for auth failed!"
+    fi
+
+    if [[ $i -eq 0 ]]; then
+      fastdir_cluster_auth_config_filename=$ta_auth_conf
+      fastdir_server_session_config_filename=$ta_session_conf
+      faststore_cluster_auth_config_filename=$ta_auth_conf
+      faststore_server_session_config_filename=$ta_session_conf
+    fi
+  done
+}
+
+fuse_dir_cluster_config_filename="cluster.conf"
+auth_server_client_config_filename="../fdir/client.conf"
 
 init_fastdir_config() {
   # if [[ ${#dir_pathes[*]} -le 0 ]] || [[ $dir_server_count -le 0 ]]; then
@@ -469,13 +755,15 @@ init_fastdir_config() {
   # Init config fastDIR to target path.
   echo "INFO:Will initialize $dir_server_count instances for $FDIR_LIB..."
 
-  SERVER_TPL="./template/fastDIR/server.template"
-  CLUSTER_TPL="./template/fastDIR/cluster_servers.template"
-  CLIENT_TPL="./template/fastDIR/client.template"
+  D_SERVER_TPL="./template/fastDIR/server.template"
+  D_CLUSTER_TPL="./template/fastDIR/cluster.template"
+  D_SERVERS_TPL="./template/fastDIR/servers.template"
+  D_CLIENT_TPL="./template/fastDIR/client.template"
 
-  check_config_file $SERVER_TPL
-  check_config_file $CLUSTER_TPL
-  check_config_file $CLIENT_TPL
+  check_config_file $D_SERVER_TPL
+  check_config_file $D_CLUSTER_TPL
+  check_config_file $D_SERVERS_TPL
+  check_config_file $D_CLIENT_TPL
 
   # Create fastDIR cluster op shell from template
   dir_cluster_shell="$BUILD_PATH/shell/fastdir-cluster.sh"
@@ -501,63 +789,91 @@ init_fastdir_config() {
       exit 1
     fi
 
-    t_server_conf=$target_dir/server.conf
-    if cp -f $SERVER_TPL $t_server_conf; then
+    td_server_conf=$target_dir/server.conf
+    if cp -f $D_SERVER_TPL $td_server_conf; then
       # Replace placeholders with reality in server template
-      echo "INFO:Begin config $t_server_conf..."
-      placeholder_replace $t_server_conf BASE_PATH "${dir_pathes[$i]}"
-      placeholder_replace $t_server_conf CLUSTER_BIND_ADDR "${dir_bind_addrs[$i]}"
-      placeholder_replace $t_server_conf CLUSTER_PORT "${dir_cluster_ports[$i]}"
-      placeholder_replace $t_server_conf SERVICE_BIND_ADDR "${dir_bind_addrs[$i]}"
-      placeholder_replace $t_server_conf SERVICE_PORT "${dir_service_ports[$i]}"
+      echo "INFO:Begin config $td_server_conf..."
+      placeholder_replace $td_server_conf BASE_PATH "${dir_pathes[$i]}"
+      placeholder_replace $td_server_conf CLUSTER_BIND_ADDR "${dir_bind_addrs[$i]}"
+      placeholder_replace $td_server_conf CLUSTER_PORT "${dir_cluster_ports[$i]}"
+      placeholder_replace $td_server_conf SERVICE_BIND_ADDR "${dir_bind_addrs[$i]}"
+      placeholder_replace $td_server_conf SERVICE_PORT "${dir_service_ports[$i]}"
+      placeholder_replace $td_server_conf SESSION_CONFIG_FILENAME "${fastdir_server_session_config_filename}"
       
       # Add fdir_serverd command to $dir_cluster_shell
       if [[ -f $dir_cluster_shell ]]; then
-        echo "fdir_serverd $t_server_conf \$mode" >> $dir_cluster_shell
+        echo "fdir_serverd $td_server_conf \$mode" >> $dir_cluster_shell
       fi
     else
-      echo "ERROR:Create server.conf from $SERVER_TPL failed!"
+      echo "ERROR:Create server.conf from $D_SERVER_TPL failed!"
     fi
 
-    t_cluster_conf=$target_dir/cluster_servers.conf
+    td_cluster_conf=$target_dir/cluster.conf
     if [[ $i -eq 0 ]]; then
-      t_dir_cluster_servers_conf=$t_cluster_conf
+      fuse_dir_cluster_config_filename=$td_cluster_conf
     fi
 
-    if cp -f $CLUSTER_TPL $t_cluster_conf; then
-      # Replace placeholders with reality in cluster_servers template
-      echo "INFO:Begin config $t_cluster_conf..."
-      placeholder_replace $t_cluster_conf CLUSTER_PORT "${dir_cluster_ports[0]}"
-      placeholder_replace $t_cluster_conf SERVICE_PORT "${dir_service_ports[0]}"
-      placeholder_replace $t_cluster_conf SERVER_HOST "${dir_hosts[0]}"
+    if cp -f $D_CLUSTER_TPL $td_cluster_conf; then
+      # Replace placeholders with reality in fastDIR cluster template
+      # config the auth config filename
+      # auth_config_filename = /etc/fastcfs/auth/auth.conf
+      echo "INFO:Begin config $td_cluster_conf..."
+      placeholder_replace $td_cluster_conf AUTH_CONFIG_FILENAME "${fastdir_cluster_auth_config_filename}"
+    else
+      echo "ERROR:Create cluster.conf from $D_CLUSTER_TPL for fastDIR failed!"
+    fi
+
+    td_servers_conf=$target_dir/servers.conf
+    if cp -f $D_SERVERS_TPL $td_servers_conf; then
+      # Replace placeholders with reality in fastDIR servers template
+      echo "INFO:Begin config $td_servers_conf..."
+      placeholder_replace $td_servers_conf CLUSTER_PORT "${dir_cluster_ports[0]}"
+      placeholder_replace $td_servers_conf SERVICE_PORT "${dir_service_ports[0]}"
+      placeholder_replace $td_servers_conf SERVER_HOST "${dir_hosts[0]}"
       for (( j=1; j < $dir_server_count; j++ )); do
         #增加服务器section
         #[server-2]
         #cluster-port = 11013
         #service-port = 11014
         #host = myhostname
-        echo "[server-$(( $j + 1 ))]" >> $t_cluster_conf
-        echo "cluster-port = ${dir_cluster_ports[$j]}" >> $t_cluster_conf
-        echo "service-port = ${dir_service_ports[$j]}" >> $t_cluster_conf
-        echo "host = ${dir_hosts[$j]}" >> $t_cluster_conf
-        echo "" >> $t_cluster_conf
+        echo "[server-$(( $j + 1 ))]" >> $td_servers_conf
+        echo "cluster-port = ${dir_cluster_ports[$j]}" >> $td_servers_conf
+        echo "service-port = ${dir_service_ports[$j]}" >> $td_servers_conf
+        echo "host = ${dir_hosts[$j]}" >> $td_servers_conf
+        echo "" >> $td_servers_conf
       done
     else
-      echo "ERROR:Create cluster_servers.conf from $CLUSTER_TPL failed!"
+      echo "ERROR:Create servers.conf from $SERVERS_TPL for fastDIR failed!"
     fi
 
-    t_client_conf=$target_dir/client.conf
-    if cp -f $CLIENT_TPL $t_client_conf; then
+    td_client_conf=$target_dir/client.conf
+    if cp -f $D_CLIENT_TPL $td_client_conf; then
       # Replace placeholders with reality in client template
-      echo "INFO:Begin config $t_client_conf..."
-      placeholder_replace $t_client_conf BASE_PATH "${dir_pathes[$i]}"
+      echo "INFO:Begin config $td_client_conf..."
+      placeholder_replace $td_client_conf BASE_PATH "${dir_pathes[$i]}"
     else
-      echo "ERROR:Create client.conf from $CLIENT_TPL failed!"
+      echo "ERROR:Create client.conf from $D_CLIENT_TPL for fastDIR failed!"
+    fi
+  
+    if [[ $i -eq 0 ]]; then
+      auth_server_client_config_filename=$td_client_conf
     fi
   done
 }
 
-t_store_cluster_conf="cluster.conf"
+reinit_auth_config() {
+  # 替换server.conf中引用的fdir/client.conf.
+  echo "INFO:Will reinitialize server.conf for auth..."
+
+  for (( i=0; i < $auth_server_count; i++ )); do
+    target_auth=${auth_pathes[$i]}/conf
+    ta_server_conf=$target_auth/server.conf
+    echo "INFO:Begin reconfig $ta_server_conf..."
+    placeholder_replace $ta_server_conf CLIENT_CONFIG_FILENAME "${auth_server_client_config_filename}"
+  done
+}
+
+fuse_store_cluster_config_filename="cluster.conf"
 
 init_faststore_config() {
   # if [[ ${#store_pathes[*]} -le 0 ]] || [[ $store_server_count -le 0 ]]; then
@@ -616,6 +932,7 @@ init_faststore_config() {
       placeholder_replace $t_server_conf SERVICE_PORT "${store_service_ports[$i]}"
       placeholder_replace $t_server_conf REPLICA_BIND_ADDR "${store_bind_addrs[$i]}"
       placeholder_replace $t_server_conf REPLICA_PORT "${store_replica_ports[$i]}"
+      placeholder_replace $t_server_conf SESSION_CONFIG_FILENAME "${faststore_server_session_config_filename}"
 
       # Add fs_serverd command to $store_cluster_shell
       if [[ -f $store_cluster_shell ]]; then
@@ -663,7 +980,7 @@ init_faststore_config() {
     t_cluster_conf=$target_path/cluster.conf
     
     if [[ $i -eq 0 ]]; then
-      t_store_cluster_conf=$t_cluster_conf
+      fuse_store_cluster_config_filename=$t_cluster_conf
     fi
 
     if cp -f $S_CLUSTER_TPL $t_cluster_conf; then
@@ -672,6 +989,7 @@ init_faststore_config() {
       placeholder_replace $t_cluster_conf SERVER_GROUP_COUNT "1"
       placeholder_replace $t_cluster_conf DATA_GROUP_COUNT "64"
       placeholder_replace $t_cluster_conf SERVER_GROUP_1_SERVER_IDS "[1, $store_server_count]"
+      placeholder_replace $t_cluster_conf AUTH_CONFIG_FILENAME "$faststore_cluster_auth_config_filename"
 
       data_group_ids='data_group_ids = [1, 32]\
 data_group_ids = [33, 64]'
@@ -715,8 +1033,8 @@ data_group_ids = [33, 64]'
         placeholder_replace $t_fuse_conf FUSE_MOUNT_POINT "$fuse_mount_point"
         
         #替换fastDIR、faststore服务器集群配置文件占位符
-        placeholder_replace $t_fuse_conf DIR_CLUSTER_SERVERS_CONF "$t_dir_cluster_servers_conf"
-        placeholder_replace $t_fuse_conf STORE_CLUSTER_CONF "$t_store_cluster_conf"
+        placeholder_replace $t_fuse_conf DIR_CLUSTER_CONFIG_FILENAME "$fuse_dir_cluster_config_filename"
+        placeholder_replace $t_fuse_conf STORE_CLUSTER_CONFIG_FILENAME "$fuse_store_cluster_config_filename"
 
         # Create fuse op shell from template
         fuse_shell="$BUILD_PATH/shell/fuse.sh"
@@ -812,6 +1130,12 @@ case "$mode" in
       IP=$(get_first_local_ip)
       echo "Usage for demo: "
       echo "	$0 init \\"
+      echo "	--auth-path=/usr/local/fastcfs-test/auth \\"
+      echo "	--auth-server-count=1 \\"
+      echo "	--auth-host=$IP \\"
+      echo "	--auth-cluster-port=61011 \\"
+      echo "	--auth-service-port=71011 \\"
+      echo "	--auth-bind-addr= \\"
       echo "	--dir-path=/usr/local/fastcfs-test/fastdir \\"
       echo "	--dir-server-count=1 \\"
       echo "	--dir-host=$IP \\"
@@ -833,7 +1157,9 @@ case "$mode" in
         mkdir -m 775 $BUILD_PATH/shell
         echo "INFO:Build path {$BUILD_PATH/shell} not exist, created."
       fi
+      init_auth_config
       init_fastdir_config
+      reinit_auth_config
       init_faststore_config
     fi
   ;;

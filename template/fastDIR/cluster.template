@@ -1,0 +1,6 @@
+
+# config the id, ip address and port of all servers/instances in the cluster
+server_config_filename = servers.conf
+
+# config the auth config filename
+auth_config_filename = ${AUTH_CONFIG_FILENAME}

@@ -1,0 +1,18 @@
+[group-cluster]
+# the default cluster port
+port = ${CLUSTER_PORT}
+
+[group-service]
+# the default service port
+port = ${SERVICE_PORT}
+
+# config a server
+# section format: [server-$id]
+# server id is a 32 bits natural number (1, 2, 3 etc.),
+[server-1]
+
+# format: host[:port]
+# host can be an IP address or a hostname
+# IP address is recommended
+# can occur more than once
+host = ${SERVER_HOST}

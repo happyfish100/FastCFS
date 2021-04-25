@@ -163,7 +163,7 @@ network_timeout = 10
 namespace = fs
 
 # config the cluster servers
-cluster_servers_filename = ${DIR_CLUSTER_SERVERS_CONF}
+cluster_config_filename = ${DIR_CLUSTER_CONFIG_FILENAME}
 
 # if use sys lock for file append and truncate to avoid conflict
 # set true when the files appended or truncated by many nodes (FUSE instances)
@@ -204,7 +204,7 @@ connect_timeout = 2
 network_timeout = 30
 
 # config the cluster servers and groups
-cluster_config_filename = ${STORE_CLUSTER_CONF}
+cluster_config_filename = ${STORE_CLUSTER_CONFIG_FILENAME}
 
 
 [write_combine]

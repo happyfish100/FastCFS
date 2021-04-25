@@ -80,6 +80,9 @@ cluster_config_filename = cluster.conf
 # config the store paths
 storage_config_filename = storage.conf
 
+# session config filename for auth
+session_config_filename = ${SESSION_CONFIG_FILENAME}
+
 #standard log level as syslog, case insensitive, value list:
 ### emerg for emergency
 ### alert

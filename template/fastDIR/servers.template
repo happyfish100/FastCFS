@@ -13,6 +13,10 @@ port = ${CLUSTER_PORT}
 #ip_prefix = 172.
 
 [group-service]
+# enable / disable authentication
+# default value is false
+auth = false
+
 # the default service port
 port = ${SERVICE_PORT}
 
