@@ -138,7 +138,9 @@ sed_replace()
 }
 
 split_to_array() {
-  IFS=',' read -ra $2 <<< "$1"
+  if ! [ -z $2 ]; then
+    IFS=',' read -ra $2 <<< "$1"
+  fi
 }
 
 placeholder_replace() {
