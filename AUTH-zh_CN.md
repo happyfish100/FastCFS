@@ -94,6 +94,8 @@ tail /opt/fastcfs/auth/logs/fcfs_authd.log
 fcfs_pool create fs unlimited
 ```
 
+注：存储池名称必须和FastCFS fuse客户端配置文件fuse.conf中的命名空间一致（缺省配置为fs，可按需修改）
+
 ### 2. FastDIR server
 
 2.1 复制auth server上的如下配置文件到 /etc/fastcfs/auth/
@@ -124,3 +126,6 @@ fcfs_pool create fs unlimited
 参见 2. FastDIR server 部分
 
 拷贝完成后重启fuse服务（fcfs_fused）
+
+### 注意事项
+  * Auth server依赖FastDIR server，需要先启动FastDIR server，然后启动Auth server。
