@@ -656,7 +656,7 @@ init_auth_config() {
       
       # Add fcfs_authd command to $auth_cluster_shell
       if [[ -f $auth_cluster_shell ]]; then
-        echo "fcfs_authd $t_server_conf \$mode" >> $auth_cluster_shell
+        echo "fcfs_authd $ta_server_conf \$mode" >> $auth_cluster_shell
       fi
     else
       echo "ERROR:Create server.conf from $A_SERVER_TPL failed!"
