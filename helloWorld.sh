@@ -65,7 +65,7 @@ echo "just for FastCFS demo: 1 fdir instance and 1 fstore instance"
 ./fastcfs.sh pull
 ./fastcfs.sh makeinstall
 ./fastcfs.sh init \
-  --auth-path=$FASTCFS_BASE//auth \
+  --auth-path=$FASTCFS_BASE/auth \
 	--auth-server-count=1 \
 	--auth-host=$IP  \
 	--auth-cluster-port=61011 \
