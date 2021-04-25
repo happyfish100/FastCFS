@@ -20,6 +20,12 @@ fastcfs.sh 命令参数说明：
 ./fastcfs.sh makeinstall
 IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:' | head -n 1)
 ./fastcfs.sh init \
+	--auth-path=/usr/local/fastcfs-test/auth \
+	--auth-server-count=1 \
+	--auth-host=$IP  \
+	--auth-cluster-port=61011 \
+	--auth-service-port=71011 \
+	--auth-bind-addr=  \
 	--dir-path=/usr/local/fastcfs-test/fastdir \
 	--dir-server-count=1 \
 	--dir-host=$IP  \
