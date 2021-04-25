@@ -716,7 +716,7 @@ init_auth_config() {
     fi
 
     ta_auth_conf=$target_auth/auth.conf
-    if cp -f $A_AUTH_TPL $ta_client_conf; then
+    if cp -f $A_AUTH_TPL $ta_auth_conf; then
       # Replace placeholders with reality in auth template
       echo "INFO:Begin config $ta_auth_conf..."
       placeholder_replace $ta_auth_conf CLIENT_CONFIG_FILENAME "${ta_client_conf}"
