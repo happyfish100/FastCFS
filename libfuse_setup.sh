@@ -111,6 +111,7 @@ if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 
     fi
   fi
 
+  rpm -q fuse-devel >/dev/null && yum remove fuse-devel -y
   rpm -q fuse >/dev/null && yum remove fuse -y
   yum install fuse3-devel -y
   exit 0
