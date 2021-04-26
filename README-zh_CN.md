@@ -60,4 +60,4 @@ FastCFS安装完成后，请参阅[配置指南](CONFIGURE-zh_CN.md)
 
 
 微信交流群：
-![微信交流群](images/wechat_group.jpg)
+<img src="images/wechat_group.jpg" height="100" alt="微信交流群">
