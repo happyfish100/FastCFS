@@ -160,7 +160,7 @@ sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 
 进入之前clone下来的FastCFS目录，然后执行：
 ```
-./make.sh clean && ./make.sh && ./make.sh install
+./make.sh --exclude=auth_client clean && ./make.sh --exclude=auth_client && ./make.sh --exclude=auth_client install
 mkdir -p /etc/fastcfs/fcfs/
 mkdir -p /etc/fastcfs/auth/
 cp conf/*.conf /etc/fastcfs/fcfs/

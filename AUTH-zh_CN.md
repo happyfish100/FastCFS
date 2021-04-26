@@ -127,5 +127,11 @@ fcfs_pool create fs unlimited
 
 拷贝完成后重启fuse服务（fcfs_fused）
 
+### 命令行工具
+
+  * fcfs_user：用户管理
+
+  * fcfs_pool：储存池管理
+
 ### 注意事项
   * Auth server依赖FastDIR server，需要先启动FastDIR server，然后启动Auth server。

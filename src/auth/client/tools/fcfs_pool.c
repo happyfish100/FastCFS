@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
         switch (ch) {
             case 'h':
                 usage(argv);
-                break;
+                return 0;
             case 'c':
                 config_filename = optarg;
                 break;
