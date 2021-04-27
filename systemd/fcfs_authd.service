@@ -4,11 +4,11 @@ After=network.target
 
 [Service]
 Type=forking
-PIDFile=/opt/fastcfs/fcfs/authd.pid
+PIDFile=/opt/fastcfs/auth/authd.pid
 ExecStart=/usr/bin/fcfs_authd /etc/fastcfs/auth/server.conf start
 
 # start/stop timeout
-TimeoutSec=60
+TimeoutSec=0
 
 # Disable OOM kill by Linux kernel
 OOMScoreAdjust=-1000
