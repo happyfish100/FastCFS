@@ -86,6 +86,10 @@ static void *pool_usage_refresh_thread_func(void *arg)
     ConnectionInfo *conn;
     int result;
 
+#ifdef OS_LINUX
+    prctl(PR_SET_NAME, "pool-usage-updater");
+#endif
+
     cm = &g_fdir_client_vars.client_ctx.cm;
     while (SF_G_CONTINUE_FLAG) {
         if ((conn=cm->ops.get_master_connection(cm, 0, &result)) == NULL) {

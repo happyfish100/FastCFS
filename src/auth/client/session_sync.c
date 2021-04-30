@@ -231,6 +231,10 @@ static void *session_sync_thread_func(void *arg)
     ConnectionInfo *conn;
     int result;
 
+#ifdef OS_LINUX
+    prctl(PR_SET_NAME, "session-sync");
+#endif
+
     cm = &g_fcfs_auth_client_vars.client_ctx.cm;
     while (SF_G_CONTINUE_FLAG) {
         if ((conn=cm->ops.get_connection(cm, 0, &result)) == NULL) {

@@ -320,6 +320,10 @@ static void *async_reporter_thread_func(void *arg)
 {
     FCFSAPIAsyncReportEvent *head;
 
+#ifdef OS_LINUX
+    prctl(PR_SET_NAME, "dir-async-reporter");
+#endif
+
     while (SF_G_CONTINUE_FLAG) {
         head = (FCFSAPIAsyncReportEvent *)fc_queue_pop_all(
                 &g_async_reporter_ctx.queue);
