@@ -68,19 +68,6 @@ static int fcfs_auth_client_do_init_ex(FCFSAuthClientContext *client_ctx,
                 sizeof(g_fcfs_auth_client_vars.base_path),
                 "%s", pBasePath);
         chopPath(g_fcfs_auth_client_vars.base_path);
-        if (!fileExists(g_fcfs_auth_client_vars.base_path)) {
-            logError("file: "__FILE__", line: %d, "
-                "\"%s\" can't be accessed, error info: %s",
-                __LINE__, g_fcfs_auth_client_vars.base_path,
-                STRERROR(errno));
-            return errno != 0 ? errno : ENOENT;
-        }
-        if (!isDir(g_fcfs_auth_client_vars.base_path)) {
-            logError("file: "__FILE__", line: %d, "
-                "\"%s\" is not a directory!",
-                __LINE__, g_fcfs_auth_client_vars.base_path);
-            return ENOTDIR;
-        }
     }
 
     client_ctx->common_cfg.connect_timeout = iniGetIntValueEx(
