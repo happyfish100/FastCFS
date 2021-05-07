@@ -67,11 +67,13 @@ pull_source_code() {
     echo "INFO:The $module_name local repository does not exist!"
     echo "INFO:=====Begin to clone $module_name , it will take some time...====="
     git clone $module_url
+    git checkout config_simplify
   else
     echo "INFO:The $module_name local repository have existed."
     cd $module_name
     echo "INFO:=====Begin to pull $module_name, it will take some time...====="
     git pull
+    git checkout config_simplify
     cd ..
   fi
 }
