@@ -6,7 +6,7 @@ FastCFS 是一款基于块存储的通用分布式文件系统，可以作为MyS
 
 ## 2. 当前版本
 
-V2.0.0
+V2.0.1
 
 ## 3. 支持的操作系统
 
@@ -19,11 +19,11 @@ V2.0.0
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
-* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.49)
-* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.6)
-* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V2.0.0)
-* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V2.0.0)
-* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V2.0.0)
+* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.50)
+* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.7)
+* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V2.0.1)
+* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V2.0.1)
+* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V2.0.1)
 
 ## 5. 安装
 
@@ -31,13 +31,18 @@ FastCFS包含 libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五
 
 ### 一键部署
 
-如果你打算快速体验一下FastCFS，可以一键搭建(包括部署和运行)demo环境（需要root身份执行）：
+如果你打算快速体验一下FastCFS，可以一键搭建(包括部署和运行)单节点（需要root身份执行）：
 ```
 git clone https://gitee.com/fastdfs100/FastCFS.git; cd FastCFS/
-./helloWorld.sh --prefix=/usr/local/fastcfs-test
+./helloWorld.sh
 ```
 
-上述操作完成后，通过命令 df -h  可以看到FastCFS挂载的文件目录，你可以当作本地文件系统访问该目录。
+上述操作完成后，执行命令：
+```
+df -h /opt/fastcfs/fuse
+```
+可以看到FastCFS挂载的文件目录，你可以当作本地文件系统访问该目录。
+
 
 ### DIY安装
 

@@ -4,55 +4,26 @@
 通过执行fastcfs.sh脚本，可自动从gitee仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
 
 fastcfs.sh 命令参数说明：
-
-* pull -- 从gitee拉取或更新代码库（拉取到本地build目录）
-* makeinstall -- 顺序编译、安装代码库（make clean && make && make install）
-* init -- 初始化集群目录、配置文件（已存在不会重新生成）
-* clean -- 清除已编译程序文件（相当于make clean）
-
-
+```
+* setup: 安装程序包
+* config: 复制配置文件并自动配置为单节点
+* start | stop | restart: 服务进程控制
+```
 
 或执行如下命令（需要root身份执行）：
-
 ```
-./libfuse_setup.sh
-./fastcfs.sh pull
-./fastcfs.sh makeinstall
-IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:' | head -n 1)
-./fastcfs.sh init \
-	--auth-path=/usr/local/fastcfs-test/auth \
-	--auth-server-count=1 \
-	--auth-host=$IP  \
-	--auth-cluster-port=61011 \
-	--auth-service-port=71011 \
-	--auth-bind-addr=  \
-	--dir-path=/usr/local/fastcfs-test/fastdir \
-	--dir-server-count=1 \
-	--dir-host=$IP  \
-	--dir-cluster-port=11011 \
-	--dir-service-port=21011 \
-	--dir-bind-addr=  \
-	--store-path=/usr/local/fastcfs-test/faststore \
-	--store-server-count=1 \
-	--store-host=$IP  \
-	--store-cluster-port=31011 \
-	--store-service-port=41011 \
-	--store-replica-port=51011 \
-	--store-bind-addr= \
-	--fuse-path=/usr/local/fastcfs-test/fuse \
-	--fuse-mount-point=/usr/local/fastcfs-test/fuse/fuse1
-
-注：
-   * 当本机有多个IP地址时，需要手动设置IP 变量为其中的一个IP地址。查看本机IP列表：
-     ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:'
-   * --fuse-mount-point为mount到本地的路径，通过这个mount point对FastCFS进行文件存取访问。
-
-FCFS_SHELL_PATH=$(pwd)/build/shell
-$FCFS_SHELL_PATH/fastdir-cluster.sh restart
-$FCFS_SHELL_PATH/faststore-cluster.sh restart
-$FCFS_SHELL_PATH/fuse.sh restart
-
+./fastcfs.sh setup
+./fastcfs.sh config
+./fastcfs.sh restart
 ```
+
+通过 df 命令查看FastCFS挂载的文件目录：
+```
+df -h /opt/fastcfs/fuse
+```
+
+以上命令执行成功，你就可以通过本地目录 /opt/fastcfs/fuse 访问FastCFS了。
+
 
 ## 二、DIY编译和安装
 

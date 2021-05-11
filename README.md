@@ -8,7 +8,7 @@ FastCFS is a block based standard distributed file system which can be used as t
 
 ## 2. Current Version
 
-V2.0.0
+V2.0.1
 
 ## 3. Supported Platforms
 
@@ -21,11 +21,11 @@ V2.0.0
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.49)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.6)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V2.0.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V2.0.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V2.0.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.50)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.7)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V2.0.1)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V2.0.1)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V2.0.1)
 
 ## 5. Installation
 
@@ -47,64 +47,30 @@ git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
 
 fastcfs.sh usage:
 
-* pull -- pull or update codes from GitHub to subdir named "build"
-* makeinstall -- compile and install in order (make clean && make && make install)
-* init -- initialize the cluster directory and config files (NOT regenerated when already exist)
-* clean -- clean the compiled program files (make clean)
-
+```
+* setup: pull/update codes from gitee, then make and install
+* config: copy config files and configure them with local ip
+* start | stop | restart: for service processes control
+```
 
 one click to build (deploy and run) demo environment (MUST by root):
 
 ```
-./helloWorld.sh --prefix=/usr/local/fastcfs-test
+./helloWorld.sh
 ```
 
 or execute following commands (MUST by root):
 
 ```
-./libfuse_setup.sh
-./fastcfs.sh pull
-./fastcfs.sh makeinstall
-IP=$(ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:' | head -n 1)
-./fastcfs.sh init \
-	--auth-path=/usr/local/fastcfs-test/auth \
-	--auth-server-count=1 \
-	--auth-host=$IP  \
-	--auth-cluster-port=61011 \
-	--auth-service-port=71011 \
-	--auth-bind-addr=  \
-	--dir-path=/usr/local/fastcfs-test/fastdir \
-	--dir-server-count=1 \
-	--dir-host=$IP  \
-	--dir-cluster-port=11011 \
-	--dir-service-port=21011 \
-	--dir-bind-addr=  \
-	--store-path=/usr/local/fastcfs-test/faststore \
-	--store-server-count=1 \
-	--store-host=$IP  \
-	--store-cluster-port=31011 \
-	--store-service-port=41011 \
-	--store-replica-port=51011 \
-	--store-bind-addr= \
-	--fuse-path=/usr/local/fastcfs-test/fuse \
-	--fuse-mount-point=/usr/local/fastcfs-test/fuse/fuse1
-
-Note:
-   * you should set IP variable manually with multi local ip addresses. show local ip list:
-     ifconfig -a | grep -w inet | grep -v 127.0.0.1 | awk '{print $2}' | tr -d 'addr:'
-   * --fuse-mount-point is the path mounted to local, the files in FastCFS can be accessed by this local path
-
-FCFS_SHELL_PATH=$(pwd)/build/shell
-$FCFS_SHELL_PATH/fastdir-cluster.sh restart
-$FCFS_SHELL_PATH/faststore-cluster.sh restart
-$FCFS_SHELL_PATH/fuse.sh restart
-
+./fastcfs.sh setup
+./fastcfs.sh config
+./fastcfs.sh restart
 ```
 
 now you can see the mounted path of FastCFS by the command:
 
 ```
-df -h
+df -h /opt/fastcfs/fuse
 ```
 
 ## 6. Contact us
