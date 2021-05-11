@@ -319,11 +319,44 @@ service_op() {
   fcfs_fused ${FUSE_CONF_PATH}fuse.conf $operate_mode
 }
 
+uname=$(uname)
+if [ $uname = 'Linux' ]; then
+  osname=$(cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2;}' | \
+          awk -F '"' '{if (NF==3) {print $2} else {print $1}}' | awk '{print $1}')
+  if [ $osname = 'CentOS' ]; then
+    osversion=$(cat /etc/system-release | awk '{print $4}')
+  fi
+  if [ -z $osversion ]; then
+    osversion=$(cat /etc/os-release | grep -w VERSION_ID | awk -F '=' '{print $2;}' | \
+            awk -F '"' '{if (NF==3) {print $2} else {print $1}}')
+  fi
+  os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
+else
+  echo "Unsupport OS: $uname" 1>&2
+  exit 1
+fi
+
+check_install_fastos_repo() {
+  repo=$(rpm -q FastOSrepo 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    if [ $os_major_version -eq 7 ]; then
+      rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
+    else
+      rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
+    fi
+  fi
+}
+
 case "$mode" in
   'setup')
-    ./libfuse_setup.sh
-    pull_source_codes
-    make_installs
+    if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
+      check_install_fastos_repo
+      yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
+    else
+      ./libfuse_setup.sh
+      pull_source_codes
+      make_installs
+    fi
   ;;
   'config')
     IP=$(get_first_local_ip)
