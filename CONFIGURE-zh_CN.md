@@ -13,14 +13,12 @@
         |    |__ fuse.conf: fcfs_fused对应的配置文件
         |
         |__ fdir: FastDIR目录服务
-             |__ servers.conf: 服务器列表，配置服务器ID、IP和端口
-        |    |__ cluster.conf: 集群配置
+        |    |__ cluster.conf: 服务器列表，配置服务器ID、IP和端口
         |    |__ server.conf: fdir_serverd对应的配置文件
         |    |__ client.conf: 客户端配置文件
         |
         |__ fstore: faststore存储服务
-             |__ servers.conf: 服务器列表，配置服务器ID、IP和端口
-             |__ cluster.conf: 配置服务器分组及数据分组之间的对应关系
+             |__ cluster.conf: 服务器列表(配置服务器ID、IP和端口)，并配置服务器分组及数据分组之间的对应关系
              |__ storage.conf: 存储路径及空间分配和回收配置
              |__ server.conf: fs_serverd对应的配置文件
              |__ client.conf: 客户端配置文件
@@ -58,11 +56,11 @@ FastCFS集群配置包含如下四部分：
 
 配置文件路径：/etc/fastcfs/fdir
 
-fastDIR集群内各个server配置的servers.conf和cluster.conf必须完全一样。
+fastDIR集群内各个server配置的cluster.conf必须完全一样。
 
 建议配置一次，分发到其他服务器即可。
 
-1.1 把fastDIR集群中的所有服务实例配置到servers.conf中；
+1.1 把fastDIR集群中的所有服务实例配置到cluster.conf中；
 
   每个fastDIR服务实例包含2个服务端口：cluster 和 service
 
@@ -83,7 +81,7 @@ host = 172.16.168.128
 
   * 如果需要修改数据存放路径，修改配置项 data_path 为绝对路径
 
-  * [cluster] 和 [service] 配置的端口（port）必须与servers.conf中本机的一致，否则启动会报错
+  * [cluster] 和 [service] 配置的端口（port）必须与cluster.conf中本机的一致，否则启动会报错
 
   fastDIR重启：
 ```
@@ -103,19 +101,19 @@ tail /opt/fastcfs/fdir/logs/fdir_serverd.log
 
 配置文件路径：/etc/fastcfs/fstore
 
-faststore集群各个服务实例配置的servers.conf和cluster.conf必须完全一样。
+faststore集群各个服务实例配置的cluster.conf必须完全一样。
 
 建议把这两个配置文件分别配置好，然后分发到其他服务器。
 
-2.1 把faststore集群中的所有服务实例配置到servers.conf中；
+2.1 把faststore集群中的所有服务实例配置到cluster.conf中；
 
   每个faststore服务实例包含3个服务端口：cluster、replica 和 service
 
-  和fastDIR的servers.conf相比，多了一个replica端口，二者配置方式完全相同。
+  和fastDIR的cluster.conf相比，多了一个replica端口，二者配置方式完全相同。
 
 2.2 在cluster.conf中配置服务器分组和数据分组对应关系；
 
- 对于生产环境，为了便于今后扩容，建议数据分组数目至少为256，最好不要超过1024（视业务未来5年发展规模而定）
+ 对于生产环境，为了便于今后扩容，建议数据分组数目至少为64，最好不要超过1024（视业务未来5年发展规模而定）
 
 2.3 在storage.conf 中配置存储路径等参数；
 
@@ -134,7 +132,7 @@ path = /opt/faststore/data
 
   * 如果需要修改数据存放路径，修改配置项 data_path 为绝对路径
 
-  * [cluster]、[replica] 和 [service] 配置的端口（port）必须与servers.conf中本机的一致，否则启动会报错
+  * [cluster]、[replica] 和 [service] 配置的端口（port）必须与cluster.conf中本机的一致，否则启动会报错
 
   faststore重启：
 ```
@@ -156,13 +154,11 @@ fused 配置文件路径：/etc/fastcfs/fcfs
 
 3.1 复制faststore server上的如下配置文件到 /etc/fastcfs/fstore/
 ```
-/etc/fastcfs/fstore/servers.conf
 /etc/fastcfs/fstore/cluster.conf
 ```
 
 3.2 复制fastDIR server上的如下配置文件到 /etc/fastcfs/fdir/
 ```
-/etc/fastcfs/fdir/servers.conf
 /etc/fastcfs/fdir/cluster.conf
 ```
 

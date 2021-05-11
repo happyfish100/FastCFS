@@ -14,8 +14,7 @@
         |__ auth: 认证中心
              |__ keys: 存放用户密钥文件，每个用户对应一个密钥文件，例如 admin.key
              |    |__ session_validate.key: 用于FastDIR和FastStore请求auth服务验证session和权限
-             |__ servers.conf: 服务器列表，配置服务器ID、IP和端口
-             |__ cluster.conf: 集群配置
+             |__ cluster.conf: 服务器列表，配置服务器ID、IP和端口
              |__ server.conf: fcfs_authd对应的配置文件
              |__ client.conf: 客户端配置文件
              |__ auth.conf: 认证相关的公共配置文件，在FastDIR和FastStore的cluster.conf中引用
@@ -41,11 +40,11 @@
 
 配置文件路径：/etc/fastcfs/auth
 
-Auth集群内各个server配置的servers.conf和cluster.conf必须完全一样。
+Auth集群内各个server配置的cluster.conf必须完全一样。
 
 建议配置一次，分发到其他服务器即可。
 
-1.1 把Auth集群中的所有服务实例配置到servers.conf中；
+1.1 把Auth集群中的所有服务实例配置到cluster.conf中；
 
   每个Auth服务实例包含2个服务端口：cluster 和 service
 
@@ -55,7 +54,7 @@ Auth集群内各个server配置的servers.conf和cluster.conf必须完全一样�
 
 1.2 配置 server.conf
 
-  * [cluster] 和 [service] 配置的端口（port）必须与servers.conf中本机的一致，否则启动会报错
+  * [cluster] 和 [service] 配置的端口（port）必须与cluster.conf中本机的一致，否则启动会报错
 
 1.3 配置 auth.conf
 
@@ -66,7 +65,6 @@ Auth集群内各个server配置的servers.conf和cluster.conf必须完全一样�
 ```
 /etc/fastcfs/fdir/client.conf
 /etc/fastcfs/fdir/cluster.conf
-/etc/fastcfs/fdir/servers.conf
 ```
 
 1.5 启动authd
@@ -103,7 +101,6 @@ fcfs_pool create fs unlimited
 /etc/fastcfs/auth/auth.conf
 /etc/fastcfs/auth/session.conf
 /etc/fastcfs/auth/cluster.conf
-/etc/fastcfs/auth/servers.conf
 /etc/fastcfs/auth/client.conf
 ```
 
