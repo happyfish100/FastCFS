@@ -1,3 +1,0 @@
-
-# config the id, ip address and port of all instances in the cluster
-server_config_filename = servers.conf
