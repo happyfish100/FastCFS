@@ -70,10 +70,12 @@ pull_source_code() {
     echo "INFO:The $module_name local repository does not exist!"
     echo "INFO:=====Begin to clone $module_name , it will take some time...====="
     git clone $module_url
+    git checkout master
   else
     echo "INFO:The $module_name local repository have existed."
     cd $module_name
     echo "INFO:=====Begin to pull $module_name, it will take some time...====="
+    git checkout master
     git pull
     cd ..
   fi
@@ -141,7 +143,7 @@ placeholder_replace() {
 parse_config_arguments() {
   for arg do
     case "$arg" in
-      -f)
+      --force)
         force_reconfig=1
       ;;
     esac
@@ -200,8 +202,9 @@ copy_config_to() {
     check_config_file $tmp_src_file
     if [ -f $tmp_dest_file ]; then
       if ! [ $force_reconfig -eq 1 ]; then
-        echo "ERROR:File $tmp_dest_file does exist, you must specify -f with config to force reconfig, it will overlay the exists files!"
-        echo "Usage: $this_shell_name config -f"
+        echo "ERROR:File $tmp_dest_file exist, "
+        echo 'you must specify --force to force reconfig, it will overwrite the exists files!'
+        echo "Usage: $this_shell_name config --force"
         exit 1
       else
         # Backup exists file
