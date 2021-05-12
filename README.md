@@ -1,4 +1,4 @@
-# FastCFS -- a high performance cloud native distributed file system for databases, K8s and VM
+# FastCFS -- a high performance distributed file system for databases, K8s and VM etc.
 
 Chinese language please click: [README in Chinese](README-zh_CN.md)
 
