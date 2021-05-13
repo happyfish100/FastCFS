@@ -58,13 +58,15 @@ FastCFS集群配置包含如下四部分：
 
 fastDIR集群内各个server配置的cluster.conf必须完全一样。
 
-建议配置一次，分发到其他服务器即可。
+建议配置一次，分发到集群中的所有服务器和客户端即可。
 
 1.1 把fastDIR集群中的所有服务实例配置到cluster.conf中；
 
   每个fastDIR服务实例包含2个服务端口：cluster 和 service
 
-  一个fastDIR服务实例需要配置一个[server-$id]的section，其中$id为实例ID。
+  cluster.conf中配置集群所有实例，一个实例由IP + 端口（包括 cluster和service 2个端口 ）组成
+
+  一个fastDIR服务实例需要配置一个[server-$id]的section，其中$id为实例ID（从1开始编号）。
 
   如果一台服务器上启动了多个实例，因端口与全局配置的不一致，此时必须指定端口。
 
@@ -81,7 +83,13 @@ host = 172.16.168.128
 
   * 如果需要修改数据存放路径，修改配置项 data_path 为绝对路径
 
-  * [cluster] 和 [service] 配置的端口（port）必须与cluster.conf中本机的一致，否则启动会报错
+  * 本机端口包含cluster和service 2个端口，分配在[cluster] 和 [service] 中配置
+
+  * 本机IP + 本机端口必须配置在cluster.conf的一个实例中，否则启动时会出现类似的出错信息：
+```
+ERROR - file: cluster_info.c, line: 119, cluster config file: /etc/fastcfs/fdir/cluster.conf,
+      can't find myself by my local ip and listen port
+```
 
   fastDIR重启：
 ```
@@ -103,7 +111,7 @@ tail /opt/fastcfs/fdir/logs/fdir_serverd.log
 
 faststore集群各个服务实例配置的cluster.conf必须完全一样。
 
-建议把这两个配置文件分别配置好，然后分发到其他服务器。
+建议把cluster.conf一次性配置好，然后分发到集群中的所有服务器和客户端。
 
 2.1 把faststore集群中的所有服务实例配置到cluster.conf中；
 
@@ -130,9 +138,15 @@ path = /opt/faststore/data
 
 2.4 配置 server.conf
 
-  * 如果需要修改数据存放路径，修改配置项 data_path 为绝对路径
+  * 如果需要修改binlog存放路径，修改配置项 data_path 为绝对路径
 
-  * [cluster]、[replica] 和 [service] 配置的端口（port）必须与cluster.conf中本机的一致，否则启动会报错
+  * 本机端口包含cluster、replica和service 3个端口，分配在[cluster]、[replica] 和 [service] 中配置
+
+  * 本机IP + 本机端口必须配置在cluster.conf的一个实例中，否则启动时会出现类似的出错信息：
+```
+ERROR - file: server_group_info.c, line: 347, cluster config file: /etc/fastcfs/fstore/cluster.conf,
+      can't find myself by my local ip and listen port
+```
 
   faststore重启：
 ```
