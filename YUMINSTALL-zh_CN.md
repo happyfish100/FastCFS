@@ -69,3 +69,5 @@ systemctl restart faststore
 systemctl restart fastcfs
 systemctl restart fcfs_authd
 ```
+### 6. 一个包含5个节点的安装过程的详细文档
+请参与[5节点安装文档](YUMINSTALL-Diy-5nodes-zh_CN.md)
