@@ -53,7 +53,7 @@ static int setup_server_env(const char *config_filename);
 
 int main(int argc, char *argv[])
 {
-    char *config_filename;
+    const char *config_filename;
     char *action;
     char g_pid_filename[MAX_PATH_SIZE];
     pthread_t schedule_tid;
@@ -66,7 +66,13 @@ int main(int argc, char *argv[])
         sf_usage(argv[0]);
         return 1;
     }
-    config_filename = argv[1];
+
+    config_filename = sf_parse_daemon_mode_and_action(argc, argv,
+            &g_fcfs_auth_global_vars.version, &daemon_mode, &action);
+    if (config_filename == NULL) {
+        return 0;
+    }
+
     log_init2();
     //log_set_time_precision(&g_log_context, LOG_TIME_PRECISION_USECOND);
 
@@ -80,7 +86,6 @@ int main(int argc, char *argv[])
     snprintf(g_pid_filename, sizeof(g_pid_filename), 
              "%s/authd.pid", SF_G_BASE_PATH);
 
-    sf_parse_daemon_mode_and_action(argc, argv, &daemon_mode, &action);
     result = process_action(g_pid_filename, action, &stop);
     if (result != 0) {
         if (result == EINVAL) {
