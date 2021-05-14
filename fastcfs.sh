@@ -67,14 +67,14 @@ pull_source_code() {
   module_name=$1
   module_url=$2
   if ! [ -d $module_name ]; then
-    echo "INFO:The $module_name local repository does not exist!"
-    echo "INFO:=====Begin to clone $module_name , it will take some time...====="
+    echo "INFO: The $module_name local repository does not exist!"
+    echo "INFO: =====Begin to clone $module_name , it will take some time...====="
     git clone $module_url
     git checkout master
   else
-    echo "INFO:The $module_name local repository have existed."
+    echo "INFO: The $module_name local repository have existed."
     cd $module_name
-    echo "INFO:=====Begin to pull $module_name, it will take some time...====="
+    echo "INFO: =====Begin to pull $module_name, it will take some time...====="
     git checkout master
     git pull
     cd ..
@@ -99,7 +99,7 @@ make_op() {
     exit 1
   else  
     cd $module_lib_path
-    echo "INFO:=====Begin to $make_mode module [$module_name]====="
+    echo "INFO: =====Begin to $make_mode module [$module_name]====="
     command="./$make_shell"
     if [ ${#extend_options} -gt 0 ]; then
       command="$command $extend_options"
@@ -107,9 +107,9 @@ make_op() {
     if [ $make_mode != "make" ]; then
       command="$command $make_mode"
     fi
-    echo "INFO:Execute command ($command) in path ($PWD)"
+    echo "INFO: Execute command ($command) in path ($PWD)"
     result=`$command`
-    echo "INFO:Execute result=("
+    echo "INFO: Execute result=("
     echo "$result"
     echo ")"
     cd -
@@ -165,7 +165,7 @@ $check_conf_file|sed 's/\([^=]*\)=\([^=]\)/\2/g'`
         echo "ERROR: Create target path in file $check_conf_file failed:$check_path!"
         exit 1
       else
-        echo "INFO:Created target path in file $check_conf_file successfully:$check_path!"
+        echo "INFO: Created target path in file $check_conf_file successfully:$check_path!"
       fi
     fi
   done
@@ -189,7 +189,6 @@ copy_config_to() {
     fi
   fi
   for CONF_FILE in ${config_file_array[@]}; do
-    echo "INFO:Copy file $CONF_FILE to $dest_path"
     tmp_src_file=$src_path/$CONF_FILE
     tmp_dest_file=${dest_path}$CONF_FILE
     if [ -f $tmp_src_file ]; then
@@ -204,6 +203,7 @@ copy_config_to() {
           cp -f $tmp_dest_file $tmp_dest_file.bak
         fi
       fi
+      echo "INFO: Copy file $CONF_FILE to $dest_path"
       cp -f $tmp_src_file $tmp_dest_file
     elif ! [ -f $tmp_dest_file ]; then
       echo "ERROR: file $tmp_dest_file not exist"
@@ -219,21 +219,21 @@ copy_config_to() {
 
 config_faststore() {
   # Copy faststore's config file to target config path
-  echo "INFO:Config faststore:"
+  echo "INFO: Config faststore:"
   store_src_conf_path=$BUILD_PATH/$STORE_LIB/conf
   copy_config_to "${STORE_CONF_FILES[*]}" $store_src_conf_path $STORE_CONF_PATH
 }
 
 config_fastdir() {
   # Copy fastDIR's config file to target config path
-  echo "INFO:Config fastDIR:"
+  echo "INFO: Config fastDIR:"
   fdir_src_conf_path=$BUILD_PATH/$FDIR_LIB/conf
   copy_config_to "${FDIR_CONF_FILES[*]}" $fdir_src_conf_path $FDIR_CONF_PATH
 }
 
 config_auth() {
   # Copy auth's config file to target config path
-  echo "INFO:Config auth:"
+  echo "INFO: Config auth:"
   auth_src_conf_path=src/auth/conf
   copy_config_to "${AUTH_CONF_FILES[*]}" $auth_src_conf_path $AUTH_CONF_PATH
   auth_src_keys_path=src/auth/conf/keys
@@ -242,7 +242,7 @@ config_auth() {
 
 config_fuse() {
   # Copy fuse's config file to target config path
-  echo "INFO:Config fuse:"
+  echo "INFO: Config fuse:"
   fuse_src_conf_path=conf
   copy_config_to "${FUSE_CONF_FILES[*]}" $fuse_src_conf_path $FUSE_CONF_PATH
 }
@@ -263,13 +263,13 @@ get_first_local_ip() {
 
 pull_source_codes() {
   # Clone or pull source code from github.com if not exists.
-  echo "INFO:Begin to pull source codes..."
+  echo "INFO: Begin to pull source codes..."
   # Pull fastCFS self.
   git pull
   # Create build path if not exists.
   if ! [ -d $BUILD_PATH ]; then
     mkdir -m 775 $BUILD_PATH
-    echo "INFO:Build path {$BUILD_PATH} not exist, created."
+    echo "INFO: Build path {$BUILD_PATH} not exist, created."
   fi
   cd $BUILD_PATH
   
@@ -304,8 +304,8 @@ make_installs() {
   make_install $FDIR_LIB $FDIR_LIB
   make_install $STORE_LIB $STORE_LIB
   make_install FastCFS $FASTCFS_LIB --exclude=auth_client
-  echo "INFO:Congratulation, setup complete successfully!"
-  echo "INFO:Then, you can execute command [fastcfs.sh config] next step."
+  echo "INFO: Congratulation, setup complete successfully!"
+  echo "INFO: Then, you can execute command [fastcfs.sh config] next step."
 }
 
 service_op() {
