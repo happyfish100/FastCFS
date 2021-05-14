@@ -53,17 +53,17 @@ fastcfs.sh usage:
 * start | stop | restart: for service processes control
 ```
 
-one click to build (deploy and run) demo environment (MUST by root):
+one click to build (deploy and run) single node demo environment (MUST run by root):
 
 ```
 ./helloWorld.sh
 ```
 
-or execute following commands (MUST by root):
+or execute following commands (MUST run by root):
 
 ```
 ./fastcfs.sh setup
-./fastcfs.sh config
+./fastcfs.sh config --force
 ./fastcfs.sh restart
 ```
 

@@ -35,6 +35,8 @@ FastCFS包含 libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五
 ```
 git clone https://gitee.com/fastdfs100/FastCFS.git; cd FastCFS/
 ./helloWorld.sh
+
+# 注意：helloWorld.sh将更改FastCFS相关配置文件，请不要在多节点集群上执行！
 ```
 
 上述操作完成后，执行命令：
