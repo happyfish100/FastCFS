@@ -220,7 +220,7 @@ fs_cluster_stat -N
 
  查看FastCFS磁盘使用情况：
 ```
-df -h
+df -h /opt/fastcfs/fuse | grep fuse
 ```
 至此，mountpoint（如：/opt/fastcfs/fuse）可以作为本地文件目录访问了。
 

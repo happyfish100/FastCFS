@@ -39,7 +39,7 @@ git clone https://gitee.com/fastdfs100/FastCFS.git; cd FastCFS/
 
 上述操作完成后，执行命令：
 ```
-df -h /opt/fastcfs/fuse
+df -h /opt/fastcfs/fuse | grep fuse
 ```
 可以看到FastCFS挂载的文件目录，你可以当作本地文件系统访问该目录。
 

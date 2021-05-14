@@ -19,7 +19,7 @@ fastcfs.sh 命令参数说明：
 
 通过 df 命令查看FastCFS挂载的文件目录：
 ```
-df -h /opt/fastcfs/fuse
+df -h /opt/fastcfs/fuse | grep fuse
 ```
 
 以上命令执行成功，你就可以通过本地目录 /opt/fastcfs/fuse 访问FastCFS了。
