@@ -3,20 +3,22 @@ FastCFS支持大规模的集群，下面以最为典型的最小化集群的部�
 1. 节点类型和数量：共计5个节点，3个服务端节点，2客户端节点
 2. 服务端集群：FastStore和FastDir公用，也可以分开独立部署，生产环境建议分开。本说明为了降低节点数量，采用了公用部署的方式。
 3. 客户端：为了说明支持多客户端，使用了2个客户端节点。生产环境中如果只需要1个客户端，也是没问题的。
-<img src="images/demo-5-nodes-deploy.jpg" width="1024" alt="微信公众号">
+<img src="images/demo-5-nodes-deploy.jpg" width="800" alt="微信公众号">
 ### 前置依赖
 先安装FastOS.repo yum源，FastCFS所需要的pkg都在此源中，安装成功后就可以安装FastCFS相关软件包了。
+
 - CentOS 7
 ```
 rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
 ```
+
 - CentOS 8
 ```
 rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
 ```
 
 ### 服务端集群安装
-192.168.126.[101,102,103]上分别安装FastStore、FastDIR 两个服务. 
+在192.168.126.[101,102,103]上分别安装FastStore、FastDIR 两个服务. 
 #### 安装FastDIR
 ```
 yum install fastDIR-server
@@ -373,7 +375,7 @@ hello world
 [first@192.168.126.202 /opt/fastcfs/fuse]
 ```
 
-## 服务监控
+### 服务监控
 1. 查看FastDir集群状态
 ```
 $ fdir_cluster_stat
