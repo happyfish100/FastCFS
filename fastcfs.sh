@@ -60,7 +60,7 @@ uname=$(uname)
 
 pull_source_code() {
   if [ $# != 2 ]; then
-    echo "ERROR:$0 - pull_source_code() function need repository name and url!"
+    echo "ERROR: $0 - pull_source_code() function need repository name and url!"
     exit 1
   fi
 
@@ -83,7 +83,7 @@ pull_source_code() {
 
 make_op() {
   if [ $# -lt 3 ]; then
-    echo "ERROR:$0 - make_op() function need module repository name and mode!"
+    echo "ERROR: $0 - make_op() function need module repository name and mode!"
     exit 1
   fi
 
@@ -94,8 +94,8 @@ make_op() {
 
   module_lib_path=$BUILD_PATH/$module_src_path
   if ! [ -d $module_lib_path ]; then
-    echo "ERROR:$0 - module repository {$module_name} does not exist!"
-    echo "ERROR:You must checkout from remote repository first!"
+    echo "ERROR: $0 - module repository {$module_name} does not exist!"
+    echo "ERROR: You must checkout from remote repository first!"
     exit 1
   else  
     cd $module_lib_path
@@ -150,13 +150,6 @@ parse_config_arguments() {
   done
 }
 
-check_config_file() {
-  if ! [ -f $1 ]; then
-    echo "ERROR:File $1 does not exist, can't copy to target path!"
-    exit 1
-  fi
-}
-
 check_paths_infile() {
   # Check all paths in this config file, if not exist, will create it.
   check_conf_file=$1
@@ -169,7 +162,7 @@ $check_conf_file|sed 's/\([^=]*\)=\([^=]\)/\2/g'`
   for check_path in ${check_result[@]}; do
     if ! [ -d $check_path ]; then
       if ! mkdir -p $check_path; then
-        echo "ERROR:Create target path in file $check_conf_file failed:$check_path!"
+        echo "ERROR: Create target path in file $check_conf_file failed:$check_path!"
         exit 1
       else
         echo "INFO:Created target path in file $check_conf_file successfully:$check_path!"
@@ -191,7 +184,7 @@ copy_config_to() {
   dest_path=$3
   if ! [ -d $dest_path ]; then
     if ! mkdir -p $dest_path; then
-      echo "ERROR:Create target conf path failed:$dest_path!"
+      echo "ERROR: Create target conf path failed:$dest_path!"
       exit 1
     fi
   fi
@@ -199,19 +192,23 @@ copy_config_to() {
     echo "INFO:Copy file $CONF_FILE to $dest_path"
     tmp_src_file=$src_path/$CONF_FILE
     tmp_dest_file=${dest_path}$CONF_FILE
-    check_config_file $tmp_src_file
-    if [ -f $tmp_dest_file ]; then
-      if ! [ $force_reconfig -eq 1 ]; then
-        echo "ERROR:File $tmp_dest_file exist, "
-        echo 'you must specify --force to force reconfig, it will overwrite the exists files!'
-        echo "Usage: $this_shell_name config --force"
-        exit 1
-      else
-        # Backup exists file
-        cp -f $tmp_dest_file $tmp_dest_file.bak
+    if [ -f $tmp_src_file ]; then
+      if [ -f $tmp_dest_file ]; then
+        if ! [ $force_reconfig -eq 1 ]; then
+          echo "ERROR: file $tmp_dest_file exist, "
+          echo 'you must specify --force to force reconfig, it will overwrite the exists files!'
+          echo "Usage: $this_shell_name config --force"
+          exit 1
+        else
+          # Backup exists file
+          cp -f $tmp_dest_file $tmp_dest_file.bak
+        fi
       fi
+      cp -f $tmp_src_file $tmp_dest_file
+    elif ! [ -f $tmp_dest_file ]; then
+      echo "ERROR: file $tmp_dest_file not exist"
+      exit 1
     fi
-    cp -f $tmp_src_file $tmp_dest_file
     file_extension="${tmp_dest_file##*.}"
     if [ $file_extension = "conf" ]; then
       check_paths_infile $tmp_dest_file
@@ -256,7 +253,7 @@ get_first_local_ip() {
   elif [ -f /sbin/ifconfig ]; then
     IFCONFIG=/sbin/ifconfig
   else
-    echo "ERROR:can't find ifconfig command" 1>&2
+    echo "ERROR: can't find ifconfig command" 1>&2
     exit
   fi
 
