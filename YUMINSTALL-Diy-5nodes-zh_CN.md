@@ -3,7 +3,7 @@ FastCFS支持大规模的集群，下面以最为典型的最小化集群的部�
 1. 节点类型和数量：共计5个节点，3个服务端节点，2客户端节点
 2. 服务端集群：FastStore和FastDir公用，也可以分开独立部署，生产环境建议分开。本说明为了降低节点数量，采用了公用部署的方式。
 3. 客户端：为了说明支持多客户端，使用了2个客户端节点。生产环境中如果只需要1个客户端，也是没问题的。
-<img src="images/demo-5-nodes-deploy.jpg" width="800" alt="微信公众号">
+<img src="images/demo-5-nodes-deploy.jpg" width="800" alt="5个节点的集群架构图">
 ### 前置依赖
 先安装FastOS.repo yum源，FastCFS所需要的pkg都在此源中，安装成功后就可以安装FastCFS相关软件包了。
 
