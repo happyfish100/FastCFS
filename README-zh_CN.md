@@ -45,7 +45,7 @@ df -h /opt/fastcfs/fuse | grep fuse
 ```
 可以看到FastCFS挂载的文件目录，你可以当作本地文件系统访问该目录。
 
-一键部署的详细说明，请参见这里[一键部署详细说明](docs/asy-install-detail-zh_CN.md)
+一键部署的详细说明，请参见这里[一键部署详细说明](docs/Easy-install-detail-zh_CN.md)
 
 ### DIY安装
 
