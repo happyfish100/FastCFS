@@ -65,7 +65,8 @@ rm -rf %{buildroot}
 DESTDIR=$RPM_BUILD_ROOT ./make.sh --module=auth_client install
 AUTH_CONFDIR=%{buildroot}/etc/fastcfs/auth/
 mkdir -p $AUTH_CONFDIR
-cp -R src/auth/conf/* $AUTH_CONFDIR
+cp src/auth/conf/*.conf $AUTH_CONFDIR
+cp -R src/auth/conf/keys $AUTH_CONFDIR
 
 %post
 

@@ -78,12 +78,12 @@ static int copy_file()
     fcfs_api_async_report_config_to_string_ex(&g_fcfs_api_ctx,
             async_report_config, sizeof(async_report_config));
     fdir_client_log_config_ex(g_fcfs_api_ctx.contexts.fdir,
-            async_report_config);
+            async_report_config, true);
 
     fs_api_config_to_string(write_combine_config,
             sizeof(write_combine_config));
     fs_client_log_config_ex(g_fcfs_api_ctx.contexts.fsapi->fs,
-            write_combine_config);
+            write_combine_config, true);
 
     if (fs_filename[strlen(fs_filename) - 1] == '/') {
         const char *filename;
