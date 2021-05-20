@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <getopt.h>
 #include "fastcommon/logger.h"
 #include "fastcommon/process_ctrl.h"
 #include "fastcommon/sched_thread.h"
@@ -42,20 +43,61 @@ static bool daemon_mode = true;
 static const char *config_filename;
 static char g_pid_filename[MAX_PATH_SIZE];
 
+static void parse_cmd_options(int argc, char *argv[])
+{
+    int ch;
+    struct option longopts[] = {
+        {"user", required_argument, NULL, 'u'},
+        {"key",  required_argument, NULL, 'k'},
+        {"namespace",  required_argument, NULL, 'n'},
+        {"mountpoint", required_argument, NULL, 'm'},
+        {NULL, 0, NULL, 0}
+    };
+
+    //TODO
+    while ((ch = getopt_long(argc, argv, "u:k:n:m:",
+                    longopts, NULL)) != -1)
+    {
+        switch (ch) {
+            case 'u':
+                break;
+            case 'k':
+                break;
+            case 'n':
+                break;
+            case 'm':
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 static int process_cmdline(int argc, char *argv[], bool *continue_flag)
 {
+    char *strs[4];
+    str_ptr_array_t options;
     char *action;
     bool stop;
     int result;
 
+    options.strs = strs;
+    options.count = 0;
+    strs[options.count++] = "-u | --user: the username";
+    strs[options.count++] = "-k | --key: the secret key filename";
+    strs[options.count++] = "-n | --namespace: the FastDIR namespace "
+        "or the storage pool name";
+    strs[options.count++] = "-m | --mountpoint: the mountpoint";
+
     *continue_flag = false;
     if (argc < 2) {
-        sf_usage(argv[0]);
+        sf_usage_ex1(argv[0], &options);
         return 1;
     }
 
-    config_filename = sf_parse_daemon_mode_and_action(argc, argv,
-            &g_fcfs_global_vars.version, &daemon_mode, &action);
+    config_filename = sf_parse_daemon_mode_and_action_ex1(
+            argc, argv, &g_fcfs_global_vars.version,
+            &daemon_mode, &action, "start", &options);
     if (config_filename == NULL) {
         return 0;
     }
@@ -70,14 +112,14 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
         return result;
     }
 
-    snprintf(pid_filename, sizeof(pid_filename),
+    snprintf(g_pid_filename, sizeof(g_pid_filename),
             "%s/fused.pid", SF_G_BASE_PATH);
 
     stop = false;
-    result = process_action(pid_filename, action, &stop);
+    result = process_action(g_pid_filename, action, &stop);
     if (result != 0) {
         if (result == EINVAL) {
-            sf_usage(argv[0]);
+            sf_usage_ex1(argv[0], &options);
         }
         log_destroy();
         return result;
@@ -88,6 +130,7 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
         return 0;
     }
 
+    parse_cmd_options(argc, argv);
     *continue_flag = true;
     return 0;
 }
@@ -134,7 +177,7 @@ int main(int argc, char *argv[])
             break;
         }
 
-        if ((result=write_to_pid_file(pid_filename)) != 0) {
+        if ((result=write_to_pid_file(g_pid_filename)) != 0) {
             break;
         }
 
@@ -150,7 +193,7 @@ int main(int argc, char *argv[])
 
         fuse_session_unmount(se);
         fcfs_api_terminate();
-        delete_pid_file(pid_filename);
+        delete_pid_file(g_pid_filename);
     } while (0);
 
     if (g_schedule_flag) {
