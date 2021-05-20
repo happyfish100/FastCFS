@@ -54,20 +54,26 @@ static void parse_cmd_options(int argc, char *argv[])
         {NULL, 0, NULL, 0}
     };
 
-    //TODO
     while ((ch = getopt_long(argc, argv, "u:k:n:m:",
                     longopts, NULL)) != -1)
     {
         switch (ch) {
             case 'u':
+                FC_SET_STRING(g_fcfs_auth_client_vars.client_ctx.
+                        auth_cfg.username, optarg);
                 break;
             case 'k':
+                FC_SET_STRING(g_fcfs_auth_client_vars.client_ctx.
+                        auth_cfg.secret_key_filename, optarg);
                 break;
             case 'n':
+                g_fuse_global_vars.ns = optarg;
                 break;
             case 'm':
+                g_fuse_global_vars.mountpoint = optarg;
                 break;
             default:
+                //just ignore other options
                 break;
         }
     }

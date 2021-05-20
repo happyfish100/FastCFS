@@ -29,18 +29,31 @@ static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
     FilenameString new_key_filename;
     string_t new_filename;
 
-    username.str = iniGetStrValue(NULL, "username", ini_context);
-    if (username.str == NULL || *(username.str) == '\0') {
-        username.str = "admin";
+    if (g_fcfs_auth_client_vars.client_ctx.auth_cfg.username.str == NULL) {
+        username.str = iniGetStrValue(NULL, "username", ini_context);
+        if (username.str == NULL || *(username.str) == '\0') {
+            username.str = "admin";
+        }
+        username.len = strlen(username.str);
+    } else {
+        username = g_fcfs_auth_client_vars.client_ctx.auth_cfg.username;
     }
-    username.len = strlen(username.str);
 
-    secret_key_filename.str = iniGetStrValue(NULL,
-            "secret_key_filename", ini_context);
-    if (secret_key_filename.str == NULL || *(secret_key_filename.str) == '\0') {
-        secret_key_filename.str = "/etc/fastcfs/auth/keys/${username}.key";
+    if (g_fcfs_auth_client_vars.client_ctx.auth_cfg.
+            secret_key_filename.str == NULL)
+    {
+        secret_key_filename.str = iniGetStrValue(NULL,
+                "secret_key_filename", ini_context);
+        if (secret_key_filename.str == NULL ||
+                *(secret_key_filename.str) == '\0')
+        {
+            secret_key_filename.str = "/etc/fastcfs/auth/keys/${username}.key";
+        }
+        secret_key_filename.len = strlen(secret_key_filename.str);
+    } else {
+        secret_key_filename = g_fcfs_auth_client_vars.
+            client_ctx.auth_cfg.secret_key_filename;
     }
-    secret_key_filename.len = strlen(secret_key_filename.str);
 
     auth_cfg->passwd.str = (char *)auth_cfg->passwd_buff;
     auth_cfg->passwd.len = FCFS_AUTH_PASSWD_LEN;

@@ -56,22 +56,27 @@
 #define FUSE_OWNER_TYPE_CALLER_STR  "caller"
 #define FUSE_OWNER_TYPE_FIXED_STR   "fixed"
 
-FUSEGlobalVars g_fuse_global_vars;
+FUSEGlobalVars g_fuse_global_vars = {NULL, NULL};
 
 static int load_fuse_mountpoint(IniFullContext *ini_ctx, string_t *mountpoint)
 {
     struct statfs buf;
     int result;
 
-    mountpoint->str = iniGetStrValue(ini_ctx->section_name,
-            "mountpoint", ini_ctx->context);
-    if (mountpoint->str == NULL || *mountpoint->str == '\0') {
-        logError("file: "__FILE__", line: %d, "
-                "config file: %s, section: %s, item: mountpoint "
-                "not exist or is empty", __LINE__, ini_ctx->filename,
-                ini_ctx->section_name);
-        return ENOENT;
+    if (g_fuse_global_vars.mountpoint == NULL) {
+        mountpoint->str = iniGetStrValue(ini_ctx->section_name,
+                "mountpoint", ini_ctx->context);
+        if (mountpoint->str == NULL || *mountpoint->str == '\0') {
+            logError("file: "__FILE__", line: %d, "
+                    "config file: %s, section: %s, item: mountpoint "
+                    "not exist or is empty", __LINE__, ini_ctx->filename,
+                    ini_ctx->section_name);
+            return ENOENT;
+        }
+    } else {
+        mountpoint->str = g_fuse_global_vars.mountpoint;
     }
+
     if (!fileExists(mountpoint->str)) {
         result = errno != 0 ? errno : ENOENT;
         if (result == ENOTCONN) {
@@ -81,7 +86,7 @@ static int load_fuse_mountpoint(IniFullContext *ini_ctx, string_t *mountpoint)
                 logError("file: "__FILE__", line: %d, "
                         "unmount %s fail, you should run "
                         "\"sudo umount %s\" manually", __LINE__,
-                        mountpoint->str,mountpoint->str);
+                        mountpoint->str, mountpoint->str);
             }
         }
 
@@ -190,14 +195,18 @@ static int load_fuse_config(IniFullContext *ini_ctx)
     char *allow_others;
     int result;
 
-    ns.str = iniGetStrValue(FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
-            "namespace", ini_ctx->context);
-    if (ns.str == NULL || *ns.str == '\0') {
-        logError("file: "__FILE__", line: %d, "
-                "config file: %s, section: %s, item: namespace "
-                "not exist or is empty", __LINE__, ini_ctx->filename,
-                FCFS_API_DEFAULT_FASTDIR_SECTION_NAME);
-        return ENOENT;
+    if (g_fuse_global_vars.ns == NULL) {
+        ns.str = iniGetStrValue(FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
+                "namespace", ini_ctx->context);
+        if (ns.str == NULL || *ns.str == '\0') {
+            logError("file: "__FILE__", line: %d, "
+                    "config file: %s, section: %s, item: namespace "
+                    "not exist or is empty", __LINE__, ini_ctx->filename,
+                    FCFS_API_DEFAULT_FASTDIR_SECTION_NAME);
+            return ENOENT;
+        }
+    } else {
+        ns.str = g_fuse_global_vars.ns;
     }
     ns.len = strlen(ns.str);
 

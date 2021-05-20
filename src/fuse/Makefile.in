@@ -2,7 +2,8 @@
 
 COMPILE = $(CC) $(CFLAGS)
 INC_PATH = -I.. -I../common -I../include
-LIB_PATH = -L../api $(LIBS) -lfuse3 -lfcfsapi -lfdirclient -lfsapi -lfsclient -lfastcommon -lserverframe
+LIB_PATH = -L../api $(LIBS) -lfuse3 -lfcfsapi -lfdirclient -lfsapi  \
+		   -lfsclient -lfcfsauthclient -lfastcommon -lserverframe
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
 STATIC_OBJS = fuse_wrapper.o global.o
