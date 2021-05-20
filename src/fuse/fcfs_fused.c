@@ -43,7 +43,7 @@ static bool daemon_mode = true;
 static const char *config_filename;
 static char g_pid_filename[MAX_PATH_SIZE];
 
-static void parse_cmd_options(int argc, char *argv[])
+static int parse_cmd_options(int argc, char *argv[])
 {
     int ch;
     struct option longopts[] = {
@@ -51,10 +51,11 @@ static void parse_cmd_options(int argc, char *argv[])
         {"key",  required_argument, NULL, 'k'},
         {"namespace",  required_argument, NULL, 'n'},
         {"mountpoint", required_argument, NULL, 'm'},
+        SF_COMMON_LONG_OPTIONS,
         {NULL, 0, NULL, 0}
     };
 
-    while ((ch = getopt_long(argc, argv, "u:k:n:m:",
+    while ((ch = getopt_long(argc, argv, SF_COMMON_OPT_STRING"u:k:n:m:",
                     longopts, NULL)) != -1)
     {
         switch (ch) {
@@ -72,38 +73,54 @@ static void parse_cmd_options(int argc, char *argv[])
             case 'm':
                 g_fuse_global_vars.mountpoint = optarg;
                 break;
+            case '?':
+                return EINVAL;
             default:
-                //just ignore other options
                 break;
         }
     }
+
+    return 0;
 }
+
+#define OPTION_NAME_USER_STR "user"
+#define OPTION_NAME_USER_LEN (sizeof(OPTION_NAME_USER_STR) - 1)
+
+#define OPTION_NAME_KEY_STR  "key"
+#define OPTION_NAME_KEY_LEN  (sizeof(OPTION_NAME_KEY_STR) - 1)
+
+#define OPTION_NAME_NAMESPACE_STR  "namespace"
+#define OPTION_NAME_NAMESPACE_LEN  (sizeof(OPTION_NAME_NAMESPACE_STR) - 1)
+
+#define OPTION_NAME_MOUNTPOINT_STR "mountpoint"
+#define OPTION_NAME_MOUNTPOINT_LEN (sizeof(OPTION_NAME_MOUNTPOINT_STR) - 1)
 
 static int process_cmdline(int argc, char *argv[], bool *continue_flag)
 {
-    char *strs[4];
-    str_ptr_array_t options;
+    const SFCMDOption other_options[] = {
+        {{OPTION_NAME_USER_STR, OPTION_NAME_USER_LEN},
+            'u', true, "-u | --user: the username"},
+        {{OPTION_NAME_KEY_STR, OPTION_NAME_KEY_LEN},
+            'k', true, "-k | --key: the secret key filename"},
+        {{OPTION_NAME_NAMESPACE_STR, OPTION_NAME_NAMESPACE_LEN},
+            'n', true, "-n | --namespace: the FastDIR namespace"},
+        {{OPTION_NAME_MOUNTPOINT_STR, OPTION_NAME_MOUNTPOINT_LEN},
+            'm', true, "-m | --mountpoint: the mountpoint"},
+        {{NULL, 0}, 0, false, NULL}
+    };
     char *action;
     bool stop;
     int result;
 
-    options.strs = strs;
-    options.count = 0;
-    strs[options.count++] = "-u | --user: the username";
-    strs[options.count++] = "-k | --key: the secret key filename";
-    strs[options.count++] = "-n | --namespace: the FastDIR namespace "
-        "or the storage pool name";
-    strs[options.count++] = "-m | --mountpoint: the mountpoint";
-
     *continue_flag = false;
     if (argc < 2) {
-        sf_usage_ex1(argv[0], &options);
+        sf_usage_ex(argv[0], other_options);
         return 1;
     }
 
-    config_filename = sf_parse_daemon_mode_and_action_ex1(
+    config_filename = sf_parse_daemon_mode_and_action_ex(
             argc, argv, &g_fcfs_global_vars.version,
-            &daemon_mode, &action, "start", &options);
+            &daemon_mode, &action, "start", other_options);
     if (config_filename == NULL) {
         return 0;
     }
@@ -125,7 +142,7 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
     result = process_action(g_pid_filename, action, &stop);
     if (result != 0) {
         if (result == EINVAL) {
-            sf_usage_ex1(argv[0], &options);
+            sf_usage_ex(argv[0], other_options);
         }
         log_destroy();
         return result;
@@ -136,9 +153,11 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
         return 0;
     }
 
-    parse_cmd_options(argc, argv);
-    *continue_flag = true;
-    return 0;
+    if ((result=parse_cmd_options(argc, argv)) == 0) {
+        *continue_flag = true;
+    }
+
+    return result;
 }
 
 int main(int argc, char *argv[])
