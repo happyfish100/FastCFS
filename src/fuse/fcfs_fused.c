@@ -51,11 +51,12 @@ static int parse_cmd_options(int argc, char *argv[])
         {"key",  required_argument, NULL, 'k'},
         {"namespace",  required_argument, NULL, 'n'},
         {"mountpoint", required_argument, NULL, 'm'},
+        {"base-path",  required_argument, NULL, 'b'},
         SF_COMMON_LONG_OPTIONS,
         {NULL, 0, NULL, 0}
     };
 
-    while ((ch = getopt_long(argc, argv, SF_COMMON_OPT_STRING"u:k:n:m:",
+    while ((ch = getopt_long(argc, argv, SF_COMMON_OPT_STRING"u:k:n:m:b:",
                     longopts, NULL)) != -1)
     {
         switch (ch) {
@@ -72,6 +73,9 @@ static int parse_cmd_options(int argc, char *argv[])
                 break;
             case 'm':
                 g_fuse_global_vars.mountpoint = optarg;
+                break;
+            case 'b':
+                sf_set_global_base_path(optarg);
                 break;
             case '?':
                 return EINVAL;
@@ -95,6 +99,9 @@ static int parse_cmd_options(int argc, char *argv[])
 #define OPTION_NAME_MOUNTPOINT_STR "mountpoint"
 #define OPTION_NAME_MOUNTPOINT_LEN (sizeof(OPTION_NAME_MOUNTPOINT_STR) - 1)
 
+#define OPTION_NAME_BASE_PATH_STR "base-path"
+#define OPTION_NAME_BASE_PATH_LEN (sizeof(OPTION_NAME_BASE_PATH_STR) - 1)
+
 static int process_cmdline(int argc, char *argv[], bool *continue_flag)
 {
     const SFCMDOption other_options[] = {
@@ -106,6 +113,8 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
             'n', true, "-n | --namespace: the FastDIR namespace"},
         {{OPTION_NAME_MOUNTPOINT_STR, OPTION_NAME_MOUNTPOINT_LEN},
             'm', true, "-m | --mountpoint: the mountpoint"},
+        {{OPTION_NAME_BASE_PATH_STR, OPTION_NAME_BASE_PATH_LEN},
+            'b', true, "-b | --base-path: the base path"},
         {{NULL, 0}, 0, false, NULL}
     };
     char *action;

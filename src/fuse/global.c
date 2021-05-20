@@ -410,12 +410,12 @@ int fcfs_fuse_global_init(const char *config_filename)
     fcfs_api_async_report_config_to_string_ex(&g_fcfs_api_ctx,
             async_report_config, sizeof(async_report_config));
     fdir_client_log_config_ex(g_fcfs_api_ctx.contexts.fdir,
-            async_report_config);
+            async_report_config, false);
 
     fs_api_config_to_string(write_combine_config,
             sizeof(write_combine_config));
     fs_client_log_config_ex(g_fcfs_api_ctx.contexts.fsapi->fs,
-            write_combine_config);
+            write_combine_config, false);
 
     logInfo("FastCFS V%d.%d.%d, FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
