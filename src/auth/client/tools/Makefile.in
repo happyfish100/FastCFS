@@ -2,12 +2,12 @@
 
 COMPILE = $(CC) $(CFLAGS)
 INC_PATH = -I../../common -I/usr/local/include
-LIB_PATH = -L.. $(LIBS) -lfcfsauthclient -lfastcommon
+LIB_PATH = -L.. $(LIBS) -lfcfsauthclient -lfastcommon -lserverframe
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
 STATIC_OBJS = tool_func.o
 
-ALL_PRGS = fcfs_user fcfs_pool
+ALL_PRGS = fcfs_user fcfs_pool fauth_list_servers
 
 all: $(STATIC_OBJS) $(ALL_PRGS)
 

@@ -22,6 +22,8 @@
 #include "sf/sf_cluster_cfg.h"
 #include "auth_types.h"
 
+#define FCFS_AUTH_CLIENT_DEFAULT_CONFIG_FILENAME "/etc/fastcfs/auth/client.conf"
+
 typedef struct fcfs_auth_client_user_key_pair {
     string_t username;
     string_t key_filename;

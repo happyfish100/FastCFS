@@ -32,8 +32,7 @@ static bool priv_set = false;
 
 static void usage(char *argv[])
 {
-    fprintf(stderr, "\nUsage: %s [-c config_filename="
-            "/etc/fastcfs/auth/client.conf]\n"
+    fprintf(stderr, "\nUsage: %s [-c config_filename=%s]\n"
             "\t[-u admin_username=admin]\n"
             "\t[-k admin_secret_key_filename=/etc/fastcfs/auth/keys/"
             "${username}.key]\n"
@@ -51,7 +50,8 @@ static void usage(char *argv[])
             "\t  %s: monitor cluster\n"
             "\t  %s: subscribe session for FastDIR and FastStore server side\n"
             "\t  %s: for all priviledges\n\n",
-            argv[0], USER_PRIV_NAME_USER_MANAGE_STR,
+            argv[0], FCFS_AUTH_CLIENT_DEFAULT_CONFIG_FILENAME,
+            USER_PRIV_NAME_USER_MANAGE_STR,
             USER_PRIV_NAME_CREATE_POOL_STR,
             USER_PRIV_NAME_MONITOR_CLUSTER_STR,
             USER_PRIV_NAME_SUBSCRIBE_SESSION_STR,
@@ -183,7 +183,7 @@ static int list_user(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
     int ch;
-    const char *config_filename = "/etc/fastcfs/auth/client.conf";
+    const char *config_filename = FCFS_AUTH_CLIENT_DEFAULT_CONFIG_FILENAME;
     char *operation;
     FCFSAuthClientUserKeyPair admin;
     unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN + 1];

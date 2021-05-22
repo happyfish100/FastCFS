@@ -42,8 +42,7 @@ static bool dryrun;
 
 static void usage(char *argv[])
 {
-    fprintf(stderr, "\nUsage: %s [-c config_filename="
-            "/etc/fastcfs/auth/client.conf]\n"
+    fprintf(stderr, "\nUsage: %s [-c config_filename=%s]\n"
             "\t[-u admin_username=admin]\n"
             "\t[-k admin_secret_key_filename=/etc/fastcfs/auth/keys/"
             "${admin_username}.key]\n"
@@ -70,7 +69,8 @@ static void usage(char *argv[])
             "\t  %c:  read only\n"
             "\t  %c:  write only\n"
             "\t  %c%c: read and write\n\n",
-            argv[0], DRY_RUN_OPTION_STR, FCFS_AUTH_AUTO_ID_TAG_STR,
+            argv[0], FCFS_AUTH_CLIENT_DEFAULT_CONFIG_FILENAME,
+            DRY_RUN_OPTION_STR, FCFS_AUTH_AUTO_ID_TAG_STR,
             FCFS_AUTH_AUTO_ID_TAG_STR, FCFS_AUTH_UNLIMITED_QUOTA_STR,
             POOL_ACCESS_NAME_READ_CHR, POOL_ACCESS_NAME_WRITE_CHR,
             POOL_ACCESS_NAME_READ_CHR, POOL_ACCESS_NAME_WRITE_CHR);
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
 {
     int ch;
     int op_type;
-    const char *config_filename = "/etc/fastcfs/auth/client.conf";
+    const char *config_filename = FCFS_AUTH_CLIENT_DEFAULT_CONFIG_FILENAME;
     char *operation;
     FCFSAuthClientUserKeyPair admin;
     unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN + 1];

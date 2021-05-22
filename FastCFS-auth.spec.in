@@ -82,6 +82,7 @@ rm -rf %{buildroot}
 /usr/lib64/libfcfsauthclient.so*
 /usr/bin/fcfs_user
 /usr/bin/fcfs_pool
+/usr/bin/fauth_list_servers
 
 %files -n %{FastCFSAuthDevel}
 %defattr(-,root,root,-)

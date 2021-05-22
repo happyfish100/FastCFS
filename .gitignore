@@ -39,6 +39,7 @@ src/fuse/fcfs_fused
 src/auth/server/fcfs_authd
 src/auth/client/tools/fcfs_user
 src/auth/client/tools/fcfs_pool
+src/auth/client/tools/fauth_list_servers
 
 # other
 logs
