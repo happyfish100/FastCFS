@@ -105,6 +105,9 @@ int adb_spool_set_quota(AuthServerContext *server_ctx,
         const string_t *username, const string_t *poolname,
         const int64_t quota);
 
+int adb_spool_get_quota(AuthServerContext *server_ctx,
+        const string_t *poolname, int64_t *quota);
+
 int adb_spool_list(AuthServerContext *server_ctx, const string_t *username,
         FCFSAuthStoragePoolArray *array);
 

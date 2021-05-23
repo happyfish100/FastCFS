@@ -103,7 +103,6 @@ int fcfs_auth_client_user_remove(FCFSAuthClientContext *client_ctx,
         const string_t *username);
 
 /* storage pool operations */
-
 int fcfs_auth_client_spool_create(FCFSAuthClientContext *client_ctx,
         FCFSAuthStoragePoolInfo *spool, const int name_size,
         const bool dryrun);
@@ -117,6 +116,9 @@ int fcfs_auth_client_spool_remove(FCFSAuthClientContext *client_ctx,
 
 int fcfs_auth_client_spool_set_quota(FCFSAuthClientContext *client_ctx,
         const string_t *poolname, const int64_t quota);
+
+int fcfs_auth_client_spool_get_quota(FCFSAuthClientContext *client_ctx,
+        const string_t *poolname, int64_t *quota);
 
 /* pool granted operations */
 int fcfs_auth_client_gpool_grant(FCFSAuthClientContext *client_ctx,

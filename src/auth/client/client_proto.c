@@ -603,6 +603,41 @@ int fcfs_auth_client_proto_spool_set_quota(FCFSAuthClientContext *client_ctx,
     return result;
 }
 
+int fcfs_auth_client_proto_spool_get_quota(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *poolname, int64_t *quota)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoSPoolGetQuotaReq *req;
+    FCFSAuthProtoSPoolGetQuotaResp resp;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoSPoolGetQuotaReq) + NAME_MAX];
+    SFResponseInfo response;
+    int out_bytes;
+    int result;
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoSPoolGetQuotaReq *)(header + 1);
+    out_bytes = sizeof(FCFSAuthProtoHeader) + sizeof(*req) + poolname->len;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_SPOOL_GET_QUOTA_REQ,
+            out_bytes - sizeof(FCFSAuthProtoHeader));
+    if ((result=pack_poolname(poolname, &req->poolname)) != 0) {
+        return result;
+    }
+
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_response(conn, out_buff, out_bytes,
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_SPOOL_GET_QUOTA_RESP,
+                    (char *)&resp, sizeof(resp))) == 0)
+    {
+        *quota = buff2long(resp.quota);
+    } else {
+        sf_log_network_error(&response, conn, result);
+    }
+
+    return result;
+}
+
 int fcfs_auth_client_proto_gpool_grant(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username, const string_t
         *poolname, const FCFSAuthSPoolPriviledges *privs)

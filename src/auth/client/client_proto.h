@@ -67,6 +67,9 @@ int fcfs_auth_client_proto_spool_remove(FCFSAuthClientContext *client_ctx,
 int fcfs_auth_client_proto_spool_set_quota(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *poolname, const int64_t quota);
 
+int fcfs_auth_client_proto_spool_get_quota(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *poolname, int64_t *quota);
+
 int fcfs_auth_client_proto_gpool_grant(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username, const string_t
         *poolname, const FCFSAuthSPoolPriviledges *privs);

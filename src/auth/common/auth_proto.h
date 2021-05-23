@@ -46,13 +46,15 @@
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP         76
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ       77
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP      78
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_GET_QUOTA_REQ       79
+#define FCFS_AUTH_SERVICE_PROTO_SPOOL_GET_QUOTA_RESP      80
 
-#define FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ           81
-#define FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_RESP          82
-#define FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ        83
-#define FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_RESP       84
-#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ            85
-#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP           86
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ           91
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_RESP          92
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_REQ        93
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_RESP       94
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ            95
+#define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP           96
 
 
 typedef SFCommonProtoHeader  FCFSAuthProtoHeader;
@@ -182,6 +184,14 @@ typedef struct fcfs_auth_proto_spool_set_quota_req {
     char quota[8];
     FCFSAuthProtoNameInfo poolname;
 } FCFSAuthProtoSPoolSetQuotaReq;
+
+typedef struct fcfs_auth_proto_spool_get_quota_req {
+    FCFSAuthProtoNameInfo poolname;
+} FCFSAuthProtoSPoolGetQuotaReq;
+
+typedef struct fcfs_auth_proto_spool_get_quota_resp {
+    char quota[8];
+} FCFSAuthProtoSPoolGetQuotaResp;
 
 typedef struct fcfs_auth_proto_spool_grant_req {
     FCFSAuthProtoPoolPriviledges privs;

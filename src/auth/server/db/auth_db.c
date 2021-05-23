@@ -718,6 +718,30 @@ int adb_spool_set_quota(AuthServerContext *server_ctx,
     return 0;
 }
 
+int adb_spool_get_quota(AuthServerContext *server_ctx,
+        const string_t *poolname, int64_t *quota)
+{
+    DBStoragePoolInfo *spool;
+    int result;
+
+    PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
+    if ((spool=get_spool_by_name(poolname)) != NULL) {
+        if (spool->pool.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+            *quota = spool->pool.quota;
+            result = 0;
+        } else {
+            *quota = 0;
+            result = ENOENT;
+        }
+    } else {
+        *quota = 0;
+        result = ENOENT;
+    }
+    PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
+
+    return result;
+}
+
 int adb_spool_set_used_bytes(const string_t *poolname,
         const int64_t used_bytes)
 {

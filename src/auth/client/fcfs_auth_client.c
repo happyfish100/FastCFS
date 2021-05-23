@@ -267,6 +267,14 @@ int fcfs_auth_client_spool_set_quota(FCFSAuthClientContext *client_ctx,
             poolname, quota);
 }
 
+int fcfs_auth_client_spool_get_quota(FCFSAuthClientContext *client_ctx,
+        const string_t *poolname, int64_t *quota)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_get_quota,
+            poolname, quota);
+}
+
 int fcfs_auth_client_gpool_grant(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *poolname,
         const FCFSAuthSPoolPriviledges *privs)

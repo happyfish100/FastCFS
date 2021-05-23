@@ -1269,13 +1269,29 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
         struct statvfs *stbuf)
 {
     int result;
-    FSClusterSpaceStat sstat;
+    FCFSAuthClientFullContext *auth;
+    int64_t quota;
+    int64_t total;
+    int64_t free;
+    int64_t avail;
     FDIRClientNamespaceStat nstat;
 
-    if ((result=fs_api_cluster_space_stat(ctx->
-                    contexts.fsapi, &sstat)) != 0)
-    {
-        return result;
+    if (ctx->contexts.fdir->auth.enabled) {
+        auth = &ctx->contexts.fdir->auth;
+    } else if (ctx->contexts.fsapi->fs->auth.enabled) {
+        auth = &ctx->contexts.fsapi->fs->auth;
+    } else {
+        auth = NULL;
+    }
+
+    if (auth != NULL) {
+        if ((result=fcfs_auth_client_spool_get_quota(
+                        auth->ctx, &ctx->ns, &quota)) != 0)
+        {
+            return result;
+        }
+    } else {
+        quota = FCFS_AUTH_UNLIMITED_QUOTA_VAL;
     }
 
     if ((result=fdir_client_namespace_stat(ctx->contexts.
@@ -1284,14 +1300,33 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
         return result;
     }
 
-    stbuf->f_bsize = stbuf->f_frsize = 512;
-    stbuf->f_blocks = sstat.total / stbuf->f_frsize;
-    if (sstat.total > sstat.used) {
-        stbuf->f_bfree = (sstat.total - sstat.used) / stbuf->f_frsize;
+    if (quota == FCFS_AUTH_UNLIMITED_QUOTA_VAL) {
+        FSClusterSpaceStat sstat;
+        if ((result=fs_api_cluster_space_stat(ctx->
+                        contexts.fsapi, &sstat)) != 0)
+        {
+            return result;
+        }
+
+        total = sstat.total;
+        avail = sstat.avail;
+        free = total - sstat.used;
+        if (free < 0) {
+            free = 0;
+        }
     } else {
-        stbuf->f_bfree = 0;
+        total = quota;
+        avail = total - nstat.space.used;
+        if (avail < 0) {
+            avail = 0;
+        }
+        free = avail;
     }
-    stbuf->f_bavail = sstat.avail / stbuf->f_frsize;
+
+    stbuf->f_bsize = stbuf->f_frsize = 512;
+    stbuf->f_blocks = total / stbuf->f_frsize;
+    stbuf->f_bavail = avail / stbuf->f_frsize;
+    stbuf->f_bfree = free / stbuf->f_frsize;
 
     stbuf->f_files = nstat.inode.total;
     stbuf->f_ffree = nstat.inode.total - nstat.inode.used;

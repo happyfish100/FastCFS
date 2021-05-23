@@ -81,6 +81,7 @@ static int check_user_priv(struct fast_task_info *task)
     switch (REQUEST.header.cmd) {
         case SF_PROTO_ACTIVE_TEST_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GET_QUOTA_REQ:
             return 0;
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
@@ -600,7 +601,8 @@ static int service_deal_spool_set_quota(struct fast_task_info *task)
     int result;
 
     if ((result=server_check_body_length(sizeof(FCFSAuthProtoSPoolSetQuotaReq)
-                    + 1, sizeof(FCFSAuthProtoSPoolSetQuotaReq) + NAME_MAX)) != 0)
+                    + 1, sizeof(FCFSAuthProtoSPoolSetQuotaReq) +
+                    NAME_MAX)) != 0)
     {
         return result;
     }
@@ -617,6 +619,40 @@ static int service_deal_spool_set_quota(struct fast_task_info *task)
     quota = buff2long(req->quota);
     username = SESSION_USER.name;
     return adb_spool_set_quota(SERVER_CTX, &username, &poolname, quota);
+}
+
+static int service_deal_spool_get_quota(struct fast_task_info *task)
+{
+    FCFSAuthProtoSPoolGetQuotaReq *req;
+    FCFSAuthProtoSPoolGetQuotaResp *resp;
+    string_t poolname;
+    int64_t quota;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoSPoolGetQuotaReq)
+                    + 1, sizeof(FCFSAuthProtoSPoolGetQuotaReq)
+                    + NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoSPoolGetQuotaReq *)REQUEST.body;
+    FC_SET_STRING_EX(poolname, req->poolname.str, req->poolname.len);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoSPoolGetQuotaReq)
+                    + poolname.len)) != 0)
+    {
+        return result;
+    }
+
+    if ((result=adb_spool_get_quota(SERVER_CTX, &poolname, &quota)) == 0) {
+        resp = (FCFSAuthProtoSPoolGetQuotaResp *)REQUEST.body;
+        long2buff(quota, resp->quota);
+        RESPONSE.header.body_len = sizeof(*resp);
+        TASK_ARG->context.common.response_done = true;
+    }
+
+    return result;
 }
 
 static int service_deal_spool_grant(struct fast_task_info *task)
@@ -822,6 +858,9 @@ static int service_process(struct fast_task_info *task)
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_REQ:
             RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP;
             return service_deal_spool_set_quota(task);
+        case FCFS_AUTH_SERVICE_PROTO_SPOOL_GET_QUOTA_REQ:
+            RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_GET_QUOTA_RESP;
+            return service_deal_spool_get_quota(task);
         case FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_REQ:
             RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_RESP;
             return service_deal_spool_grant(task);
