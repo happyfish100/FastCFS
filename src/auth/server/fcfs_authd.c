@@ -48,20 +48,19 @@
 #include "cluster_handler.h"
 #include "service_handler.h"
 
-static bool daemon_mode = true;
 static int setup_server_env(const char *config_filename);
 
-int main(int argc, char *argv[])
+static bool daemon_mode = true;
+static const char *config_filename;
+static char g_pid_filename[MAX_PATH_SIZE];
+
+static int process_cmdline(int argc, char *argv[], bool *continue_flag)
 {
-    const char *config_filename;
     char *action;
-    char g_pid_filename[MAX_PATH_SIZE];
-    pthread_t schedule_tid;
-    int wait_count;
     bool stop;
     int result;
 
-    stop = false;
+    *continue_flag = false;
     if (argc < 2) {
         sf_usage(argv[0]);
         return 1;
@@ -86,6 +85,7 @@ int main(int argc, char *argv[])
     snprintf(g_pid_filename, sizeof(g_pid_filename), 
              "%s/authd.pid", SF_G_BASE_PATH);
 
+    stop = false;
     result = process_action(g_pid_filename, action, &stop);
     if (result != 0) {
         if (result == EINVAL) {
@@ -98,6 +98,21 @@ int main(int argc, char *argv[])
     if (stop) {
         log_destroy();
         return 0;
+    }
+
+    *continue_flag = true;
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    pthread_t schedule_tid;
+    int wait_count;
+    int result;
+
+    result = process_cmdline(argc, argv, (bool *)&SF_G_CONTINUE_FLAG);
+    if (!SF_G_CONTINUE_FLAG) {
+        return result;
     }
 
     sf_enable_exit_on_oom();

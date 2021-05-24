@@ -31,7 +31,6 @@
 #include "global.h"
 #include "fuse_wrapper.h"
 
-static bool daemon_mode = true;
 static struct fuse_session *fuse_instance;
 
 static int setup_server_env(const char *config_filename);
@@ -39,18 +38,17 @@ static struct fuse_session *create_fuse_session(char *argv0,
         struct fuse_lowlevel_ops *ops);
 static void fuse_exit_handler(int sig);
 
-int main(int argc, char *argv[])
-{
-    const char *config_filename;
-    char *action;
-    char pid_filename[MAX_PATH_SIZE];
-    pthread_t schedule_tid;
-    bool stop;
-    int wait_count;
-	struct fuse_lowlevel_ops fuse_operations;
-	struct fuse_session *se;
-	int result;
+static bool daemon_mode = true;
+static const char *config_filename;
+static char g_pid_filename[MAX_PATH_SIZE];
 
+static int process_cmdline(int argc, char *argv[], bool *continue_flag)
+{
+    char *action;
+    bool stop;
+    int result;
+
+    *continue_flag = false;
     if (argc < 2) {
         sf_usage(argv[0]);
         return 1;
@@ -73,7 +71,7 @@ int main(int argc, char *argv[])
     }
 
     snprintf(pid_filename, sizeof(pid_filename),
-             "%s/fused.pid", SF_G_BASE_PATH);
+            "%s/fused.pid", SF_G_BASE_PATH);
 
     stop = false;
     result = process_action(pid_filename, action, &stop);
@@ -88,6 +86,23 @@ int main(int argc, char *argv[])
     if (stop) {
         log_destroy();
         return 0;
+    }
+
+    *continue_flag = true;
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    pthread_t schedule_tid;
+    int wait_count;
+    struct fuse_lowlevel_ops fuse_operations;
+    struct fuse_session *se;
+    int result;
+
+    result = process_cmdline(argc, argv, (bool *)&SF_G_CONTINUE_FLAG);
+    if (!SF_G_CONTINUE_FLAG) {
+        return result;
     }
 
     sf_enable_exit_on_oom();
