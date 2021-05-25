@@ -27,6 +27,7 @@ static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
     string_t username;
     string_t secret_key_filename;
     FilenameString new_key_filename;
+    char full_secret_filename[PATH_MAX];
     string_t new_filename;
 
     if (g_fcfs_auth_client_vars.client_ctx.auth_cfg.username.str == NULL) {
@@ -47,7 +48,7 @@ static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
         if (secret_key_filename.str == NULL ||
                 *(secret_key_filename.str) == '\0')
         {
-            secret_key_filename.str = "/etc/fastcfs/auth/keys/${username}.key";
+            secret_key_filename.str = "keys/${username}.key";
         }
         secret_key_filename.len = strlen(secret_key_filename.str);
     } else {
@@ -59,8 +60,11 @@ static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
     auth_cfg->passwd.len = FCFS_AUTH_PASSWD_LEN;
     fcfs_auth_replace_filename_with_username(&secret_key_filename,
             &username, &new_key_filename);
-    new_filename.str = FC_FILENAME_STRING_PTR(new_key_filename);
-    new_filename.len = strlen(new_filename.str);
+
+    new_filename.str = full_secret_filename;
+    new_filename.len = resolve_path(auth_config_filename,
+            FC_FILENAME_STRING_PTR(new_key_filename),
+            full_secret_filename, sizeof(full_secret_filename));
     if (g_fcfs_auth_client_vars.need_load_passwd) {
         if ((result=fcfs_auth_load_passwd(new_filename.str,
                         auth_cfg->passwd_buff)) != 0)

@@ -102,17 +102,19 @@ void server_session_cfg_to_string_ex(char *buff,
 static int load_session_validate_key(IniFullContext *ini_ctx)
 {
     int result;
+    char *key_filename;
+    char full_key_filename[PATH_MAX];
     string_t validate_key_filename;
 
-    validate_key_filename.str = iniGetStrValue(ini_ctx->section_name,
+    key_filename = iniGetStrValue(ini_ctx->section_name,
             "validate_key_filename", ini_ctx->context);
-    if (validate_key_filename.str == NULL ||
-            *(validate_key_filename.str) == '\0')
-    {
-        validate_key_filename.str =
-            "/etc/fastcfs/auth/keys/session_validate.key";
+    if (key_filename == NULL || *key_filename == '\0') {
+        key_filename = "keys/session_validate.key";
     }
-    validate_key_filename.len = strlen(validate_key_filename.str);
+
+    validate_key_filename.str = full_key_filename;
+    validate_key_filename.len = resolve_path(ini_ctx->filename,
+            key_filename, full_key_filename, sizeof(full_key_filename));
     if ((result=fcfs_auth_load_passwd(validate_key_filename.str,
                     g_server_session_cfg.validate_key_buff)) != 0)
     {
