@@ -19,6 +19,9 @@
 #include "sf/sf_proto.h"
 #include "auth_types.h"
 
+#define fcfs_auth_load_passwd(filename, passwd) \
+    fcfs_auth_load_passwd_ex(filename, passwd, false)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,7 +97,8 @@ extern "C" {
 
     int fcfs_auth_save_passwd(const char *filename, unsigned char passwd[16]);
 
-    int fcfs_auth_load_passwd(const char *filename, unsigned char passwd[16]);
+    int fcfs_auth_load_passwd_ex(const char *filename,
+            unsigned char passwd[16], const bool ignore_enoent);
 
     int fcfs_auth_replace_filename_with_username(const string_t *src,
             const string_t *username, FilenameString *new_filename);

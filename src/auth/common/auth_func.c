@@ -61,7 +61,8 @@ int fcfs_auth_save_passwd(const char *filename, unsigned char passwd[16])
             FCFS_AUTH_PASSWD_LEN * 2);
 }
 
-int fcfs_auth_load_passwd(const char *filename, unsigned char passwd[16])
+int fcfs_auth_load_passwd_ex(const char *filename,
+        unsigned char passwd[16], const bool ignore_enoent)
 {
     int result;
     int len;
@@ -72,7 +73,7 @@ int fcfs_auth_load_passwd(const char *filename, unsigned char passwd[16])
     if (IS_URL_RESOURCE(filename)) {
         int http_status;
         int content_len;
-        char buff[4096];
+        char buff[8 * 1024];
         char *content;
         char error_info[512];
 
@@ -95,19 +96,40 @@ int fcfs_auth_load_passwd(const char *filename, unsigned char passwd[16])
             return result;
         }
 
-	if (content_len >= sizeof(hex_buff)) {
+        if (http_status != 200) {
+            if (http_status == 404 && ignore_enoent) {
+                memset(passwd, 0, FCFS_AUTH_PASSWD_LEN);
+                return 0;
+            }
+
+            logError("file: "__FILE__", line: %d, "
+                    "HTTP status code: %d != 200, url: %s",
+                    __LINE__, http_status, filename);
+            return http_status == 404 ? ENOENT : EACCES;
+        }
+
+        if (content_len >= sizeof(hex_buff)) {
             logError("file: "__FILE__", line: %d, "
                     "%s is not a valid secret file because the content "
                     "length: %d >= %d", __LINE__, filename, content_len,
                     (int)sizeof(hex_buff));
             return EOVERFLOW;
-	}
-	memcpy(hex_buff, content, content_len + 1);
-	file_size = content_len;
-    } else if ((result=getFileContentEx(filename,
-                    hex_buff, 0, &file_size)) != 0)
-    {
-        return result;
+        }
+        memcpy(hex_buff, content, content_len + 1);
+        file_size = content_len;
+    } else {
+        if (access(filename, F_OK) != 0) {
+            if (errno == ENOENT && ignore_enoent) {
+                memset(passwd, 0, FCFS_AUTH_PASSWD_LEN);
+                return 0;
+            }
+        }
+
+        if ((result=getFileContentEx(filename,
+                        hex_buff, 0, &file_size)) != 0)
+        {
+            return result;
+        }
     }
 
     if (file_size > 2 * FCFS_AUTH_PASSWD_LEN) {

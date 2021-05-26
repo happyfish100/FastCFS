@@ -39,6 +39,7 @@ static inline int fcfs_auth_for_server_init_ex(FCFSAuthClientFullContext
 {
     int result;
 
+    g_fcfs_auth_client_vars.ignore_when_passwd_not_exist = true;
     if ((result=fcfs_auth_load_config_ex(auth, cluster_filename,
                     section_name, sf_server_group_index_type_cluster)) != 0)
     {

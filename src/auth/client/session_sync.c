@@ -21,6 +21,7 @@
 #include "sf/sf_proto.h"
 #include "sf/sf_global.h"
 #include "auth_proto.h"
+#include "auth_func.h"
 #include "server_session.h"
 #include "client_global.h"
 #include "client_proto.h"
@@ -246,7 +247,23 @@ static void *session_sync_thread_func(void *arg)
                         &g_fcfs_auth_client_vars.client_ctx, conn)) == 0)
         {
             session_sync(conn);
-        } else if (result == ENOENT || result == EPERM) {
+        } else if (result == ENOENT) {
+            sleep(10);
+        } else if (result == EPERM) {
+            if ((result=fcfs_auth_load_passwd_ex(g_fcfs_auth_client_vars.
+                            client_ctx.auth_cfg.secret_key_filename.str,
+                            g_fcfs_auth_client_vars.client_ctx.auth_cfg.
+                            passwd_buff, g_fcfs_auth_client_vars.
+                            ignore_when_passwd_not_exist)) != 0)
+            {
+                logError("file: "__FILE__", line: %d, "
+                        "secret_key_filename: %s, "
+                        "load password fail, ret code: %d", __LINE__,
+                        g_fcfs_auth_client_vars.client_ctx.auth_cfg.
+                        secret_key_filename.str, result);
+                sleep(30);
+            }
+
             sleep(10);
         }
 

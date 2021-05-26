@@ -66,8 +66,9 @@ static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
             FC_FILENAME_STRING_PTR(new_key_filename),
             full_secret_filename, sizeof(full_secret_filename));
     if (g_fcfs_auth_client_vars.need_load_passwd) {
-        if ((result=fcfs_auth_load_passwd(new_filename.str,
-                        auth_cfg->passwd_buff)) != 0)
+        if ((result=fcfs_auth_load_passwd_ex(new_filename.str,
+                        auth_cfg->passwd_buff, g_fcfs_auth_client_vars.
+                        ignore_when_passwd_not_exist)) != 0)
         {
             logError("file: "__FILE__", line: %d, "
                     "config file: %s, secret_key_filename: %s, "
