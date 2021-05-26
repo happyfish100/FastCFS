@@ -72,11 +72,12 @@ int fcfs_auth_load_passwd(const char *filename, unsigned char passwd[16])
     if (IS_URL_RESOURCE(filename)) {
         int http_status;
         int content_len;
+        char buff[4096];
         char *content;
         char error_info[512];
 
-        content = hex_buff;
-        content_len = sizeof(hex_buff);
+        content = buff;
+        content_len = sizeof(buff);
         if ((result=get_url_content_ex(filename, strlen(filename),
                         SF_G_CONNECT_TIMEOUT, SF_G_NETWORK_TIMEOUT,
                         &http_status, &content, &content_len,
@@ -93,6 +94,16 @@ int fcfs_auth_load_passwd(const char *filename, unsigned char passwd[16])
             }
             return result;
         }
+
+	if (content_len >= sizeof(hex_buff)) {
+            logError("file: "__FILE__", line: %d, "
+                    "%s is not a valid secret file because the content "
+                    "length: %d >= %d", __LINE__, filename, content_len,
+                    (int)sizeof(hex_buff));
+            return EOVERFLOW;
+	}
+	memcpy(hex_buff, content, content_len + 1);
+	file_size = content_len;
     } else if ((result=getFileContentEx(filename,
                     hex_buff, 0, &file_size)) != 0)
     {
