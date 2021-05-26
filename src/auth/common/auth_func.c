@@ -16,6 +16,8 @@
 #include "fastcommon/system_info.h"
 #include "fastcommon/sched_thread.h"
 #include "fastcommon/md5.h"
+#include "fastcommon/http_func.h"
+#include "sf/sf_global.h"
 #include "auth_func.h"
 
 void fcfs_auth_generate_passwd(unsigned char passwd[16])
@@ -64,13 +66,43 @@ int fcfs_auth_load_passwd(const char *filename, unsigned char passwd[16])
     int result;
     int len;
     int64_t file_size;
-    char hex_buff[2 * FCFS_AUTH_PASSWD_LEN + 1];
+    char hex_buff[2 * FCFS_AUTH_PASSWD_LEN + 4];
 
     file_size = sizeof(hex_buff);
-    if ((result=getFileContentEx(filename, hex_buff, 0, &file_size)) != 0) {
+    if (IS_URL_RESOURCE(filename)) {
+        int http_status;
+        int content_len;
+        char *content;
+        char error_info[512];
+
+        content = hex_buff;
+        content_len = sizeof(hex_buff);
+        if ((result=get_url_content_ex(filename, strlen(filename),
+                        SF_G_CONNECT_TIMEOUT, SF_G_NETWORK_TIMEOUT,
+                        &http_status, &content, &content_len,
+                        error_info)) != 0)
+        {
+            if (*error_info != '\0') {
+                logError("file: "__FILE__", line: %d, "
+                        "%s fetch fail, %s", __LINE__,
+                        filename, error_info);
+            } else {
+                logError("file: "__FILE__", line: %d, "
+                        "%s fetch fail, errno: %d, error info: %s",
+                        __LINE__, filename, result, STRERROR(result));
+            }
+            return result;
+        }
+    } else if ((result=getFileContentEx(filename,
+                    hex_buff, 0, &file_size)) != 0)
+    {
         return result;
     }
 
+    if (file_size > 2 * FCFS_AUTH_PASSWD_LEN) {
+        trim_right(hex_buff);
+        file_size = strlen(hex_buff);
+    }
     if (file_size != 2 * FCFS_AUTH_PASSWD_LEN) {
         logError("file: "__FILE__", line: %d, "
                 "invalid secret filename: %s whose file size MUST be: %d",
