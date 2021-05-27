@@ -237,9 +237,9 @@ static int load_fuse_config(IniFullContext *ini_ctx)
         get_kernel_version(&version);
         if (version.major < 4 || (version.major == 4 && version.minor < 2)) {
             logWarning("file: "__FILE__", line: %d, "
-                    "kernel version %d.%d.%d < 4.2.0, do NOT support "
-                    "FUSE feature clone_fd", __LINE__, version.major,
-                    version.minor, version.patch);
+                    "kernel version %d.%d < 4.2, do NOT support "
+                    "FUSE feature clone_fd", __LINE__,
+                    version.major, version.minor);
             g_fuse_global_vars.clone_fd = false;
         }
     }
