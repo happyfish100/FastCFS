@@ -36,6 +36,7 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include "fastcommon/sched_thread.h"
+#include "fastcommon/system_info.h"
 #include "sf/sf_global.h"
 #include "sf/idempotency/client/client_channel.h"
 #include "fastcfs/api/fcfs_api.h"
@@ -231,9 +232,20 @@ static int load_fuse_config(IniFullContext *ini_ctx)
 
     g_fuse_global_vars.clone_fd = iniGetBoolValue(ini_ctx->
             section_name, "clone_fd", ini_ctx->context, false);
+    if (g_fuse_global_vars.clone_fd) {
+        Version version;
+        get_kernel_version(&version);
+        if (version.major < 4 || (version.major == 4 && version.minor < 2)) {
+            logWarning("file: "__FILE__", line: %d, "
+                    "kernel version %d.%d.%d < 4.2.0, do NOT support "
+                    "FUSE feature clone_fd", __LINE__, version.major,
+                    version.minor, version.patch);
+            g_fuse_global_vars.clone_fd = false;
+        }
+    }
 
     g_fuse_global_vars.auto_unmount = iniGetBoolValue(ini_ctx->
-            section_name, "auto_unmount", ini_ctx->context, true);
+            section_name, "auto_unmount", ini_ctx->context, false);
 
     allow_others = iniGetStrValue(ini_ctx->section_name,
             "allow_others", ini_ctx->context);

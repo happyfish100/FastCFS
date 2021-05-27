@@ -312,7 +312,13 @@ service_op() {
   operate_mode=$1
   fs_serverd ${STORE_CONF_PATH}server.conf $operate_mode
   fdir_serverd ${FDIR_CONF_PATH}server.conf $operate_mode
+  if [ $operate_mode != 'stop' ]; then
+     sleep 3
+  fi
   fcfs_authd ${AUTH_CONF_PATH}server.conf $operate_mode
+  if [ $operate_mode != 'stop' ]; then
+     sleep 1
+  fi
   fcfs_fused ${FUSE_CONF_PATH}fuse.conf $operate_mode
 }
 
