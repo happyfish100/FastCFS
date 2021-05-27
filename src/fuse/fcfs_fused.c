@@ -46,7 +46,7 @@ static char g_pid_filename[MAX_PATH_SIZE];
 static int parse_cmd_options(int argc, char *argv[])
 {
     int ch;
-    struct option longopts[] = {
+    const struct option longopts[] = {
         {"user", required_argument, NULL, 'u'},
         {"key",  required_argument, NULL, 'k'},
         {"namespace",  required_argument, NULL, 'n'},

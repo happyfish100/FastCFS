@@ -2,6 +2,7 @@
 src/api/Makefile
 src/api/tests/Makefile
 src/fuse/Makefile
+src/tools/Makefile
 src/auth/server/Makefile
 src/auth/client/Makefile
 src/auth/client/tools/Makefile
@@ -36,6 +37,7 @@ src/auth/client/tools/Makefile
 src/api/tests/test_file_op
 src/api/tests/test_file_copy
 src/fuse/fcfs_fused
+src/tools/fcfs_active_test
 src/auth/server/fcfs_authd
 src/auth/client/tools/fcfs_user
 src/auth/client/tools/fcfs_pool

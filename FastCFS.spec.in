@@ -1,4 +1,5 @@
 %define FastCFSFused        FastCFS-fused
+%define FastCFSUtils        FastCFS-utils
 %define FastCFSAPI          FastCFS-api-libs
 %define FastCFSAuthServer   FastCFS-auth-server
 %define FastCFSAPIDevel     FastCFS-api-devel
@@ -33,6 +34,10 @@ Requires: fuse3 >= 3.10.1
 Requires: %{FastCFSFuseConfig} >= 1.0.0
 Summary: FastCFS fuse
 
+%package -n %{FastCFSUtils}
+Requires: libserverframe >= 1.1.8
+Summary: FastCFS utils 
+
 %package -n %{FastCFSAPI}
 Requires: fastDIR-client >= 2.1.0
 Requires: faststore-client >= 2.1.0
@@ -53,6 +58,10 @@ Summary: FastCFS fuse config files for sample
 
 %description -n %{FastCFSFused}
 FastCFS fuse
+commit version: %{CommitVersion}
+
+%description -n %{FastCFSUtils}
+FastCFS utils
 commit version: %{CommitVersion}
 
 %description -n %{FastCFSAPI}
@@ -106,6 +115,9 @@ mkdir -p /opt/fastcfs/fuse
 %files -n %{FastCFSFused}
 /usr/bin/fcfs_fused
 %config(noreplace) /usr/lib/systemd/system/fastcfs.service
+
+%files -n %{FastCFSUtils}
+/usr/bin/fcfs_active_test
 
 %files -n %{FastCFSAPI}
 %defattr(-,root,root,-)

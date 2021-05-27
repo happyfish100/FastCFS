@@ -1,0 +1,27 @@
+.SUFFIXES: .c .o .lo
+
+COMPILE = $(CC) $(CFLAGS)
+INC_PATH = -I/usr/local/include
+LIB_PATH = -L.. $(LIBS) -lfastcommon -lserverframe
+TARGET_PATH = $(TARGET_PREFIX)/bin
+
+STATIC_OBJS =
+
+ALL_PRGS = fcfs_active_test
+
+all: $(STATIC_OBJS) $(ALL_PRGS)
+
+.o:
+	$(COMPILE) -o $@ $<  $(STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c:
+	$(COMPILE) -o $@ $<  $(STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c.o:
+	$(COMPILE) -c -o $@ $<  $(INC_PATH)
+
+install:
+	mkdir -p $(TARGET_PATH)
+	cp -f $(ALL_PRGS) $(TARGET_PATH)
+
+clean:
+	rm -f $(STATIC_OBJS) $(ALL_PRGS)
+

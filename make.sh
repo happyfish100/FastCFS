@@ -191,6 +191,14 @@ if [ -z $module ] || [ "$module" = 'api' ]; then
   fi
 fi
 
+if [ -z $module ] || [ "$module" = 'tools' ]; then
+  if [ "x$exclude" != 'xtools' ]; then
+    cd $base_path/src/tools
+    replace_makefile
+    make $param1 $param2
+  fi
+fi
+
 if [ -z $module ] || [ "$module" = 'fuse' ]; then
   if [ "x$exclude" != 'xfuse' ]; then
     cd $base_path/src/fuse
