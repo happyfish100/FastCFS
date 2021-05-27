@@ -137,15 +137,22 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
     log_init2();
     //log_set_time_precision(&g_log_context, LOG_TIME_PRECISION_MSECOND);
 
-    result = get_base_path_from_conf_file(config_filename,
-            SF_G_BASE_PATH, sizeof(SF_G_BASE_PATH));
-    if (result != 0) {
-        log_destroy();
+    if ((result=parse_cmd_options(argc, argv)) != 0) {
         return result;
     }
 
+    if (!SF_G_BASE_PATH_INITED) {
+        result = get_base_path_from_conf_file(config_filename,
+                SF_G_BASE_PATH_STR, sizeof(SF_G_BASE_PATH_STR));
+        if (result != 0) {
+            log_destroy();
+            return result;
+        }
+        SF_G_BASE_PATH_INITED = true;
+    }
+
     snprintf(g_pid_filename, sizeof(g_pid_filename),
-            "%s/fused.pid", SF_G_BASE_PATH);
+            "%s/fused.pid", SF_G_BASE_PATH_STR);
 
     stop = false;
     result = process_action(g_pid_filename, action, &stop);
@@ -162,10 +169,7 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
         return 0;
     }
 
-    if ((result=parse_cmd_options(argc, argv)) == 0) {
-        *continue_flag = true;
-    }
-
+    *continue_flag = true;
     return result;
 }
 

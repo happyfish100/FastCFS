@@ -332,20 +332,20 @@ int fcfs_fuse_global_init(const char *config_filename)
             break;
         }
 
-        FC_SET_STRING(base_path, SF_G_BASE_PATH);
+        FC_SET_STRING(base_path, SF_G_BASE_PATH_STR);
         FC_SET_STRING(mountpoint, g_fuse_global_vars.mountpoint);
         if (fc_path_contains(&base_path, &mountpoint, &result)) {
             logError("file: "__FILE__", line: %d, "
                     "config file: %s, base path: %s contains mountpoint: %s, "
                     "this case is not allowed", __LINE__, config_filename,
-                    SF_G_BASE_PATH, g_fuse_global_vars.mountpoint);
+                    SF_G_BASE_PATH_STR, g_fuse_global_vars.mountpoint);
             result = EINVAL;
             break;
         } else if (result != 0) {
             logError("file: "__FILE__", line: %d, "
                     "config file: %s, base path: %s or mountpoint: %s "
                     "is invalid", __LINE__, config_filename,
-                    SF_G_BASE_PATH, g_fuse_global_vars.mountpoint);
+                    SF_G_BASE_PATH_STR, g_fuse_global_vars.mountpoint);
             break;
         }
 
