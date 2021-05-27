@@ -64,7 +64,7 @@ static void usage(char *argv[])
             "\t  you can set the initial value of auto increment id and "
             "the pool name template in server.conf of the server side\n\n"
             "\t* the quota parameter is required for create and quota operations\n"
-            "\t  the default unit of quota is GB, %s for no limit\n\n"
+            "\t  the default unit of quota is GiB, %s for no limit\n\n"
             "\tFastDIR and FastStore accesses are:\n"
             "\t  %c:  read only\n"
             "\t  %c:  write only\n"
@@ -118,7 +118,7 @@ static int quota_spool(int argc, char *argv[])
             strcpy(buff, FCFS_AUTH_UNLIMITED_QUOTA_STR);
         } else {
             long_to_comma_str(spool.quota / (1024 * 1024 * 1024), buff);
-            strcat(buff, "GB");
+            strcat(buff, "GiB");
         }
         printf("pool %s, set quota to %s success\n", spool.name.str, buff);
     } else {
@@ -223,7 +223,7 @@ static void output_spools(FCFSAuthStoragePoolArray *array)
     FCFSAuthStoragePoolInfo *end;
     char buff[64];
 
-    printf("%5s %32s %32s\n", "No.", "pool_name", "quota (GB)");
+    printf("%5s %32s %32s\n", "No.", "pool_name", "quota (GiB)");
     end = array->spools + array->count;
     for (spool=array->spools; spool<end; spool++) {
         if (spool->quota == FCFS_AUTH_UNLIMITED_QUOTA_VAL) {
