@@ -104,4 +104,4 @@
 </tr>
 </table>
 
-more info see Chinese doc: [FastCFS vs. Ceph benchmark detail](docs/benchmark-20210514.pdf)
+more info see Chinese doc: [FastCFS vs. Ceph benchmark detail](benchmark-20210514.pdf)

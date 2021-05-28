@@ -75,7 +75,7 @@ df -h /opt/fastcfs/fuse | grep fuse
 
 ## 6. Benchmark
 
-[FastCFS vs. Ceph benchmark](docs/benchmark.md)
+* [FastCFS vs. Ceph benchmark](docs/benchmark.md)
 
 ## 7. Contact us
 
