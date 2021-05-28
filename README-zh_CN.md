@@ -60,7 +60,13 @@ df -h /opt/fastcfs/fuse | grep fuse
 FastCFS安装完成后，请参阅[配置指南](docs/CONFIGURE-zh_CN.md)
 
 
-## 6. 联系我们
+## 6. 性能测试
+
+* [FastCFS与Ceph性能对比测试结果概要](docs/benchmark.md)
+
+* 详情参见 [完整PDF文档](docs/benchmark-20210514.pdf)
+
+## 7. 联系我们
 
 查看FastCFS相关技术文章，请关注微信公众号：
 

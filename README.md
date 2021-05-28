@@ -73,7 +73,11 @@ now you can see the mounted path of FastCFS by the command:
 df -h /opt/fastcfs/fuse | grep fuse
 ```
 
-## 6. Contact us
+## 6. Benchmark
+
+[FastCFS vs. Ceph benchmark](docs/benchmark.md)
+
+## 7. Contact us
 
 email: 384681(at)qq(dot)com
 
