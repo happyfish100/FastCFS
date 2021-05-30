@@ -4,41 +4,10 @@ fcfs_settings_file="fcfs.settings"
 #fcfs_dependency_file_server="http://www.fastken.com"
 fcfs_dependency_file_server="http://localhost:8082"
 module_names=(fdir fstore fauth fuseclient)
+module_programs=([fauth]=FastCFS-auth-server [fdir]=fastDIR-server [fauth]=faststore-server [fuseclient]=FastCFS-fused)
 shell_name=$0
 shell_command=$1
 uname=$(uname)
-
-get_osname() {
-  uname=$(uname)
-  if [ $uname = 'Linux' ]; then
-    osname=$(cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2;}' | \
-            awk -F '"' '{if (NF==3) {print $2} else {print $1}}' | awk '{print $1}')
-    if [ $osname = 'CentOS' ]; then
-      osversion=$(cat /etc/system-release | awk '{print $4}')
-    fi
-    if [ -z $osversion ]; then
-      osversion=$(cat /etc/os-release | grep -w VERSION_ID | awk -F '=' '{print $2;}' | \
-              awk -F '"' '{if (NF==3) {print $2} else {print $1}}')
-    fi
-    os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
-  else
-    echo "Unsupport OS: $uname" 1>&2
-    exit 1
-  fi
-}
-
-check_install_fastos_repo() {
-  repo=$(rpm -q FastOSrepo 2>/dev/null)
-  if [ $? -ne 0 ]; then
-    if [ $os_major_version -eq 7 ]; then
-      rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
-    else
-      rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
-    fi
-  fi
-}
-
-
 
 # View last N lines log of the cluster with system command tail;
 tail_log() {
@@ -215,6 +184,64 @@ load_cluster_groups() {
   fi
 }
 
+check_remote_osname() {
+  uname=$(uname)
+  if [ $uname = 'Linux' ]; then
+    osname=$(cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2;}' | \
+            awk -F '"' '{if (NF==3) {print $2} else {print $1}}' | awk '{print $1}')
+    if [ $osname = 'CentOS' ]; then
+      osversion=$(cat /etc/system-release | awk '{print $4}')
+    fi
+    if [ -z $osversion ]; then
+      osversion=$(cat /etc/os-release | grep -w VERSION_ID | awk -F '=' '{print $2;}' | \
+              awk -F '"' '{if (NF==3) {print $2} else {print $1}}')
+    fi
+    os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
+  else
+    echo "Unsupport OS: $uname" 1>&2
+    exit 1
+  fi
+}
+
+check_install_fastos_repo() {
+  repo=$(rpm -q FastOSrepo 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    if [ $os_major_version -eq 7 ]; then
+      rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
+    else
+      rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
+    fi
+  fi
+}
+
+install_program() {
+  program_name=$1
+  if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
+    check_install_fastos_repo
+    if [ $program_name = 'FastCFS-fused' ]; then
+      rpm -q fuse >/dev/null && yum remove fuse -y
+    fi
+    # yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
+    yum install $program_name -y
+  else
+    echo "Unsupport OS: $uname" 1>&2
+    echo "Command setup and install can only be used for CentOS 7 or 8."
+    exit 1
+  fi
+}
+
+install_program_on_remote() {
+  remote_host=$1
+  program_name=$2
+  ssh -Tq $remote_host <<EOF
+$(typeset -f check_remote_osname)
+check_remote_osname
+$(typeset -f check_install_fastos_repo)
+$(typeset -f install_program)
+install_program $program_name
+EOF
+}
+
 # Install libs to target nodes.
 install_dependent_libs() {
   load_fcfs_settings
@@ -224,15 +251,18 @@ install_dependent_libs() {
   fi
   load_dependency_settings $fastcfs_version
 
-  # if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
-  #   check_install_fastos_repo
-  #   rpm -q fuse >/dev/null && yum remove fuse -y
-  #   yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
-  # else
-  #   echo "Unsupport OS: $uname" 1>&2
-  #   echo "Command setup and install can only be used for CentOS 7 or 8."
-  #   exit 1
-  # fi
+  if [ $fdir_need_execute -eq 1 ]; then
+    install_program_on_remote 192.168.142.11 fastDIR-server
+  fi
+  if [ $fstore_need_execute -eq 1 ]; then
+    install_program_on_remote 192.168.142.11 faststore-server
+  fi
+  if [ $fauth_need_execute -eq 1 ]; then
+    install_program_on_remote 192.168.142.11 FastCFS-auth-server
+  fi
+  if [ $fuseclient_need_execute -eq 1 ]; then
+    install_program_on_remote 192.168.142.11 FastCFS-fused
+  fi
 }
 
 check_module_param $*
