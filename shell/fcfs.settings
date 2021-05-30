@@ -5,5 +5,5 @@
 # 要安装的集群版本号（例如：2.0.1）
 fastcfs_version=2.0.1
 
-# 要安装 fsclient 客户端的IP列表
-fsclient_ips=192.168.0.1
+# 要安装 fuseclient 客户端的IP列表
+fuseclient_ips=192.168.0.1
