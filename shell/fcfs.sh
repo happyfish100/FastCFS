@@ -52,6 +52,12 @@ print_usage() {
   echo ""
 }
 
+split_to_array() {
+  if ! [ -z $2 ]; then
+    IFS=',' read -ra $2 <<< "$1"
+  fi
+}
+
 # Load cluster settings from file fcfs.settings
 load_fcfs_settings() {
   if ! [ -f $fcfs_settings_file ]; then
@@ -60,6 +66,7 @@ load_fcfs_settings() {
   else
     fcfs_settings=`sed -e 's/#.*//' -e '/^$/ d' $fcfs_settings_file`
     eval $fcfs_settings
+    split_to_array $fuseclient_ips fuseclient_ip_array
     # if [ -z $fastcfs_version ]; then
     #   echo "WARN: param fastcfs_version has no value in $fcfs_settings_file"
     # fi
@@ -109,6 +116,10 @@ load_dependency_settings() {
 }
 
 # Get module name from command args, if not specify, will handle all modules.
+fdir_need_execute=0
+fstore_need_execute=0
+fauth_need_execute=0
+fuseclient_need_execute=0
 check_module_param() {
   if [ $# -gt 1 ]; then
     module_name=$2
@@ -126,8 +137,8 @@ check_module_param() {
         fuseclient_need_execute=1
       ;;
       *)
-        echo "Error: you specifed module name invalid:$module_name"
-        echo "Allowed module names:fdir/fstore/fauth/fuseclient"
+        echo "Error: module name invalid:$module_name"
+        echo "Allowed module names:fdir, fstore, fauth, fuseclient"
         exit 1
       ;;
     esac
@@ -252,23 +263,57 @@ install_dependent_libs() {
   load_dependency_settings $fastcfs_version
 
   if [ $fdir_need_execute -eq 1 ]; then
-    install_program_on_remote 192.168.142.11 fastDIR-server
+    for fdir_server_ip in ${fdir_group[@]}; do
+      if [ -z $node_host_need_execute ] || [ $fdir_server_ip = $node_host_need_execute ]; then
+        echo "Info: begin install fastDIR-server on server $fdir_server_ip"
+        install_program_on_remote $fdir_server_ip fastDIR-server
+      fi
+    done
   fi
   if [ $fstore_need_execute -eq 1 ]; then
-    install_program_on_remote 192.168.142.11 faststore-server
+    for (( i=1 ; i <= $fstore_group_count ; i++ )); do
+      fstore_group="fstore_group_$i[@]"
+      for fstore_server_ip in ${!fstore_group}; do
+        if [ -z $node_host_need_execute ] || [ $fstore_server_ip = $node_host_need_execute ]; then
+          echo "Info: begin install faststore-server on server $fstore_server_ip"
+          install_program_on_remote $fstore_server_ip faststore-server
+        fi
+      done
+    done
   fi
   if [ $fauth_need_execute -eq 1 ]; then
-    install_program_on_remote 192.168.142.11 FastCFS-auth-server
+    for fauth_server_ip in ${fauth_group[@]}; do
+      if [ -z $node_host_need_execute ] || [ $fauth_server_ip = $node_host_need_execute ]; then
+        echo "Info: begin install FastCFS-auth-server on server $fauth_server_ip"
+        install_program_on_remote $fauth_server_ip FastCFS-auth-server
+      fi
+    done
   fi
   if [ $fuseclient_need_execute -eq 1 ]; then
-    install_program_on_remote 192.168.142.11 FastCFS-fused
+    if [ ${#fuseclient_ip_array[@]} -eq 0 ]; then
+      echo "WARN: param fuseclient_ips has no value in $fcfs_settings_file"
+    else
+      node_match_setting=0
+      for fuseclient_server_ip in ${fuseclient_ip_array[@]}; do
+        if [ -z $node_host_need_execute ] || [ $fuseclient_server_ip = $node_host_need_execute ]; then
+          echo "Info: begin install FastCFS-fused on server $fuseclient_server_ip"
+          install_program_on_remote $fuseclient_server_ip FastCFS-fused
+        fi
+        if [ $fuseclient_server_ip = $node_host_need_execute ]; then
+          node_match_setting=1
+        fi
+      done
+      if ! [ -z $node_host_need_execute ] && [ $node_match_setting -eq 0 ]; then
+        echo "Error: the node $node_host_need_execute not match param fuseclient_ips in $fcfs_settings_file"
+      fi
+    fi
   fi
 }
 
 check_module_param $*
 check_node_param $*
 load_cluster_groups
-echo "$fdir_group"
+# Check if node_host_need_execute match cluster settings or config
 
 case "$shell_command" in
   'setup')
