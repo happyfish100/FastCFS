@@ -1,0 +1,9 @@
+# FastCFS cluster ops settings be used with shell fcfs.sh
+# This settings file must be placed at same path with fcfs.sh
+# You can edit it, or download it from http://www.fastcfs.com/ops.
+
+# 要安装的集群版本号（例如：2.0.1）
+fastcfs_version=2.0.1
+
+# 要安装 fsclient 客户端的IP列表
+fsclient_ips=192.168.0.1
