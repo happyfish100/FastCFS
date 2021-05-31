@@ -253,6 +253,97 @@ install_program $program_name
 EOF
 }
 
+execute_command_on_fdir_servers() {
+  command_name=$1
+  function_name=$2
+  module_name=$3
+  if [ $fdir_need_execute -eq 1 ]; then
+    fdir_node_match_setting=0
+    for fdir_server_ip in ${fdir_group[@]}; do
+      if [ -z $node_host_need_execute ] || [ $fdir_server_ip = "$node_host_need_execute" ]; then
+        echo "Info: begin $command_name $module_name on server $fdir_server_ip"
+        $function_name $fdir_server_ip $module_name
+      fi
+      if [ $fdir_server_ip = "$node_host_need_execute" ]; then
+        fdir_node_match_setting=1
+      fi
+    done
+    if ! [ -z $node_host_need_execute ] && [ $fdir_node_match_setting -eq 0 ]; then
+      echo "Error: the node $node_host_need_execute not match host in fdir cluster.conf"
+    fi
+  fi
+}
+
+execute_command_on_fstore_servers() {
+  command_name=$1
+  function_name=$2
+  module_name=$3
+  if [ $fstore_need_execute -eq 1 ]; then
+    fstore_node_match_setting=0
+    for (( i=1 ; i <= $fstore_group_count ; i++ )); do
+      fstore_group="fstore_group_$i[@]"
+      for fstore_server_ip in ${!fstore_group}; do
+        if [ -z $node_host_need_execute ] || [ $fstore_server_ip = "$node_host_need_execute" ]; then
+          echo "Info: begin $command_name $module_name on server $fstore_server_ip"
+          $function_name $fstore_server_ip $module_name
+        fi
+        if [ $fstore_server_ip = "$node_host_need_execute" ]; then
+          fstore_node_match_setting=1
+        fi
+      done
+    done
+    if ! [ -z $node_host_need_execute ] && [ $fstore_node_match_setting -eq 0 ]; then
+      echo "Error: the node $node_host_need_execute not match host in fstore cluster.conf"
+    fi
+  fi
+}
+
+execute_command_on_fauth_servers() {
+  command_name=$1
+  function_name=$2
+  module_name=$3
+  if [ $fauth_need_execute -eq 1 ]; then
+    fauth_node_match_setting=0
+    for fauth_server_ip in ${fauth_group[@]}; do
+      if [ -z $node_host_need_execute ] || [ $fauth_server_ip = "$node_host_need_execute" ]; then
+        echo "Info: begin $command_name $module_name on server $fauth_server_ip"
+        $function_name $fauth_server_ip $module_name
+      fi
+      if [ $fauth_server_ip = "$node_host_need_execute" ]; then
+        fauth_node_match_setting=1
+      fi
+    done
+    if ! [ -z $node_host_need_execute ] && [ $fauth_node_match_setting -eq 0 ]; then
+      echo "Error: the node $node_host_need_execute not match host in fauth cluster.conf"
+    fi
+  fi
+}
+
+execute_command_on_fuseclient_servers() {
+  command_name=$1
+  function_name=$2
+  module_name=$3
+  if [ $fuseclient_need_execute -eq 1 ]; then
+    if [ ${#fuseclient_ip_array[@]} -eq 0 ]; then
+      echo "WARN: param fuseclient_ips has no value in $fcfs_settings_file"
+    else
+      fuseclient_node_match_setting=0
+      for fuseclient_server_ip in ${fuseclient_ip_array[@]}; do
+        if [ -z $node_host_need_execute ] || [ $fuseclient_server_ip = "$node_host_need_execute" ]; then
+          echo "Info: begin $command_name $module_name on server $fuseclient_server_ip"
+          $function_name $fuseclient_server_ip $module_name
+        fi
+        if [ $fuseclient_server_ip = "$node_host_need_execute" ]; then
+          fuseclient_node_match_setting=1
+        fi
+      done
+      if ! [ -z $node_host_need_execute ] && [ $fuseclient_node_match_setting -eq 0 ]; then
+        echo "Error: the node $node_host_need_execute not match param fuseclient_ips in $fcfs_settings_file"
+      fi
+    fi
+  fi
+}
+
 # Install libs to target nodes.
 install_dependent_libs() {
   load_fcfs_settings
@@ -262,52 +353,10 @@ install_dependent_libs() {
   fi
   load_dependency_settings $fastcfs_version
 
-  if [ $fdir_need_execute -eq 1 ]; then
-    for fdir_server_ip in ${fdir_group[@]}; do
-      if [ -z $node_host_need_execute ] || [ $fdir_server_ip = $node_host_need_execute ]; then
-        echo "Info: begin install fastDIR-server on server $fdir_server_ip"
-        install_program_on_remote $fdir_server_ip fastDIR-server
-      fi
-    done
-  fi
-  if [ $fstore_need_execute -eq 1 ]; then
-    for (( i=1 ; i <= $fstore_group_count ; i++ )); do
-      fstore_group="fstore_group_$i[@]"
-      for fstore_server_ip in ${!fstore_group}; do
-        if [ -z $node_host_need_execute ] || [ $fstore_server_ip = $node_host_need_execute ]; then
-          echo "Info: begin install faststore-server on server $fstore_server_ip"
-          install_program_on_remote $fstore_server_ip faststore-server
-        fi
-      done
-    done
-  fi
-  if [ $fauth_need_execute -eq 1 ]; then
-    for fauth_server_ip in ${fauth_group[@]}; do
-      if [ -z $node_host_need_execute ] || [ $fauth_server_ip = $node_host_need_execute ]; then
-        echo "Info: begin install FastCFS-auth-server on server $fauth_server_ip"
-        install_program_on_remote $fauth_server_ip FastCFS-auth-server
-      fi
-    done
-  fi
-  if [ $fuseclient_need_execute -eq 1 ]; then
-    if [ ${#fuseclient_ip_array[@]} -eq 0 ]; then
-      echo "WARN: param fuseclient_ips has no value in $fcfs_settings_file"
-    else
-      node_match_setting=0
-      for fuseclient_server_ip in ${fuseclient_ip_array[@]}; do
-        if [ -z $node_host_need_execute ] || [ $fuseclient_server_ip = $node_host_need_execute ]; then
-          echo "Info: begin install FastCFS-fused on server $fuseclient_server_ip"
-          install_program_on_remote $fuseclient_server_ip FastCFS-fused
-        fi
-        if [ $fuseclient_server_ip = $node_host_need_execute ]; then
-          node_match_setting=1
-        fi
-      done
-      if ! [ -z $node_host_need_execute ] && [ $node_match_setting -eq 0 ]; then
-        echo "Error: the node $node_host_need_execute not match param fuseclient_ips in $fcfs_settings_file"
-      fi
-    fi
-  fi
+  execute_command_on_fdir_servers install install_program_on_remote fastDIR-server
+  execute_command_on_fstore_servers install install_program_on_remote faststore-server
+  execute_command_on_fauth_servers install install_program_on_remote FastCFS-auth-server
+  execute_command_on_fuseclient_servers install install_program_on_remote FastCFS-fused
 }
 
 check_module_param $*
