@@ -257,6 +257,7 @@ static int service_deal_user_create(struct fast_task_info *task)
         return result;
     }
 
+    user.status = FCFS_AUTH_USER_STATUS_NORMAL;
     return adb_user_create(SERVER_CTX, &user);
 }
 
@@ -456,6 +457,7 @@ static int service_deal_spool_create(struct fast_task_info *task)
         return result;
     }
 
+    spool.status = FCFS_AUTH_POOL_STATUS_NORMAL;
     username = SESSION_USER.name;
     if (spool.name.len >= FCFS_AUTH_AUTO_ID_TAG_LEN &&
             strstr(spool.name.str, FCFS_AUTH_AUTO_ID_TAG_STR) != NULL)

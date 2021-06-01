@@ -298,7 +298,7 @@ static int user_create(AuthServerContext *server_ctx, DBUserInfo **dbuser,
     }
 
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
-    (*dbuser)->user.status = FCFS_AUTH_USER_STATUS_NORMAL;
+    (*dbuser)->user.status = user->status;
     if (need_insert) {
         if ((result=uniq_skiplist_insert(adb_ctx.user.sl_pair.
                         skiplist, *dbuser)) == 0)
@@ -535,7 +535,7 @@ static int storage_pool_create(AuthServerContext *server_ctx,
     }
 
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
-    (*dbspool)->pool.status = FCFS_AUTH_POOL_STATUS_NORMAL;
+    (*dbspool)->pool.status = pool->status;
     if (need_insert) {
         if ((result=spool_global_skiplists_insert(*dbspool)) == 0) {
             result = uniq_skiplist_insert(dbuser->storage_pools.
@@ -569,7 +569,7 @@ int adb_spool_create(AuthServerContext *server_ctx, const string_t
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     user = user_get(server_ctx, username);
     if (user != NULL) {
-        if (user->user.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+        if (user->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
             dbspool = user_spool_get(server_ctx, user, &pool->name);
             if (dbspool != NULL) {
                 if (dbspool->pool.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
@@ -806,6 +806,7 @@ static int convert_spool_array(AuthServerContext *server_ctx,
     end = spool_array->spools + spool_array->count;
     for (spool=spool_array->spools; spool<end; spool++) {
         dbspool = NULL;
+
         if ((result=storage_pool_create(server_ctx, dbuser,
                         &dbspool, spool, addto_backend)) != 0)
         {
@@ -1082,7 +1083,7 @@ int adb_granted_create(AuthServerContext *server_ctx, const string_t *username,
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     dbuser = user_get(server_ctx, username);
     if (dbuser != NULL) {
-        if (dbuser->user.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+        if (dbuser->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
             dbgranted = granted_pool_get(dbuser, granted->pool_id);
         } else {
             dbuser = NULL;
@@ -1133,7 +1134,7 @@ int adb_granted_remove(AuthServerContext *server_ctx,
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     dbuser = user_get(server_ctx, username);
     if (dbuser != NULL) {
-        if (dbuser->user.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+        if (dbuser->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
             dbgranted = granted_pool_get(dbuser, pool_id);
         }
     }
@@ -1176,7 +1177,7 @@ int adb_granted_full_get(AuthServerContext *server_ctx, const string_t
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     dbuser = user_get(server_ctx, username);
     if (dbuser != NULL) {
-        if (dbuser->user.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
+        if (dbuser->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
             if ((dbgranted=granted_pool_get(dbuser, pool_id)) != NULL) {
                 set_gpool_full_info(gf, dbgranted);
             }
