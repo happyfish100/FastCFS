@@ -37,8 +37,9 @@ typedef struct auth_full_path {
                 AUTH_NAMESPACE_LEN); \
         fp.fullname.path.str = fp.buff;  \
         fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                AUTH_BASE_PATH_STR"/%s/%s/%"PRId64,      \
-                (username)->str, AUTH_DIR_NAME_GRANTED_STR, granted_id); \
+                AUTH_BASE_PATH_STR"/%.*s/%s/%"PRId64,        \
+                (username)->len, (username)->str, \
+                AUTH_DIR_NAME_GRANTED_STR, granted_id); \
     } while (0)
 
 #define AUTH_SET_USER_PATH2(fp, username, subdir1, subdir2)  \
@@ -47,17 +48,18 @@ typedef struct auth_full_path {
                 AUTH_NAMESPACE_LEN); \
         fp.fullname.path.str = fp.buff;  \
         fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                AUTH_BASE_PATH_STR"/%s/%s/%s",      \
-                (username)->str, subdir1, subdir2); \
+                AUTH_BASE_PATH_STR"/%.*s/%s/%.*s", (username)->len, \
+                (username)->str, subdir1, (subdir2).len, (subdir2).str); \
     } while (0)
 
 #define AUTH_SET_USER_PATH1(fp, username, subdir1)  \
     do {  \
-        FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
+        FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR,  \
                 AUTH_NAMESPACE_LEN); \
         fp.fullname.path.str = fp.buff;  \
-        fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                AUTH_BASE_PATH_STR"/%s/%s", (username)->str, subdir1); \
+        fp.fullname.path.len = sprintf(fp.fullname.path.str,   \
+                AUTH_BASE_PATH_STR"/%.*s/%s", (username)->len, \
+                (username)->str, subdir1); \
     } while (0)
 
 #define AUTH_SET_USER_HOME(fp, username)  \
@@ -66,7 +68,8 @@ typedef struct auth_full_path {
                 AUTH_NAMESPACE_LEN); \
         fp.fullname.path.str = fp.buff;  \
         fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                AUTH_BASE_PATH_STR"/%s", (username)->str);   \
+                AUTH_BASE_PATH_STR"/%.*s", (username)->len,  \
+                (username)->str);   \
     } while (0)
 
 
