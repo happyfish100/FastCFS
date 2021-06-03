@@ -527,7 +527,7 @@ service_op() {
     ;;
     'fuseclient')
       service_name="fcfs_fused"
-      conf_file="${FUSE_CONF_PATH}server.conf"
+      conf_file="${FUSE_CONF_PATH}fuse.conf"
     ;;
     *)
       echo "ERROR: target module name is invalid - $target_module"
