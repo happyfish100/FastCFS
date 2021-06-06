@@ -1,22 +1,26 @@
 #!/bin/bash
 
 fcfs_settings_file="fcfs.settings"
-#fcfs_dependency_file_server="http://www.fastken.com"
-fcfs_dependency_file_server="http://localhost:8082"
+fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
+# fcfs_dependency_file_server="http://localhost:8082"
 
 STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf)
 STORE_CONF_PATH="/etc/fastcfs/fstore/"
+STORE_LOG_FILE="/opt/fastcfs/fstore/logs/fs_serverd.log"
 
 FDIR_CONF_FILES=(client.conf cluster.conf server.conf)
 FDIR_CONF_PATH="/etc/fastcfs/fdir/"
+FDIR_LOG_FILE="/opt/fastcfs/fdir/logs/fdir_serverd.log "
 
 AUTH_CONF_FILES=(auth.conf client.conf cluster.conf server.conf session.conf)
 AUTH_CONF_PATH="/etc/fastcfs/auth/"
 AUTH_KEYS_FILES=(session_validate.key)
 AUTH_KEYS_PATH="/etc/fastcfs/auth/keys/"
+AUTH_LOG_FILE="/opt/fastcfs/auth/logs/fcfs_authd.log"
 
 FUSE_CONF_FILES=(fuse.conf)
 FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
+FUSE_LOG_FILE="/opt/fastcfs/fcfs/logs/fcfs_fused.log"
 
 module_names=(fdir fstore fauth fuseclient)
 
@@ -69,12 +73,12 @@ print_detail_usage() {
   echo "  $shell_name start fdir 172.16.168.128"
   echo "  $shell_name stop fdir 172.16.168.128"
   echo "  $shell_name restart fdir 172.16.168.128"
-  echo "  $shell_name tail fdir 172.16.168.128"
+  echo "  $shell_name tail fdir 172.16.168.128 -n 100"
   echo ""
 }
 
 case "$shell_command" in
-  'setup' | 'install' | 'reinstall' | 'erase' | 'config' | 'start' | 'restart' | 'stop' | 'tail')
+  'setup' | 'install' | 'reinstall' | 'erase' | 'remove' | 'config' | 'start' | 'restart' | 'stop' | 'tail')
   ;;
   'help')
     print_detail_usage
@@ -123,7 +127,7 @@ load_dependency_settings() {
   if ! [ -f $dependency_settings_file ]; then
     # File not exist in local path, will get it from remote server match the version
     echo "WARN: file $dependency_settings_file not exist, getting it from remote server $fcfs_dependency_file_server"
-    remote_file_url="$fcfs_dependency_file_server/$dependency_settings_file"
+    remote_file_url="$fcfs_dependency_file_server/$dependency_file_version"
     download_res=`curl -f -o $dependency_settings_file $remote_file_url`
 
     if ! [ -f $dependency_settings_file ]; then
@@ -157,6 +161,7 @@ fstore_need_execute=0
 fauth_need_execute=0
 fuseclient_need_execute=0
 
+has_module_param=1
 check_module_param() {
   if [ $# -gt 1 ]; then
     module_name=$2
@@ -174,12 +179,21 @@ check_module_param() {
         fuseclient_need_execute=1
       ;;
       *)
-        echo "Error: module name invalid:$module_name"
-        echo "Allowed module names:fdir, fstore, fauth, fuseclient"
-        exit 1
+        has_module_param=0
+        if ! [ $shell_command = 'tail' ] || ! [[ $module_name =~ ^- ]]; then
+          echo "Error: module name invalid:$module_name"
+          echo "Allowed module names:fdir, fstore, fauth, fuseclient"
+          exit 1
+        else
+          fdir_need_execute=1
+          fstore_need_execute=1
+          fauth_need_execute=1
+          fuseclient_need_execute=1
+        fi
       ;;
     esac
   else
+    has_module_param=0
     fdir_need_execute=1
     fstore_need_execute=1
     fauth_need_execute=1
@@ -189,9 +203,11 @@ check_module_param() {
 
 # Get node host from command args, if not specify, will handle all nodes.
 # It must specify after module name.
+has_node_param=0
 check_node_param() {
-  if [ $# -gt 2 ]; then
+  if [ $# -gt 2 ] && ! [[ $3 =~ ^- ]] && [ $has_module_param = 1 ]; then
     node_host_need_execute=$3
+    has_node_param=1
   fi
 }
 
@@ -235,11 +251,11 @@ load_cluster_groups() {
 
 #---Iterate hosts for execute command section begin---#
 execute_command_on_fdir_servers() {
-  command_name=$1
-  function_name=$2
-  module_name=$3
+  local command_name=$1
+  local function_name=$2
+  local module_name=$3
   if [ $fdir_need_execute -eq 1 ]; then
-    fdir_node_match_setting=0
+    local fdir_node_match_setting=0
     for fdir_server_ip in ${fdir_group[@]}; do
       if [ -z $node_host_need_execute ] || [ $fdir_server_ip = "$node_host_need_execute" ]; then
         echo "Info: begin $command_name $module_name on server $fdir_server_ip"
@@ -256,13 +272,13 @@ execute_command_on_fdir_servers() {
 }
 
 execute_command_on_fstore_servers() {
-  command_name=$1
-  function_name=$2
-  module_name=$3
+  local command_name=$1
+  local function_name=$2
+  local module_name=$3
   if [ $fstore_need_execute -eq 1 ]; then
-    fstore_node_match_setting=0
+    local fstore_node_match_setting=0
     for (( i=1 ; i <= $fstore_group_count ; i++ )); do
-      fstore_group="fstore_group_$i[@]"
+      local fstore_group="fstore_group_$i[@]"
       for fstore_server_ip in ${!fstore_group}; do
         if [ -z $node_host_need_execute ] || [ $fstore_server_ip = "$node_host_need_execute" ]; then
           echo "Info: begin $command_name $module_name on server $fstore_server_ip"
@@ -280,11 +296,11 @@ execute_command_on_fstore_servers() {
 }
 
 execute_command_on_fauth_servers() {
-  command_name=$1
-  function_name=$2
-  module_name=$3
+  local command_name=$1
+  local function_name=$2
+  local module_name=$3
   if [ $fauth_need_execute -eq 1 ]; then
-    fauth_node_match_setting=0
+    local fauth_node_match_setting=0
     for fauth_server_ip in ${fauth_group[@]}; do
       if [ -z $node_host_need_execute ] || [ $fauth_server_ip = "$node_host_need_execute" ]; then
         echo "Info: begin $command_name $module_name on server $fauth_server_ip"
@@ -301,14 +317,14 @@ execute_command_on_fauth_servers() {
 }
 
 execute_command_on_fuseclient_servers() {
-  command_name=$1
-  function_name=$2
-  module_name=$3
+  local command_name=$1
+  local function_name=$2
+  local module_name=$3
   if [ $fuseclient_need_execute -eq 1 ]; then
     if [ ${#fuseclient_ip_array[@]} -eq 0 ]; then
       echo "WARN: param fuseclient_ips has no value in $fcfs_settings_file"
     else
-      fuseclient_node_match_setting=0
+      local fuseclient_node_match_setting=0
       for fuseclient_server_ip in ${fuseclient_ip_array[@]}; do
         if [ -z $node_host_need_execute ] || [ $fuseclient_server_ip = "$node_host_need_execute" ]; then
           echo "Info: begin $command_name $module_name on server $fuseclient_server_ip"
@@ -362,10 +378,12 @@ execute_yum() {
   program_name=$2
   if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
     check_install_fastos_repo
-    if [ $program_name = 'FastCFS-fused' ]; then
+    if [ $yum_command = 'install' ] && [[ $program_name == *"FastCFS-fused"* ]]; then
+      echo "Info: remove old version fuse"
       rpm -q fuse >/dev/null && yum remove fuse -y
     fi
     # yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
+    echo "Info: yum $yum_command $program_name -y"
     yum $yum_command $program_name -y
   else
     echo "Unsupport OS: $uname" 1>&2
@@ -378,13 +396,12 @@ execute_yum_on_remote() {
   remote_host=$1
   program_name=$2
   yum_command=$3
-  echo "yum_command=$yum_command"
   ssh -Tq $remote_host <<EOF
 $(typeset -f check_remote_osname)
 check_remote_osname
 $(typeset -f check_install_fastos_repo)
 $(typeset -f execute_yum)
-execute_yum $yum_command $program_name
+execute_yum $yum_command "$program_name"
 EOF
 }
 
@@ -395,9 +412,9 @@ install_dependent_libs() {
   execute_command_on_fdir_servers install execute_yum_on_remote "$fdir_programs"
   fstore_programs="faststore-server-$fstore libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fstore_servers install execute_yum_on_remote "$fstore_programs"
-  fauth_programs="FastCFS-auth-server-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
+  fauth_programs="FastCFS-auth-server-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth fastDIR-client-$fdir"
   execute_command_on_fauth_servers install execute_yum_on_remote "$fauth_programs"
-  fuseclient_programs="FastCFS-fused-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
+  fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore"
   execute_command_on_fuseclient_servers install execute_yum_on_remote "$fuseclient_programs"
 }
 
@@ -406,9 +423,9 @@ erase_dependent_libs() {
   execute_command_on_fdir_servers erase execute_yum_on_remote "$fdir_programs"
   fstore_programs="faststore-server libfastcommon libserverframe FastCFS-auth-client"
   execute_command_on_fstore_servers erase execute_yum_on_remote "$fstore_programs"
-  fauth_programs="FastCFS-auth-server libfastcommon libserverframe FastCFS-auth-client"
+  fauth_programs="FastCFS-auth-server libfastcommon libserverframe FastCFS-auth-client fastDIR-client"
   execute_command_on_fauth_servers erase execute_yum_on_remote "$fauth_programs"
-  fuseclient_programs="FastCFS-fused libfastcommon libserverframe FastCFS-auth-client"
+  fuseclient_programs="FastCFS-fused libfastcommon libserverframe FastCFS-auth-client FastCFS-api-libs faststore-client"
   execute_command_on_fuseclient_servers erase execute_yum_on_remote "$fuseclient_programs"
 }
 
@@ -418,9 +435,9 @@ reinstall_dependent_libs() {
   execute_command_on_fdir_servers reinstall execute_yum_on_remote "$fdir_programs"
   fstore_programs="faststore-server-$fstore libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fstore_servers reinstall execute_yum_on_remote "$fstore_programs"
-  fauth_programs="FastCFS-auth-server-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
+  fauth_programs="FastCFS-auth-server-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth fastDIR-client-$fdir"
   execute_command_on_fauth_servers reinstall execute_yum_on_remote "$fauth_programs"
-  fuseclient_programs="FastCFS-fused-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
+  fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore"
   execute_command_on_fuseclient_servers reinstall execute_yum_on_remote "$fuseclient_programs"
 }
 #---Install section end---#
@@ -583,11 +600,33 @@ cluster_service_op() {
 }
 #---Service op section end---#
 
-# View last N lines log of the cluster with system command tail;
-tail_log() {
-  echo ""
+#---Tail log section begin---#
+tail_remote_log() {
+  local tail_server=$1
+  local tail_args=$2
+  # echo "ssh -Tq $remote_host \"tail $tail_args\""
+  ssh -Tq $tail_server "tail $tail_args"
+  echo "========================================================"
+  echo "========Log boundary===================================="
+  echo "========================================================"
 }
 
+# View last N lines log of the cluster with system command tail;
+tail_log() {
+  shift
+  if [ $has_module_param = 1 ]; then
+    shift
+    if [ $has_node_param = 1 ]; then
+      shift
+    fi
+  fi
+  local tail_args="$*"
+  execute_command_on_fdir_servers tail tail_remote_log "$tail_args $FDIR_LOG_FILE"
+  execute_command_on_fstore_servers tail tail_remote_log "$tail_args $STORE_LOG_FILE"
+  execute_command_on_fauth_servers tail tail_remote_log "$tail_args $AUTH_LOG_FILE"
+  execute_command_on_fuseclient_servers tail tail_remote_log "$tail_args $FUSE_LOG_FILE"
+}
+#---Tail log section end---#
 
 check_module_param $*
 check_node_param $*
@@ -610,7 +649,7 @@ case "$shell_command" in
   'reinstall')
     reinstall_dependent_libs
   ;;
-  'erase')
+  'erase' | 'remove')
     erase_dependent_libs
   ;;
   'config')
