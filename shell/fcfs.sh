@@ -250,6 +250,7 @@ list_servers_in_config() {
   list_config_file=$2
   cmd_exist=`which $list_program`
   if [ -z "$cmd_exist" ]; then
+    # Todo: 添加自动安装 FastCFS-utils 的步骤
     echo "Error: program $list_program not found, you must install it first."
     exit 1
   else
@@ -504,7 +505,6 @@ check_installed_version() {
 # Install libs to target nodes.
 install_dependent_libs() {
   check_installed_version
-  load_dependency_settings $fastcfs_version
   fdir_programs="fastDIR-server-$fdir libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fdir_servers install execute_yum_on_remote "$fdir_programs"
   fstore_programs="faststore-server-$fstore libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
@@ -539,7 +539,6 @@ erase_dependent_libs() {
 
 reinstall_dependent_libs() {
   check_installed_version
-  load_dependency_settings $fastcfs_version
   fdir_programs="fastDIR-server-$fdir libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fdir_servers reinstall execute_yum_on_remote "$fdir_programs"
   fstore_programs="faststore-server-$fstore libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
@@ -759,12 +758,13 @@ tail_log() {
 
 check_module_param $*
 check_node_param $*
-load_cluster_groups
 load_fcfs_settings
 if [ -z $fastcfs_version ]; then
   echo "Error: fastcfs_version in $fcfs_settings_file cannot be empty"
   exit 1
 fi
+load_dependency_settings $fastcfs_version
+load_cluster_groups
 load_installed_settings
 if [ -z $fastcfs_version_installed ]; then
   case "$shell_command" in
