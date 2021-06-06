@@ -3,6 +3,8 @@
 fcfs_settings_file="fcfs.settings"
 fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
 # fcfs_dependency_file_server="http://localhost:8082"
+fcfs_cache_path=".fcfs"
+fcfs_installed_file="installed.settings"
 
 STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf)
 STORE_CONF_PATH="/etc/fastcfs/fstore/"
@@ -22,8 +24,6 @@ FUSE_CONF_FILES=(fuse.conf)
 FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
 FUSE_LOG_FILE="/opt/fastcfs/fcfs/logs/fcfs_fused.log"
 
-module_names=(fdir fstore fauth fuseclient)
-
 shell_name=$0
 shell_command=$1
 uname=$(uname)
@@ -40,7 +40,7 @@ print_usage() {
   echo "  setup      This command setup FastCFS cluster, a Shortcut command combines install, config, and restart"
   echo "  install    This command install FastCFS cluster's dependent libs with yum"
   echo "  reinstall  This command reinstall FastCFS cluster's dependent libs with yum"
-  echo "  erase      This command erase FastCFS cluster's dependent libs with yum"
+  echo "  erase/remove      This command erase FastCFS cluster's dependent libs with yum"
   echo "  config     This command copy cluster config file to target host path"
   echo "  start      This command start all or one module service in cluster"
   echo "  stop       This command stop  all or one module service in cluster"
@@ -91,10 +91,34 @@ case "$shell_command" in
 esac
 #---Usage info section end---#
 
-#---Settings and cluster info section begin---#
+sed_replace()
+{
+    sed_cmd=$1
+    filename=$2
+    if [ "$uname" = "FreeBSD" ] || [ "$uname" = "Darwin" ]; then
+       sed -i "" "$sed_cmd" $filename
+    else
+       sed -i "$sed_cmd" $filename
+    fi
+}
+
 split_to_array() {
   if ! [ -z $2 ]; then
     IFS=',' read -ra $2 <<< "$1"
+  fi
+}
+
+function version_le() { test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" == "$1"; }
+
+#---Settings and cluster info section begin---#
+check_fcfs_cache_path() {
+  if ! [ -d $fcfs_cache_path ]; then
+    if ! mkdir -p $fcfs_cache_path; then
+      echo "ERROR: Create fcfs cache path failed:$fcfs_cache_path!"
+      exit 1
+    else
+      echo "INFO: Created fcfs cache path successfully:$fcfs_cache_path!"
+    fi
   fi
 }
 
@@ -116,6 +140,15 @@ load_fcfs_settings() {
   fi
 }
 
+# Load installed settings from file .fcfs/installed.settings
+load_installed_settings() {
+  local installed_mark_file=$fcfs_cache_path/$fcfs_installed_file
+  if [ -f $installed_mark_file ]; then
+    local installed_marks=`sed -e 's/#.*//' -e '/^$/ d' $installed_mark_file`
+    eval $installed_marks
+  fi
+}
+
 # Load cluster dependent lib version settings from file dependency.[FastCFS-version].settings
 load_dependency_settings() {
   dependency_file_version=$1
@@ -123,10 +156,11 @@ load_dependency_settings() {
     echo "Error: dependency file version cannot be empty"
     exit 1
   fi
-  dependency_settings_file="dependency.$dependency_file_version.settings"
+  dependency_settings_file="$fcfs_cache_path/dependency.$dependency_file_version.settings"
   if ! [ -f $dependency_settings_file ]; then
     # File not exist in local path, will get it from remote server match the version
     echo "WARN: file $dependency_settings_file not exist, getting it from remote server $fcfs_dependency_file_server"
+    check_fcfs_cache_path
     remote_file_url="$fcfs_dependency_file_server/$dependency_file_version"
     download_res=`curl -f -o $dependency_settings_file $remote_file_url`
 
@@ -405,8 +439,71 @@ execute_yum $yum_command "$program_name"
 EOF
 }
 
+replace_installed_mark() {
+  # Replace host with ip of current host.
+  local mark_file=$1
+  local installed_version=$2
+  sed_replace "s#^fastcfs_version_installed=.*#fastcfs_version_installed=$installed_version#g" $mark_file
+}
+
+save_installed_mark() {
+  check_fcfs_cache_path
+  local installed_mark_file=$fcfs_cache_path/$fcfs_installed_file
+  if [ -f $installed_mark_file ]; then
+    local installed_marks=`grep fastcfs_version_installed $installed_mark_file`
+    if [ -z $installed_marks ]; then
+      echo "fastcfs_version_installed=$fastcfs_version" >> $installed_mark_file
+    else
+      # replace old value
+      replace_installed_mark $installed_mark_file "$fastcfs_version"
+    fi
+  else
+    echo "fastcfs_version_installed=$fastcfs_version" >> $installed_mark_file
+  fi
+}
+
+remove_installed_mark() {
+  local installed_mark_file=$fcfs_cache_path/$fcfs_installed_file
+  if [ -f $installed_mark_file ]; then
+    if ! rm -rf $installed_mark_file; then
+      echo "ERROR: delete installed mark file failed:$installed_mark_file!"
+      exit 1
+    fi
+  fi
+}
+
+check_installed_version() {
+  # First install cannot specify module
+  if [ -z $fastcfs_version_installed ] && [ $has_module_param = 1 ]; then
+    echo "Error: first execute setup or install cannot specify module"
+    exit 1
+  fi
+  if ! [ -z $fastcfs_version_installed ] && ! [ $fastcfs_version_installed = $fastcfs_version ]; then
+    if version_le $fastcfs_version_installed $fastcfs_version; then
+      # Upgrade cannot specify module
+      if [ $has_module_param = 1 ]; then
+        echo "Error: Upgrade cannot specify module"
+        exit 1
+      fi
+      for ((;;)) do
+        echo "Warning!!!: upgrade the installed program confirm, from $fastcfs_version_installed to $fastcfs_version ? [y/N]"
+        read var
+        if ! [ "$var" = "y" ] && ! [ "$var" = "Y" ] && ! [ "$var" = "yes" ] && ! [ "$var" = "YES" ]; then
+          exit 1
+        fi
+        break;
+      done
+    else
+      # Downgrade must remove old version first
+      echo "Error: Downgrade install must remove old version first"
+      exit 1
+    fi
+  fi
+}
+
 # Install libs to target nodes.
 install_dependent_libs() {
+  check_installed_version
   load_dependency_settings $fastcfs_version
   fdir_programs="fastDIR-server-$fdir libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fdir_servers install execute_yum_on_remote "$fdir_programs"
@@ -416,9 +513,19 @@ install_dependent_libs() {
   execute_command_on_fauth_servers install execute_yum_on_remote "$fauth_programs"
   fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore"
   execute_command_on_fuseclient_servers install execute_yum_on_remote "$fuseclient_programs"
+  save_installed_mark
 }
 
 erase_dependent_libs() {
+  # Before remove programm, need user to reconfirm
+  for ((;;)) do
+    echo "Warning!!!: delete the installed program confirm[y/N]"
+    read var
+    if ! [ "$var" = "y" ] && ! [ "$var" = "Y" ] && ! [ "$var" = "yes" ] && ! [ "$var" = "YES" ]; then
+      exit 1
+    fi
+    break;
+  done
   fdir_programs="fastDIR-server libfastcommon libserverframe FastCFS-auth-client"
   execute_command_on_fdir_servers erase execute_yum_on_remote "$fdir_programs"
   fstore_programs="faststore-server libfastcommon libserverframe FastCFS-auth-client"
@@ -427,9 +534,11 @@ erase_dependent_libs() {
   execute_command_on_fauth_servers erase execute_yum_on_remote "$fauth_programs"
   fuseclient_programs="FastCFS-fused libfastcommon libserverframe FastCFS-auth-client FastCFS-api-libs faststore-client"
   execute_command_on_fuseclient_servers erase execute_yum_on_remote "$fuseclient_programs"
+  remove_installed_mark
 }
 
 reinstall_dependent_libs() {
+  check_installed_version
   load_dependency_settings $fastcfs_version
   fdir_programs="fastDIR-server-$fdir libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fdir_servers reinstall execute_yum_on_remote "$fdir_programs"
@@ -439,6 +548,7 @@ reinstall_dependent_libs() {
   execute_command_on_fauth_servers reinstall execute_yum_on_remote "$fauth_programs"
   fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore"
   execute_command_on_fuseclient_servers reinstall execute_yum_on_remote "$fuseclient_programs"
+  save_installed_mark
 }
 #---Install section end---#
 
@@ -542,12 +652,31 @@ copy_config_to_remote() {
   done
 }
 
+save_configed_mark() {
+  check_fcfs_cache_path
+  local installed_mark_file=$fcfs_cache_path/$fcfs_installed_file
+  if [ -f $installed_mark_file ]; then
+    local configed_marks=`grep fastcfs_configed $installed_mark_file`
+    if [ -z $configed_marks ]; then
+      echo "fastcfs_configed=1" >> $installed_mark_file
+    fi
+  else
+    echo "fastcfs_configed=1" >> $installed_mark_file
+  fi
+}
+
 deploy_config_files() {
+  if [ -z $fastcfs_configed ] && [ $has_module_param = 1 ]; then
+    echo "Error: first execute config cannot specify module"
+    exit 1
+  fi
   execute_command_on_fdir_servers config copy_config_to_remote fdir
   execute_command_on_fstore_servers config copy_config_to_remote fstore
   execute_command_on_fauth_servers config copy_config_to_remote fauth
   execute_command_on_fauth_servers config copy_config_to_remote keys
   execute_command_on_fuseclient_servers config copy_config_to_remote fuseclient
+  # Save configed mark into installed.settings
+  save_configed_mark
 }
 #---Config section end---#
 
@@ -635,6 +764,23 @@ load_fcfs_settings
 if [ -z $fastcfs_version ]; then
   echo "Error: fastcfs_version in $fcfs_settings_file cannot be empty"
   exit 1
+fi
+load_installed_settings
+if [ -z $fastcfs_version_installed ]; then
+  case "$shell_command" in
+    'reinstall' | 'erase' | 'remove' | 'config' | 'start' | 'restart' | 'stop' | 'tail')
+      echo "Error: The FastCFS cluster has not been installed, you must execute setup or install first"
+      exit 1
+    ;;
+  esac
+fi
+if [ -z $fastcfs_configed ]; then
+  case "$shell_command" in
+    'start' | 'restart' | 'stop' | 'tail')
+      echo "Error: The FastCFS cluster has not been configed, you must execute config first"
+      exit 1
+    ;;
+  esac
 fi
 
 case "$shell_command" in
