@@ -52,3 +52,5 @@ data
 
 # Build tmp path after execute fastcfs.sh
 build
+
+.DS_Store
