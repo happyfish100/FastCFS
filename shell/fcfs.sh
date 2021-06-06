@@ -250,19 +250,18 @@ list_servers_in_config() {
   list_config_file=$2
   cmd_exist=`which $list_program`
   if [ -z "$cmd_exist" ]; then
-    # Todo: 添加自动安装 FastCFS-utils 的步骤
-    echo "Error: program $list_program not found, you must install it first."
+    echo "Warn: program $list_program not found, install it now"
+    check_remote_osname
+    execute_yum install "FastCFS-utils-$fcfsutils libfastcommon-$libfastcommon libserverframe-$libserverframe"
+  fi
+  if ! [ -f $list_config_file ]; then
+    echo "Error: cluster config file $list_config_file not exist"
     exit 1
   else
-    if ! [ -f $list_config_file ]; then
-      echo "Error: cluster config file $list_config_file not exist"
-      exit 1
-    else
-      list_result=$($list_program $list_config_file)
-      echo "Info: get servers from $list_config_file:"
-      echo "$list_result"
-      eval $list_result
-    fi
+    list_result=$($list_program $list_config_file)
+    echo "Info: get servers from $list_config_file:"
+    echo "$list_result"
+    eval $list_result
   fi
 }
 
