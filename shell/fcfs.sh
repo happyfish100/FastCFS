@@ -37,16 +37,17 @@ print_usage() {
   echo "A self-sufficient operation shell for FastCFS cluster"
   echo ""
   echo "Commands:"
-  echo "  setup      This command setup FastCFS cluster, a Shortcut command combines install, config, and restart"
-  echo "  install    This command install FastCFS cluster's dependent libs with yum"
-  echo "  reinstall  This command reinstall FastCFS cluster's dependent libs with yum"
-  echo "  erase/remove      This command erase FastCFS cluster's dependent libs with yum"
-  echo "  config     This command copy cluster config file to target host path"
-  echo "  start      This command start all or one module service in cluster"
-  echo "  stop       This command stop  all or one module service in cluster"
-  echo "  restart    This command restart all or one module service in cluster"
-  echo "  tail       This command view the last N lines of the specified module's log"
-  echo "  help       This command show the detail of commands and examples"
+  echo "  setup      Setup FastCFS softwares, a shortcut command combines install, config, and restart"
+  echo "  install    Install FastCFS softwares"
+  echo "  reinstall  Reinstall FastCFS softwares"
+  echo "  erase      Erase FastCFS softwares"
+  echo "  remove     Remove FastCFS softwares, same as erase"
+  echo "  config     Copy cluster config files to target host path"
+  echo "  start      Start all or one module service in cluster"
+  echo "  stop       Stop all or one module service in cluster"
+  echo "  restart    Restart all or one module service in cluster"
+  echo "  tail       Display the last part of the specified module's log"
+  echo "  help       Show the detail of commands and examples"
   echo ""
 }
 
@@ -54,26 +55,49 @@ print_detail_usage() {
   # Print usage to console.
   print_usage
   echo "Modules:"
-  echo "  fdir       fastDIR"
-  echo "  fstore     faststore"
-  echo "  fauth      FastCFS auth client module"
-  echo "  fuseclient   FastCFS client use with fuse"
+  echo "  fdir         fastDIR server"
+  echo "  fstore       faststore server"
+  echo "  fauth        FastCFS auth server"
+  echo "  fuseclient   FastCFS fuse client"
   echo ""
   echo "Node:"
   echo "  You can specify a single cluster IP, or command will be executed on all nodes."
   echo ""
+  echo "Tail command options:"
+  echo "  -n number"
+  echo "          The location is number lines"
+  echo ""
+  echo "  -number"
+  echo "          The location is number lines"
+  echo ""
   echo "Examples:"
   echo "  $shell_name setup"
-  echo "      -- Setup FastCFS cluster's all modules on all nodes, and then config and start module services."
+  echo "          Setup all FastCFS softwares on all nodes, then config and start module services."
   echo ""
   echo "  $shell_name install"
+  echo "          Install all FastCFS softwares on all nodes."
+  echo ""
   echo "  $shell_name reinstall"
+  echo "          reinstall all FastCFS softwares on all nodes."
+  echo ""
   echo "  $shell_name erase"
+  echo "          Erase all FastCFS softwares on all nodes."
+  echo ""
   echo "  $shell_name config fdir 172.16.168.128"
+  echo "          Copy fdir config file to host 172.16.168.128."
+  echo ""
   echo "  $shell_name start fdir 172.16.168.128"
+  echo "          Start fdir server on host 172.16.168.128."
+  echo ""
   echo "  $shell_name stop fdir 172.16.168.128"
+  echo "          Stop fdir server on host 172.16.168.128."
+  echo ""
   echo "  $shell_name restart fdir 172.16.168.128"
+  echo "          Restart fdir server on host 172.16.168.128."
+  echo ""
   echo "  $shell_name tail fdir 172.16.168.128 -n 100"
+  echo "          Display the last 100 lines of fdir server log."
+  echo ""
   echo ""
 }
 
@@ -114,10 +138,10 @@ function version_le() { test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" 
 check_fcfs_cache_path() {
   if ! [ -d $fcfs_cache_path ]; then
     if ! mkdir -p $fcfs_cache_path; then
-      echo "ERROR: Create fcfs cache path failed:$fcfs_cache_path!"
+      echo "ERROR: Create fcfs cache path failed, $fcfs_cache_path!"
       exit 1
     else
-      echo "INFO: Created fcfs cache path successfully:$fcfs_cache_path!"
+      echo "INFO: Created fcfs cache path successfully, $fcfs_cache_path."
     fi
   fi
 }
@@ -125,7 +149,7 @@ check_fcfs_cache_path() {
 # Load cluster settings from file fcfs.settings
 load_fcfs_settings() {
   if ! [ -f $fcfs_settings_file ]; then
-    echo "ERROR: file $fcfs_settings_file not exist"
+    echo "ERROR: File $fcfs_settings_file does not exist"
     exit 1
   else
     fcfs_settings=`sed -e 's/#.*//' -e '/^$/ d' $fcfs_settings_file`
@@ -153,39 +177,39 @@ load_installed_settings() {
 load_dependency_settings() {
   dependency_file_version=$1
   if [ -z $dependency_file_version ]; then
-    echo "Error: dependency file version cannot be empty"
+    echo "ERROR: Dependency file version cannot be empty."
     exit 1
   fi
   dependency_settings_file="$fcfs_cache_path/dependency.$dependency_file_version.settings"
   if ! [ -f $dependency_settings_file ]; then
     # File not exist in local path, will get it from remote server match the version
-    echo "WARN: file $dependency_settings_file not exist, getting it from remote server $fcfs_dependency_file_server"
+    echo "WARN: File $dependency_settings_file does not exist, getting it from remote server $fcfs_dependency_file_server."
     check_fcfs_cache_path
     remote_file_url="$fcfs_dependency_file_server/$dependency_file_version"
     download_res=`curl -f -o $dependency_settings_file $remote_file_url`
 
     if ! [ -f $dependency_settings_file ]; then
-      echo "Error: cannot download file $dependency_settings_file from $remote_file_url"
-      echo "Please make sure that remote file exists and network is accessible"
+      echo "ERROR: Cannot download file $dependency_settings_file from $remote_file_url."
+      echo "       Please make sure that remote file exists and network is accessible."
       exit 1
     fi
   fi
   dependency_settings=`sed -e 's/#.*//' -e '/^$/ d' $dependency_settings_file`
   eval $dependency_settings
   if [ -z $libfastcommon ]; then
-    echo "WARN: dependency libfastcommon has no version value in $dependency_settings_file"
+    echo "WARN: Dependency libfastcommon has no version value in $dependency_settings_file."
   fi
   if [ -z $libserverframe ]; then
-    echo "WARN: dependency libserverframe has no version value in $dependency_settings_file"
+    echo "WARN: Dependency libserverframe has no version value in $dependency_settings_file."
   fi
   if [ -z $fauth ]; then
-    echo "WARN: dependency fauth has no version value in $dependency_settings_file"
+    echo "WARN: Dependency fauth has no version value in $dependency_settings_file."
   fi
   if [ -z $fdir ]; then
-    echo "WARN: dependency fdir has no version value in $dependency_settings_file"
+    echo "WARN: Dependency fdir has no version value in $dependency_settings_file."
   fi
   if [ -z $fstore ]; then
-    echo "WARN: dependency fstore has no version value in $dependency_settings_file"
+    echo "WARN: Dependency fstore has no version value in $dependency_settings_file."
   fi
 }
 
@@ -215,8 +239,8 @@ check_module_param() {
       *)
         has_module_param=0
         if ! [ $shell_command = 'tail' ] || ! [[ $module_name =~ ^- ]]; then
-          echo "Error: module name invalid:$module_name"
-          echo "Allowed module names:fdir, fstore, fauth, fuseclient"
+          echo "ERROR: Module name invalid, $module_name."
+          echo "       Allowed module names: fdir, fstore, fauth, fuseclient."
           exit 1
         else
           fdir_need_execute=1
@@ -250,17 +274,15 @@ list_servers_in_config() {
   list_config_file=$2
   cmd_exist=`which $list_program`
   if [ -z "$cmd_exist" ]; then
-    echo "Warn: program $list_program not found, install it now"
+    echo "WARN: Program $list_program not found, install it now."
     check_remote_osname
     execute_yum install "FastCFS-utils-$fcfsutils libfastcommon-$libfastcommon libserverframe-$libserverframe"
   fi
   if ! [ -f $list_config_file ]; then
-    echo "Error: cluster config file $list_config_file not exist"
+    echo "ERROR: Cluster config file $list_config_file does not exist."
     exit 1
   else
     list_result=$($list_program $list_config_file)
-    echo "Info: get servers from $list_config_file:"
-    echo "$list_result"
     eval $list_result
   fi
 }
@@ -292,7 +314,7 @@ execute_command_on_fdir_servers() {
     local fdir_node_match_setting=0
     for fdir_server_ip in ${fdir_group[@]}; do
       if [ -z $node_host_need_execute ] || [ $fdir_server_ip = "$node_host_need_execute" ]; then
-        echo "Info: begin $command_name $module_name on server $fdir_server_ip"
+        echo "INFO: Begin $command_name $module_name on server $fdir_server_ip."
         $function_name $fdir_server_ip "$module_name" $command_name
       fi
       if [ $fdir_server_ip = "$node_host_need_execute" ]; then
@@ -300,7 +322,7 @@ execute_command_on_fdir_servers() {
       fi
     done
     if ! [ -z $node_host_need_execute ] && [ $fdir_node_match_setting -eq 0 ]; then
-      echo "Error: the node $node_host_need_execute not match host in fdir cluster.conf"
+      echo "ERROR: The node $node_host_need_execute not match host in fdir cluster.conf."
     fi
   fi
 }
@@ -315,7 +337,7 @@ execute_command_on_fstore_servers() {
       local fstore_group="fstore_group_$i[@]"
       for fstore_server_ip in ${!fstore_group}; do
         if [ -z $node_host_need_execute ] || [ $fstore_server_ip = "$node_host_need_execute" ]; then
-          echo "Info: begin $command_name $module_name on server $fstore_server_ip"
+          echo "INFO: Begin $command_name $module_name on server $fstore_server_ip."
           $function_name $fstore_server_ip "$module_name" $command_name
         fi
         if [ $fstore_server_ip = "$node_host_need_execute" ]; then
@@ -324,7 +346,7 @@ execute_command_on_fstore_servers() {
       done
     done
     if ! [ -z $node_host_need_execute ] && [ $fstore_node_match_setting -eq 0 ]; then
-      echo "Error: the node $node_host_need_execute not match host in fstore cluster.conf"
+      echo "ERROR: The node $node_host_need_execute not match host in fstore cluster.conf."
     fi
   fi
 }
@@ -337,7 +359,7 @@ execute_command_on_fauth_servers() {
     local fauth_node_match_setting=0
     for fauth_server_ip in ${fauth_group[@]}; do
       if [ -z $node_host_need_execute ] || [ $fauth_server_ip = "$node_host_need_execute" ]; then
-        echo "Info: begin $command_name $module_name on server $fauth_server_ip"
+        echo "INFO: Begin $command_name $module_name on server $fauth_server_ip."
         $function_name $fauth_server_ip "$module_name" $command_name
       fi
       if [ $fauth_server_ip = "$node_host_need_execute" ]; then
@@ -345,7 +367,7 @@ execute_command_on_fauth_servers() {
       fi
     done
     if ! [ -z $node_host_need_execute ] && [ $fauth_node_match_setting -eq 0 ]; then
-      echo "Error: the node $node_host_need_execute not match host in fauth cluster.conf"
+      echo "ERROR: The node $node_host_need_execute not match host in fauth cluster.conf."
     fi
   fi
 }
@@ -356,12 +378,12 @@ execute_command_on_fuseclient_servers() {
   local module_name=$3
   if [ $fuseclient_need_execute -eq 1 ]; then
     if [ ${#fuseclient_ip_array[@]} -eq 0 ]; then
-      echo "WARN: param fuseclient_ips has no value in $fcfs_settings_file"
+      echo "WARN: Param fuseclient_ips has no value in $fcfs_settings_file."
     else
       local fuseclient_node_match_setting=0
       for fuseclient_server_ip in ${fuseclient_ip_array[@]}; do
         if [ -z $node_host_need_execute ] || [ $fuseclient_server_ip = "$node_host_need_execute" ]; then
-          echo "Info: begin $command_name $module_name on server $fuseclient_server_ip"
+          echo "INFO: begin $command_name $module_name on server $fuseclient_server_ip."
           $function_name $fuseclient_server_ip "$module_name" $command_name
         fi
         if [ $fuseclient_server_ip = "$node_host_need_execute" ]; then
@@ -369,7 +391,7 @@ execute_command_on_fuseclient_servers() {
         fi
       done
       if ! [ -z $node_host_need_execute ] && [ $fuseclient_node_match_setting -eq 0 ]; then
-        echo "Error: the node $node_host_need_execute not match param fuseclient_ips in $fcfs_settings_file"
+        echo "ERROR: The node $node_host_need_execute not match param fuseclient_ips in $fcfs_settings_file."
       fi
     fi
   fi
@@ -391,7 +413,7 @@ check_remote_osname() {
     fi
     os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
   else
-    echo "Unsupport OS: $uname" 1>&2
+    echo "Error: Unsupport OS, $uname" 1>&2
     exit 1
   fi
 }
@@ -400,9 +422,9 @@ check_install_fastos_repo() {
   repo=$(rpm -q FastOSrepo 2>/dev/null)
   if [ $? -ne 0 ]; then
     if [ $os_major_version -eq 7 ]; then
-      rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
+      sudo rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
     else
-      rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
+      sudo rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
     fi
   fi
 }
@@ -413,15 +435,15 @@ execute_yum() {
   if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
     check_install_fastos_repo
     if [ $yum_command = 'install' ] && [[ $program_name == *"FastCFS-fused"* ]]; then
-      echo "Info: remove old version fuse"
-      rpm -q fuse >/dev/null && yum remove fuse -y
+      echo "INFO: Remove old version fuse."
+      sudo rpm -q fuse >/dev/null && yum remove fuse -y
     fi
     # yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
-    echo "Info: yum $yum_command $program_name -y"
-    yum $yum_command $program_name -y
+    echo "INFO: yum $yum_command $program_name -y."
+    sudo yum $yum_command $program_name -y
   else
-    echo "Unsupport OS: $uname" 1>&2
-    echo "Command setup and install can only be used for CentOS 7 or 8."
+    echo "ERROR: Unsupport OS, $uname" 1>&2
+    echo "       Command setup and install can only be used for CentOS 7 or 8."
     exit 1
   fi
 }
@@ -466,7 +488,7 @@ remove_installed_mark() {
   local installed_mark_file=$fcfs_cache_path/$fcfs_installed_file
   if [ -f $installed_mark_file ]; then
     if ! rm -rf $installed_mark_file; then
-      echo "ERROR: delete installed mark file failed:$installed_mark_file!"
+      echo "ERROR: Delete installed mark file failed, $installed_mark_file!"
       exit 1
     fi
   fi
@@ -475,18 +497,18 @@ remove_installed_mark() {
 check_installed_version() {
   # First install cannot specify module
   if [ -z $fastcfs_version_installed ] && [ $has_module_param = 1 ]; then
-    echo "Error: first execute setup or install cannot specify module"
+    echo "ERROR: First execute setup or install cannot specify module."
     exit 1
   fi
   if ! [ -z $fastcfs_version_installed ] && ! [ $fastcfs_version_installed = $fastcfs_version ]; then
     if version_le $fastcfs_version_installed $fastcfs_version; then
       # Upgrade cannot specify module
       if [ $has_module_param = 1 ]; then
-        echo "Error: Upgrade cannot specify module"
+        echo "ERROR: Upgrade cannot specify module."
         exit 1
       fi
       for ((;;)) do
-        echo "Warning!!!: upgrade the installed program confirm, from $fastcfs_version_installed to $fastcfs_version ? [y/N]"
+        echo "WARN: Upgrade installed program confirm, from $fastcfs_version_installed to $fastcfs_version ? [y/N]"
         read var
         if ! [ "$var" = "y" ] && ! [ "$var" = "Y" ] && ! [ "$var" = "yes" ] && ! [ "$var" = "YES" ]; then
           exit 1
@@ -495,7 +517,7 @@ check_installed_version() {
       done
     else
       # Downgrade must remove old version first
-      echo "Error: Downgrade install must remove old version first"
+      echo "ERROR: Downgrade install must remove old version first."
       exit 1
     fi
   fi
@@ -518,7 +540,7 @@ install_dependent_libs() {
 erase_dependent_libs() {
   # Before remove programm, need user to reconfirm
   for ((;;)) do
-    echo "Warning!!!: delete the installed program confirm[y/N]"
+    echo "WARN: Delete the installed program confirm[y/N]"
     read var
     if ! [ "$var" = "y" ] && ! [ "$var" = "Y" ] && ! [ "$var" = "yes" ] && ! [ "$var" = "YES" ]; then
       exit 1
@@ -555,7 +577,7 @@ check_remote_path() {
   dest_path=$1
   if ! [ -d $dest_path ]; then
     if ! mkdir -p $dest_path; then
-      echo "ERROR: Create target conf path failed:$dest_path!"
+      echo "ERROR: Create target conf path failed, $dest_path!"
       exit 1
     fi
   fi
@@ -582,10 +604,10 @@ $check_conf_file|sed 's/\([^=]*\)=\([^=]\)/\2/g'`
   for check_path in ${check_result[@]}; do
     if ! [ -d $check_path ]; then
       if ! mkdir -p $check_path; then
-        echo "ERROR: Create target path in file $check_conf_file failed:$check_path!"
+        echo "ERROR: Create target path in file $check_conf_file failed, $check_path!"
         exit 1
       else
-        echo "INFO: Created target path in file $check_conf_file successfully:$check_path!"
+        echo "INFO: Created target path in file $check_conf_file successfully, $check_path."
       fi
     fi
   done
@@ -628,7 +650,7 @@ copy_config_to_remote() {
       dest_path=$FUSE_CONF_PATH
     ;;
     *)
-      echo "ERROR: target module name is invalid - $target_module"
+      echo "ERROR: Target module name is invalid, $target_module."
       exit 1
     ;;
   esac
@@ -638,14 +660,14 @@ copy_config_to_remote() {
   for CONF_FILE in ${config_file_array[@]}; do
     tmp_src_file=$src_path/$CONF_FILE
     if [ -f $tmp_src_file ]; then
-      echo "INFO: Copy file $CONF_FILE to $dest_path of server $target_server_ip"
+      echo "INFO: Copy file $CONF_FILE to $dest_path of server $target_server_ip."
       scp $tmp_src_file $target_server_ip:$dest_path
       file_extension="${CONF_FILE##*.}"
       if [ $file_extension = "conf" ]; then
         check_paths_infile $target_server_ip $dest_path $CONF_FILE
       fi
     else
-      echo "WARN: file $tmp_src_file not exist"
+      echo "WARN: File $tmp_src_file does not exist."
     fi
   done
 }
@@ -665,7 +687,7 @@ save_configed_mark() {
 
 deploy_config_files() {
   if [ -z $fastcfs_configed ] && [ $has_module_param = 1 ]; then
-    echo "Error: first execute config cannot specify module"
+    echo "ERROR: First execute config cannot specify module."
     exit 1
   fi
   execute_command_on_fdir_servers config copy_config_to_remote fdir
@@ -708,7 +730,7 @@ service_op() {
       conf_file="${FUSE_CONF_PATH}fuse.conf"
     ;;
     *)
-      echo "ERROR: target module name is invalid - $target_module"
+      echo "ERROR: Target module name is invalid, $target_module."
       exit 1
     ;;
   esac
@@ -722,7 +744,13 @@ cluster_service_op() {
   operate_mode=$1
   execute_command_on_fdir_servers $operate_mode service_op fdir
   execute_command_on_fstore_servers $operate_mode service_op fstore
+  if [ $operate_mode != 'stop' ]; then
+     sleep 3
+  fi
   execute_command_on_fauth_servers $operate_mode service_op fauth
+  if [ $operate_mode != 'stop' ]; then
+     sleep 1
+  fi
   execute_command_on_fuseclient_servers $operate_mode service_op fuseclient
 }
 #---Service op section end---#
@@ -759,7 +787,7 @@ check_module_param $*
 check_node_param $*
 load_fcfs_settings
 if [ -z $fastcfs_version ]; then
-  echo "Error: fastcfs_version in $fcfs_settings_file cannot be empty"
+  echo "ERROR: Param fastcfs_version in $fcfs_settings_file cannot be empty."
   exit 1
 fi
 load_dependency_settings $fastcfs_version
@@ -768,7 +796,7 @@ load_installed_settings
 if [ -z $fastcfs_version_installed ]; then
   case "$shell_command" in
     'reinstall' | 'erase' | 'remove' | 'config' | 'start' | 'restart' | 'stop' | 'tail')
-      echo "Error: The FastCFS cluster has not been installed, you must execute setup or install first"
+      echo "ERROR: The FastCFS softwares has not been installed, you must execute setup or install first."
       exit 1
     ;;
   esac
@@ -776,7 +804,7 @@ fi
 if [ -z $fastcfs_configed ]; then
   case "$shell_command" in
     'start' | 'restart' | 'stop' | 'tail')
-      echo "Error: The FastCFS cluster has not been configed, you must execute config first"
+      echo "ERROR: The FastCFS softwares has not been configed, you must execute config first."
       exit 1
     ;;
   esac
