@@ -633,11 +633,12 @@ copy_config_to_remote() {
     'fauth')
       config_file_array="${AUTH_CONF_FILES[*]}"
       dest_path=$AUTH_CONF_PATH
+      src_path="conf/auth"
     ;;
     'keys')
       config_file_array="${AUTH_KEYS_FILES[*]}"
       dest_path=$AUTH_KEYS_PATH
-      src_path="conf/fauth/keys"
+      src_path="conf/auth/keys"
     ;;
     'fuseclient')
       config_file_array="${FUSE_CONF_FILES[*]}"
