@@ -294,7 +294,7 @@ load_cluster_groups() {
     list_servers_in_config fstore_list_servers conf/fstore/cluster.conf
   fi
   if [ $fauth_need_execute -eq 1 ]; then
-    list_servers_in_config fauth_list_servers conf/fauth/cluster.conf
+    list_servers_in_config fauth_list_servers conf/auth/cluster.conf
   fi
 }
 #---Settings and cluster info section end---#
@@ -643,6 +643,7 @@ copy_config_to_remote() {
     'fuseclient')
       config_file_array="${FUSE_CONF_FILES[*]}"
       dest_path=$FUSE_CONF_PATH
+      src_path="conf/fcfs"
     ;;
     *)
       echo "ERROR: Target module name is invalid, $target_module."
