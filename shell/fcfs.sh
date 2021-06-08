@@ -526,7 +526,7 @@ install_dependent_libs() {
   execute_command_on_fstore_servers install execute_yum_on_remote "$fstore_programs"
   fauth_programs="FastCFS-auth-server-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth fastDIR-client-$fdir"
   execute_command_on_fauth_servers install execute_yum_on_remote "$fauth_programs"
-  fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore"
+  fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore fastDIR-client-$fdir"
   execute_command_on_fuseclient_servers install execute_yum_on_remote "$fuseclient_programs"
   save_installed_mark
 }
@@ -547,7 +547,7 @@ erase_dependent_libs() {
   execute_command_on_fstore_servers erase execute_yum_on_remote "$fstore_programs"
   fauth_programs="FastCFS-auth-server libfastcommon libserverframe FastCFS-auth-client fastDIR-client"
   execute_command_on_fauth_servers erase execute_yum_on_remote "$fauth_programs"
-  fuseclient_programs="FastCFS-fused libfastcommon libserverframe FastCFS-auth-client FastCFS-api-libs faststore-client"
+  fuseclient_programs="FastCFS-fused libfastcommon libserverframe FastCFS-auth-client FastCFS-api-libs faststore-client fastDIR-client"
   execute_command_on_fuseclient_servers erase execute_yum_on_remote "$fuseclient_programs"
   remove_installed_mark
 }
@@ -560,7 +560,7 @@ reinstall_dependent_libs() {
   execute_command_on_fstore_servers reinstall execute_yum_on_remote "$fstore_programs"
   fauth_programs="FastCFS-auth-server-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth fastDIR-client-$fdir"
   execute_command_on_fauth_servers reinstall execute_yum_on_remote "$fauth_programs"
-  fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore"
+  fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore fastDIR-client-$fdir"
   execute_command_on_fuseclient_servers reinstall execute_yum_on_remote "$fuseclient_programs"
   save_installed_mark
 }
