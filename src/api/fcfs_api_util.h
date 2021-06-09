@@ -260,8 +260,8 @@ static inline int fcfs_api_set_xattr_by_inode_ex(FCFSAPIContext *ctx,
 static inline int fcfs_api_remove_xattr_by_inode_ex(FCFSAPIContext *ctx,
         const int64_t inode, const string_t *name)
 {
-    return fdir_client_remove_xattr_by_inode(ctx->contexts.fdir,
-            &ctx->ns, inode, name);
+    return fdir_client_remove_xattr_by_inode_ex(ctx->contexts.fdir,
+            &ctx->ns, inode, name, LOG_DEBUG);
 }
 
 static inline int fcfs_api_get_xattr_by_inode_ex(FCFSAPIContext *ctx,
