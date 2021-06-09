@@ -347,7 +347,7 @@ static int cluster_deal_queue(AuthServerContext *server_context,
         return EAGAIN;
     }
 
-    fc_queue_pop_to_queue(&subscriber->queue, &qinfo);
+    fc_queue_try_pop_to_queue(&subscriber->queue, &qinfo);
     if (qinfo.head == NULL) {
         return 0;
     }

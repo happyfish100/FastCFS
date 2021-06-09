@@ -29,7 +29,7 @@ int dao_spool_create(FDIRClientContext *client_ctx,
     FDIRDEntryInfo dentry;
 
     AUTH_SET_USER_PATH2(pool_path, username,
-            AUTH_DIR_NAME_CREATED_STR, spool->name.str);
+            AUTH_DIR_NAME_CREATED_STR, spool->name);
     if ((result=fdir_client_create_dentry(client_ctx,
             &pool_path.fullname, &DAO_OMP_FILE, &dentry)) == 0)
     {

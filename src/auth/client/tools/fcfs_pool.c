@@ -223,7 +223,7 @@ static void output_spools(FCFSAuthStoragePoolArray *array)
     FCFSAuthStoragePoolInfo *end;
     char buff[64];
 
-    printf("%5s %32s %32s\n", "No.", "pool_name", "quota (GiB)");
+    printf("%5s %32s %50s\n", "No.", "pool_name", "quota (GiB)");
     end = array->spools + array->count;
     for (spool=array->spools; spool<end; spool++) {
         if (spool->quota == FCFS_AUTH_UNLIMITED_QUOTA_VAL) {
@@ -231,7 +231,7 @@ static void output_spools(FCFSAuthStoragePoolArray *array)
         } else {
             long_to_comma_str(spool->quota / (1024 * 1024 * 1024), buff);
         }
-        printf("%4d. %32.*s %32s\n", (int)((spool - array->spools) + 1),
+        printf("%4d. %32.*s %50s\n", (int)((spool - array->spools) + 1),
                 spool->name.len, spool->name.str, buff);
     }
 }
@@ -245,13 +245,13 @@ static void output_gpools(FCFSAuthGrantedPoolArray *array)
     string_t priv_names_fdir;
     string_t priv_names_fstore;
 
-    printf("%5s %32s %32s %16s %16s\n", "No.", "owner_name", "pool_name",
+    printf("%5s %32s %50s %16s %16s\n", "No.", "owner_name", "pool_name",
             "fdir_priv", "fstore_priv");
     priv_names_fdir.str = buff1;
     priv_names_fstore.str = buff2;
     end = array->gpools + array->count;
     for (gpool=array->gpools; gpool<end; gpool++) {
-        printf("%4d. %32.*s %32.*s %16s %16s\n",
+        printf("%4d. %32.*s %50.*s %16s %16s\n",
                 (int)((gpool - array->gpools) + 1),
                 gpool->username.len, gpool->username.str,
                 gpool->pool_name.len, gpool->pool_name.str,
