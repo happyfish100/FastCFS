@@ -1,0 +1,10 @@
+# FastCFS cluster's dependent libs version settings.
+# Ops shell fcfs.sh will use it to install appropriate version libs FastCFS depends.
+# This file download from http://www.fastcfs.com/ops/dependency.[FastCFS-version].settings.
+# Do not change libs and versions below.
+
+libfastcommon=1.0.50
+libserverframe=1.1.7
+fauth=2.0.1
+fdir=2.0.1
+fstore=2.0.1
