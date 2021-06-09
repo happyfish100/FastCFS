@@ -23,8 +23,9 @@
 AsyncReporterContext g_async_reporter_ctx;
 
 #define FCFS_API_CTX  g_async_reporter_ctx.fcfs_api_ctx
-#define SORTED_TASK_PTR_ARRAY g_async_reporter_ctx.event_ptr_arrays.sorted
-#define MERGED_TASK_PTR_ARRAY g_async_reporter_ctx.event_ptr_arrays.merged
+#define SORTED_EVENT_PTR_ARRAY g_async_reporter_ctx.event_ptr_arrays.sorted
+#define MERGED_EVENT_PTR_ARRAY g_async_reporter_ctx.event_ptr_arrays.merged
+#define NOTIFY_EVENT_COUNT g_async_reporter_ctx.event_ptr_arrays.notify_count
 
 static inline int batch_set_dentry_size(const int count)
 {
@@ -114,7 +115,7 @@ static int compare_event_ptr(const FCFSAPIAsyncReportEvent **t1,
         return sub;
     }
 
-    return (*t1)->id - (*t2)->id;
+    return (int)(*t1)->id - (int)(*t2)->id;
 }
 
 static inline void merge_event(FCFSAPIAsyncReportEvent *dest,
@@ -142,45 +143,48 @@ static inline void merge_event(FCFSAPIAsyncReportEvent *dest,
 static int merge_events(FCFSAPIAsyncReportEvent *head)
 {
     int result;
-    int merge_count;
+    //int merge_count;
     FCFSAPIAsyncReportEvent **ts;
     FCFSAPIAsyncReportEvent **send;
     FCFSAPIAsyncReportEvent **merge;
     FCFSAPIAsyncReportEvent *current;
 
-    if ((result=to_event_ptr_array(head, &SORTED_TASK_PTR_ARRAY)) != 0) {
+    if ((result=to_event_ptr_array(head, &SORTED_EVENT_PTR_ARRAY)) != 0) {
         return result;
     }
 
-    if (SORTED_TASK_PTR_ARRAY.count > 1) {
-        qsort(SORTED_TASK_PTR_ARRAY.events, SORTED_TASK_PTR_ARRAY.count,
+    if (SORTED_EVENT_PTR_ARRAY.count > 1) {
+        qsort(SORTED_EVENT_PTR_ARRAY.events, SORTED_EVENT_PTR_ARRAY.count,
                 sizeof(FCFSAPIAsyncReportEvent *), (int (*)(const void *,
                         const void *))compare_event_ptr);
     }
 
-    send = SORTED_TASK_PTR_ARRAY.events + SORTED_TASK_PTR_ARRAY.count;
-    ts = SORTED_TASK_PTR_ARRAY.events;
-    merge = MERGED_TASK_PTR_ARRAY.events;
+    NOTIFY_EVENT_COUNT = 0;
+    send = SORTED_EVENT_PTR_ARRAY.events + SORTED_EVENT_PTR_ARRAY.count;
+    ts = SORTED_EVENT_PTR_ARRAY.events;
+    merge = MERGED_EVENT_PTR_ARRAY.events;
     while (ts < send) {
-        if (merge - MERGED_TASK_PTR_ARRAY.events >=
-                MERGED_TASK_PTR_ARRAY.alloc)
+        if ((*ts)->type == fcfs_api_event_type_notify) {
+            NOTIFY_EVENT_COUNT++;
+            ts++;
+            continue;
+        }
+
+        if (merge - MERGED_EVENT_PTR_ARRAY.events >=
+                MERGED_EVENT_PTR_ARRAY.alloc)
         {
-            if ((merge=realloc_event_ptrs(&MERGED_TASK_PTR_ARRAY,
-                            merge - MERGED_TASK_PTR_ARRAY.events)) == NULL)
+            if ((merge=realloc_event_ptrs(&MERGED_EVENT_PTR_ARRAY,
+                            merge - MERGED_EVENT_PTR_ARRAY.events)) == NULL)
             {
                 result = ENOMEM;
                 break;
             }
         }
 
-        merge_count = 1;
+        //merge_count = 1;
         current = *ts;
         *merge++ = *ts++;
         if (current->dsize.force) {
-            /*
-            logInfo("event oid: %"PRId64", force: %d, merged count: %d",
-                    current->dsize.inode, current->dsize.force, merge_count);
-                    */
             continue;
         }
         if (ts == send) {
@@ -190,18 +194,22 @@ static int merge_events(FCFSAPIAsyncReportEvent *head)
         while ((ts < send) && (!(*ts)->dsize.force) &&
                 ((*ts)->dsize.inode == current->dsize.inode))
         {
-            merge_count++;
-            merge_event(current, *ts);
+            if ((*ts)->type == fcfs_api_event_type_notify) {
+                NOTIFY_EVENT_COUNT++;
+            } else {
+                //merge_count++;
+                merge_event(current, *ts);
+            }
             ts++;
         }
 
         /*
         logInfo("event oid: %"PRId64", merged count: %d",
                 current->dsize.inode, merge_count);
-                */
+         */
     }
 
-    MERGED_TASK_PTR_ARRAY.count = merge - MERGED_TASK_PTR_ARRAY.events;
+    MERGED_EVENT_PTR_ARRAY.count = merge - MERGED_EVENT_PTR_ARRAY.events;
     return 0;
 }
 
@@ -209,15 +217,19 @@ static inline void notify_waiting_tasks(FCFSAPIAsyncReportEvent *event)
 {
     FCFSAPIWaitingTask *task;
 
-    PTHREAD_MUTEX_LOCK(&event->inode_hentry->hentry.sharding->lock);
+    if (event->type == fcfs_api_event_type_report) {
+        PTHREAD_MUTEX_LOCK(&event->inode_hentry->hentry.sharding->lock);
+    }
     while (event->waitings.head != NULL) {
         task = event->waitings.head;
         event->waitings.head = event->waitings.head->next;
 
         fcfs_api_notify_waiting_task(task);
     }
-    fc_list_del_init(&event->dlink);
-    PTHREAD_MUTEX_UNLOCK(&event->inode_hentry->hentry.sharding->lock);
+    if (event->type == fcfs_api_event_type_report) {
+        fc_list_del_init(&event->dlink);
+        PTHREAD_MUTEX_UNLOCK(&event->inode_hentry->hentry.sharding->lock);
+    }
 }
 
 static inline void notify_waiting_tasks_and_free_events(
@@ -247,8 +259,8 @@ static inline int deal_events(FCFSAPIAsyncReportEvent *head)
     }
 
     dsize = g_async_reporter_ctx.dsizes;
-    tend = MERGED_TASK_PTR_ARRAY.events + MERGED_TASK_PTR_ARRAY.count;
-    for (event=MERGED_TASK_PTR_ARRAY.events; event<tend; event++) {
+    tend = MERGED_EVENT_PTR_ARRAY.events + MERGED_EVENT_PTR_ARRAY.count;
+    for (event=MERGED_EVENT_PTR_ARRAY.events; event<tend; event++) {
         *dsize++ = (*event)->dsize;
         if ((current_count=dsize - g_async_reporter_ctx.dsizes) ==
                 FDIR_BATCH_SET_MAX_DENTRY_COUNT)
@@ -262,10 +274,14 @@ static inline int deal_events(FCFSAPIAsyncReportEvent *head)
         batch_set_dentry_size(current_count);
     }
 
+    __sync_fetch_and_sub(&g_async_reporter_ctx.waiting_count,
+            SORTED_EVENT_PTR_ARRAY.count - NOTIFY_EVENT_COUNT);
     notify_waiting_tasks_and_free_events(head);
+
     /*
-    logInfo("total (input) event count: %d, report (output) count: %d",
-            SORTED_TASK_PTR_ARRAY.count, MERGED_TASK_PTR_ARRAY.count);
+    logInfo("total (input) event count: %d, report (output) count: %d, "
+            "notify event count: %d", SORTED_EVENT_PTR_ARRAY.count,
+            MERGED_EVENT_PTR_ARRAY.count, NOTIFY_EVENT_COUNT);
             */
     return 0;
 }
@@ -352,10 +368,10 @@ int async_reporter_init(FCFSAPIContext *fcfs_api_ctx)
         return ENOMEM;
     }
 
-    if ((result=int_event_ptr_array(&SORTED_TASK_PTR_ARRAY)) != 0) {
+    if ((result=int_event_ptr_array(&SORTED_EVENT_PTR_ARRAY)) != 0) {
         return result;
     }
-    if ((result=int_event_ptr_array(&MERGED_TASK_PTR_ARRAY)) != 0) {
+    if ((result=int_event_ptr_array(&MERGED_EVENT_PTR_ARRAY)) != 0) {
         return result;
     }
 

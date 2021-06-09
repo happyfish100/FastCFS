@@ -206,7 +206,8 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
         }
     } else {
         pe = &dentry;
-        result = fcfs_api_modify_dentry_stat(ino, attr, options.flags, &dentry);
+        result = fcfs_api_modify_dentry_stat(new_inode,
+                attr, options.flags, &dentry);
     }
     if (result != 0) {
         fuse_reply_err(req, ENOENT);
@@ -748,6 +749,7 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
 			  struct fuse_file_info *fi)
 {
     int result;
+    int64_t new_inode;
     FCFSAPIFileContext fctx;
     const struct fuse_ctx *fuse_ctx;
     FDIRDEntryInfo dentry;
@@ -758,7 +760,12 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
             __LINE__, __FUNCTION__, ino, fi->fh, (fi->flags & O_APPEND));
             */
 
-    if ((result=fcfs_api_stat_dentry_by_inode(ino, &dentry)) != 0) {
+    if (fs_convert_inode(ino, &new_inode) != 0) {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+
+    if ((result=fcfs_api_stat_dentry_by_inode(new_inode, &dentry)) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
