@@ -16,5 +16,5 @@
 #include "fcfs_global.h"
 
 FCFSGlobalVars g_fcfs_global_vars = {
-    {2, 1, 1}
+    {2, 2, 0}
 };
