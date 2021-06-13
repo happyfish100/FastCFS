@@ -1,8 +1,14 @@
 #!/bin/bash
-
+#
+# fcfs.sh is a ops tool for quickly deploy FastCFS clusters.
+# It only relying on SSH access to the servers and sudo.
+# It runs fully on your workstation, requiring no servers, databases, or anything like that.
+#
+# If you set up and tear down FastCFS clusters a lot, and want minimal extra repeating works,
+# this is for you.
+#
 fcfs_settings_file="fcfs.settings"
 fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
-# fcfs_dependency_file_server="http://localhost:8082"
 fcfs_cache_path=".fcfs"
 fcfs_installed_file="installed.settings"
 
@@ -127,6 +133,130 @@ split_to_array() {
 }
 
 function version_le() { test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" == "$1"; }
+
+#---Parse cluster servers section begin---#
+INT_REGEXP='^[0-9]+$'
+RANGE_REGEXP='^\[[0-9]*, *[0-9]*\]$'
+
+parse_value_in_section() {
+  local conf_file=$1
+  local section_name=$2
+  local field_name=$3
+  local value=$(\
+sed -n "/^\\[$section_name\\]/,/^\[/ p" $conf_file | \
+sed -n "/^$field_name *=/ p" | \
+sed 's/\([^=]*\)=\([^=]\)/\2/g' | \
+sed 's/ *^//g' | sed 's/ *$//g')
+  echo $value
+}
+
+parse_fstore_servers() {
+  local conf_file=$1
+  if ! [ -f $conf_file ]; then
+    echo "ERROR: fstore cluster config file $conf_file does not exist."
+    exit 1
+  fi
+  local server_groups=`sed -n '/^\[server-group/ p' $conf_file | sed 's/\[//' | sed 's/\]//'`
+  for server_group in ${server_groups[@]}; do
+    let fstore_group_count=$fstore_group_count+1
+    local fstore_server_hosts=""
+    local server_ids=$(parse_value_in_section $conf_file $server_group "server_ids")
+    # echo "server_ids in $server_group is:==$server_ids=="
+    if [[ $server_ids =~ $INT_REGEXP ]]; then
+      #单个整数，只有一个节点
+      # echo "$server_ids is integer"
+      local server_host=$(parse_value_in_section $conf_file "server-$server_ids" "host")
+      server_host=${server_host%%:*}
+      if [ -n server_host ]; then
+        fstore_server_hosts=$server_host
+      fi
+    elif [[ $server_ids =~ $RANGE_REGEXP ]]; then
+      # echo "[$server_ids] is range"
+      local src_str=`echo $server_ids | sed 's/\[//' | sed 's/\]//' | sed 's/, */../'`
+      local dest="echo {$src_str}"
+      for server_id in $(eval $dest); do
+        local server_host=$(parse_value_in_section $conf_file "server-$server_id" "host")
+        server_host=${server_host%%:*}
+        if [ -n server_host ]; then
+          fstore_server_hosts="$fstore_server_hosts $server_host"
+        fi
+      done 
+    else
+      echo "ERROR: Invalid server_ids format:[$server_ids] in config file $conf_file"
+      exit 1
+    fi
+    fstore_server_hosts=`echo $fstore_server_hosts | sed 's/ *^//g'`
+    if [[ -n $fstore_server_hosts ]]; then
+      local array_str="fstore_group_$fstore_group_count=($fstore_server_hosts)"
+      eval $array_str
+    else
+      echo "ERROR: Parse fstore server hosts failed, $conf_file must conform to format below:"
+      echo "  [server-group-1]"
+      echo "  server_ids = [1, 3]"
+      echo "  # Or server_ids = 1"
+      echo "  [server-1]"
+      echo "  host = 10.0.1.11"
+      exit 1
+    fi
+  done
+}
+
+parse_fdir_servers() {
+  local conf_file=$1
+  if ! [ -f $conf_file ]; then
+    echo "ERROR: fdir cluster config file $conf_file does not exist."
+    exit 1
+  fi
+  local fdir_servers=`sed -n '/^\[server-/ p' $conf_file | sed 's/\[//' | sed 's/\]//'`
+  local fdir_server_hosts=""
+  for fdir_server in ${fdir_servers[@]}; do
+    local server_host=$(parse_value_in_section $conf_file $fdir_server "host")
+    server_host=${server_host%%:*}
+    if [ -n server_host ]; then
+      fdir_server_hosts="$fdir_server_hosts $server_host"
+    fi
+  done
+  fdir_server_hosts=`echo $fdir_server_hosts | sed 's/ *^//g'`
+  if [[ -n $fdir_server_hosts ]]; then
+    local array_str="fdir_group=($fdir_server_hosts)"
+    eval $array_str
+  else
+    echo "ERROR: Parse fdir server hosts failed, $conf_file must conform to format below:"
+    echo "  [server-1]"
+    echo "  host = 10.0.1.11"
+    echo "  ..."
+    exit 1
+  fi
+}
+
+parse_fauth_servers() {
+  local conf_file=$1
+  if ! [ -f $list_config_file ]; then
+    echo "ERROR: fauth cluster config file $conf_file does not exist."
+    exit 1
+  fi
+  local fauth_servers=`sed -n '/^\[server-/ p' $conf_file | sed 's/\[//' | sed 's/\]//'`
+  local fauth_server_hosts=""
+  for fauth_server in ${fauth_servers[@]}; do
+    local server_host=$(parse_value_in_section $conf_file $fauth_server "host")
+    server_host=${server_host%%:*}
+    if [ -n server_host ]; then
+      fauth_server_hosts="$fauth_server_hosts $server_host"
+    fi
+  done
+  fauth_server_hosts=`echo $fauth_server_hosts | sed 's/ *^//g'`
+  if [[ -n $fauth_server_hosts ]]; then
+    local array_str="fauth_group=($fauth_server_hosts)"
+    eval $array_str
+  else
+    echo "ERROR: Parse fauth server hosts failed, $conf_file must conform to format below:"
+    echo "  [server-1]"
+    echo "  host = 10.0.1.11"
+    echo "  ..."
+    exit 1
+  fi
+}
+#---Parse cluster servers section end---#
 
 #---Settings and cluster info section begin---#
 check_fcfs_cache_path() {
@@ -288,13 +418,42 @@ list_servers_in_config() {
 #   fauth_group=(172.16.168.128)
 load_cluster_groups() {
   if [ $fdir_need_execute -eq 1 ]; then
-    list_servers_in_config fdir_list_servers conf/fdir/cluster.conf
+    # list_servers_in_config fdir_list_servers conf/fdir/cluster.conf
+    parse_fdir_servers "conf/fdir/cluster.conf"
   fi
   if [ $fstore_need_execute -eq 1 ]; then
-    list_servers_in_config fstore_list_servers conf/fstore/cluster.conf
+    # list_servers_in_config fstore_list_servers conf/fstore/cluster.conf
+    parse_fstore_servers "conf/fstore/cluster.conf"
   fi
   if [ $fauth_need_execute -eq 1 ]; then
-    list_servers_in_config fauth_list_servers conf/auth/cluster.conf
+    # list_servers_in_config fauth_list_servers conf/auth/cluster.conf
+    parse_fauth_servers "conf/auth/cluster.conf"
+  fi
+}
+
+fuseclient_share_fdir=0
+fuseclient_share_fstore=0
+fuseclient_share_fauth=0
+
+check_if_client_share_servers() {
+  if ! [ ${#fuseclient_ip_array[@]} -eq 0 ]; then
+    for fuseclient_server_ip in ${fuseclient_ip_array[@]}; do
+      for fdir_server_ip in ${fdir_group[@]}; do
+        if [ $fdir_server_ip = "$fuseclient_server_ip" ]; then
+          fuseclient_share_fdir=1
+        fi
+      done
+      for fstore_server_ip in ${!fstore_group}; do
+        if [ $fstore_server_ip = "$fuseclient_server_ip" ]; then
+          fuseclient_share_fstore=1
+        fi
+      done
+      for fauth_server_ip in ${fauth_group[@]}; do
+        if [ $fauth_server_ip = "$fuseclient_server_ip" ]; then
+          fuseclient_share_fauth=1
+        fi
+      done
+    done
   fi
 }
 #---Settings and cluster info section end---#
@@ -372,7 +531,8 @@ execute_command_on_fuseclient_servers() {
   local module_name=$3
   if [ $fuseclient_need_execute -eq 1 ]; then
     if [ ${#fuseclient_ip_array[@]} -eq 0 ]; then
-      echo "WARN: Param fuseclient_ips has no value in $fcfs_settings_file."
+      echo "ERROR: Param fuseclient_ips has no value in $fcfs_settings_file."
+      exit 1
     else
       local fuseclient_node_match_setting=0
       for fuseclient_server_ip in ${fuseclient_ip_array[@]}; do
@@ -386,6 +546,7 @@ execute_command_on_fuseclient_servers() {
       done
       if ! [ -z $node_host_need_execute ] && [ $fuseclient_node_match_setting -eq 0 ]; then
         echo "ERROR: The node $node_host_need_execute not match param fuseclient_ips in $fcfs_settings_file."
+        exit 1
       fi
     fi
   fi
@@ -420,6 +581,10 @@ check_install_fastos_repo() {
     else
       sudo rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
     fi
+    if [ $? -ne 0 ]; then
+      echo "ERROR: FastOSrepo rpm install failed."
+      exit 1
+    fi
   fi
 }
 
@@ -429,12 +594,23 @@ execute_yum() {
   if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
     check_install_fastos_repo
     if [ $yum_command = 'install' ] && [[ $program_name == *"FastCFS-fused"* ]]; then
-      echo "INFO: Remove old version fuse."
-      sudo rpm -q fuse >/dev/null && yum remove fuse -y
+      sudo rpm -q fuse >/dev/null
+      if [ $? -eq 0 ]; then
+        echo "INFO: Remove old version fuse."
+        yum remove fuse -y
+        if [ $? -ne 0 ]; then
+          echo "ERROR: Remove old version fuse failed."
+          exit 1
+        fi
+      fi
     fi
     # yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
     echo "INFO: yum $yum_command $program_name -y."
     sudo yum $yum_command $program_name -y
+    if [ $? -ne 0 ]; then
+      echo "ERROR: \"yum $yum_command $program_name -y\" execute failed."
+      exit 1
+    fi
   else
     echo "ERROR: Unsupport OS, $uname" 1>&2
     echo "       Command setup and install can only be used for CentOS 7 or 8."
@@ -453,6 +629,9 @@ $(typeset -f check_install_fastos_repo)
 $(typeset -f execute_yum)
 execute_yum $yum_command "$program_name"
 EOF
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
 }
 
 replace_installed_mark() {
@@ -502,7 +681,7 @@ check_installed_version() {
         exit 1
       fi
       for ((;;)) do
-        echo "WARN: Upgrade installed program confirm, from $fastcfs_version_installed to $fastcfs_version ? [y/N]"
+        echo -n "WARN: Upgrade installed program confirm, from $fastcfs_version_installed to $fastcfs_version ? [y/N]"
         read var
         if ! [ "$var" = "y" ] && ! [ "$var" = "Y" ] && ! [ "$var" = "yes" ] && ! [ "$var" = "YES" ]; then
           exit 1
@@ -534,7 +713,7 @@ install_dependent_libs() {
 erase_dependent_libs() {
   # Before remove programm, need user to reconfirm
   for ((;;)) do
-    echo "WARN: Delete the installed program confirm[y/N]"
+    echo -n "WARN: Delete the installed program confirm[y/N]"
     read var
     if ! [ "$var" = "y" ] && ! [ "$var" = "Y" ] && ! [ "$var" = "yes" ] && ! [ "$var" = "YES" ]; then
       exit 1
@@ -617,9 +796,11 @@ EOF
 }
 
 copy_config_to_remote() {
-  target_server_ip=$1
-  target_module=$2
-  src_path="conf/$target_module"
+  local target_server_ip=$1
+  local target_module=$2
+  local src_path="conf/$target_module"
+  local config_files=""
+  local dest_path=""
 
   case "$target_module" in
     'fdir')
@@ -632,18 +813,18 @@ copy_config_to_remote() {
     ;;
     'fauth')
       config_file_array="${AUTH_CONF_FILES[*]}"
-      dest_path=$AUTH_CONF_PATH
       src_path="conf/auth"
+      dest_path=$AUTH_CONF_PATH
     ;;
     'keys')
       config_file_array="${AUTH_KEYS_FILES[*]}"
-      dest_path=$AUTH_KEYS_PATH
       src_path="conf/auth/keys"
+      dest_path=$AUTH_KEYS_PATH
     ;;
     'fuseclient')
       config_file_array="${FUSE_CONF_FILES[*]}"
-      dest_path=$FUSE_CONF_PATH
       src_path="conf/fcfs"
+      dest_path=$FUSE_CONF_PATH
     ;;
     *)
       echo "ERROR: Target module name is invalid, $target_module."
@@ -654,11 +835,11 @@ copy_config_to_remote() {
   check_path_on_remote $target_server_ip $dest_path
 
   for CONF_FILE in ${config_file_array[@]}; do
-    tmp_src_file=$src_path/$CONF_FILE
+    local tmp_src_file=$src_path/$CONF_FILE
     if [ -f $tmp_src_file ]; then
       echo "INFO: Copy file $CONF_FILE to $dest_path of server $target_server_ip."
       scp $tmp_src_file $target_server_ip:$dest_path
-      file_extension="${CONF_FILE##*.}"
+      local file_extension="${CONF_FILE##*.}"
       if [ $file_extension = "conf" ]; then
         check_paths_infile $target_server_ip $dest_path $CONF_FILE
       fi
@@ -691,6 +872,17 @@ deploy_config_files() {
   execute_command_on_fauth_servers config copy_config_to_remote fauth
   execute_command_on_fauth_servers config copy_config_to_remote keys
   execute_command_on_fuseclient_servers config copy_config_to_remote fuseclient
+
+  if [ $fuseclient_share_fdir -eq 0 ]; then
+    execute_command_on_fuseclient_servers config copy_config_to_remote fdir
+  fi
+  if [ $fuseclient_share_fstore -eq 0 ]; then
+    execute_command_on_fuseclient_servers config copy_config_to_remote fstore
+  fi
+  if [ $fuseclient_share_fauth -eq 0 ]; then
+    execute_command_on_fuseclient_servers config copy_config_to_remote fauth
+    execute_command_on_fuseclient_servers config copy_config_to_remote keys
+  fi
   # Save configed mark into installed.settings
   save_configed_mark
 }
@@ -702,6 +894,10 @@ service_op_on_remote() {
   operate_mode=$2
   conf_file=$3
   $service_name $conf_file $operate_mode
+  if [ $? -ne 0 ] && [ $operate_mode != "stop" ]; then
+    echo "ERROR: Service $service_name $operate_mode failed."
+    exit 1
+  fi
 }
 
 service_op() {
@@ -734,6 +930,9 @@ service_op() {
 $(typeset -f service_op_on_remote)
 service_op_on_remote $service_name $operate_mode $conf_file
 EOF
+  if [ $? -ne 0 ] && [ $operate_mode != "stop" ]; then
+    exit 1
+  fi
 }
 
 cluster_service_op() {
@@ -788,6 +987,7 @@ if [ -z $fastcfs_version ]; then
 fi
 load_dependency_settings $fastcfs_version
 load_cluster_groups
+check_if_client_share_servers
 load_installed_settings
 if [ -z $fastcfs_version_installed ]; then
   case "$shell_command" in
