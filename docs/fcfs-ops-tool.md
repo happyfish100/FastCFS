@@ -20,7 +20,7 @@ It is not a generic deployment tool, it is only for FastCFS. It does not handle 
 
 Get it from http://fastcfs.net/fastcfs/ops/fcfs.sh and put it in workstation's bin path.
 
-> sudo curl -o /usr/bin/fcfs.sh  http://fastcfs.net/fastcfs/ops/fcfs.sh && sudo chmod a+x /usr/bin/fcfs.sh
+> sudo curl -o /usr/bin/fcfs.sh  http://fastcfs.net/fastcfs/ops/fcfs.sh && sudo chmod +x /usr/bin/fcfs.sh
 
 ## 4. Use preconditions
 
@@ -37,8 +37,8 @@ fcfs.settings include two fields ***fastcfs_version*** and ***fuseclient_ips***,
 fcfs.settings content Example:
 
 ```
-# Version of FastCFS cluster（exp：2.1.0）
-fastcfs_version=2.1.0
+# Version of FastCFS cluster（exp：2.2.0）
+fastcfs_version=2.2.0
 
 # Hosts which fuseclient will install，multiple hosts separated by comma
 fuseclient_ips=10.0.1.14
@@ -207,15 +207,15 @@ After install FastCFS softwares, you must execute command ***config*** to distri
 
 Distribute all module config files to all nodes respective：
 
->fcfs.sh config
+> fcfs.sh config
 
 Distribute fdir server config files to all fdir nodes：
 
->fcfs.sh config fdir
+> fcfs.sh config fdir
 
 Distribute fdir server config files to fdir node 10.0.1.11：
 
->fcfs.sh config fdir 10.0.1.11
+> fcfs.sh config fdir 10.0.1.11
 
 ### 6.7. Cluster manage
 
@@ -243,12 +243,12 @@ When you want to query FastCFS services last logs, you can use command ***tail**
 
 Display the last 100 lines of fdir server log:
 
-> tail fdir 10.0.1.11 -n 100
+> fcfs.sh tail fdir 10.0.1.11 -n 100
 
 or:
 
-> tail fdir 10.0.1.11 -100
+> fcfs.sh tail fdir 10.0.1.11 -100
 
 Display the last 10 lines of each fdir server log:
 
-> tail fdir
+> fcfs.sh tail fdir
