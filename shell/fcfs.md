@@ -24,7 +24,7 @@ Get it from http://fastcfs.cn/fastcfs/ops and put it in workstation's bin path.
 
 * fcfs.settings -- cluster ops settings, in current working directory
 * conf -- cluster config files, in current working directory
-* remote server SSH password-free login, see also [SSH password-free login](#5.%20SSH%20password-free%20login)
+* remote server SSH password-free login, see also [SSH password-free login](#5)
 
 You must create a independent working directory for a cluster, put "fcfs.settings" and "conf" into it. And then, all subsequent commands for this cluster must be execute at the same working directory.
 
@@ -105,7 +105,7 @@ Usage:
 * fauth -- FastCFS auth server
 * fuseclient -- FastCFS fuse client
 
-**Node**:=
+**Node**:
 
 You can specify a single cluster IP, or command will be executed on all nodes.
 
