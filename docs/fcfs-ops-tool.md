@@ -18,7 +18,10 @@ It is not a generic deployment tool, it is only for FastCFS. It does not handle 
 
 ## 3. Install
 
-Get it from http://fastcfs.cn/fastcfs/ops and put it in workstation's bin path.
+Get it from http://fastcfs.net/fastcfs/ops/fcfs.sh and put it in workstation's bin path.
+
+> sudo curl -o /usr/bin/fcfs.sh  http://fastcfs.net/fastcfs/ops/fcfs.sh
+> sudo chmod a+x /usr/bin/fcfs.sh
 
 ## 4. Use preconditions
 
@@ -31,6 +34,16 @@ You must create a independent working directory for a cluster, put "fcfs.setting
 ### 4.1. fcfs.settings
 
 fcfs.settings include two fields ***fastcfs_version*** and ***fuseclient_ips***, fastcfs_version specify FastCFS main version number, fuseclient_ips specify host to deploy fuse client. When upgrade or downgrade FastCFS, you need change fastcfs_version to version you expect.
+
+fcfs.settings content Example:
+
+```
+# Version of FastCFS cluster（exp：2.1.0）
+fastcfs_version=2.1.0
+
+# Hosts which fuseclient will install，multiple hosts separated by comma
+fuseclient_ips=10.0.1.14
+```
 
 ### 4.2. conf
 
