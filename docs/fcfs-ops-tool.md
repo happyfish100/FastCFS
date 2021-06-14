@@ -4,6 +4,8 @@ fcfs.sh is a ops tool for quickly deploy and manage FastCFS clusters. It only re
 
 If you set up and tear down FastCFS clusters a lot, and want minimal extra repeating works, this is for you.
 
+***Tip： This shell only support for Centos 7, Centos 8.***
+
 ## 1. What this tool can do?
 
 It can quickly setup FastCFS cluster, include install softwares, distribute config files, manage cluster services and query cluster logs.
@@ -16,7 +18,7 @@ It can reinstall software or redistribute config files.
 
 It is not a generic deployment tool, it is only for FastCFS. It does not handle cluster configuration beyond distribute config files to cluster servers. You must provide usable cluster config files for it.
 
-## 3. Install
+## 3. Fetch fcfs.sh
 
 Get it from http://fastcfs.net/fastcfs/ops/fcfs.sh and put it in workstation's bin path.
 
@@ -28,7 +30,7 @@ Get it from http://fastcfs.net/fastcfs/ops/fcfs.sh and put it in workstation's b
 * conf -- cluster config files, in current working directory
 * remote server SSH password-free login, see also [SSH password-free login](#5)
 
-You must create a independent working directory for a cluster, put "fcfs.settings" and "conf" into it. And then, all subsequent commands for this cluster must be execute at the same working directory.
+You must create a independent working directory(exp: ***fastcfs-ops***) for a cluster, put "fcfs.settings" and "conf" into it. And then, all subsequent commands for this cluster must be execute at the same working directory.
 
 ### 4.1. fcfs.settings
 
@@ -44,6 +46,8 @@ fastcfs_version=2.2.0
 fuseclient_ips=10.0.1.14
 ```
 
+***Tip：Use version 2.2.0 and later for deploy.***
+
 ### 4.2. conf
 
 All config files of FastCFS cluster must be put into working directory beforehand, conf include four subdirectories：
@@ -53,6 +57,15 @@ All config files of FastCFS cluster must be put into working directory beforehan
 * auth -- config files for fauth server
 * fcfs -- config files for fuseclient
 
+**Fetch config sample**
+
+```
+mkdir fastcfs-ops
+cd fastcfs-ops/
+curl -o fcfs-config-sample.tar.gz http://fastcfs.net/fastcfs/ops/fcfs-config-sample.tar.gz
+tar -xzvf fcfs-config-sample.tar.gz
+```
+
 ## 5. SSH password-free login
 
 fcfs.sh will connect to cluster hosts via SSH. It requires that the workstation machine from which the shell is being run can connect via SSH as root(or sudo user) without password into cluster nodes.
@@ -60,6 +73,11 @@ fcfs.sh will connect to cluster hosts via SSH. It requires that the workstation 
 To enable password-free login, you need generate rsa key pair for ssh:
 
 > ssh-keygen -t rsa -C cfs -f cfs-ssh-key
+
+it will generate key files：
+
+* cfs-ssh-key  -- private key file
+* cfs-ssh-key.pub -- public key file
 
 ### 5.1. Deploy private key
 
