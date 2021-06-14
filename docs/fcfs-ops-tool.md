@@ -20,8 +20,7 @@ It is not a generic deployment tool, it is only for FastCFS. It does not handle 
 
 Get it from http://fastcfs.net/fastcfs/ops/fcfs.sh and put it in workstation's bin path.
 
-> sudo curl -o /usr/bin/fcfs.sh  http://fastcfs.net/fastcfs/ops/fcfs.sh
-> sudo chmod a+x /usr/bin/fcfs.sh
+> sudo curl -o /usr/bin/fcfs.sh  http://fastcfs.net/fastcfs/ops/fcfs.sh && sudo chmod a+x /usr/bin/fcfs.sh
 
 ## 4. Use preconditions
 
