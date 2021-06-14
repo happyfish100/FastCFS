@@ -5,7 +5,8 @@
 # application development and to support all fastcfs features that fit.
 #
 # fastcfs shell support commands
-#    setup -- pull code, make, install
+#    setup -- combin install, config and restart, quickly setup single node FastCFS cluster
+#    install -- pull code, make, install
 #    config -- copy config files to default conf path(/etc/fastcfs/)
 #    start -- start fdir_serverd, fs_serverd, fcfs_fused service
 #    restart -- restart fdir_serverd, fs_serverd, fcfs_fused service
@@ -53,7 +54,7 @@ FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
 
 BUILD_PATH="build"
 this_shell_name=$0
-mode=$1    # setup|config|start|restart|stop
+mode=$1    # setup|install|config|start|restart|stop
 make_shell=make.sh
 force_reconfig=0
 uname=$(uname)
@@ -344,31 +345,44 @@ check_install_fastos_repo() {
   if [ $? -ne 0 ]; then
     if [ $os_major_version -eq 7 ]; then
       rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
-    else
+    else 
       rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
     fi
   fi
 }
 
+install_all_softwares() {
+  if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
+    check_install_fastos_repo
+    rpm -q fuse >/dev/null && yum remove fuse -y
+    yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
+  else
+    ./libfuse_setup.sh
+    pull_source_codes
+    make_installs
+  fi
+}
+
+config_all_modules() {
+  IP=$(get_first_local_ip)
+  parse_config_arguments $*
+  config_faststore
+  config_fastdir
+  config_auth
+  config_fuse
+}
+
 case "$mode" in
   'setup')
-    if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
-      check_install_fastos_repo
-      rpm -q fuse >/dev/null && yum remove fuse -y
-      yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
-    else
-      ./libfuse_setup.sh
-      pull_source_codes
-      make_installs
-    fi
+    install_all_softwares
+    config_all_modules
+    service_op restart
+  ;;
+  'install')
+    install_all_softwares
   ;;
   'config')
-    IP=$(get_first_local_ip)
-    parse_config_arguments $*
-    config_faststore
-    config_fastdir
-    config_auth
-    config_fuse
+    config_all_modules
   ;;
   'start')
     # Start services.
@@ -384,7 +398,7 @@ case "$mode" in
   ;;
   *)
     # usage
-    echo "Usage: $0 {setup|config|start|restart|stop}"
+    echo "Usage: $0 {setup|install|config|start|restart|stop}"
     exit 1
   ;;
 esac
