@@ -94,7 +94,13 @@ typedef struct fcfs_api_waiting_task {
     struct fcfs_api_waiting_task *next; //for event waitings queue
 } FCFSAPIWaitingTask;
 
+typedef enum {
+    fcfs_api_event_type_report,
+    fcfs_api_event_type_notify
+} FCFSAPIEventType;
+
 typedef struct fcfs_api_async_report_event {
+    FCFSAPIEventType type;
     int id;   //used by async_reporter for stable sort
     FDIRSetDEntrySizeInfo dsize;
     struct fcfs_api_inode_hentry *inode_hentry;
