@@ -34,7 +34,7 @@ fcfs.sh 是一个用于快速部署和管理 FastCFS 集群的脚本工具。它
 
 * fcfs.settings -- 集群运维配置，放置在当前工作目录中
 * conf -- 集群配置文件目录，放置在当前工作目录中
-* 远程服务器 SSH 免密登录，参见 [5. SSH 免密登录](#5)
+* 远程服务器 SSH 免密登录，参见 [5. SSH 免密登录](#SSH-password-free-login)
 
 你必须为每个集群创建一个独立的工作目录（例如：***fastcfs-ops***），将 ***fcfs.settings*** 和 ***conf*** 放入其中。然后所有针对该集群的后续命令操作，都必须在该工作目录中执行。
 
@@ -72,6 +72,7 @@ curl -o fcfs-config-sample.tar.gz http://fastcfs.net/fastcfs/ops/fcfs-config-sam
 tar -xzvf fcfs-config-sample.tar.gz
 ```
 
+<a name="SSH-password-free-login"></a>
 ## 5. SSH 免密登录
 
 fcfs.sh 将通过 SSH 连接所有集群主机。它需要工作站机器可以通过 SSH 在远程主机上执行脚本，执行命令的用户身份可以是 root 或带 sudo的用户，并且必须支持免密登录。

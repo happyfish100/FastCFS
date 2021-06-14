@@ -28,7 +28,7 @@ Get it from http://fastcfs.net/fastcfs/ops/fcfs.sh and put it in workstation's b
 
 * fcfs.settings -- cluster ops settings, in current working directory
 * conf -- cluster config files, in current working directory
-* remote server SSH password-free login, see also [SSH password-free login](#5)
+* remote server SSH password-free login, see also [SSH password-free login](#SSH-password-free-login)
 
 You must create a independent working directory(exp: ***fastcfs-ops***) for a cluster, put "fcfs.settings" and "conf" into it. And then, all subsequent commands for this cluster must be execute at the same working directory.
 
@@ -66,6 +66,7 @@ curl -o fcfs-config-sample.tar.gz http://fastcfs.net/fastcfs/ops/fcfs-config-sam
 tar -xzvf fcfs-config-sample.tar.gz
 ```
 
+<a name="SSH-password-free-login"></a>
 ## 5. SSH password-free login
 
 fcfs.sh will connect to cluster hosts via SSH. It requires that the workstation machine from which the shell is being run can connect via SSH as root(or sudo user) without password into cluster nodes.
