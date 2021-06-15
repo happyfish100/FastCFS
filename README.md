@@ -8,7 +8,7 @@ FastCFS is a block based standard distributed file system which can be used as t
 
 ## 2. Current Version
 
-V2.1.0
+V2.2.0
 
 ## 3. Supported Platforms
 
@@ -21,11 +21,11 @@ V2.1.0
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.51)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.8)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V2.1.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V2.1.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V2.1.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.52)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.9)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V2.2.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V2.2.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V2.2.0)
 
 ## 5. Installation
 
@@ -48,7 +48,7 @@ git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
 fastcfs.sh usage:
 
 ```
-* setup: pull/update codes from gitee, then make and install
+* install: pull/update codes from gitee, then make and install
 * config: copy config files and configure them with local ip
 * start | stop | restart: for service processes control
 ```
@@ -62,7 +62,7 @@ one click to build (deploy and run) single node demo environment (MUST run by ro
 or execute following commands (MUST run by root):
 
 ```
-./fastcfs.sh setup
+./fastcfs.sh install
 ./fastcfs.sh config --force
 ./fastcfs.sh restart
 ```

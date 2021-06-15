@@ -4,7 +4,7 @@ echo "just for FastCFS demo: 1 fdir instance and 1 fstore instance"
 
 mounted_path=/opt/fastcfs/fuse
 
-./fastcfs.sh setup || exit 1
+./fastcfs.sh install || exit 1
 ./fastcfs.sh config --force
 ./fastcfs.sh restart
 
