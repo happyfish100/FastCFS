@@ -597,7 +597,7 @@ execute_yum() {
       sudo rpm -q fuse >/dev/null
       if [ $? -eq 0 ]; then
         echo "INFO: Remove old version fuse."
-        yum remove fuse -y
+        sudo yum remove fuse -y
         if [ $? -ne 0 ]; then
           echo "ERROR: Remove old version fuse failed."
           exit 1
