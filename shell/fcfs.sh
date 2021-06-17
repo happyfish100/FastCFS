@@ -839,6 +839,9 @@ copy_config_to_remote() {
     if [ -f $tmp_src_file ]; then
       echo "INFO: Copy file $CONF_FILE to $dest_path of server $target_server_ip."
       scp $tmp_src_file $target_server_ip:$dest_path
+      if [ $? -ne 0 ]; then
+        exit 1
+      fi
       local file_extension="${CONF_FILE##*.}"
       if [ $file_extension = "conf" ]; then
         check_paths_infile $target_server_ip $dest_path $CONF_FILE
