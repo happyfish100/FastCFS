@@ -307,7 +307,7 @@ int fcfs_fuse_global_init(const char *config_filename)
     IniFullContext ini_ctx;
     SFContextIniConfig config;
     char sf_idempotency_config[256];
-    char write_combine_config[512];
+    char fsapi_config[1024];
     char async_report_config[512];
     char owner_config[256];
 
@@ -424,10 +424,9 @@ int fcfs_fuse_global_init(const char *config_filename)
     fdir_client_log_config_ex(g_fcfs_api_ctx.contexts.fdir,
             async_report_config, false);
 
-    fs_api_config_to_string(write_combine_config,
-            sizeof(write_combine_config));
+    fs_api_config_to_string(fsapi_config, sizeof(fsapi_config));
     fs_client_log_config_ex(g_fcfs_api_ctx.contexts.fsapi->fs,
-            write_combine_config, false);
+            fsapi_config, false);
 
     logInfo("FastCFS V%d.%d.%d, FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
