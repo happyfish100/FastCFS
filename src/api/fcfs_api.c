@@ -299,7 +299,9 @@ int fcfs_api_start_ex(FCFSAPIContext *ctx)
 void fcfs_api_terminate_ex(FCFSAPIContext *ctx)
 {
     fs_api_terminate_ex(ctx->contexts.fsapi);
-    async_reporter_terminate();
+    if (ctx->async_report.enabled) {
+        async_reporter_terminate();
+    }
 }
 
 void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
