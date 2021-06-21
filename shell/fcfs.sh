@@ -622,7 +622,7 @@ execute_yum_on_remote() {
   remote_host=$1
   program_name=$2
   yum_command=$3
-  ssh -Tq $remote_host <<EOF
+  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host <<EOF
 $(typeset -f check_remote_osname)
 check_remote_osname
 $(typeset -f check_install_fastos_repo)
@@ -759,7 +759,7 @@ check_remote_path() {
 check_path_on_remote() {
   remote_host=$1
   remote_target_path=$2
-  ssh -Tq $remote_host <<EOF
+  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host <<EOF
 $(typeset -f check_remote_path)
 check_remote_path $remote_target_path
 EOF
@@ -789,7 +789,7 @@ $check_conf_file|sed 's/\([^=]*\)=\([^=]\)/\2/g'`
 check_paths_infile() {
   remote_host=$1
   remote_target_file=$2$3
-  ssh -Tq $remote_host <<EOF
+  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host <<EOF
 $(typeset -f check_paths_infile_remote)
 check_paths_infile_remote $remote_target_file
 EOF
@@ -929,7 +929,7 @@ service_op() {
       exit 1
     ;;
   esac
-  ssh -Tq $target_server_ip <<EOF
+  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $target_server_ip <<EOF
 $(typeset -f service_op_on_remote)
 service_op_on_remote $service_name $operate_mode $conf_file
 EOF
@@ -958,7 +958,7 @@ tail_remote_log() {
   local tail_server=$1
   local tail_args=$2
   # echo "ssh -Tq $remote_host \"tail $tail_args\""
-  ssh -Tq $tail_server "tail $tail_args"
+  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $tail_server "tail $tail_args"
   echo "========================================================"
   echo "========Log boundary===================================="
   echo "========================================================"
