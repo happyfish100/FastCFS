@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     }
 
     if (file_size_to_set >= 0) {
-        if ((result=fcfs_api_ftruncate_ex(&fi,file_size_to_set,
+        if ((result=fcfs_api_ftruncate_ex(&fi, file_size_to_set,
                         fctx.tid)) != 0)
         {
             return result;
