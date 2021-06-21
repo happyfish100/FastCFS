@@ -62,46 +62,46 @@
 <tr style="background-color:#F5F5F5">
 <td rowspan=3 align=center><b>sequential read</b></td>
 <td align=right>4 &nbsp;</td>
-<td align=right>14,771 &nbsp;</td>
+<td align=right>34,880 &nbsp;</td>
 <td align=right>14,848 &nbsp;</td>
-<td align=right>99% &nbsp;</td>
+<td align=right>235% &nbsp;</td>
 </tr>
 
 <tr style="background-color:#F5F5F5">
 <td align=right>8 &nbsp;</td>
-<td align=right>28,672 &nbsp;</td>
+<td align=right>62,751 &nbsp;</td>
 <td align=right>24,883 &nbsp;</td>
-<td align=right>115% &nbsp;</td>
+<td align=right>252% &nbsp;</td>
 </tr>
 
 <tr style="background-color:#F5F5F5">
 <td align=right>16 &nbsp;</td>
-<td align=right>50,944 &nbsp;</td>
+<td align=right>86,508 &nbsp;</td>
 <td align=right>38,912 &nbsp;</td>
-<td align=right>131% &nbsp;</td>
+<td align=right>222% &nbsp;</td>
 </tr>
 
 <tr>
 <td rowspan=3 align=center><b>rand read</b></td>
 <td align=right>4 &nbsp;</td>
-<td align=right>11,110 &nbsp;</td>
+<td align=right>12,527 &nbsp;</td>
 <td align=right>12,160 &nbsp;</td>
-<td align=right>91% &nbsp;</td>
+<td align=right>103% &nbsp;</td>
 </tr>
 
 <tr>
 <td align=right>8 &nbsp;</td>
-<td align=right>20,966 &nbsp;</td>
+<td align=right>23,610 &nbsp;</td>
 <td align=right>22,220 &nbsp;</td>
-<td align=right>94% &nbsp;</td>
+<td align=right>106% &nbsp;</td>
 </tr>
 
 <tr>
 <td align=right>16 &nbsp;</td>
-<td align=right>35,072 &nbsp;</td>
+<td align=right>41,790 &nbsp;</td>
 <td align=right>36,608 &nbsp;</td>
-<td align=right>96% &nbsp;</td>
+<td align=right>114% &nbsp;</td>
 </tr>
 </table>
 
-more info see Chinese doc: [FastCFS vs. Ceph benchmark detail](benchmark-20210514.pdf)
+more info see Chinese doc: [FastCFS vs. Ceph benchmark detail](benchmark-20210621.pdf)

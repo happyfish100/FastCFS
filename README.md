@@ -29,9 +29,11 @@ V2.2.0
 
 ## 5. Installation
 
-### 5.1 DIY installation (step by step)
+### 5.1 DIY installation
 
-please see [INSTALL](docs/INSTALL.md)
+you can use [Cluster Operation Tool](docs/fcfs-ops-tool.md) to deploy FastCFS
+
+step by step please see [INSTALL](docs/INSTALL.md)
 
 recommend to execute libfuse_setup.sh for compiling and installing libfuse
 

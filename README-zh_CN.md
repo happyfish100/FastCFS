@@ -47,6 +47,10 @@ df -h /opt/fastcfs/fuse | grep fuse
 
 一键部署的详细说明，请参见这里[一键部署详细说明](docs/Easy-install-detail-zh_CN.md)
 
+### 集群部署工具
+
+推荐使用 [FastCFS集群运维工具](docs/fcfs-ops-tool-zh_CN.md)
+
 ### DIY安装
 
 如果你要自己搭建FastCFS环境，可以采用如下两种安装方式之一：
@@ -64,7 +68,7 @@ FastCFS安装完成后，请参阅[配置指南](docs/CONFIGURE-zh_CN.md)
 
 * [FastCFS与Ceph性能对比测试结果概要](docs/benchmark.md)
 
-* 详情参见 [完整PDF文档](docs/benchmark-20210514.pdf)
+* 详情参见 [完整PDF文档](docs/benchmark-20210621.pdf)
 
 ## 7. 联系我们
 
