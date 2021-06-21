@@ -66,11 +66,17 @@ FastCFS安装完成后，请参阅[配置指南](docs/CONFIGURE-zh_CN.md)
 
 ## 6. 性能测试
 
+FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2.x倍，随机写大约是Ceph的2倍。
+
 * [FastCFS与Ceph性能对比测试结果概要](docs/benchmark.md)
 
 * 详情参见 [完整PDF文档](docs/benchmark-20210621.pdf)
 
-## 7. 联系我们
+## 7. K8s CSI驱动
+
+参见项目[fastcfs-csi](https://gitee.com/fastdfs100/fastcfs-csi)
+
+## 8. 联系我们
 
 查看FastCFS相关技术文章，请关注微信公众号：
 

@@ -77,9 +77,15 @@ df -h /opt/fastcfs/fuse | grep fuse
 
 ## 6. Benchmark
 
+FastCFS has huge better performance than Ceph: the IOPS ratio of sequential write is 6.x, sequential read is 2.x, random write is about 2.0.
+
 * [FastCFS vs. Ceph benchmark](docs/benchmark.md)
 
-## 7. Contact us
+## 7. K8s CSI Driver
+
+[fastcfs-csi](https://github.com/happyfish100/fastcfs-csi)
+
+## 8. Contact us
 
 email: 384681(at)qq(dot)com
 
