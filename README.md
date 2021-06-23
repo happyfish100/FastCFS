@@ -85,7 +85,11 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 
 [fastcfs-csi](https://github.com/happyfish100/fastcfs-csi)
 
-## 8. Contact us
+## 8. Chinese Relative articles
+
+[OSChina blog](https://my.oschina.net/u/3334339)
+
+## 9. Contact us
 
 email: 384681(at)qq(dot)com
 
