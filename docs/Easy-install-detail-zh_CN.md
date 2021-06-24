@@ -85,6 +85,7 @@ pid [2400] exit.
 
 7. 移除安装包恢复初始环境
 ```
-sudo yum remove  FastCFS-auth-server   FastCFS-fused   fastDIR-server   faststore-server -y
-sudo rm -rf /etc/fastcfs  /opt/fastcfs  /opt/faststore  
+sudo yum remove FastCFS-auth-server FastCFS-fused fastDIR-server faststore-server -y
+sudo yum remove fastDIR-config faststore-config FastCFS-auth-config FastCFS-fuse-config -y
+sudo rm -rf /etc/fastcfs /opt/fastcfs /opt/faststore
 ```
