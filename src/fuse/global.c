@@ -307,6 +307,7 @@ int fcfs_fuse_global_init(const char *config_filename)
     IniFullContext ini_ctx;
     SFContextIniConfig config;
     char sf_idempotency_config[256];
+    char auth_config[512];
     char fsapi_config[1024];
     char async_report_config[512];
     char owner_config[256];
@@ -421,10 +422,20 @@ int fcfs_fuse_global_init(const char *config_filename)
 
     fcfs_api_async_report_config_to_string_ex(&g_fcfs_api_ctx,
             async_report_config, sizeof(async_report_config));
+    fcfs_auth_config_to_string(&g_fcfs_api_ctx.contexts.
+            fdir->auth, auth_config, sizeof(auth_config));
+    snprintf(async_report_config + strlen(async_report_config),
+            sizeof(async_report_config) - strlen(async_report_config),
+            ", %s", auth_config);
     fdir_client_log_config_ex(g_fcfs_api_ctx.contexts.fdir,
             async_report_config, false);
 
     fs_api_config_to_string(fsapi_config, sizeof(fsapi_config));
+    fcfs_auth_config_to_string(&g_fcfs_api_ctx.contexts.fsapi->
+            fs->auth, auth_config, sizeof(auth_config));
+    snprintf(fsapi_config + strlen(fsapi_config),
+            sizeof(fsapi_config) - strlen(fsapi_config),
+            ", %s", auth_config);
     fs_client_log_config_ex(g_fcfs_api_ctx.contexts.fsapi->fs,
             fsapi_config, false);
 
