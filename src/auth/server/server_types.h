@@ -46,9 +46,17 @@
 #define SERVER_CTX        ((AuthServerContext *)task->thread_data->arg)
 #define SESSION_HOLDER    SERVER_CTX->service.session_holder
 
+typedef struct fcfs_auth_cluster_server_info {
+    FCServerInfo *server;
+} FCFSAuthClusterServerInfo;
+
+typedef struct fcfs_auth_cluster_server_array {
+    FCFSAuthClusterServerInfo *servers;
+    int count;
+} FCFSAuthClusterServerArray;
+
 struct db_user_info;
 struct db_storage_pool_info;
-//struct db_granted_pool_info;
 
 typedef struct server_session_fields {
     bool publish;

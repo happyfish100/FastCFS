@@ -27,6 +27,10 @@
 
 typedef struct server_global_vars {
     struct {
+        FCFSAuthClusterServerInfo *master;
+        FCFSAuthClusterServerInfo *myself;
+        SFClusterConfig config;
+        FCFSAuthClusterServerArray server_array;
         SFContext sf_context;  //for cluster communication
     } cluster;
 
@@ -48,7 +52,19 @@ typedef struct server_global_vars {
     SFSlowLogContext slow_log;
 } AuthServerGlobalVars;
 
-#define CLUSTER_SF_CTX         g_server_global_vars.cluster.sf_context
+#define CLUSTER_CONFIG          g_server_global_vars.cluster.config
+#define CLUSTER_SERVER_CONFIG   CLUSTER_CONFIG.server_cfg
+
+#define CLUSTER_MYSELF_PTR      g_server_global_vars.cluster.myself
+#define CLUSTER_MASTER_PTR      g_server_global_vars.cluster.master
+#define CLUSTER_MASTER_ATOM_PTR ((FCFSAuthClusterServerInfo *)  \
+        __sync_add_and_fetch(&CLUSTER_MASTER_PTR, 0))
+#define MYSELF_IS_MASTER        (CLUSTER_MASTER_ATOM_PTR == CLUSTER_MYSELF_PTR)
+
+#define CLUSTER_SERVER_ARRAY    g_server_global_vars.cluster.server_array
+#define CLUSTER_MY_SERVER_ID    CLUSTER_MYSELF_PTR->server->id
+
+#define CLUSTER_SF_CTX          g_server_global_vars.cluster.sf_context
 
 #define ADMIN_GENERATE               g_server_global_vars.admin_generate
 #define ADMIN_GENERATE_MODE          ADMIN_GENERATE.mode
@@ -66,6 +82,26 @@ typedef struct server_global_vars {
 #define SLOW_LOG                g_server_global_vars.slow_log
 #define SLOW_LOG_CFG            SLOW_LOG.cfg
 #define SLOW_LOG_CTX            SLOW_LOG.ctx
+
+#define CLUSTER_GROUP_INDEX     g_server_global_vars.cluster.config.cluster_group_index
+#define SERVICE_GROUP_INDEX     g_server_global_vars.cluster.config.service_group_index
+
+#define CLUSTER_GROUP_ADDRESS_ARRAY(server) \
+    (server)->group_addrs[CLUSTER_GROUP_INDEX].address_array
+#define SERVICE_GROUP_ADDRESS_ARRAY(server) \
+    (server)->group_addrs[SERVICE_GROUP_INDEX].address_array
+
+#define CLUSTER_GROUP_ADDRESS_FIRST_PTR(server) \
+    (*(server)->group_addrs[CLUSTER_GROUP_INDEX].address_array.addrs)
+#define SERVICE_GROUP_ADDRESS_FIRST_PTR(server) \
+    (*(server)->group_addrs[SERVICE_GROUP_INDEX].address_array.addrs)
+
+#define CLUSTER_GROUP_ADDRESS_FIRST_IP(server) \
+    CLUSTER_GROUP_ADDRESS_FIRST_PTR(server)->conn.ip_addr
+#define CLUSTER_GROUP_ADDRESS_FIRST_PORT(server) \
+    CLUSTER_GROUP_ADDRESS_FIRST_PTR(server)->conn.port
+
+#define CLUSTER_CONFIG_SIGN_BUF g_server_global_vars.cluster.config.md5_digest
 
 #ifdef __cplusplus
 extern "C" {

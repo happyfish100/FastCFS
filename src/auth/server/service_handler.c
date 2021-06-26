@@ -831,8 +831,42 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     return 0;
 }
 
+static int service_deal_get_master(struct fast_task_info *task)
+{
+    int result;
+    FCFSAuthProtoGetServerResp *resp;
+    FCFSAuthClusterServerInfo *master;
+    const FCAddressInfo *addr;
+
+    if ((result=server_expect_body_length(0)) != 0) {
+        return result;
+    }
+
+    master = CLUSTER_MASTER_ATOM_PTR;
+    if (master == NULL) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "the master NOT exist");
+        return SF_RETRIABLE_ERROR_NO_SERVER;
+    }
+
+    resp = (FCFSAuthProtoGetServerResp *)SF_PROTO_RESP_BODY(task);
+    addr = fc_server_get_address_by_peer(&SERVICE_GROUP_ADDRESS_ARRAY(
+                master->server), task->client_ip);
+
+    int2buff(master->server->id, resp->server_id);
+    snprintf(resp->ip_addr, sizeof(resp->ip_addr), "%s",
+            addr->conn.ip_addr);
+    short2buff(addr->conn.port, resp->port);
+
+    RESPONSE.header.body_len = sizeof(FCFSAuthProtoGetServerResp);
+    TASK_CTX.common.response_done = true;
+    return 0;
+}
+
 static int service_process(struct fast_task_info *task)
 {
+    int result;
     switch (REQUEST.header.cmd) {
         case SF_PROTO_ACTIVE_TEST_REQ:
             RESPONSE.header.cmd = SF_PROTO_ACTIVE_TEST_RESP;
@@ -871,6 +905,16 @@ static int service_process(struct fast_task_info *task)
             return service_deal_spool_withdraw(task);
         case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ:
             return service_deal_gpool_list(task);
+        case FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ:
+            if ((result=service_deal_get_master(task)) == 0) {
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP;
+            }
+            return result;
+        case SF_SERVICE_PROTO_GET_LEADER_REQ:
+            if ((result=service_deal_get_master(task)) == 0) {
+                RESPONSE.header.cmd = SF_SERVICE_PROTO_GET_LEADER_RESP;
+            }
+            return result;
         default:
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
@@ -888,8 +932,8 @@ int service_deal_task(struct fast_task_info *task, const int stage)
             "task: %p, sock: %d, nio stage: %d, continue: %d, "
             "cmd: %d (%s)", __LINE__, task, task->event.fd, stage,
             stage == SF_NIO_STAGE_CONTINUE,
-            ((FDIRProtoHeader *)task->data)->cmd,
-            fdir_get_cmd_caption(((FDIRProtoHeader *)task->data)->cmd));
+            ((FCFSAuthProtoHeader *)task->data)->cmd,
+            fdir_get_cmd_caption(((FCFSAuthProtoHeader *)task->data)->cmd));
             */
 
     if (stage == SF_NIO_STAGE_CONTINUE) {

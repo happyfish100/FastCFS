@@ -87,6 +87,25 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "GPOOL_LIST_REQ";
         case FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP:
             return "GPOOL_LIST_RESP";
+
+        case FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ:
+            return "GET_MASTER_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP:
+            return "GET_MASTER_RESP";
+        case FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_REQ:
+            return "GET_SERVER_STATUS_REQ";
+        case FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_RESP:
+            return "GET_SERVER_STATUS_RESP";
+        case FCFS_AUTH_CLUSTER_PROTO_JOIN_MASTER:
+            return "JOIN_MASTER";
+        case FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_REQ:
+            return "PING_MASTER_REQ";
+        case FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_RESP:
+            return "PING_MASTER_RESP";
+        case FCFS_AUTH_CLUSTER_PROTO_PRE_SET_NEXT_MASTER:
+            return "PRE_SET_NEXT_MASTER";
+        case FCFS_AUTH_CLUSTER_PROTO_COMMIT_NEXT_MASTER:
+            return "COMMIT_NEXT_MASTER";
         default:
             return sf_get_cmd_caption(cmd);
     }

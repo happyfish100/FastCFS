@@ -38,6 +38,9 @@
 #define FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ           27
 #define FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP          28
 
+#define FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ            61
+#define FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP           62
+
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ          71
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP         72
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_REQ            73
@@ -56,6 +59,14 @@
 #define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_REQ            95
 #define FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP           96
 
+//cluster commands
+#define FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_REQ    201
+#define FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_RESP   202
+#define FCFS_AUTH_CLUSTER_PROTO_JOIN_MASTER              203  //slave  -> master
+#define FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_REQ          205
+#define FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_RESP         206
+#define FCFS_AUTH_CLUSTER_PROTO_PRE_SET_NEXT_MASTER      207  //notify next leader to other servers
+#define FCFS_AUTH_CLUSTER_PROTO_COMMIT_NEXT_MASTER       208  //commit next leader to other servers
 
 typedef SFCommonProtoHeader  FCFSAuthProtoHeader;
 
@@ -208,6 +219,27 @@ typedef struct fcfs_auth_proto_gpool_list_resp_body_part {
     FCFSAuthProtoPoolPriviledges privs;
     FCFSAuthProtoUserPoolPair up_pair;
 } FCFSAuthProtoGPoolListRespBodyPart;
+
+typedef struct fcfs_auth_proto_get_server_resp {
+    char server_id[4];
+    char ip_addr[IP_ADDRESS_SIZE];
+    char port[2];
+} FCFSAuthProtoGetServerResp;
+
+typedef struct fcfs_auth_proto_get_server_status_req {
+    char server_id[4];
+    char config_sign[SF_CLUSTER_CONFIG_SIGN_LEN];
+} FCFSAuthProtoGetServerStatusReq;
+
+typedef struct fcfs_auth_proto_get_server_status_resp {
+    char is_master;
+    char server_id[4];
+} FCFSAuthProtoGetServerStatusResp;
+
+typedef struct fcfs_auth_proto_join_master_req {
+    char server_id[4];     //the slave server id
+    char config_sign[SF_CLUSTER_CONFIG_SIGN_LEN];
+} FCFSAuthProtoJoinMasterReq;
 
 #ifdef __cplusplus
 extern "C" {

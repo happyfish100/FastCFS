@@ -190,7 +190,6 @@ int main(int argc, char *argv[])
             break;
         }
 
-        //TODO
         if ((result=adb_check_generate_admin_user((AuthServerContext *)
                         sf_get_random_thread_data()->arg)) != 0) {
             break;
