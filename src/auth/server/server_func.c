@@ -23,11 +23,13 @@
 #include "fastcommon/local_ip_func.h"
 #include "sf/sf_global.h"
 #include "sf/sf_service.h"
+#include "sf/sf_cluster_cfg.h"
 #include "common/auth_proto.h"
 #include "common/auth_func.h"
 #include "common/server_session.h"
 #include "server_global.h"
 #include "session_subscribe.h"
+#include "cluster_info.h"
 #include "server_func.h"
 
 #define SECTION_NAME_FASTDIR  "FastDIR"
@@ -180,6 +182,20 @@ static int server_load_pool_generate_config(IniContext *ini_context,
     return 0;
 }
 
+static void log_cluster_server_config()
+{
+    FastBuffer buffer;
+
+    if (fast_buffer_init_ex(&buffer, 1024) != 0) {
+        return;
+    }
+    fc_server_to_config_string(&CLUSTER_SERVER_CONFIG, &buffer);
+    log_it1(LOG_INFO, buffer.data, buffer.length);
+    fast_buffer_destroy(&buffer);
+
+    fc_server_to_log(&CLUSTER_SERVER_CONFIG);
+}
+
 static void server_log_configs()
 {
     char sz_server_config[512];
@@ -218,6 +234,26 @@ static void server_log_configs()
             POOL_USAGE_REFRESH_INTERVAL, sz_session_config);
 
     log_local_host_ip_addrs();
+    log_cluster_server_config();
+}
+
+static int load_cluster_config(IniFullContext *ini_ctx,
+        char *full_cluster_filename)
+{
+    int result;
+
+    if ((result=sf_load_cluster_config_ex(&CLUSTER_CONFIG,
+                    ini_ctx, FCFS_AUTH_DEFAULT_CLUSTER_PORT,
+                    full_cluster_filename, PATH_MAX)) != 0)
+    {
+        return result;
+    }
+
+    if ((result=cluster_info_init(full_cluster_filename)) != 0) {
+        return result;
+    }
+
+    return 0;
 }
 
 int server_load_config(const char *filename)
@@ -225,6 +261,7 @@ int server_load_config(const char *filename)
     const int task_buffer_extra_size = 0;
     IniContext ini_context;
     IniFullContext ini_ctx;
+    char full_cluster_filename[PATH_MAX];
     int result;
 
     if ((result=iniLoadFromFile(filename, &ini_context)) != 0) {
@@ -249,8 +286,16 @@ int server_load_config(const char *filename)
         return result;
     }
 
-    FAST_INI_SET_FULL_CTX_EX(ini_ctx, filename, "session", &ini_context);
-    if ((result=server_session_init_ex(&ini_ctx, sizeof(ServerSessionFields),
+    FAST_INI_SET_FULL_CTX_EX(ini_ctx, filename, NULL, &ini_context);
+    if ((result=load_cluster_config(&ini_ctx,
+                    full_cluster_filename)) != 0)
+    {
+        return result;
+    }
+
+    ini_ctx.section_name = "session";
+    if ((result=server_session_init_ex(&ini_ctx,
+                    sizeof(ServerSessionFields),
                     &g_server_session_callbacks)) != 0)
     {
         return result;
