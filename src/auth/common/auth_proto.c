@@ -92,6 +92,10 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "GET_MASTER_REQ";
         case FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP:
             return "GET_MASTER_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_REQ:
+            return "CLUSTER_STAT_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_RESP:
+            return "CLUSTER_STAT_RESP";
         case FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_REQ:
             return "GET_SERVER_STATUS_REQ";
         case FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_RESP:

@@ -17,8 +17,8 @@
 #include "../common/auth_func.h"
 #include "fcfs_auth_client.h"
 
-#define GET_CONNECTION(cm, arg1, result) \
-    (cm)->ops.get_connection(cm, arg1, result)
+#define GET_MASTER_CONNECTION(cm, arg1, result)   \
+    (cm)->ops.get_master_connection(cm, arg1, result)
 
 static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
         IniContext *ini_context, const char *auth_config_filename)
@@ -207,14 +207,14 @@ int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,
         const string_t *poolname, const int flags)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_user_login,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_user_login,
             username, passwd, poolname, flags);
 }
 
 int fcfs_auth_client_session_subscribe(FCFSAuthClientContext *client_ctx)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_session_subscribe);
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_session_subscribe);
 }
 
 int fcfs_auth_client_session_validate(FCFSAuthClientContext *client_ctx,
@@ -223,7 +223,7 @@ int fcfs_auth_client_session_validate(FCFSAuthClientContext *client_ctx,
         const int64_t pool_id, const int64_t priv_required)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_session_validate,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_session_validate,
             session_id, validate_key, priv_type, pool_id, priv_required);
 }
 
@@ -231,7 +231,7 @@ int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthUserInfo *user)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_user_create, user);
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_user_create, user);
 }
 
 int fcfs_auth_client_user_list(FCFSAuthClientContext *client_ctx,
@@ -239,7 +239,7 @@ int fcfs_auth_client_user_list(FCFSAuthClientContext *client_ctx,
         FCFSAuthUserArray *array)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_user_list,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_user_list,
             username, buffer, array);
 }
 
@@ -247,7 +247,7 @@ int fcfs_auth_client_user_grant(FCFSAuthClientContext *client_ctx,
         const string_t *username, const int64_t priv)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_user_grant,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_user_grant,
             username, priv);
 }
 
@@ -255,7 +255,7 @@ int fcfs_auth_client_user_remove(FCFSAuthClientContext *client_ctx,
         const string_t *username)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_user_remove,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_user_remove,
             username);
 }
 
@@ -264,7 +264,7 @@ int fcfs_auth_client_spool_create(FCFSAuthClientContext *client_ctx,
         const bool dryrun)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_create,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_spool_create,
             spool, name_size, dryrun);
 }
 
@@ -273,7 +273,7 @@ int fcfs_auth_client_spool_list(FCFSAuthClientContext *client_ctx,
         SFProtoRecvBuffer *buffer, FCFSAuthStoragePoolArray *array)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_list,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_spool_list,
             username, poolname, buffer, array);
 }
 
@@ -281,7 +281,7 @@ int fcfs_auth_client_spool_remove(FCFSAuthClientContext *client_ctx,
         const string_t *poolname)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_remove,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_spool_remove,
             poolname);
 }
 
@@ -289,7 +289,7 @@ int fcfs_auth_client_spool_set_quota(FCFSAuthClientContext *client_ctx,
         const string_t *poolname, const int64_t quota)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_set_quota,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_spool_set_quota,
             poolname, quota);
 }
 
@@ -297,7 +297,7 @@ int fcfs_auth_client_spool_get_quota(FCFSAuthClientContext *client_ctx,
         const string_t *poolname, int64_t *quota)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_spool_get_quota,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_spool_get_quota,
             poolname, quota);
 }
 
@@ -306,7 +306,7 @@ int fcfs_auth_client_gpool_grant(FCFSAuthClientContext *client_ctx,
         const FCFSAuthSPoolPriviledges *privs)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_gpool_grant,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_gpool_grant,
             username, poolname, privs);
 }
 
@@ -314,7 +314,7 @@ int fcfs_auth_client_gpool_withdraw(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *poolname)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_gpool_withdraw,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_gpool_withdraw,
             username, poolname);
 }
 
@@ -323,6 +323,6 @@ int fcfs_auth_client_gpool_list(FCFSAuthClientContext *client_ctx,
         SFProtoRecvBuffer *buffer, FCFSAuthGrantedPoolArray *array)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
-            GET_CONNECTION, 0, fcfs_auth_client_proto_gpool_list,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_gpool_list,
             username, poolname, buffer, array);
 }

@@ -487,7 +487,15 @@ int main(int argc, char *argv[])
         } else if ((result=parse_bytes(argv[current_index],
                         1024 * 1024 * 1024, &spool.quota)) != 0)
         {
-            fprintf(stderr, "parse quota fail\n");
+            fprintf(stderr, "parse quota field fail!\n");
+            if (op_type == FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ) {
+                fprintf(stderr, "\nUsage: %s create [pool_name] <quota> "
+                        "[%s]\nFor example: %s create %s %s %s\n\n",
+                        argv[0], DRY_RUN_OPTION_STR, argv[0],
+                        (spool.name.str != NULL ? spool.name.str :
+                         argv[current_index]), FCFS_AUTH_UNLIMITED_QUOTA_STR,
+                        (dryrun ? DRY_RUN_OPTION_STR : ""));
+            }
             return 1;
         }
 

@@ -80,6 +80,8 @@ static int check_user_priv(struct fast_task_info *task)
 
     switch (REQUEST.header.cmd) {
         case SF_PROTO_ACTIVE_TEST_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_REQ:
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_GET_QUOTA_REQ:
             return 0;
@@ -864,6 +866,39 @@ static int service_deal_get_master(struct fast_task_info *task)
     return 0;
 }
 
+static int service_deal_cluster_stat(struct fast_task_info *task)
+{
+    int result;
+    FCFSAuthProtoClusterStatRespBodyHeader *body_header;
+    FCFSAuthProtoClusterStatRespBodyPart *body_part;
+    FCFSAuthClusterServerInfo *cs;
+    FCFSAuthClusterServerInfo *send;
+
+    if ((result=server_expect_body_length(0)) != 0) {
+        return result;
+    }
+
+    body_header = (FCFSAuthProtoClusterStatRespBodyHeader *)
+        SF_PROTO_RESP_BODY(task);
+    body_part = (FCFSAuthProtoClusterStatRespBodyPart *)(body_header + 1);
+    int2buff(CLUSTER_SERVER_ARRAY.count, body_header->count);
+
+    send = CLUSTER_SERVER_ARRAY.servers + CLUSTER_SERVER_ARRAY.count;
+    for (cs=CLUSTER_SERVER_ARRAY.servers; cs<send; cs++, body_part++) {
+        int2buff(cs->server->id, body_part->server_id);
+        body_part->is_master = (cs == CLUSTER_MASTER_ATOM_PTR ? 1 : 0);
+        snprintf(body_part->ip_addr, sizeof(body_part->ip_addr), "%s",
+                SERVICE_GROUP_ADDRESS_FIRST_IP(cs->server));
+        short2buff(SERVICE_GROUP_ADDRESS_FIRST_PORT(cs->server),
+                body_part->port);
+    }
+
+    RESPONSE.header.body_len = (char *)body_part - SF_PROTO_RESP_BODY(task);
+    RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_RESP;
+    TASK_CTX.common.response_done = true;
+    return 0;
+}
+
 static int service_process(struct fast_task_info *task)
 {
     int result;
@@ -923,6 +958,8 @@ static int service_process(struct fast_task_info *task)
                 RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP;
             }
             return result;
+        case FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_REQ:
+            return service_deal_cluster_stat(task);
         case SF_SERVICE_PROTO_GET_LEADER_REQ:
             if ((result=service_deal_get_master(task)) == 0) {
                 RESPONSE.header.cmd = SF_SERVICE_PROTO_GET_LEADER_RESP;

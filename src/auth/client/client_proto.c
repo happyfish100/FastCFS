@@ -786,3 +786,134 @@ int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
     array->count = count;
     return result;
 }
+
+int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,
+        FCFSAuthClientServerEntry *master)
+{
+    int result;
+    ConnectionInfo *conn;
+    FCFSAuthProtoHeader *header;
+    SFResponseInfo response;
+    FCFSAuthProtoGetServerResp server_resp;
+    char out_buff[sizeof(FCFSAuthProtoHeader)];
+
+    conn = client_ctx->cm.ops.get_connection(&client_ctx->cm, 0, &result);
+    if (conn == NULL) {
+        return result;
+    }
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ,
+            sizeof(out_buff) - sizeof(FCFSAuthProtoHeader));
+    response.error.length = 0;
+    if ((result=sf_send_and_recv_response(conn, out_buff, sizeof(out_buff),
+                    &response, client_ctx->common_cfg.network_timeout,
+                    FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP,
+                    (char *)&server_resp, sizeof(FCFSAuthProtoGetServerResp))) != 0)
+    {
+        sf_log_network_error(&response, conn, result);
+    } else {
+        master->server_id = buff2int(server_resp.server_id);
+        memcpy(master->conn.ip_addr, server_resp.ip_addr, IP_ADDRESS_SIZE);
+        *(master->conn.ip_addr + IP_ADDRESS_SIZE - 1) = '\0';
+        master->conn.port = buff2short(server_resp.port);
+    }
+
+    SF_CLIENT_RELEASE_CONNECTION(&client_ctx->cm, conn, result);
+    return result;
+}
+
+int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
+        FCFSAuthClientClusterStatEntry *stats, const int size, int *count)
+{
+    FCFSAuthProtoHeader *header;
+    FCFSAuthProtoClusterStatRespBodyHeader *body_header;
+    FCFSAuthProtoClusterStatRespBodyPart *body_part;
+    FCFSAuthProtoClusterStatRespBodyPart *body_end;
+    FCFSAuthClientClusterStatEntry *stat;
+    ConnectionInfo *conn;
+    char out_buff[sizeof(FCFSAuthProtoHeader)];
+    char fixed_buff[8 * 1024];
+    char *in_buff;
+    SFResponseInfo response;
+    int result;
+    int calc_size;
+
+    if ((conn=client_ctx->cm.ops.get_master_connection(
+                    &client_ctx->cm, 0, &result)) == NULL)
+    {
+        return result;
+    }
+
+    header = (FCFSAuthProtoHeader *)out_buff;
+    SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_REQ,
+            sizeof(out_buff) - sizeof(FCFSAuthProtoHeader));
+
+    response.error.length = 0;
+    in_buff = fixed_buff;
+    if ((result=sf_send_and_check_response_header(conn, out_buff,
+                    sizeof(out_buff), &response, client_ctx->common_cfg.
+                    network_timeout, FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_RESP)) == 0)
+    {
+        if (response.header.body_len > sizeof(fixed_buff)) {
+            in_buff = (char *)fc_malloc(response.header.body_len);
+            if (in_buff == NULL) {
+                response.error.length = sprintf(response.error.message,
+                        "malloc %d bytes fail", response.header.body_len);
+                result = ENOMEM;
+            }
+        }
+
+        if (result == 0) {
+            result = tcprecvdata_nb(conn->sock, in_buff,
+                    response.header.body_len, client_ctx->
+                    common_cfg.network_timeout);
+        }
+    }
+
+    body_header = (FCFSAuthProtoClusterStatRespBodyHeader *)in_buff;
+    body_part = (FCFSAuthProtoClusterStatRespBodyPart *)(in_buff +
+            sizeof(FCFSAuthProtoClusterStatRespBodyHeader));
+    if (result == 0) {
+        *count = buff2int(body_header->count);
+
+        calc_size = sizeof(FCFSAuthProtoClusterStatRespBodyHeader) +
+            (*count) * sizeof(FCFSAuthProtoClusterStatRespBodyPart);
+        if (calc_size != response.header.body_len) {
+            response.error.length = sprintf(response.error.message,
+                    "response body length: %d != calculate size: %d, "
+                    "server count: %d", response.header.body_len,
+                    calc_size, *count);
+            result = EINVAL;
+        } else if (size < *count) {
+            response.error.length = sprintf(response.error.message,
+                    "entry size %d too small < %d", size, *count);
+            *count = 0;
+            result = ENOSPC;
+        }
+    } else {
+        *count = 0;
+    }
+
+    if (result != 0) {
+        sf_log_network_error(&response, conn, result);
+    } else {
+        body_end = body_part + (*count);
+        for (stat=stats; body_part<body_end; body_part++, stat++) {
+            stat->is_master = body_part->is_master;
+            stat->server_id = buff2int(body_part->server_id);
+            memcpy(stat->ip_addr, body_part->ip_addr, IP_ADDRESS_SIZE);
+            *(stat->ip_addr + IP_ADDRESS_SIZE - 1) = '\0';
+            stat->port = buff2short(body_part->port);
+        }
+    }
+
+    SF_CLIENT_RELEASE_CONNECTION(&client_ctx->cm, conn, result);
+    if (in_buff != fixed_buff) {
+        if (in_buff != NULL) {
+            free(in_buff);
+        }
+    }
+
+    return result;
+}

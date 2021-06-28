@@ -40,6 +40,8 @@
 
 #define FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ            61
 #define FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP           62
+#define FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_REQ          63
+#define FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_RESP         64
 
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ          71
 #define FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP         72
@@ -222,8 +224,9 @@ typedef struct fcfs_auth_proto_gpool_list_resp_body_part {
 
 typedef struct fcfs_auth_proto_get_server_resp {
     char server_id[4];
-    char ip_addr[IP_ADDRESS_SIZE];
     char port[2];
+    char padding[2];
+    char ip_addr[IP_ADDRESS_SIZE];
 } FCFSAuthProtoGetServerResp;
 
 typedef struct fcfs_auth_proto_get_server_status_req {
@@ -232,14 +235,29 @@ typedef struct fcfs_auth_proto_get_server_status_req {
 } FCFSAuthProtoGetServerStatusReq;
 
 typedef struct fcfs_auth_proto_get_server_status_resp {
-    char is_master;
     char server_id[4];
+    char is_master;
+    char padding[3];
 } FCFSAuthProtoGetServerStatusResp;
 
 typedef struct fcfs_auth_proto_join_master_req {
     char server_id[4];     //the slave server id
+    char padding[4];
     char config_sign[SF_CLUSTER_CONFIG_SIGN_LEN];
 } FCFSAuthProtoJoinMasterReq;
+
+typedef struct fcfs_auth_proto_cluster_stat_resp_body_header {
+    char count[4];
+    char padding[4];
+} FCFSAuthProtoClusterStatRespBodyHeader;
+
+typedef struct fcfs_auth_proto_cluster_stat_resp_body_part {
+    char server_id[4];
+    char is_master;
+    char padding[1];
+    char port[2];
+    char ip_addr[IP_ADDRESS_SIZE];
+} FCFSAuthProtoClusterStatRespBodyPart;
 
 #ifdef __cplusplus
 extern "C" {

@@ -101,6 +101,11 @@ typedef struct server_global_vars {
 #define CLUSTER_GROUP_ADDRESS_FIRST_PORT(server) \
     CLUSTER_GROUP_ADDRESS_FIRST_PTR(server)->conn.port
 
+#define SERVICE_GROUP_ADDRESS_FIRST_IP(server) \
+    SERVICE_GROUP_ADDRESS_FIRST_PTR(server)->conn.ip_addr
+#define SERVICE_GROUP_ADDRESS_FIRST_PORT(server) \
+    SERVICE_GROUP_ADDRESS_FIRST_PTR(server)->conn.port
+
 #define CLUSTER_CONFIG_SIGN_BUF g_server_global_vars.cluster.config.md5_digest
 
 #ifdef __cplusplus

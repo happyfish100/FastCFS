@@ -21,9 +21,22 @@
 #include "sf/sf_proto.h"
 #include "client_types.h"
 
+typedef struct fcfs_auth_client_cluster_stat_entry {
+    int server_id;
+    bool is_master;
+    char ip_addr[IP_ADDRESS_SIZE];
+    uint16_t port;
+} FCFSAuthClientClusterStatEntry;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,
+        FCFSAuthClientServerEntry *master);
+
+int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
+        FCFSAuthClientClusterStatEntry *stats, const int size, int *count);
 
 int fcfs_auth_client_proto_session_subscribe(
         FCFSAuthClientContext *client_ctx, ConnectionInfo *conn);

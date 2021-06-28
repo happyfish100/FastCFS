@@ -25,12 +25,10 @@
 
 typedef struct fcfs_auth_cm_simple_extra {
     /* master connection cache */
-    /*
     struct {
         ConnectionInfo *conn;
-        ConnectionInfo holder;
     } master_cache;
-    */
+
     ConnectionPool cpool;
     FCFSAuthClientContext *client_ctx;
     FCFSAuthServerGroup *cluster_sarray;
@@ -146,6 +144,41 @@ static ConnectionInfo *get_connection(SFConnectionManager *cm,
     return NULL;
 }
 
+static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
+        const int group_index, int *err_no)
+{
+    FCFSAuthCMSimpleExtra *extra;
+    ConnectionInfo *conn;
+    FCFSAuthClientServerEntry master;
+
+    extra = (FCFSAuthCMSimpleExtra *)cm->extra;
+    if (extra->master_cache.conn != NULL) {
+        return extra->master_cache.conn;
+    }
+
+    do {
+        if ((*err_no=fcfs_auth_client_get_master(extra->
+                        client_ctx, &master)) != 0)
+        {
+            break;
+        }
+
+        if ((conn=get_spec_connection(cm, &master.conn,
+                        err_no)) == NULL)
+        {
+            break;
+        }
+
+        extra->master_cache.conn = conn;
+        return conn;
+    } while (0);
+
+    logError("file: "__FILE__", line: %d, "
+            "get_master_connection fail, errno: %d",
+            __LINE__, *err_no);
+    return NULL;
+}
+
 static void release_connection(SFConnectionManager *cm,
         ConnectionInfo *conn)
 {
@@ -160,11 +193,9 @@ static void close_connection(SFConnectionManager *cm,
 {
     FCFSAuthCMSimpleExtra *extra;
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
-    /*
     if (extra->master_cache.conn == conn) {
         extra->master_cache.conn = NULL;
     }
-    */
 
     conn_pool_close_connection_ex(&extra->cpool, conn, true);
 }
@@ -253,7 +284,7 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
     cm->common_cfg = &client_ctx->common_cfg;
     cm->ops.get_connection = get_connection;
     cm->ops.get_spec_connection = get_spec_connection;
-    cm->ops.get_master_connection = NULL;
+    cm->ops.get_master_connection = get_master_connection;
     cm->ops.get_readable_connection = NULL;
     cm->ops.release_connection = release_connection;
     cm->ops.close_connection = close_connection;

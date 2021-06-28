@@ -43,6 +43,7 @@ src/auth/server/fcfs_authd
 src/auth/client/tools/fcfs_user
 src/auth/client/tools/fcfs_pool
 src/auth/client/tools/fauth_list_servers
+src/auth/client/tools/fauth_cluster_stat
 
 # other
 logs
