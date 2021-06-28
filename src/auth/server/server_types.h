@@ -28,20 +28,22 @@
 #define TASK_STATUS_CONTINUE           12345
 #define TASK_ARG           ((AuthServerTaskArg *)task->arg)
 #define TASK_CTX           TASK_ARG->context
-#define SESSION_ENTRY      TASK_CTX.session
-#define SESSION_FIELDS     ((ServerSessionFields *)TASK_CTX.session->fields)
+#define SESSION_ENTRY      TASK_CTX.shared.service.session
+#define SESSION_FIELDS     ((ServerSessionFields *)SESSION_ENTRY->fields)
 #define SESSION_DBUSER     SESSION_FIELDS->dbuser
 #define SESSION_DBPOOL     SESSION_FIELDS->dbpool
 #define SESSION_USER       SESSION_FIELDS->dbuser->user
-#define SESSION_SUBSCRIBER TASK_CTX.subscriber
+#define SESSION_SUBSCRIBER TASK_CTX.shared.cluster.subscriber
 #define REQUEST            TASK_CTX.common.request
 #define RESPONSE           TASK_CTX.common.response
 #define RESPONSE_STATUS    RESPONSE.header.status
 #define REQUEST_STATUS     REQUEST.header.status
 #define SERVER_TASK_TYPE   TASK_CTX.task_type
+#define CLUSTER_PEER       TASK_CTX.shared.cluster.peer
 
-#define AUTH_SERVER_TASK_TYPE_SESSION     1
-#define AUTH_SERVER_TASK_TYPE_SUBSCRIBE   2
+#define AUTH_SERVER_TASK_TYPE_SESSION      1
+#define AUTH_SERVER_TASK_TYPE_SUBSCRIBE    2
+#define AUTH_SERVER_TASK_TYPE_RELATIONSHIP 3
 
 #define SERVER_CTX        ((AuthServerContext *)task->thread_data->arg)
 #define SESSION_HOLDER    SERVER_CTX->service.session_holder
@@ -82,9 +84,16 @@ typedef struct server_task_arg {
         SFCommonTaskContext common;
         int task_type;
         union {
-            ServerSessionEntry *session;
-            ServerSessionSubscriber *subscriber;
-        };
+            struct {
+                ServerSessionEntry *session;
+            } service;
+
+            union {
+                ServerSessionSubscriber *subscriber;
+                FCFSAuthClusterServerInfo *peer;   //the peer server in the cluster
+            } cluster;
+        } shared;
+
     } context;
 } AuthServerTaskArg;
 

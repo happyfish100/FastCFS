@@ -29,7 +29,7 @@ extern "C" {
 int cluster_info_init(const char *cluster_config_filename);
 int cluster_info_destroy();
 
-FCFSAuthClusterServerInfo *fdir_get_server_by_id(const int server_id);
+FCFSAuthClusterServerInfo *fcfs_auth_get_server_by_id(const int server_id);
 
 #ifdef __cplusplus
 }

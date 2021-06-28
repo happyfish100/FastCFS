@@ -217,7 +217,14 @@ static int session_sync(ConnectionInfo *conn)
                 break;
             }
             deal_session_array();
-        } else if (result != ETIMEDOUT) {
+        } else if (result == ETIMEDOUT) {
+            if ((result=sf_active_test(conn, &response,
+                            g_fcfs_auth_client_vars.client_ctx.
+                            common_cfg.network_timeout)) != 0)
+            {
+                break;
+            }
+        } else {
             sf_log_network_error(&response, conn, result);
             break;
         }

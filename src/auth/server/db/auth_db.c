@@ -31,6 +31,8 @@
 
 #define SKIPLIST_INIT_LEVEL_COUNT   2
 
+static int auth_db_init();
+
 typedef struct auth_db_context {
     pthread_mutex_t lock;
     struct fast_allocator_context name_acontext;
@@ -142,6 +144,13 @@ static int init_allocators()
     return 0;
 }
 
+static void destroy_allocators()
+{
+    fast_mblock_destroy(&adb_ctx.user.allocator);
+    fast_mblock_destroy(&adb_ctx.pool.allocators.created);
+    fast_mblock_destroy(&adb_ctx.pool.allocators.granted);
+}
+
 static void free_storage_pool_func(void *ptr, const int delay_seconds)
 {
     DBStoragePoolInfo *dbspool;
@@ -213,7 +222,16 @@ static int init_skiplists()
     return 0;
 }
 
-int auth_db_init()
+static void destroy_skiplists()
+{
+    uniq_skiplist_destroy(&adb_ctx.user.sl_pair.factory);
+    uniq_skiplist_destroy(&adb_ctx.pool.factories.created);
+    uniq_skiplist_destroy(&adb_ctx.pool.factories.granted);
+    uniq_skiplist_destroy(&adb_ctx.pool.sl_pairs.by_id.factory);
+    uniq_skiplist_destroy(&adb_ctx.pool.sl_pairs.by_name.factory);
+}
+
+static int auth_db_init()
 {
     int result;
 
@@ -225,15 +243,23 @@ int auth_db_init()
         return result;
     }
 
-    if ((result=init_skiplists()) != 0) {
-        return result;
-    }
-
     if ((result=init_allocators()) != 0) {
         return result;
     }
 
+    if ((result=init_skiplists()) != 0) {
+        return result;
+    }
+
     return 0;
+}
+
+void auth_db_destroy()
+{
+    destroy_skiplists();
+    destroy_allocators();
+    fast_allocator_destroy(&adb_ctx.name_acontext);
+    pthread_mutex_destroy(&adb_ctx.lock);
 }
 
 static inline DBUserInfo *user_get(AuthServerContext *server_ctx,
@@ -1001,6 +1027,10 @@ int adb_load_data(AuthServerContext *server_ctx)
     int result;
     struct fast_mpool_man mpool;
     FCFSAuthUserArray user_array;
+
+    if ((result=auth_db_init()) != 0) {
+        return result;
+    }
 
     if ((result=fast_mpool_init(&mpool, alloc_size_once,
                     discard_size)) != 0)

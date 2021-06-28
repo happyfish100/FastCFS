@@ -39,11 +39,10 @@
 #include "sf/sf_service.h"
 #include "sf/sf_util.h"
 #include "common/auth_proto.h"
-#include "db/auth_db.h"
-#include "db/pool_usage_updater.h"
 #include "server_global.h"
 #include "server_func.h"
 #include "session_subscribe.h"
+#include "cluster_relationship.h"
 #include "common_handler.h"
 #include "cluster_handler.h"
 #include "service_handler.h"
@@ -181,17 +180,7 @@ int main(int argc, char *argv[])
         sf_enable_thread_notify(true);
         sf_set_remove_from_ready_list(false);
 
-        if ((result=adb_load_data((AuthServerContext *)
-                        sf_get_random_thread_data()->arg)) != 0)
-        {
-            break;
-        }
-        if ((result=pool_usage_updater_init()) != 0) {
-            break;
-        }
-
-        if ((result=adb_check_generate_admin_user((AuthServerContext *)
-                        sf_get_random_thread_data()->arg)) != 0) {
+        if ((result=cluster_relationship_init()) != 0) {
             break;
         }
     } while (0);

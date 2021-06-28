@@ -116,7 +116,7 @@ static int find_myself_in_cluster_config(const char *filename)
     return 0;
 }
 
-FCFSAuthClusterServerInfo *fdir_get_server_by_id(const int server_id)
+FCFSAuthClusterServerInfo *fcfs_auth_get_server_by_id(const int server_id)
 {
     FCServerInfo *server;
     server = fc_server_get_by_id(&CLUSTER_SERVER_CONFIG, server_id);

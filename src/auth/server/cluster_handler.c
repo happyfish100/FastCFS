@@ -41,6 +41,8 @@
 #include "server_global.h"
 #include "server_func.h"
 #include "session_subscribe.h"
+#include "cluster_info.h"
+#include "cluster_relationship.h"
 #include "common_handler.h"
 #include "cluster_handler.h"
 
@@ -70,6 +72,18 @@ static void session_subscriber_cleanup(AuthServerContext *server_ctx,
 void cluster_task_finish_cleanup(struct fast_task_info *task)
 {
     switch (SERVER_TASK_TYPE) {
+        case AUTH_SERVER_TASK_TYPE_RELATIONSHIP:
+            if (CLUSTER_PEER != NULL) {
+                cluster_relationship_add_to_inactive_sarray(CLUSTER_PEER);
+                CLUSTER_PEER = NULL;
+            } else {
+                logError("file: "__FILE__", line: %d, "
+                        "mistake happen! task: %p, SERVER_TASK_TYPE: %d, "
+                        "CLUSTER_PEER is NULL", __LINE__, task,
+                        SERVER_TASK_TYPE);
+            }
+            SERVER_TASK_TYPE = SF_SERVER_TASK_TYPE_NONE;
+            break;
         case AUTH_SERVER_TASK_TYPE_SUBSCRIBE:
             if (SESSION_SUBSCRIBER != NULL) {
                 session_subscriber_cleanup(SERVER_CTX, SESSION_SUBSCRIBER);
@@ -281,6 +295,213 @@ static int cluster_deal_session_validate(struct fast_task_info *task)
     return 0;
 }
 
+static int cluster_check_config_sign(struct fast_task_info *task,
+        const int server_id, const char *config_sign)
+{
+    if (memcmp(config_sign, CLUSTER_CONFIG_SIGN_BUF,
+                SF_CLUSTER_CONFIG_SIGN_LEN) != 0)
+    {
+        char peer_hex[2 * SF_CLUSTER_CONFIG_SIGN_LEN + 1];
+        char my_hex[2 * SF_CLUSTER_CONFIG_SIGN_LEN + 1];
+
+        bin2hex(config_sign, SF_CLUSTER_CONFIG_SIGN_LEN, peer_hex);
+        bin2hex((const char *)CLUSTER_CONFIG_SIGN_BUF,
+                SF_CLUSTER_CONFIG_SIGN_LEN, my_hex);
+
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "server #%d 's cluster config md5: %s != mine: %s",
+                server_id, peer_hex, my_hex);
+        return EFAULT;
+    }
+
+    return 0;
+}
+
+static int cluster_deal_get_server_status(struct fast_task_info *task)
+{
+    int result;
+    int server_id;
+    FCFSAuthProtoGetServerStatusReq *req;
+    FCFSAuthProtoGetServerStatusResp *resp;
+
+    if ((result=server_expect_body_length(sizeof(
+                        FCFSAuthProtoGetServerStatusReq))) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoGetServerStatusReq *)REQUEST.body;
+    server_id = buff2int(req->server_id);
+    if ((result=cluster_check_config_sign(task, server_id,
+                    req->config_sign)) != 0)
+    {
+        return result;
+    }
+
+    resp = (FCFSAuthProtoGetServerStatusResp *)REQUEST.body;
+    resp->is_master = MYSELF_IS_MASTER;
+    int2buff(CLUSTER_MY_SERVER_ID, resp->server_id);
+
+    RESPONSE.header.body_len = sizeof(FCFSAuthProtoGetServerStatusResp);
+    RESPONSE.header.cmd = FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_RESP;
+    TASK_CTX.common.response_done = true;
+    return 0;
+}
+
+static int cluster_deal_join_master(struct fast_task_info *task)
+{
+    int result;
+    int server_id;
+    FCFSAuthProtoJoinMasterReq *req;
+    FCFSAuthClusterServerInfo *peer;
+
+    if ((result=server_expect_body_length(sizeof(
+                        FCFSAuthProtoJoinMasterReq))) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoJoinMasterReq *)REQUEST.body;
+    server_id = buff2int(req->server_id);
+    peer = fcfs_auth_get_server_by_id(server_id);
+    if (peer == NULL) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "peer server id: %d not exist", server_id);
+        return ENOENT;
+    }
+
+    if ((result=cluster_check_config_sign(task, server_id,
+                    req->config_sign)) != 0)
+    {
+        return result;
+    }
+
+    if (CLUSTER_MYSELF_PTR != CLUSTER_MASTER_ATOM_PTR) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "i am not master");
+        return EINVAL;
+    }
+
+    if (CLUSTER_PEER != NULL) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "peer server id: %d already joined", server_id);
+        return EEXIST;
+    }
+
+    SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_RELATIONSHIP;
+    CLUSTER_PEER = peer;
+    cluster_relationship_remove_from_inactive_sarray(peer);
+    return 0;
+}
+
+static int cluster_deal_ping_master(struct fast_task_info *task)
+{
+    int result;
+
+    if ((result=server_expect_body_length(0)) != 0) {
+        return result;
+    }
+
+    if (CLUSTER_PEER == NULL) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "please join first");
+        return EINVAL;
+    }
+
+    if (CLUSTER_MYSELF_PTR != CLUSTER_MASTER_ATOM_PTR) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "i am not master");
+        return EINVAL;
+    }
+
+    RESPONSE.header.cmd = FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_RESP;
+    return 0;
+}
+
+static int cluster_deal_next_master(struct fast_task_info *task)
+{
+    int result;
+    int master_id;
+    FCFSAuthClusterServerInfo *master;
+
+    if ((result=server_expect_body_length(4)) != 0) {
+        return result;
+    }
+
+    if (CLUSTER_MYSELF_PTR == CLUSTER_MASTER_ATOM_PTR) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "i am already master");
+        cluster_relationship_trigger_reselect_master();
+        return EEXIST;
+    }
+
+    master_id = buff2int(REQUEST.body);
+    master = fcfs_auth_get_server_by_id(master_id);
+    if (master == NULL) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "master server id: %d not exist", master_id);
+        return ENOENT;
+    }
+
+    if (REQUEST.header.cmd == FCFS_AUTH_CLUSTER_PROTO_PRE_SET_NEXT_MASTER) {
+        return cluster_relationship_pre_set_master(master);
+    } else {
+        return cluster_relationship_commit_master(master);
+    }
+}
+
+static int cluster_process(struct fast_task_info *task)
+{
+    if (!MYSELF_IS_MASTER) {
+        if (REQUEST.header.cmd == FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ ||
+                REQUEST.header.cmd == FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ)
+        {
+            RESPONSE.error.length = sprintf(
+                    RESPONSE.error.message,
+                    "i am not master");
+            return SF_RETRIABLE_ERROR_NOT_MASTER;
+        }
+    }
+
+    switch (REQUEST.header.cmd) {
+        case SF_PROTO_ACTIVE_TEST_REQ:
+            if (SERVER_TASK_TYPE == AUTH_SERVER_TASK_TYPE_SUBSCRIBE &&
+                    !MYSELF_IS_MASTER)
+            {
+                RESPONSE.error.length = sprintf(
+                        RESPONSE.error.message,
+                        "i am not master");
+                return SF_RETRIABLE_ERROR_NOT_MASTER;
+            }
+            RESPONSE.header.cmd = SF_PROTO_ACTIVE_TEST_RESP;
+            return sf_proto_deal_active_test(task, &REQUEST, &RESPONSE);
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ:
+            return  cluster_deal_session_subscribe(task);
+        case FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ:
+            return cluster_deal_session_validate(task);
+        case FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_REQ:
+            return cluster_deal_get_server_status(task);
+        case FCFS_AUTH_CLUSTER_PROTO_PRE_SET_NEXT_MASTER:
+        case FCFS_AUTH_CLUSTER_PROTO_COMMIT_NEXT_MASTER:
+            return cluster_deal_next_master(task);
+        case FCFS_AUTH_CLUSTER_PROTO_JOIN_MASTER:
+            return cluster_deal_join_master(task);
+        case FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_REQ:
+            return cluster_deal_ping_master(task);
+        default:
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "unkown cmd: %d", REQUEST.header.cmd);
+            return -EINVAL;
+    }
+}
+
 int cluster_deal_task(struct fast_task_info *task, const int stage)
 {
     int result;
@@ -298,23 +519,7 @@ int cluster_deal_task(struct fast_task_info *task, const int stage)
         }
     } else {
         sf_proto_init_task_context(task, &TASK_CTX.common);
-        switch (REQUEST.header.cmd) {
-            case SF_PROTO_ACTIVE_TEST_REQ:
-                RESPONSE.header.cmd = SF_PROTO_ACTIVE_TEST_RESP;
-                result = sf_proto_deal_active_test(task, &REQUEST, &RESPONSE);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ:
-                result =  cluster_deal_session_subscribe(task);
-                break;
-            case FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ:
-                result = cluster_deal_session_validate(task);
-                break;
-            default:
-                RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                        "unkown cmd: %d", REQUEST.header.cmd);
-                result = -EINVAL;
-                break;
-        }
+        result = cluster_process(task);
     }
 
     if (result == TASK_STATUS_CONTINUE) {

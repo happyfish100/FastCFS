@@ -49,7 +49,7 @@
 int service_handler_init()
 {
     g_fcfs_auth_client_vars.need_load_passwd = false;
-    return auth_db_init();
+    return 0;
 }
 
 int service_handler_destroy()
@@ -867,6 +867,19 @@ static int service_deal_get_master(struct fast_task_info *task)
 static int service_process(struct fast_task_info *task)
 {
     int result;
+
+    if (!MYSELF_IS_MASTER) {
+        if (!(REQUEST.header.cmd == FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ ||
+                    REQUEST.header.cmd == SF_SERVICE_PROTO_GET_LEADER_REQ ||
+                    REQUEST.header.cmd == SF_PROTO_ACTIVE_TEST_REQ))
+        {
+            RESPONSE.error.length = sprintf(
+                    RESPONSE.error.message,
+                    "i am not master");
+            return SF_RETRIABLE_ERROR_NOT_MASTER;
+        }
+    }
+
     switch (REQUEST.header.cmd) {
         case SF_PROTO_ACTIVE_TEST_REQ:
             RESPONSE.header.cmd = SF_PROTO_ACTIVE_TEST_RESP;

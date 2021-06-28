@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-int pool_usage_updater_init();
+int pool_usage_updater_start();
 
 #ifdef __cplusplus
 }

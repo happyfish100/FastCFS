@@ -23,7 +23,15 @@
 #include "auth_db.h"
 #include "pool_usage_updater.h"
 
-static FDIRClientNamespaceStatArray nss_array;
+typedef struct {
+    bool inited;
+    volatile bool running;
+    FDIRClientNamespaceStatArray nss_array;
+} PoolUsageUpdaterContext;
+
+static PoolUsageUpdaterContext updater_ctx = {false, false};
+
+#define NSS_ARRAY updater_ctx.nss_array
 
 static int nss_fetch(ConnectionInfo *conn)
 {
@@ -34,20 +42,20 @@ static int nss_fetch(ConnectionInfo *conn)
 
     do {
         if ((result=fdir_client_proto_nss_fetch(&g_fdir_client_vars.
-                        client_ctx, conn, &nss_array, &is_last)) != 0)
+                        client_ctx, conn, &NSS_ARRAY, &is_last)) != 0)
         {
             break;
         }
 
-        if (nss_array.count == 0) {
+        if (NSS_ARRAY.count == 0) {
             break;
         }
 
-        end = nss_array.entries + nss_array.count;
-        for (entry=nss_array.entries; entry<end; entry++) {
+        end = NSS_ARRAY.entries + NSS_ARRAY.count;
+        for (entry=NSS_ARRAY.entries; entry<end; entry++) {
             /*
             logInfo("%d. ns name: %.*s, used bytes: %.3lf GB",
-                    (int)(entry - nss_array.entries + 1),
+                    (int)(entry - NSS_ARRAY.entries + 1),
                     entry->ns_name.len, entry->ns_name.str,
                     (double)entry->used_bytes / (1024 * 1024 * 1024));
                     */
@@ -90,6 +98,7 @@ static void *pool_usage_refresh_thread_func(void *arg)
     prctl(PR_SET_NAME, "pool-usage-updater");
 #endif
 
+    updater_ctx.running = true;
     cm = &g_fdir_client_vars.client_ctx.cm;
     while (SF_G_CONTINUE_FLAG) {
         if ((conn=cm->ops.get_master_connection(cm, 0, &result)) == NULL) {
@@ -102,15 +111,15 @@ static void *pool_usage_refresh_thread_func(void *arg)
         sleep(1);
     }
 
+    updater_ctx.running = false;
     return NULL;
 }
 
-int pool_usage_updater_init()
+static int pool_usage_updater_init()
 {
     int result;
-    pthread_t tid;
 
-    if ((result=fdir_client_namespace_stat_array_init(&nss_array)) != 0) {
+    if ((result=fdir_client_namespace_stat_array_init(&NSS_ARRAY)) != 0) {
         return result;
     }
 
@@ -119,6 +128,32 @@ int pool_usage_updater_init()
     {
         return result;
     }
+    return 0;
+}
+
+int pool_usage_updater_start()
+{
+    int result;
+    int count;
+    pthread_t tid;
+
+    if (!updater_ctx.inited) {
+        if ((result=pool_usage_updater_init()) != 0) {
+            return result;
+        }
+
+        updater_ctx.inited = true;
+    }
+
+    count = 0;
+    while (updater_ctx.running && count++ < 3) {
+        sleep(1);
+    }
+
+    if (updater_ctx.running) {
+        return 0;
+    }
+
     return fc_create_thread(&tid, pool_usage_refresh_thread_func,
             NULL, SF_G_THREAD_STACK_SIZE);
 }
