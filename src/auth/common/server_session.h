@@ -110,6 +110,8 @@ int server_session_fdir_priv_granted(const uint64_t session_id,
 
 int server_session_delete(const uint64_t session_id);
 
+void server_session_clear();
+
 #ifdef __cplusplus
 }
 #endif

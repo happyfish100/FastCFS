@@ -36,6 +36,7 @@
 #include "db/auth_db.h"
 #include "db/pool_usage_updater.h"
 #include "server_global.h"
+#include "session_subscribe.h"
 #include "cluster_relationship.h"
 
 typedef struct fcfs_auth_cluster_server_status {
@@ -157,6 +158,8 @@ static inline void cluster_unset_master()
     if (old_master != NULL) {
         __sync_bool_compare_and_swap(&CLUSTER_MASTER_PTR, old_master, NULL);
         if (old_master == CLUSTER_MYSELF_PTR) {
+            session_subscribe_clear_session();
+            server_session_clear();
             auth_db_destroy();
         }
     }
@@ -626,7 +629,7 @@ static int cluster_select_master()
 	logInfo("file: "__FILE__", line: %d, "
 		"selecting master...", __LINE__);
 
-    sleep_secs = 2;
+    sleep_secs = 1;
     i = 0;
     while (1) {
         if ((result=cluster_get_master(&server_status, &active_count)) != 0) {
@@ -648,7 +651,7 @@ static int cluster_select_master()
                 __LINE__, i, active_count, CLUSTER_SERVER_ARRAY.count,
                 sleep_secs);
         sleep(sleep_secs);
-        if (sleep_secs < 32) {
+        if ((i % 2 == 0) && (sleep_secs < 8)) {
             sleep_secs *= 2;
         }
     }

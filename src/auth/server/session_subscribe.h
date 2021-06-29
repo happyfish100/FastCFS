@@ -46,6 +46,8 @@ extern "C" {
 
     void session_subscribe_release(ServerSessionSubscriber *subscriber);
 
+    void session_subscribe_clear_session();
+
 #ifdef __cplusplus
 }
 #endif

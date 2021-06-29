@@ -123,7 +123,7 @@ static void server_session_del_callback(ServerSessionEntry *session)
     ServerSessionSubscribeEntry subs_entry;
 
     fields = (ServerSessionFields *)(session->fields);
-    if (fields->publish) {
+    if (fields->publish && MYSELF_IS_MASTER) {
         locked_list_del(&fields->dlink, &subscribe_ctx.sessions);
 
         memset(&subs_entry, 0, sizeof(subs_entry));
@@ -347,4 +347,18 @@ void session_subscribe_release(ServerSessionSubscriber *subscriber)
         session_subscribe_free_entries(entry);
     }
     fast_mblock_free_object(&subscribe_ctx.subs_allocator, subscriber);
+}
+
+void session_subscribe_clear_session()
+{
+    ServerSessionFields *fields;
+    ServerSessionFields *tmp;
+
+    PTHREAD_MUTEX_LOCK(&subscribe_ctx.sessions.lock);
+    fc_list_for_each_entry_safe(fields, tmp,
+            &subscribe_ctx.sessions.head, dlink)
+    {
+        locked_list_del(&fields->dlink, &subscribe_ctx.sessions);
+    }
+    PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.sessions.lock);
 }

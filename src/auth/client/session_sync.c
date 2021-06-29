@@ -230,6 +230,10 @@ static int session_sync(ConnectionInfo *conn)
         }
     }
 
+    if (SF_G_CONTINUE_FLAG) {
+        server_session_clear();
+    }
+
     return result;
 }
 

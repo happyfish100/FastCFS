@@ -41,7 +41,6 @@
 typedef struct {
     ServerSessionHashEntry **buckets;
     int capacity;
-    int count;
 } ServerSessionHashtable;
 
 typedef struct {
@@ -280,7 +279,6 @@ static int init_hashtable(ServerSessionHashtable *htable)
         return ENOMEM;
     }
     memset(htable->buckets, 0, bytes);
-    htable->count = 0;
 
     return 0;
 }
@@ -529,6 +527,15 @@ int server_session_fdir_priv_granted(const uint64_t session_id,
     return result;
 }
 
+static inline void free_hash_entry(ServerSessionHashEntry *entry)
+{
+    if (session_ctx.callbacks.del_func != NULL) {
+        session_ctx.callbacks.del_func(&entry->entry);
+    }
+
+    fast_mblock_free_object(entry->allocator, entry);
+}
+
 int server_session_delete(const uint64_t session_id)
 {
     ServerSessionHashEntry *previous;
@@ -548,13 +555,38 @@ int server_session_delete(const uint64_t session_id)
     PTHREAD_MUTEX_UNLOCK(lock);
 
     if (found != NULL) {
-        if (session_ctx.callbacks.del_func != NULL) {
-            session_ctx.callbacks.del_func(&found->entry);
-        }
-
-        fast_mblock_free_object(found->allocator, found);
+        free_hash_entry(found);
         return 0;
     } else {
         return ENOENT;
+    }
+}
+
+void server_session_clear()
+{
+    ServerSessionHashEntry *current;
+    ServerSessionHashEntry *deleted;
+    ServerSessionHashEntry **bucket;
+    ServerSessionHashEntry **end;
+    pthread_mutex_t *lock;
+
+    current = NULL;
+    end = session_ctx.htable.buckets + session_ctx.htable.capacity;
+    for (bucket=session_ctx.htable.buckets; bucket<end; bucket++) {
+        lock = session_ctx.lock_array.locks + ((bucket - session_ctx.
+                    htable.buckets) % session_ctx.lock_array.count);
+        PTHREAD_MUTEX_UNLOCK(lock);
+        if (*bucket != NULL) {
+            current = *bucket;
+            *bucket = NULL;
+        }
+        PTHREAD_MUTEX_UNLOCK(lock);
+
+        while (current != NULL) {
+            deleted = current;
+            current = current->next;
+
+            free_hash_entry(deleted);
+        }
     }
 }
