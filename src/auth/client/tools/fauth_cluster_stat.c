@@ -38,11 +38,9 @@ static void output(FCFSAuthClientClusterStatEntry *stats, const int count)
     end = stats + count;
     for (stat=stats; stat<end; stat++) {
         printf( "server_id: %d, host: %s:%u, "
-                "is_master: %d\n",
-                stat->server_id,
-                stat->ip_addr, stat->port,
-                stat->is_master
-              );
+                "is_online: %d, is_master: %d\n",
+                stat->server_id, stat->ip_addr, stat->port,
+                stat->is_online, stat->is_master);
     }
     printf("\nserver count: %d\n\n", count);
 }

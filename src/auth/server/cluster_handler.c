@@ -74,6 +74,7 @@ void cluster_task_finish_cleanup(struct fast_task_info *task)
     switch (SERVER_TASK_TYPE) {
         case AUTH_SERVER_TASK_TYPE_RELATIONSHIP:
             if (CLUSTER_PEER != NULL) {
+                CLUSTER_PEER->is_online = false;
                 cluster_relationship_add_to_inactive_sarray(CLUSTER_PEER);
                 CLUSTER_PEER = NULL;
             } else {
@@ -384,6 +385,13 @@ static int cluster_deal_join_master(struct fast_task_info *task)
         return EINVAL;
     }
 
+    if (peer == CLUSTER_MYSELF_PTR) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "can't join self");
+        return EINVAL;
+    }
+
     if (CLUSTER_PEER != NULL) {
         RESPONSE.error.length = sprintf(
                 RESPONSE.error.message,
@@ -393,6 +401,7 @@ static int cluster_deal_join_master(struct fast_task_info *task)
 
     SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_RELATIONSHIP;
     CLUSTER_PEER = peer;
+    CLUSTER_PEER->is_online = true;
     cluster_relationship_remove_from_inactive_sarray(peer);
     return 0;
 }

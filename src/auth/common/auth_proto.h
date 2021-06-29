@@ -253,6 +253,7 @@ typedef struct fcfs_auth_proto_cluster_stat_resp_body_header {
 
 typedef struct fcfs_auth_proto_cluster_stat_resp_body_part {
     char server_id[4];
+    char is_online;
     char is_master;
     char padding[1];
     char port[2];

@@ -23,9 +23,10 @@
 
 typedef struct fcfs_auth_client_cluster_stat_entry {
     int server_id;
+    bool is_online;
     bool is_master;
-    char ip_addr[IP_ADDRESS_SIZE];
     uint16_t port;
+    char ip_addr[IP_ADDRESS_SIZE];
 } FCFSAuthClientClusterStatEntry;
 
 #ifdef __cplusplus

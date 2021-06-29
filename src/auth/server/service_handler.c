@@ -886,6 +886,8 @@ static int service_deal_cluster_stat(struct fast_task_info *task)
     send = CLUSTER_SERVER_ARRAY.servers + CLUSTER_SERVER_ARRAY.count;
     for (cs=CLUSTER_SERVER_ARRAY.servers; cs<send; cs++, body_part++) {
         int2buff(cs->server->id, body_part->server_id);
+        body_part->is_online = ((cs == CLUSTER_MASTER_ATOM_PTR ||
+                    cs->is_online) ? 1 : 0);
         body_part->is_master = (cs == CLUSTER_MASTER_ATOM_PTR ? 1 : 0);
         snprintf(body_part->ip_addr, sizeof(body_part->ip_addr), "%s",
                 SERVICE_GROUP_ADDRESS_FIRST_IP(cs->server));

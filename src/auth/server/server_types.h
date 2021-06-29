@@ -50,6 +50,7 @@
 
 typedef struct fcfs_auth_cluster_server_info {
     FCServerInfo *server;
+    volatile bool is_online;
 } FCFSAuthClusterServerInfo;
 
 typedef struct fcfs_auth_cluster_server_array {

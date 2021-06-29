@@ -569,7 +569,9 @@ void server_session_clear()
     ServerSessionHashEntry **bucket;
     ServerSessionHashEntry **end;
     pthread_mutex_t *lock;
+    int64_t count;
 
+    count = 0;
     current = NULL;
     end = session_ctx.htable.buckets + session_ctx.htable.capacity;
     for (bucket=session_ctx.htable.buckets; bucket<end; bucket++) {
@@ -587,6 +589,13 @@ void server_session_clear()
             current = current->next;
 
             free_hash_entry(deleted);
+            ++count;
         }
     }
+
+    //if (count > 0) {
+        logInfo("file: "__FILE__", line: %d, "
+                "%"PRId64" sessions cleared",
+                __LINE__, count);
+    //}
 }

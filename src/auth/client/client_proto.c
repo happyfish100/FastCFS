@@ -900,6 +900,7 @@ int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
     } else {
         body_end = body_part + (*count);
         for (stat=stats; body_part<body_end; body_part++, stat++) {
+            stat->is_online = body_part->is_online;
             stat->is_master = body_part->is_master;
             stat->server_id = buff2int(body_part->server_id);
             memcpy(stat->ip_addr, body_part->ip_addr, IP_ADDRESS_SIZE);
