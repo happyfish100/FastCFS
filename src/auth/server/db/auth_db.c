@@ -452,29 +452,34 @@ int adb_user_update_passwd(AuthServerContext *server_ctx,
     return result;
 }
 
-int adb_user_list(AuthServerContext *server_ctx, FCFSAuthUserArray *array)
+int adb_user_list(AuthServerContext *server_ctx,
+        const SFListLimitInfo *limit,
+        FCFSAuthUserArray *array)
 {
     UniqSkiplistIterator it;
     DBUserInfo *dbuser;
     int result;
 
-    result = 0;
     array->count = 0;
+    if ((result=fcfs_auth_user_check_realloc_array(array,
+                    limit->count)) != 0)
+    {
+        return result;
+    }
+
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
-    uniq_skiplist_iterator(adb_ctx.user.sl_pair.skiplist, &it);
-    while ((dbuser=(DBUserInfo *)uniq_skiplist_next(&it)) != NULL) {
+    uniq_skiplist_iterator_at(adb_ctx.user.sl_pair.skiplist,
+            limit->offset, &it);
+    while ((array->count < limit->count) && (dbuser=(DBUserInfo *)
+                uniq_skiplist_next(&it)) != NULL)
+    {
         if (dbuser->user.status == FCFS_AUTH_USER_STATUS_NORMAL) {
-            if ((result=fcfs_auth_user_check_realloc_array(array,
-                            array->count + 1)) != 0)
-            {
-                break;
-            }
             array->users[array->count++] = dbuser->user;
         }
     }
     PTHREAD_MUTEX_UNLOCK(&adb_ctx.lock);
 
-    return result;
+    return 0;
 }
 
 static inline DBStoragePoolInfo *get_spool_by_id(const int64_t pool_id)
@@ -789,26 +794,29 @@ int adb_spool_set_used_bytes(const string_t *poolname,
 }
 
 int adb_spool_list(AuthServerContext *server_ctx, const string_t *username,
-        FCFSAuthStoragePoolArray *array)
+        const SFListLimitInfo *limit, FCFSAuthStoragePoolArray *array)
 {
     UniqSkiplistIterator it;
     DBUserInfo *user;
     DBStoragePoolInfo *spool;
     int result;
 
-    result = 0;
     array->count = 0;
+    if ((result=fcfs_auth_spool_check_realloc_array(array,
+                    limit->count)) != 0)
+    {
+        return result;
+    }
+
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     user = user_get(server_ctx, username);
     if (user != NULL) {
-        uniq_skiplist_iterator(user->storage_pools.created, &it);
-        while ((spool=(DBStoragePoolInfo *)uniq_skiplist_next(&it)) != NULL) {
+        uniq_skiplist_iterator_at(user->storage_pools.created,
+                limit->offset, &it);
+        while ((array->count < limit->count) && (spool=(DBStoragePoolInfo *)
+                    uniq_skiplist_next(&it)) != NULL)
+        {
             if (spool->pool.status == FCFS_AUTH_POOL_STATUS_NORMAL) {
-                if ((result=fcfs_auth_spool_check_realloc_array(array,
-                                array->count + 1)) != 0)
-                {
-                    break;
-                }
                 array->spools[array->count++] = spool->pool;
             }
         }
@@ -1243,26 +1251,28 @@ int adb_granted_privs_get(AuthServerContext *server_ctx,
 }
 
 int adb_granted_list(AuthServerContext *server_ctx, const string_t *username,
-        FCFSAuthGrantedPoolArray *array)
+        const SFListLimitInfo *limit, FCFSAuthGrantedPoolArray *array)
 {
     UniqSkiplistIterator it;
     DBUserInfo *user;
     DBGrantedPoolInfo *dbgpool;
     int result;
 
-    result = 0;
     array->count = 0;
+    if ((result=fcfs_auth_gpool_check_realloc_array(
+                    array, limit->count)) != 0)
+    {
+        return result;
+    }
+
     PTHREAD_MUTEX_LOCK(&adb_ctx.lock);
     user = user_get(server_ctx, username);
     if (user != NULL) {
-        uniq_skiplist_iterator(user->storage_pools.granted, &it);
-        while ((dbgpool=(DBGrantedPoolInfo *)uniq_skiplist_next(&it)) != NULL) {
-            if ((result=fcfs_auth_gpool_check_realloc_array(
-                            array, array->count + 1)) != 0)
-            {
-                break;
-            }
-
+        uniq_skiplist_iterator_at(user->storage_pools.granted,
+                limit->offset, &it);
+        while ((array->count < limit->count) && (dbgpool=(DBGrantedPoolInfo *)
+                    uniq_skiplist_next(&it)) != NULL)
+        {
             set_gpool_full_info(array->gpools + array->count, dbgpool);
             array->count++;
         }

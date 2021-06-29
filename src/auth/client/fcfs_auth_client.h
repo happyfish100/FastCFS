@@ -93,8 +93,8 @@ int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
         const FCFSAuthUserInfo *user);
 
 int fcfs_auth_client_user_list(FCFSAuthClientContext *client_ctx,
-        const string_t *username, SFProtoRecvBuffer *buffer,
-        FCFSAuthUserArray *array);
+        const string_t *username, const SFListLimitInfo *limit,
+        struct fast_mpool_man *mpool, FCFSAuthUserArray *array);
 
 int fcfs_auth_client_user_grant(FCFSAuthClientContext *client_ctx,
         const string_t *username, const int64_t priv);

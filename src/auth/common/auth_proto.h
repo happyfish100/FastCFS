@@ -148,11 +148,14 @@ typedef struct fcfs_auth_proto_user_create_req {
 } FCFSAuthProtoUserCreateReq;
 
 typedef struct fcfs_auth_proto_user_list_req {
-    char username[0];
+    SFProtoLimitInfo limit;
+    FCFSAuthProtoNameInfo username;
 } FCFSAuthProtoUserListReq;
 
 typedef struct fcfs_auth_proto_list_resp_header {
     char count[4];
+    char is_last;
+    char padding[3];
 } FCFSAuthProtoListRespHeader;
 
 typedef struct fcfs_auth_proto_user_list_resp_body_part {
@@ -181,6 +184,7 @@ typedef struct fcfs_auth_proto_spool_create_resp {
 } FCFSAuthProtoSPoolCreateResp;
 
 typedef struct fcfs_auth_proto_spool_list_req {
+    SFProtoLimitInfo limit;
     FCFSAuthProtoUserPoolPair up_pair;
 } FCFSAuthProtoSPoolListReq;
 

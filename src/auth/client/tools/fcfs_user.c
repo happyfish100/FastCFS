@@ -26,6 +26,10 @@
 #include "../../common/auth_func.h"
 #include "../fcfs_auth_client.h"
 
+const int mpool_alloc_size_once = 16 * 1024;
+const int mpool_discard_size = 64;
+const SFListLimitInfo limit = {0, 0};
+
 static int current_index;
 static FCFSAuthUserInfo user;
 static bool priv_set = false;
@@ -160,14 +164,19 @@ static void output_users(FCFSAuthUserArray *array)
 
 static int list_user(int argc, char *argv[])
 {
-    SFProtoRBufferFixedWrapper buffer_wrapper;
+    struct fast_mpool_man mpool;
     FCFSAuthUserArray user_array;
     int result;
 
-    sf_init_recv_buffer_by_wrapper(&buffer_wrapper);
+    if ((result=fast_mpool_init(&mpool, mpool_alloc_size_once,
+                    mpool_discard_size)) != 0)
+    {
+        return result;
+    }
+
     fcfs_auth_user_init_array(&user_array);
     if ((result=fcfs_auth_client_user_list(&g_fcfs_auth_client_vars.
-                    client_ctx, &user.name, &buffer_wrapper.buffer,
+                    client_ctx, &user.name, &limit, &mpool,
                     &user_array)) == 0)
     {
         output_users(&user_array);
@@ -175,8 +184,8 @@ static int list_user(int argc, char *argv[])
         fprintf(stderr, "list user fail\n");
     }
 
-    sf_free_recv_buffer(&buffer_wrapper.buffer);
     fcfs_auth_user_free_array(&user_array);
+    fast_mpool_destroy(&mpool);
     return result;
 }
 

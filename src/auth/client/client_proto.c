@@ -25,17 +25,23 @@
 #include "client_global.h"
 #include "client_proto.h"
 
+#define FCFS_AUTH_CLIENT_LIST_BATCH_COUNT  128
+
 #define check_name(name, caption) check_name_ex(name, caption, true)
 
 #define check_username_ex(username, required) \
     check_name_ex(username, "username", required)
 #define check_username(username) check_username_ex(username, true)
+
+#define pack_username_ex(username, proto_uname, required) \
+    pack_name_ex(username, "username", proto_uname, 0, required)
 #define pack_username(username, proto_uname) \
-    pack_name_ex(username, "username", proto_uname, 0, true)
+     pack_username_ex(username, proto_uname, true)
 
 #define check_poolname_ex(poolname, required) \
     check_name_ex(poolname, "poolname", required)
 #define check_poolname(poolname) check_poolname_ex(poolname, true)
+
 #define pack_poolname_ex(poolname, proto_pname, str_offset, required) \
     pack_name_ex(poolname, "poolname", proto_pname, str_offset, required)
 #define pack_poolname(poolname, proto_pname) \
@@ -281,12 +287,16 @@ int fcfs_auth_client_proto_user_create(FCFSAuthClientContext *client_ctx,
     return result;
 }
 
-int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
+static int client_proto_user_list_do(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username,
-        SFProtoRecvBuffer *buffer, FCFSAuthUserArray *array)
+        const SFListLimitInfo *limit, SFProtoRecvBuffer *buffer,
+        struct fast_mpool_man *mpool, FCFSAuthUserArray *array,
+        bool *is_last)
 {
     FCFSAuthProtoHeader *header;
-    char out_buff[sizeof(FCFSAuthProtoHeader) + NAME_MAX];
+    FCFSAuthProtoUserListReq *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoUserListReq) + NAME_MAX];
     SFResponseInfo response;
     FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoUserListRespBodyPart *body_part;
@@ -297,19 +307,17 @@ int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
     int count;
     int result;
 
-    if ((result=check_username_ex(username, false)) != 0) {
+    header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoUserListReq *)(header + 1);
+    if ((result=pack_username_ex(username, &req->username, false)) != 0) {
         return result;
     }
 
-    header = (FCFSAuthProtoHeader *)out_buff;
-    out_bytes = sizeof(FCFSAuthProtoHeader) + username->len;
+    out_bytes = sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoUserListReq) + username->len;
     SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ,
             out_bytes - sizeof(FCFSAuthProtoHeader));
-    if (username->len > 0) {
-        FCFSAuthProtoUserListReq *req;
-        req = (FCFSAuthProtoUserListReq *)(header + 1);
-        memcpy(req->username, username->str, username->len);
-    }
+    sf_proto_pack_limit(limit, &req->limit);
 
     response.error.length = 0;
     if ((result=sf_send_and_recv_vary_response(conn, out_buff, out_bytes,
@@ -323,17 +331,24 @@ int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
 
     resp_header = (FCFSAuthProtoListRespHeader *)buffer->buff;
     count = buff2int(resp_header->count);
-    if ((result=fcfs_auth_user_check_realloc_array(array, count)) != 0) {
+    *is_last = resp_header->is_last;
+    if ((result=fcfs_auth_user_check_realloc_array(array,
+                    array->count + count)) != 0)
+    {
         return result;
     }
 
     p = (char *)(resp_header + 1);
-    end = array->users + count;
-    for (user=array->users; user<end; user++) {
+    end = array->users + array->count + count;
+    for (user=array->users+array->count; user<end; user++) {
         body_part = (FCFSAuthProtoUserListRespBodyPart *)p;
         user->priv = buff2long(body_part->priv);
-        user->name.len = body_part->username.len;
-        user->name.str = body_part->username.str;
+        if ((result=fast_mpool_alloc_string_ex(mpool,
+                        &user->name, body_part->username.str,
+                        body_part->username.len)) != 0)
+        {
+            return result;
+        }
         p += sizeof(FCFSAuthProtoUserListRespBodyPart) + user->name.len;
     }
 
@@ -345,7 +360,60 @@ int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
         return EINVAL;
     }
 
-    array->count = count;
+    array->count += count;
+    return result;
+}
+
+int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *username,
+        const SFListLimitInfo *limit, struct fast_mpool_man *mpool,
+        FCFSAuthUserArray *array)
+{
+    int result;
+    int target_count;
+    bool is_last;
+    SFProtoRBufferFixedWrapper buffer_wrapper;
+    SFListLimitInfo new_limit;
+
+    sf_init_recv_buffer_by_wrapper(&buffer_wrapper);
+    if (limit->count > 0 && limit->count <=
+            FCFS_AUTH_CLIENT_LIST_BATCH_COUNT)
+    {
+        result = client_proto_user_list_do(client_ctx, conn,
+                username, limit, &buffer_wrapper.buffer,
+                mpool, array, &is_last);
+        sf_free_recv_buffer(&buffer_wrapper.buffer);
+        return result;
+    }
+
+    if (limit->count <= 0) {
+        target_count = 1000 * 1000;
+    } else {
+        target_count = limit->count;
+    }
+
+    new_limit.offset = limit->offset;
+    new_limit.count = FCFS_AUTH_CLIENT_LIST_BATCH_COUNT;
+    result = 0;
+    is_last = false;
+    while (!is_last) {
+        if ((result=client_proto_user_list_do(client_ctx, conn,
+                        username, &new_limit, &buffer_wrapper.buffer,
+                        mpool, array, &is_last)) != 0)
+        {
+            break;
+        }
+
+        if (array->count == target_count) {
+            break;
+        } else if (array->count > target_count) {
+            array->count = target_count;
+            break;
+        }
+        new_limit.offset = array->count;
+    }
+
+    sf_free_recv_buffer(&buffer_wrapper.buffer);
     return result;
 }
 

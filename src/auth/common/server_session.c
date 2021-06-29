@@ -577,7 +577,7 @@ void server_session_clear()
     for (bucket=session_ctx.htable.buckets; bucket<end; bucket++) {
         lock = session_ctx.lock_array.locks + ((bucket - session_ctx.
                     htable.buckets) % session_ctx.lock_array.count);
-        PTHREAD_MUTEX_UNLOCK(lock);
+        PTHREAD_MUTEX_LOCK(lock);
         if (*bucket != NULL) {
             current = *bucket;
             *bucket = NULL;

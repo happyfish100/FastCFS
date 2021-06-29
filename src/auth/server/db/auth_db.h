@@ -71,7 +71,9 @@ const DBUserInfo *adb_user_get(AuthServerContext *server_ctx,
 
 int adb_user_remove(AuthServerContext *server_ctx, const string_t *username);
 
-int adb_user_list(AuthServerContext *server_ctx, FCFSAuthUserArray *array);
+int adb_user_list(AuthServerContext *server_ctx,
+        const SFListLimitInfo *limit,
+        FCFSAuthUserArray *array);
 
 int adb_user_update_priv(AuthServerContext *server_ctx,
         const string_t *username, const int64_t priv);
@@ -109,7 +111,7 @@ int adb_spool_get_quota(AuthServerContext *server_ctx,
         const string_t *poolname, int64_t *quota);
 
 int adb_spool_list(AuthServerContext *server_ctx, const string_t *username,
-        FCFSAuthStoragePoolArray *array);
+        const SFListLimitInfo *limit, FCFSAuthStoragePoolArray *array);
 
 int adb_spool_set_used_bytes(const string_t *poolname,
         const int64_t used_bytes);
@@ -129,7 +131,7 @@ int adb_granted_privs_get(AuthServerContext *server_ctx,
         FCFSAuthSPoolPriviledges *privs);
 
 int adb_granted_list(AuthServerContext *server_ctx, const string_t *username,
-        FCFSAuthGrantedPoolArray *array);
+        const SFListLimitInfo *limit, FCFSAuthGrantedPoolArray *array);
 
 #ifdef __cplusplus
 }

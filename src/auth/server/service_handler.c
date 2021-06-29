@@ -263,6 +263,23 @@ static int service_deal_user_create(struct fast_task_info *task)
     return adb_user_create(SERVER_CTX, &user);
 }
 
+static int service_parse_limit(struct fast_task_info *task,
+        const SFProtoLimitInfo *limit_proto, SFListLimitInfo *limit_info,
+        const int max_count)
+{
+    sf_proto_extract_limit(limit_proto, limit_info);
+    if (limit_info->count <= 0) {
+        limit_info->count = max_count;
+    } else if (limit_info->count > max_count) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "limit count: %d exceeds: %d",
+                limit_info->count, max_count);
+        return EOVERFLOW;
+    }
+
+    return 0;
+}
+
 static int service_deal_user_list(struct fast_task_info *task)
 {
     FCFSAuthUserArray array;
@@ -270,32 +287,56 @@ static int service_deal_user_list(struct fast_task_info *task)
     const FCFSAuthUserInfo *user;
     const FCFSAuthUserInfo *end;
     string_t username;
+    SFListLimitInfo limit;
     FCFSAuthProtoUserListReq *req;
     FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoUserListRespBodyPart *body_part;
     char *p;
     int result;
 
-    if ((result=server_check_body_length(0, NAME_MAX)) != 0) {
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoUserListReq),
+                    sizeof(FCFSAuthProtoUserListReq) + NAME_MAX)) != 0)
+    {
         return result;
     }
 
-    fcfs_auth_user_init_array(&array);
-    if (REQUEST.header.body_len > 0) {
-        req = (FCFSAuthProtoUserListReq *)REQUEST.body;
-        username.len = REQUEST.header.body_len;
-        username.str = req->username;
+    req = (FCFSAuthProtoUserListReq *)REQUEST.body;
+    FC_SET_STRING_EX(username, req->username.str, req->username.len);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoUserListReq)
+                    + username.len)) != 0)
+    {
+        return result;
+    }
+
+    if (username.len > 0) {
         if ((dbuser=adb_user_get(SERVER_CTX, &username)) == NULL) {
             RESPONSE.error.length = sprintf(RESPONSE.error.message,
                     "username:%.*s not exist", username.len, username.str);
-            fcfs_auth_user_free_array(&array);
             return ENOENT;
         }
+
+        fcfs_auth_user_init_array(&array);
         array.users[0] = dbuser->user;
         array.count = 1;
-    } else if ((result=adb_user_list(SERVER_CTX, &array)) != 0) {
-        fcfs_auth_user_free_array(&array);
-        return result;
+        limit.count = 100;
+    } else {
+        int max_count;
+
+        max_count = (task->size - (sizeof(FCFSAuthProtoHeader) +
+                    sizeof(*resp_header))) / (NAME_MAX +
+                sizeof(FCFSAuthProtoUserListRespBodyPart));
+
+        if ((result=service_parse_limit(task, &req->limit,
+                        &limit, max_count)) != 0)
+        {
+            return result;
+        }
+        fcfs_auth_user_init_array(&array);
+        if ((result=adb_user_list(SERVER_CTX, &limit, &array)) != 0) {
+            fcfs_auth_user_free_array(&array);
+            return result;
+        }
     }
 
     resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
@@ -308,6 +349,7 @@ static int service_deal_user_list(struct fast_task_info *task)
         memcpy(body_part->username.str, user->name.str, user->name.len);
         p += sizeof(FCFSAuthProtoUserListRespBodyPart) + user->name.len;
     }
+    resp_header->is_last = (array.count < limit.count);
     int2buff(array.count, resp_header->count);
     RESPONSE.header.body_len = p - REQUEST.body;
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP;
@@ -503,6 +545,7 @@ static int service_deal_spool_list(struct fast_task_info *task)
     const FCFSAuthStoragePoolInfo *end;
     string_t username;
     string_t poolname;
+    SFListLimitInfo limit;
     FCFSAuthProtoSPoolListReq *req;
     FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoSPoolListRespBodyPart *body_part;
@@ -534,21 +577,39 @@ static int service_deal_spool_list(struct fast_task_info *task)
         }
     }
 
-    fcfs_auth_spool_init_array(&array);
     if (poolname.len > 0) {
         if ((spool=adb_spool_get(SERVER_CTX, &username, &poolname)) == NULL) {
             RESPONSE.error.length = sprintf(RESPONSE.error.message,
                     "user: %.*s, pool: %.*s not exist", username.len,
                     username.str, poolname.len, poolname.str);
-            fcfs_auth_spool_free_array(&array);
             return ENOENT;
         }
 
+        fcfs_auth_spool_init_array(&array);
         array.spools[0] = *spool;
         array.count = 1;
-    } else if ((result=adb_spool_list(SERVER_CTX, &username, &array)) != 0) {
-        fcfs_auth_spool_free_array(&array);
-        return result;
+        limit.count = 100;
+    } else {
+        int max_count;
+
+        max_count = (task->size - (sizeof(FCFSAuthProtoHeader) +
+                    sizeof(*resp_header))) / (NAME_MAX +
+                sizeof(FCFSAuthProtoSPoolListRespBodyPart));
+
+        logInfo("max_count: %d", max_count);
+        if ((result=service_parse_limit(task, &req->limit,
+                        &limit, max_count)) != 0)
+        {
+            return result;
+        }
+
+        fcfs_auth_spool_init_array(&array);
+        if ((result=adb_spool_list(SERVER_CTX, &username,
+                        &limit, &array)) != 0)
+        {
+            fcfs_auth_spool_free_array(&array);
+            return result;
+        }
     }
 
     resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
@@ -561,6 +622,7 @@ static int service_deal_spool_list(struct fast_task_info *task)
         memcpy(body_part->poolname.str, spool->name.str, spool->name.len);
         p += sizeof(FCFSAuthProtoSPoolListRespBodyPart) + spool->name.len;
     }
+    resp_header->is_last = (array.count < limit.count);
     int2buff(array.count, resp_header->count);
     RESPONSE.header.body_len = p - REQUEST.body;
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP;
@@ -763,6 +825,7 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     char pname_buff[NAME_MAX];
     string_t username;
     string_t poolname;
+    SFListLimitInfo limit;
     FCFSAuthProtoGPoolListReq *req;
     FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoGPoolListRespBodyPart *body_part;
@@ -795,13 +858,29 @@ static int service_deal_gpool_list(struct fast_task_info *task)
         }
     }
 
-    fcfs_auth_granted_init_array(&array);
     if (poolname.len > 0) {
         memcpy(pname_buff, poolname.str, poolname.len);
         poolname.str = pname_buff;
+        limit.offset = 0;
+        limit.count = 1000 * 1000;  //to list all
+    } else {
+        int max_count;
+        max_count = (task->size - (sizeof(FCFSAuthProtoHeader) +
+                    sizeof(*resp_header))) / (2 * NAME_MAX +
+                sizeof(FCFSAuthProtoGPoolListRespBodyPart));
+
+        logInfo("max_count: %d", max_count);
+        if ((result=service_parse_limit(task, &req->limit,
+                        &limit, max_count)) != 0)
+        {
+            return result;
+        }
     }
 
-    if ((result=adb_granted_list(SERVER_CTX, &username, &array)) != 0) {
+    fcfs_auth_granted_init_array(&array);
+    if ((result=adb_granted_list(SERVER_CTX, &username,
+                    &limit, &array)) != 0)
+    {
         fcfs_auth_granted_free_array(&array);
         return result;
     }
@@ -824,6 +903,8 @@ static int service_deal_gpool_list(struct fast_task_info *task)
             count++;
         }
     }
+
+    resp_header->is_last = (array.count < limit.count);
     int2buff(count, resp_header->count);
     RESPONSE.header.body_len = p - REQUEST.body;
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP;
