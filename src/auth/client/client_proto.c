@@ -152,7 +152,7 @@ int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
                     FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP,
                     (char *)&login_resp, sizeof(login_resp))) == 0)
     {
-        memcpy(client_ctx->session_id, login_resp.session_id,
+        memcpy(client_ctx->session.id, login_resp.session_id,
                 FCFS_AUTH_SESSION_ID_LEN);
     } else {
         sf_log_network_error(&response, conn, result);

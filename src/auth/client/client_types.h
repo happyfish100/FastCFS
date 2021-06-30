@@ -55,7 +55,10 @@ typedef struct fcfs_auth_client_context {
     SFConnectionManager cm;
     FCFSAuthClientCommonCfg auth_cfg;
     SFClientCommonConfig common_cfg;
-    char session_id[FCFS_AUTH_SESSION_ID_LEN];
+    struct {
+        string_t *poolname;
+        char id[FCFS_AUTH_SESSION_ID_LEN];
+    } session;
 } FCFSAuthClientContext;
 
 typedef struct fcfs_auth_client_full_context {

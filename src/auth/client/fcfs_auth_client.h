@@ -22,6 +22,7 @@
 #include "client_func.h"
 #include "client_global.h"
 #include "client_proto.h"
+#include "session_regenerate.h"
 
 #define fcfs_auth_load_config(auth, config_filename)  \
     fcfs_auth_load_config_ex(auth, config_filename, NULL, \
@@ -53,20 +54,30 @@ static inline int fcfs_auth_client_user_login(
 }
 
 static inline int fcfs_auth_client_session_create_ex(
-        FCFSAuthClientFullContext *auth, const string_t *poolname,
+        FCFSAuthClientFullContext *auth, string_t *poolname,
         const bool publish)
 {
+    int result;
     int flags;
 
     /*
-    logInfo("file: "__FILE__", line: %d, "
-            "auth_enabled: %d, username: %s, secret_key_filename: %s",
-            __LINE__, auth->enabled, auth->ctx->auth_cfg.username.str,
-            auth->ctx->auth_cfg.secret_key_filename.str);
-            */
+       logInfo("file: "__FILE__", line: %d, "
+       "auth_enabled: %d, username: %s, secret_key_filename: %s",
+       __LINE__, auth->enabled, auth->ctx->auth_cfg.username.str,
+       auth->ctx->auth_cfg.secret_key_filename.str);
+     */
 
     if (auth->enabled) {
-        flags = (publish ? FCFS_AUTH_SESSION_FLAGS_PUBLISH : 0);
+        auth->ctx->session.poolname = poolname;
+
+        if (publish) {
+            if ((result=session_regenerate_init()) != 0) {
+                return result;
+            }
+            flags = FCFS_AUTH_SESSION_FLAGS_PUBLISH;
+        } else {
+            flags = 0;
+        }
         return fcfs_auth_client_user_login_ex(auth->ctx, &auth->
                 ctx->auth_cfg.username, &auth->ctx->auth_cfg.passwd,
                 poolname, flags);
@@ -78,8 +89,9 @@ static inline int fcfs_auth_client_session_create_ex(
 static inline int fcfs_auth_client_session_create(
         FCFSAuthClientFullContext *auth, const bool publish)
 {
-    const string_t poolname = {NULL, 0};
-    return fcfs_auth_client_session_create_ex(auth, &poolname, publish);
+#define AUTH_EMPTY_POOL_NAME SF_G_EMPTY_STRING
+    return fcfs_auth_client_session_create_ex(auth,
+            &AUTH_EMPTY_POOL_NAME, publish);
 }
 
 int fcfs_auth_client_session_subscribe(FCFSAuthClientContext *client_ctx);
