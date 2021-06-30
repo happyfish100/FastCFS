@@ -73,8 +73,8 @@ int fcfs_auth_client_proto_spool_create(FCFSAuthClientContext *client_ctx,
 
 int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username,
-        const string_t *poolname, SFProtoRecvBuffer *buffer,
-        FCFSAuthStoragePoolArray *array);
+        const string_t *poolname, const SFListLimitInfo *limit,
+        struct fast_mpool_man *mpool, FCFSAuthStoragePoolArray *array);
 
 int fcfs_auth_client_proto_spool_remove(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *poolname);
@@ -95,8 +95,8 @@ int fcfs_auth_client_proto_gpool_withdraw(FCFSAuthClientContext
 
 int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
         *client_ctx, ConnectionInfo *conn, const string_t *username,
-        const string_t *poolname, SFProtoRecvBuffer *buffer,
-        FCFSAuthGrantedPoolArray *array);
+        const string_t *poolname, const SFListLimitInfo *limit,
+        struct fast_mpool_man *mpool, FCFSAuthGrantedPoolArray *array);
 
 #ifdef __cplusplus
 }

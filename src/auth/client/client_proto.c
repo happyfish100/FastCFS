@@ -25,8 +25,6 @@
 #include "client_global.h"
 #include "client_proto.h"
 
-#define FCFS_AUTH_CLIENT_LIST_BATCH_COUNT  128
-
 #define check_name(name, caption) check_name_ex(name, caption, true)
 
 #define check_username_ex(username, required) \
@@ -287,11 +285,17 @@ int fcfs_auth_client_proto_user_create(FCFSAuthClientContext *client_ctx,
     return result;
 }
 
+typedef int (*client_proto_list_func)(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *username,
+        const string_t *poolname, const SFListLimitInfo *limit,
+        SFProtoRecvBuffer *buffer, struct fast_mpool_man *mpool,
+        void *array, bool *is_last);
+
 static int client_proto_user_list_do(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username,
-        const SFListLimitInfo *limit, SFProtoRecvBuffer *buffer,
-        struct fast_mpool_man *mpool, FCFSAuthUserArray *array,
-        bool *is_last)
+        const string_t *poolname, const SFListLimitInfo *limit,
+        SFProtoRecvBuffer *buffer, struct fast_mpool_man *mpool,
+        FCFSAuthUserArray *array, bool *is_last)
 {
     FCFSAuthProtoHeader *header;
     FCFSAuthProtoUserListReq *req;
@@ -364,57 +368,60 @@ static int client_proto_user_list_do(FCFSAuthClientContext *client_ctx,
     return result;
 }
 
-int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
-        ConnectionInfo *conn, const string_t *username,
+static int client_proto_list_wrapper(client_proto_list_func list_func,
+        FCFSAuthClientContext *client_ctx, ConnectionInfo *conn,
+        const string_t *username, const string_t *poolname,
         const SFListLimitInfo *limit, struct fast_mpool_man *mpool,
-        FCFSAuthUserArray *array)
+        void *array, int *count)
 {
     int result;
-    int target_count;
     bool is_last;
     SFProtoRBufferFixedWrapper buffer_wrapper;
     SFListLimitInfo new_limit;
 
     sf_init_recv_buffer_by_wrapper(&buffer_wrapper);
-    if (limit->count > 0 && limit->count <=
-            FCFS_AUTH_CLIENT_LIST_BATCH_COUNT)
-    {
-        result = client_proto_user_list_do(client_ctx, conn,
-                username, limit, &buffer_wrapper.buffer,
+    if (limit->count > 0 && limit->count <= 64) {
+        result = list_func(client_ctx, conn,
+                username, poolname, limit, &buffer_wrapper.buffer,
                 mpool, array, &is_last);
         sf_free_recv_buffer(&buffer_wrapper.buffer);
         return result;
     }
 
-    if (limit->count <= 0) {
-        target_count = 1000 * 1000;
-    } else {
-        target_count = limit->count;
-    }
-
-    new_limit.offset = limit->offset;
-    new_limit.count = FCFS_AUTH_CLIENT_LIST_BATCH_COUNT;
     result = 0;
     is_last = false;
     while (!is_last) {
-        if ((result=client_proto_user_list_do(client_ctx, conn,
-                        username, &new_limit, &buffer_wrapper.buffer,
+        new_limit.offset = limit->offset + *count;
+        if (limit->count <= 0) {
+            new_limit.count = 0;
+        } else {
+            new_limit.count = limit->count - *count;
+            if (new_limit.count == 0) {
+                break;
+            }
+        }
+
+        if ((result=list_func(client_ctx, conn, username,
+                        poolname, &new_limit, &buffer_wrapper.buffer,
                         mpool, array, &is_last)) != 0)
         {
             break;
         }
-
-        if (array->count == target_count) {
-            break;
-        } else if (array->count > target_count) {
-            array->count = target_count;
-            break;
-        }
-        new_limit.offset = array->count;
     }
 
     sf_free_recv_buffer(&buffer_wrapper.buffer);
     return result;
+}
+
+int fcfs_auth_client_proto_user_list(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *username,
+        const SFListLimitInfo *limit, struct fast_mpool_man *mpool,
+        FCFSAuthUserArray *array)
+{
+    const string_t *poolname = NULL;
+    return client_proto_list_wrapper((client_proto_list_func)
+            client_proto_user_list_do, client_ctx, conn, username,
+            poolname, limit, mpool, array, &array->count);
 }
 
 int fcfs_auth_client_proto_user_grant(FCFSAuthClientContext *client_ctx,
@@ -537,10 +544,11 @@ int fcfs_auth_client_proto_spool_create(FCFSAuthClientContext *client_ctx,
     return 0;
 }
 
-int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
+int client_proto_spool_list_do(FCFSAuthClientContext *client_ctx,
         ConnectionInfo *conn, const string_t *username,
-        const string_t *poolname, SFProtoRecvBuffer *buffer,
-        FCFSAuthStoragePoolArray *array)
+        const string_t *poolname, const SFListLimitInfo *limit,
+        SFProtoRecvBuffer *buffer, struct fast_mpool_man *mpool,
+        FCFSAuthStoragePoolArray *array, bool *is_last)
 {
     FCFSAuthProtoHeader *header;
     char out_buff[sizeof(FCFSAuthProtoHeader) +
@@ -569,6 +577,7 @@ int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
     {
         return result;
     }
+    sf_proto_pack_limit(limit, &req->limit);
 
     response.error.length = 0;
     if ((result=sf_send_and_recv_vary_response(conn, out_buff, out_bytes,
@@ -582,17 +591,24 @@ int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
 
     resp_header = (FCFSAuthProtoListRespHeader *)buffer->buff;
     count = buff2int(resp_header->count);
-    if ((result=fcfs_auth_spool_check_realloc_array(array, count)) != 0) {
+    *is_last = resp_header->is_last;
+    if ((result=fcfs_auth_spool_check_realloc_array(array,
+                    array->count + count)) != 0)
+    {
         return result;
     }
 
     p = (char *)(resp_header + 1);
-    end = array->spools + count;
-    for (spool=array->spools; spool<end; spool++) {
+    end = array->spools + array->count + count;
+    for (spool=array->spools+array->count; spool<end; spool++) {
         body_part = (FCFSAuthProtoSPoolListRespBodyPart *)p;
         spool->quota = buff2long(body_part->quota);
-        spool->name.len = body_part->poolname.len;
-        spool->name.str = body_part->poolname.str;
+        if ((result=fast_mpool_alloc_string_ex(mpool,
+                        &spool->name, body_part->poolname.str,
+                        body_part->poolname.len)) != 0)
+        {
+            return result;
+        }
         p += sizeof(FCFSAuthProtoSPoolListRespBodyPart) + spool->name.len;
     }
 
@@ -604,8 +620,18 @@ int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
         return EINVAL;
     }
 
-    array->count = count;
+    array->count += count;
     return result;
+}
+
+int fcfs_auth_client_proto_spool_list(FCFSAuthClientContext *client_ctx,
+        ConnectionInfo *conn, const string_t *username,
+        const string_t *poolname, const SFListLimitInfo *limit,
+        struct fast_mpool_man *mpool, FCFSAuthStoragePoolArray *array)
+{
+    return client_proto_list_wrapper((client_proto_list_func)
+            client_proto_spool_list_do, client_ctx, conn, username,
+            poolname, limit, mpool, array, &array->count);
 }
 
 int fcfs_auth_client_proto_spool_remove(FCFSAuthClientContext *client_ctx,
@@ -782,10 +808,11 @@ int fcfs_auth_client_proto_gpool_withdraw(FCFSAuthClientContext
     return result;
 }
 
-int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
+static int client_proto_gpool_list_do(FCFSAuthClientContext
         *client_ctx, ConnectionInfo *conn, const string_t *username,
-        const string_t *poolname, SFProtoRecvBuffer *buffer,
-        FCFSAuthGrantedPoolArray *array)
+        const string_t *poolname, const SFListLimitInfo *limit,
+        SFProtoRecvBuffer *buffer, struct fast_mpool_man *mpool,
+        FCFSAuthGrantedPoolArray *array, bool *is_last)
 {
     FCFSAuthProtoHeader *header;
     char out_buff[sizeof(FCFSAuthProtoHeader) +
@@ -814,6 +841,7 @@ int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
     {
         return result;
     }
+    sf_proto_pack_limit(limit, &req->limit);
 
     response.error.length = 0;
     if ((result=sf_send_and_recv_vary_response(conn, out_buff, out_bytes,
@@ -827,18 +855,32 @@ int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
 
     resp_header = (FCFSAuthProtoListRespHeader *)buffer->buff;
     count = buff2int(resp_header->count);
-    if ((result=fcfs_auth_gpool_check_realloc_array(array, count)) != 0) {
+    *is_last = resp_header->is_last;
+    if ((result=fcfs_auth_gpool_check_realloc_array(array,
+                    array->count + count)) != 0)
+    {
         return result;
     }
 
     p = (char *)(resp_header + 1);
-    end = array->gpools + count;
-    for (gpool=array->gpools; gpool<end; gpool++) {
+    end = array->gpools + array->count + count;
+    for (gpool=array->gpools+array->count; gpool<end; gpool++) {
         body_part = (FCFSAuthProtoGPoolListRespBodyPart *)p;
         gpool->granted.privs.fdir = buff2int(body_part->privs.fdir);
         gpool->granted.privs.fstore = buff2int(body_part->privs.fstore);
-        fcfs_auth_parse_user_pool_pair(&body_part->up_pair,
-                &gpool->username, &gpool->pool_name);
+        if ((result=fast_mpool_alloc_string_ex(mpool,
+                        &gpool->username, body_part->up_pair.username.str,
+                        body_part->up_pair.username.len)) != 0)
+        {
+            return result;
+        }
+        if ((result=fast_mpool_alloc_string_ex(mpool,
+                        &gpool->pool_name, body_part->up_pair.poolname.str,
+                        body_part->up_pair.poolname.len)) != 0)
+        {
+            return result;
+        }
+
         p += sizeof(FCFSAuthProtoGPoolListRespBodyPart)
             + gpool->username.len + gpool->pool_name.len;
     }
@@ -851,8 +893,18 @@ int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
         return EINVAL;
     }
 
-    array->count = count;
+    array->count += count;
     return result;
+}
+
+int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
+        *client_ctx, ConnectionInfo *conn, const string_t *username,
+        const string_t *poolname, const SFListLimitInfo *limit,
+        struct fast_mpool_man *mpool, FCFSAuthGrantedPoolArray *array)
+{
+    return client_proto_list_wrapper((client_proto_list_func)
+            client_proto_gpool_list_do, client_ctx, conn, username,
+            poolname, limit, mpool, array, &array->count);
 }
 
 int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,

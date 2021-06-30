@@ -31,6 +31,10 @@
 
 #define DRY_RUN_OPTION_STR  "--dryrun"
 
+const int mpool_alloc_size_once = 16 * 1024;
+const int mpool_discard_size = 8;
+const SFListLimitInfo limit = {0, 0};
+
 static int current_index;
 static FCFSAuthStoragePoolInfo spool;
 static struct {
@@ -264,16 +268,20 @@ static void output_gpools(FCFSAuthGrantedPoolArray *array)
 
 static int list_spool(int argc, char *argv[])
 {
-    SFProtoRBufferFixedWrapper buffer_wrapper;
+    struct fast_mpool_man mpool;
     FCFSAuthStoragePoolArray spool_array;
     int result;
 
-    sf_init_recv_buffer_by_wrapper(&buffer_wrapper);
-    fcfs_auth_spool_init_array(&spool_array);
+    if ((result=fast_mpool_init(&mpool, mpool_alloc_size_once,
+                    mpool_discard_size)) != 0)
+    {
+        return result;
+    }
 
+    fcfs_auth_spool_init_array(&spool_array);
     if ((result=fcfs_auth_client_spool_list(&g_fcfs_auth_client_vars.
-                    client_ctx, &username, &spool.name,
-                    &buffer_wrapper.buffer, &spool_array)) == 0)
+                    client_ctx, &username, &spool.name, &limit,
+                    &mpool, &spool_array)) == 0)
     {
         output_spools(&spool_array);
     } else {
@@ -281,23 +289,27 @@ static int list_spool(int argc, char *argv[])
     }
     result = 0;
 
-    sf_free_recv_buffer(&buffer_wrapper.buffer);
     fcfs_auth_spool_free_array(&spool_array);
+    fast_mpool_destroy(&mpool);
     return result;
 }
 
 static int list_gpool(int argc, char *argv[])
 {
-    SFProtoRBufferFixedWrapper buffer_wrapper;
+    struct fast_mpool_man mpool;
     FCFSAuthGrantedPoolArray gpool_array;
     int result;
 
-    sf_init_recv_buffer_by_wrapper(&buffer_wrapper);
-    fcfs_auth_granted_init_array(&gpool_array);
+    if ((result=fast_mpool_init(&mpool, mpool_alloc_size_once,
+                    mpool_discard_size)) != 0)
+    {
+        return result;
+    }
 
+    fcfs_auth_granted_init_array(&gpool_array);
     if ((result=fcfs_auth_client_gpool_list(&g_fcfs_auth_client_vars.
-                    client_ctx, &username, &spool.name,
-                    &buffer_wrapper.buffer, &gpool_array)) == 0)
+                    client_ctx, &username, &spool.name, &limit,
+                    &mpool, &gpool_array)) == 0)
     {
         output_gpools(&gpool_array);
     } else {
@@ -305,8 +317,8 @@ static int list_gpool(int argc, char *argv[])
     }
     result = 0;
 
-    sf_free_recv_buffer(&buffer_wrapper.buffer);
     fcfs_auth_granted_free_array(&gpool_array);
+    fast_mpool_destroy(&mpool);
     return result;
 }
 

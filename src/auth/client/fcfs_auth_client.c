@@ -270,11 +270,12 @@ int fcfs_auth_client_spool_create(FCFSAuthClientContext *client_ctx,
 
 int fcfs_auth_client_spool_list(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *poolname,
-        SFProtoRecvBuffer *buffer, FCFSAuthStoragePoolArray *array)
+        const SFListLimitInfo *limit, struct fast_mpool_man *mpool,
+        FCFSAuthStoragePoolArray *array)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
             GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_spool_list,
-            username, poolname, buffer, array);
+            username, poolname, limit, mpool, array);
 }
 
 int fcfs_auth_client_spool_remove(FCFSAuthClientContext *client_ctx,
@@ -320,9 +321,10 @@ int fcfs_auth_client_gpool_withdraw(FCFSAuthClientContext *client_ctx,
 
 int fcfs_auth_client_gpool_list(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *poolname,
-        SFProtoRecvBuffer *buffer, FCFSAuthGrantedPoolArray *array)
+        const SFListLimitInfo *limit, struct fast_mpool_man *mpool,
+        FCFSAuthGrantedPoolArray *array)
 {
     SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
             GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_gpool_list,
-            username, poolname, buffer, array);
+            username, poolname, limit, mpool, array);
 }

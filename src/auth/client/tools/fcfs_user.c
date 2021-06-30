@@ -27,7 +27,7 @@
 #include "../fcfs_auth_client.h"
 
 const int mpool_alloc_size_once = 16 * 1024;
-const int mpool_discard_size = 64;
+const int mpool_discard_size = 8;
 const SFListLimitInfo limit = {0, 0};
 
 static int current_index;

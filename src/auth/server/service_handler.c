@@ -264,19 +264,12 @@ static int service_deal_user_create(struct fast_task_info *task)
 }
 
 static int service_parse_limit(struct fast_task_info *task,
-        const SFProtoLimitInfo *limit_proto, SFListLimitInfo *limit_info,
-        const int max_count)
+        const SFProtoLimitInfo *limit_proto, SFListLimitInfo *limit_info)
 {
     sf_proto_extract_limit(limit_proto, limit_info);
     if (limit_info->count <= 0) {
-        limit_info->count = max_count;
-    } else if (limit_info->count > max_count) {
-        RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                "limit count: %d exceeds: %d",
-                limit_info->count, max_count);
-        return EOVERFLOW;
+        limit_info->count = 1024;
     }
-
     return 0;
 }
 
@@ -292,6 +285,9 @@ static int service_deal_user_list(struct fast_task_info *task)
     FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoUserListRespBodyPart *body_part;
     char *p;
+    char *buff_end;
+    bool truncated;
+    int len;
     int result;
 
     if ((result=server_check_body_length(sizeof(FCFSAuthProtoUserListReq),
@@ -321,15 +317,7 @@ static int service_deal_user_list(struct fast_task_info *task)
         array.count = 1;
         limit.count = 100;
     } else {
-        int max_count;
-
-        max_count = (task->size - (sizeof(FCFSAuthProtoHeader) +
-                    sizeof(*resp_header))) / (NAME_MAX +
-                sizeof(FCFSAuthProtoUserListRespBodyPart));
-
-        if ((result=service_parse_limit(task, &req->limit,
-                        &limit, max_count)) != 0)
-        {
+        if ((result=service_parse_limit(task, &req->limit, &limit)) != 0) {
             return result;
         }
         fcfs_auth_user_init_array(&array);
@@ -341,16 +329,24 @@ static int service_deal_user_list(struct fast_task_info *task)
 
     resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
     p = (char *)(resp_header + 1);
+    buff_end = task->data + task->size;
     end = array.users + array.count;
+    truncated = false;
     for (user=array.users; user<end; user++) {
+        len = sizeof(FCFSAuthProtoUserListRespBodyPart) + user->name.len;
+        if (p + len > buff_end) {
+            truncated = true;
+            break;
+        }
+
         body_part = (FCFSAuthProtoUserListRespBodyPart *)p;
         long2buff(user->priv, body_part->priv);
         body_part->username.len = user->name.len;
         memcpy(body_part->username.str, user->name.str, user->name.len);
-        p += sizeof(FCFSAuthProtoUserListRespBodyPart) + user->name.len;
+        p += len;
     }
-    resp_header->is_last = (array.count < limit.count);
-    int2buff(array.count, resp_header->count);
+    resp_header->is_last = (array.count < limit.count) && !truncated;
+    int2buff(user - array.users, resp_header->count);
     RESPONSE.header.body_len = p - REQUEST.body;
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP;
     TASK_ARG->context.common.response_done = true;
@@ -550,6 +546,9 @@ static int service_deal_spool_list(struct fast_task_info *task)
     FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoSPoolListRespBodyPart *body_part;
     char *p;
+    char *buff_end;
+    bool truncated;
+    int len;
     int result;
 
     if ((result=server_check_body_length(sizeof(FCFSAuthProtoSPoolListReq),
@@ -590,16 +589,7 @@ static int service_deal_spool_list(struct fast_task_info *task)
         array.count = 1;
         limit.count = 100;
     } else {
-        int max_count;
-
-        max_count = (task->size - (sizeof(FCFSAuthProtoHeader) +
-                    sizeof(*resp_header))) / (NAME_MAX +
-                sizeof(FCFSAuthProtoSPoolListRespBodyPart));
-
-        logInfo("max_count: %d", max_count);
-        if ((result=service_parse_limit(task, &req->limit,
-                        &limit, max_count)) != 0)
-        {
+        if ((result=service_parse_limit(task, &req->limit, &limit)) != 0) {
             return result;
         }
 
@@ -615,15 +605,24 @@ static int service_deal_spool_list(struct fast_task_info *task)
     resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
     p = (char *)(resp_header + 1);
     end = array.spools + array.count;
+    buff_end = task->data + task->size;
+    truncated = false;
     for (spool=array.spools; spool<end; spool++) {
+        len = sizeof(FCFSAuthProtoSPoolListRespBodyPart) +
+            spool->name.len;
+        if (p + len > buff_end) {
+            truncated = true;
+            break;
+        }
+
         body_part = (FCFSAuthProtoSPoolListRespBodyPart *)p;
         long2buff(spool->quota, body_part->quota);
         body_part->poolname.len = spool->name.len;
         memcpy(body_part->poolname.str, spool->name.str, spool->name.len);
-        p += sizeof(FCFSAuthProtoSPoolListRespBodyPart) + spool->name.len;
+        p += len;
     }
-    resp_header->is_last = (array.count < limit.count);
-    int2buff(array.count, resp_header->count);
+    resp_header->is_last = (array.count < limit.count) && !truncated;
+    int2buff(spool - array.spools, resp_header->count);
     RESPONSE.header.body_len = p - REQUEST.body;
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP;
     TASK_ARG->context.common.response_done = true;
@@ -830,7 +829,10 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoGPoolListRespBodyPart *body_part;
     char *p;
+    char *buff_end;
+    bool truncated;
     int count;
+    int len;
     int result;
 
     if ((result=server_check_body_length(sizeof(FCFSAuthProtoGPoolListReq),
@@ -864,15 +866,7 @@ static int service_deal_gpool_list(struct fast_task_info *task)
         limit.offset = 0;
         limit.count = 1000 * 1000;  //to list all
     } else {
-        int max_count;
-        max_count = (task->size - (sizeof(FCFSAuthProtoHeader) +
-                    sizeof(*resp_header))) / (2 * NAME_MAX +
-                sizeof(FCFSAuthProtoGPoolListRespBodyPart));
-
-        logInfo("max_count: %d", max_count);
-        if ((result=service_parse_limit(task, &req->limit,
-                        &limit, max_count)) != 0)
-        {
+        if ((result=service_parse_limit(task, &req->limit, &limit)) != 0) {
             return result;
         }
     }
@@ -888,23 +882,31 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     count = 0;
     resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
     p = (char *)(resp_header + 1);
+    buff_end = task->data + task->size;
     end = array.gpools + array.count;
+    truncated = false;
     for (gpool=array.gpools; gpool<end; gpool++) {
         if (poolname.len == 0 || fc_string_equals(
                     &gpool->pool_name, &poolname))
         {
+            len = sizeof(FCFSAuthProtoGPoolListRespBodyPart) +
+                gpool->username.len + gpool->pool_name.len;
+            if (p + len > buff_end) {
+                truncated = true;
+                break;
+            }
+
             body_part = (FCFSAuthProtoGPoolListRespBodyPart *)p;
             int2buff(gpool->granted.privs.fdir, body_part->privs.fdir);
             int2buff(gpool->granted.privs.fstore, body_part->privs.fstore);
             fcfs_auth_pack_user_pool_pair(&gpool->username,
                     &gpool->pool_name, &body_part->up_pair);
-            p += sizeof(FCFSAuthProtoGPoolListRespBodyPart) +
-                gpool->username.len + gpool->pool_name.len;
+            p += len;
             count++;
         }
     }
 
-    resp_header->is_last = (array.count < limit.count);
+    resp_header->is_last = (array.count < limit.count) && !truncated;
     int2buff(count, resp_header->count);
     RESPONSE.header.body_len = p - REQUEST.body;
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP;
