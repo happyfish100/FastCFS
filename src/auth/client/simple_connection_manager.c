@@ -150,17 +150,26 @@ static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
     FCFSAuthCMSimpleExtra *extra;
     ConnectionInfo *conn;
     FCFSAuthClientServerEntry master;
+    SFNetRetryIntervalContext net_retry_ctx;
+    int i;
 
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
     if (extra->master_cache.conn != NULL) {
         return extra->master_cache.conn;
     }
 
-    do {
+    sf_init_net_retry_interval_context(&net_retry_ctx,
+            &cm->common_cfg->net_retry_cfg.interval_mm,
+            &cm->common_cfg->net_retry_cfg.connect);
+    i = 0;
+    while (1) {
         if ((*err_no=fcfs_auth_client_get_master(extra->
                         client_ctx, &master)) != 0)
         {
-            break;
+            SF_NET_RETRY_CHECK_AND_SLEEP(net_retry_ctx,
+                    cm->common_cfg->net_retry_cfg.
+                    connect.times, ++i, *err_no);
+            continue;
         }
 
         if ((conn=get_spec_connection(cm, &master.conn,
@@ -171,7 +180,7 @@ static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
 
         extra->master_cache.conn = conn;
         return conn;
-    } while (0);
+    }
 
     logError("file: "__FILE__", line: %d, "
             "get_master_connection fail, errno: %d",
@@ -285,7 +294,7 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
     cm->ops.get_connection = get_connection;
     cm->ops.get_spec_connection = get_spec_connection;
     cm->ops.get_master_connection = get_master_connection;
-    cm->ops.get_readable_connection = NULL;
+    cm->ops.get_readable_connection = get_master_connection;
     cm->ops.release_connection = release_connection;
     cm->ops.close_connection = close_connection;
     cm->ops.get_connection_params = sf_cm_get_connection_params;
