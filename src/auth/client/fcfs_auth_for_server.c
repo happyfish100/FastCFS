@@ -35,10 +35,19 @@ int fcfs_auth_for_server_check_priv(FCFSAuthClientContext *client_ctx,
     session.id = buff2long(request->body);
 
     if (session.fields.publish) {
-        if (priv_type == fcfs_auth_validate_priv_type_user) {
-            result = server_session_user_priv_granted(session.id, the_priv);
-        } else {
-            result = server_session_fdir_priv_granted(session.id, the_priv);
+        switch (priv_type) {
+            case fcfs_auth_validate_priv_type_user:
+                result = server_session_user_priv_granted(
+                        session.id, the_priv);
+                break;
+            case fcfs_auth_validate_priv_type_pool_fdir:
+                result = server_session_fdir_priv_granted(
+                        session.id, the_priv);
+                break;
+            default:
+                result = server_session_fstore_priv_granted(
+                        session.id, the_priv);
+                break;
         }
 
         if (result == SF_SESSION_ERROR_NOT_EXIST) {
@@ -52,7 +61,7 @@ int fcfs_auth_for_server_check_priv(FCFSAuthClientContext *client_ctx,
     }
 
     if (validate) {
-        const int64_t pool_id = 0;  //TODO
+        const int64_t pool_id = 0;
         FC_SET_STRING_EX(session_id, request->body, FCFS_AUTH_SESSION_ID_LEN);
         result = fcfs_auth_client_session_validate(client_ctx,
                 &session_id, &g_server_session_cfg.validate_key,
