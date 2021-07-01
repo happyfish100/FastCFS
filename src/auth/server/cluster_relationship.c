@@ -58,14 +58,13 @@ typedef struct fcfs_auth_cluster_server_detect_array {
 } FCFSAuthClusterServerDetectArray;
 
 typedef struct fcfs_auth_cluster_relationship_context {
-    FCFSAuthClusterServerInfo *next_master;
     FCFSAuthClusterServerDetectArray inactive_server_array;
 } FCFSAuthClusterRelationshipContext;
 
 #define INACTIVE_SERVER_ARRAY relationship_ctx.inactive_server_array
 
 static FCFSAuthClusterRelationshipContext relationship_ctx = {
-    NULL, {NULL, 0, 0}
+    {NULL, 0, 0}
 };
 
 #define SET_SERVER_DETECT_ENTRY(entry, server) \
@@ -429,15 +428,15 @@ int cluster_relationship_pre_set_master(FCFSAuthClusterServerInfo *master)
 {
     FCFSAuthClusterServerInfo *next_master;
 
-    next_master = relationship_ctx.next_master;
+    next_master = CLUSTER_NEXT_MASTER;
     if (next_master == NULL) {
-        relationship_ctx.next_master = master;
+        CLUSTER_NEXT_MASTER = master;
     } else if (next_master != master) {
         logError("file: "__FILE__", line: %d, "
                 "try to set next master id: %d, "
                 "but next master: %d already exist",
                 __LINE__, master->server->id, next_master->server->id);
-        relationship_ctx.next_master = NULL;
+        CLUSTER_NEXT_MASTER = NULL;
         return EEXIST;
     }
 
@@ -518,7 +517,7 @@ int cluster_relationship_commit_master(FCFSAuthClusterServerInfo *master)
     FCFSAuthClusterServerInfo *next_master;
     int result;
 
-    next_master = relationship_ctx.next_master;
+    next_master = CLUSTER_NEXT_MASTER;
     if (next_master == NULL) {
         logError("file: "__FILE__", line: %d, "
                 "next master is NULL", __LINE__);
@@ -528,12 +527,12 @@ int cluster_relationship_commit_master(FCFSAuthClusterServerInfo *master)
         logError("file: "__FILE__", line: %d, "
                 "next master server id: %d != expected server id: %d",
                 __LINE__, next_master->server->id, master->server->id);
-        relationship_ctx.next_master = NULL;
+        CLUSTER_NEXT_MASTER = NULL;
         return EBUSY;
     }
 
     result = cluster_relationship_set_master(master);
-    relationship_ctx.next_master = NULL;
+    CLUSTER_NEXT_MASTER = NULL;
     return result;
 }
 

@@ -469,19 +469,28 @@ static int cluster_deal_next_master(struct fast_task_info *task)
 static int cluster_process(struct fast_task_info *task)
 {
     int result;
+    int cmd;
 
+    cmd = REQUEST.header.cmd;
     if (!MYSELF_IS_MASTER) {
-        if (REQUEST.header.cmd == FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ ||
-                REQUEST.header.cmd == FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ)
-        {
+        if (cmd == FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ) {
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
                     "i am not master");
             return SF_RETRIABLE_ERROR_NOT_MASTER;
         }
+
+        if (cmd == FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ) {
+            if (CLUSTER_MYSELF_PTR != CLUSTER_NEXT_MASTER) {
+                RESPONSE.error.length = sprintf(
+                        RESPONSE.error.message,
+                        "i am not the next master");
+                return SF_RETRIABLE_ERROR_NOT_MASTER;
+            }
+        }
     }
 
-    switch (REQUEST.header.cmd) {
+    switch (cmd) {
         case SF_PROTO_ACTIVE_TEST_REQ:
             if (SERVER_TASK_TYPE == AUTH_SERVER_TASK_TYPE_SUBSCRIBE &&
                     !MYSELF_IS_MASTER)

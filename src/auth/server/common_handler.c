@@ -76,7 +76,8 @@ int fcfs_auth_deal_get_master(struct fast_task_info *task)
         return result;
     }
 
-    master = CLUSTER_MASTER_ATOM_PTR;
+    master = (CLUSTER_MASTER_ATOM_PTR != NULL) ?
+        CLUSTER_MASTER_ATOM_PTR : CLUSTER_NEXT_MASTER;
     if (master == NULL) {
         RESPONSE.error.length = sprintf(
                 RESPONSE.error.message,

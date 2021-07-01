@@ -29,6 +29,7 @@ typedef struct server_global_vars {
     struct {
         FCFSAuthClusterServerInfo *master;
         FCFSAuthClusterServerInfo *myself;
+        FCFSAuthClusterServerInfo *next_master;
         SFClusterConfig config;
         FCFSAuthClusterServerArray server_array;
         SFContext sf_context;  //for cluster communication
@@ -55,6 +56,7 @@ typedef struct server_global_vars {
 #define CLUSTER_CONFIG          g_server_global_vars.cluster.config
 #define CLUSTER_SERVER_CONFIG   CLUSTER_CONFIG.server_cfg
 
+#define CLUSTER_NEXT_MASTER     g_server_global_vars.cluster.next_master
 #define CLUSTER_MYSELF_PTR      g_server_global_vars.cluster.myself
 #define CLUSTER_MASTER_PTR      g_server_global_vars.cluster.master
 #define CLUSTER_MASTER_ATOM_PTR ((FCFSAuthClusterServerInfo *)  \
