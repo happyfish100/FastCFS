@@ -516,12 +516,16 @@ static int cluster_process(struct fast_task_info *task)
         case FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_REQ:
             return cluster_deal_ping_master(task);
         case FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ:
-            if ((result=fcfs_auth_deal_get_master(task)) == 0) {
+            if ((result=fcfs_auth_deal_get_master(task,
+                            CLUSTER_GROUP_INDEX)) == 0)
+            {
                 RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP;
             }
             return result;
         case SF_SERVICE_PROTO_GET_LEADER_REQ:
-            if ((result=fcfs_auth_deal_get_master(task)) == 0) {
+            if ((result=fcfs_auth_deal_get_master(task,
+                            CLUSTER_GROUP_INDEX)) == 0)
+            {
                 RESPONSE.header.cmd = SF_SERVICE_PROTO_GET_LEADER_RESP;
             }
             return result;

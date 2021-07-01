@@ -65,7 +65,8 @@ void common_handler_init()
     sf_proto_set_handler_context(&handler_ctx);
 }
 
-int fcfs_auth_deal_get_master(struct fast_task_info *task)
+int fcfs_auth_deal_get_master(struct fast_task_info *task,
+        const int group_index)
 {
     int result;
     FCFSAuthProtoGetServerResp *resp;
@@ -86,8 +87,13 @@ int fcfs_auth_deal_get_master(struct fast_task_info *task)
     }
 
     resp = (FCFSAuthProtoGetServerResp *)SF_PROTO_RESP_BODY(task);
-    addr = fc_server_get_address_by_peer(&SERVICE_GROUP_ADDRESS_ARRAY(
-                master->server), task->client_ip);
+    if (group_index == SERVICE_GROUP_INDEX) {
+        addr = fc_server_get_address_by_peer(&SERVICE_GROUP_ADDRESS_ARRAY(
+                    master->server), task->client_ip);
+    } else {
+        addr = fc_server_get_address_by_peer(&CLUSTER_GROUP_ADDRESS_ARRAY(
+                    master->server), task->client_ip);
+    }
 
     int2buff(master->server->id, resp->server_id);
     snprintf(resp->ip_addr, sizeof(resp->ip_addr), "%s",

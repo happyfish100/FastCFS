@@ -1008,12 +1008,16 @@ static int service_process(struct fast_task_info *task)
         case FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_REQ:
             return service_deal_cluster_stat(task);
         case FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ:
-            if ((result=fcfs_auth_deal_get_master(task)) == 0) {
+            if ((result=fcfs_auth_deal_get_master(task,
+                            SERVICE_GROUP_INDEX)) == 0)
+            {
                 RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP;
             }
             return result;
         case SF_SERVICE_PROTO_GET_LEADER_REQ:
-            if ((result=fcfs_auth_deal_get_master(task)) == 0) {
+            if ((result=fcfs_auth_deal_get_master(task,
+                            SERVICE_GROUP_INDEX)) == 0)
+            {
                 RESPONSE.header.cmd = SF_SERVICE_PROTO_GET_LEADER_RESP;
             }
             return result;
