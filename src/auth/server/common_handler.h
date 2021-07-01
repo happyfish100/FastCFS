@@ -30,6 +30,8 @@ extern "C" {
 
 void common_handler_init();
 
+int fcfs_auth_deal_get_master(struct fast_task_info *task);
+
 #ifdef __cplusplus
 }
 #endif

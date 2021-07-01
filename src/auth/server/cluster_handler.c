@@ -468,6 +468,8 @@ static int cluster_deal_next_master(struct fast_task_info *task)
 
 static int cluster_process(struct fast_task_info *task)
 {
+    int result;
+
     if (!MYSELF_IS_MASTER) {
         if (REQUEST.header.cmd == FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_REQ ||
                 REQUEST.header.cmd == FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_REQ)
@@ -504,6 +506,16 @@ static int cluster_process(struct fast_task_info *task)
             return cluster_deal_join_master(task);
         case FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_REQ:
             return cluster_deal_ping_master(task);
+        case FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ:
+            if ((result=fcfs_auth_deal_get_master(task)) == 0) {
+                RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP;
+            }
+            return result;
+        case SF_SERVICE_PROTO_GET_LEADER_REQ:
+            if ((result=fcfs_auth_deal_get_master(task)) == 0) {
+                RESPONSE.header.cmd = SF_SERVICE_PROTO_GET_LEADER_RESP;
+            }
+            return result;
         default:
             RESPONSE.error.length = sprintf(RESPONSE.error.message,
                     "unkown cmd: %d", REQUEST.header.cmd);

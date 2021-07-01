@@ -64,3 +64,36 @@ void common_handler_init()
     }
     sf_proto_set_handler_context(&handler_ctx);
 }
+
+int fcfs_auth_deal_get_master(struct fast_task_info *task)
+{
+    int result;
+    FCFSAuthProtoGetServerResp *resp;
+    FCFSAuthClusterServerInfo *master;
+    const FCAddressInfo *addr;
+
+    if ((result=server_expect_body_length(0)) != 0) {
+        return result;
+    }
+
+    master = CLUSTER_MASTER_ATOM_PTR;
+    if (master == NULL) {
+        RESPONSE.error.length = sprintf(
+                RESPONSE.error.message,
+                "the master NOT exist");
+        return SF_RETRIABLE_ERROR_NO_SERVER;
+    }
+
+    resp = (FCFSAuthProtoGetServerResp *)SF_PROTO_RESP_BODY(task);
+    addr = fc_server_get_address_by_peer(&SERVICE_GROUP_ADDRESS_ARRAY(
+                master->server), task->client_ip);
+
+    int2buff(master->server->id, resp->server_id);
+    snprintf(resp->ip_addr, sizeof(resp->ip_addr), "%s",
+            addr->conn.ip_addr);
+    short2buff(addr->conn.port, resp->port);
+
+    RESPONSE.header.body_len = sizeof(FCFSAuthProtoGetServerResp);
+    TASK_CTX.common.response_done = true;
+    return 0;
+}
