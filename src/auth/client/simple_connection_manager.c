@@ -26,7 +26,8 @@
 typedef struct fcfs_auth_cm_simple_extra {
     /* master connection cache */
     struct {
-        ConnectionInfo *conn;
+        volatile bool valid;
+        ConnectionInfo conn;
     } master_cache;
 
     ConnectionPool cpool;
@@ -154,8 +155,9 @@ static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
     int i;
 
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
-    if (extra->master_cache.conn != NULL) {
-        return extra->master_cache.conn;
+    if (extra->master_cache.valid) {
+        return conn_pool_get_connection(&extra->cpool,
+                &extra->master_cache.conn, err_no);
     }
 
     sf_init_net_retry_interval_context(&net_retry_ctx,
@@ -178,7 +180,8 @@ static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
             break;
         }
 
-        extra->master_cache.conn = conn;
+        extra->master_cache.valid = true;
+        extra->master_cache.conn = *conn;
         return conn;
     }
 
@@ -202,8 +205,10 @@ static void close_connection(SFConnectionManager *cm,
 {
     FCFSAuthCMSimpleExtra *extra;
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
-    if (extra->master_cache.conn == conn) {
-        extra->master_cache.conn = NULL;
+    if (extra->master_cache.valid && FC_CONNECTION_SERVER_EQUAL1(
+                extra->master_cache.conn, *conn))
+    {
+        extra->master_cache.valid = false;
     }
 
     conn_pool_close_connection_ex(&extra->cpool, conn, true);
