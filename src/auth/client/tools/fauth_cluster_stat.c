@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "fastcommon/logger.h"
-#include "fastcfs/auth/fcfs_auth_client.h"
+#include "../fcfs_auth_client.h"
 
 static void usage(char *argv[])
 {

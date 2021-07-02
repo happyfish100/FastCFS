@@ -285,6 +285,7 @@ static int cluster_deal_session_validate(struct fast_task_info *task)
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "session id: %"PRId64" not exist", session_id);
+        TASK_CTX.common.log_level = LOG_WARNING;
         return result;
     }
 
