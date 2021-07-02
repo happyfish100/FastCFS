@@ -84,6 +84,7 @@ rm -rf %{buildroot}
 /usr/bin/fcfs_user
 /usr/bin/fcfs_pool
 /usr/bin/fauth_list_servers
+/usr/bin/fauth_cluster_stat
 
 %files -n %{FastCFSAuthDevel}
 %defattr(-,root,root,-)
