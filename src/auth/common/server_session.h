@@ -38,7 +38,8 @@ typedef union server_session_id_info {
     struct {
         unsigned int ts;
         bool publish : 1;
-        unsigned int rn : 15;
+        bool persistent : 1;
+        unsigned int rn : 14;
         unsigned int sn : 16;
     } fields;
 } ServerSessionIdInfo;
@@ -88,14 +89,17 @@ extern ServerSessionConfig g_server_session_cfg;
 #define server_session_cfg_to_string(buff, size) \
     server_session_cfg_to_string_ex(buff, size, false)
 
+#define server_session_add(entry, publish) \
+    server_session_add_ex(entry, publish, false)
+
 int server_session_init_ex(IniFullContext *ini_ctx, const int fields_size,
         ServerSessionCallbacks *callbacks);
 
 void server_session_cfg_to_string_ex(char *buff,
         const int size, const bool output_all);
 
-ServerSessionEntry *server_session_add(const ServerSessionEntry *entry,
-        const bool publish);
+ServerSessionEntry *server_session_add_ex(const ServerSessionEntry *entry,
+        const bool publish, const bool persistent);
 
 int server_session_get_fields(const uint64_t session_id, void *fields);
 

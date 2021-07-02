@@ -159,18 +159,18 @@ static int service_deal_user_login(struct fast_task_info *task)
         return result;
     }
 
-    if (SERVER_TASK_TYPE != SF_SERVER_TASK_TYPE_NONE) {
-        RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                "task type: %d != %d", SERVER_TASK_TYPE,
-                SF_SERVER_TASK_TYPE_NONE);
-        return EEXIST;
-    }
-
     if (SESSION_ENTRY != NULL) {
         RESPONSE.error.length = sprintf(
                 RESPONSE.error.message,
                 "user already logined");
-        return EEXIST;
+        return -EEXIST;
+    }
+
+    if (SERVER_TASK_TYPE != SF_SERVER_TASK_TYPE_NONE) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "task type: %d != %d", SERVER_TASK_TYPE,
+                SF_SERVER_TASK_TYPE_NONE);
+        return -EEXIST;
     }
 
     fields = (ServerSessionFields *)(SESSION_HOLDER->fields);
@@ -1071,6 +1071,7 @@ int service_deal_task(struct fast_task_info *task, const int stage)
 static int create_session_for_access_fdir(ServerSessionEntry
         *session_holder, char *session_id)
 {
+    const bool persistent = true;
     ServerSessionFields *fields;
     ServerSessionEntry *session;
 
@@ -1079,8 +1080,8 @@ static int create_session_for_access_fdir(ServerSessionEntry
     fields->pool_privs.fdir = FCFS_AUTH_POOL_ACCESS_ALL;
     fields->pool_privs.fstore = FCFS_AUTH_POOL_ACCESS_ALL;
     session_holder->session_id = 0;
-    if ((session=server_session_add(session_holder,
-                    fields->publish)) == NULL)
+    if ((session=server_session_add_ex(session_holder,
+                    fields->publish, persistent)) == NULL)
     {
         return ENOMEM;
     }

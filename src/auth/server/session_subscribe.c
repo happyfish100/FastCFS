@@ -358,7 +358,7 @@ void session_subscribe_clear_session()
     fc_list_for_each_entry_safe(fields, tmp,
             &subscribe_ctx.sessions.head, dlink)
     {
-        locked_list_del(&fields->dlink, &subscribe_ctx.sessions);
+        fc_list_del_init(&fields->dlink);
     }
     PTHREAD_MUTEX_UNLOCK(&subscribe_ctx.sessions.lock);
 }

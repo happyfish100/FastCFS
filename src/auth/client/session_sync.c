@@ -198,17 +198,15 @@ static void deal_session_array()
 
 static int session_sync(ConnectionInfo *conn)
 {
+    const int network_timeout = 2;
     int result;
     SFResponseInfo response;
 
     response.error.length = 0;
     while (SF_G_CONTINUE_FLAG) {
-        result = sf_recv_vary_response(conn, &response,
-                g_fcfs_auth_client_vars.client_ctx.
-                common_cfg.network_timeout,
-                FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_REQ,
-                &session_array.buffer,
-                sizeof(FCFSAuthProtoSessionPushRespBodyHeader));
+        result = sf_recv_vary_response(conn, &response, network_timeout,
+                FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_REQ, &session_array.
+                buffer, sizeof(FCFSAuthProtoSessionPushRespBodyHeader));
         if (result == 0) {
             if ((result=parse_session_push(&response)) != 0) {
                 if (response.error.length > 0) {
@@ -259,7 +257,7 @@ static void *session_sync_thread_func(void *arg)
         {
             session_sync(conn);
         } else if (result == ENOENT) {
-            sleep(10);
+            sleep(5);
         } else if (result == EPERM) {
             if ((result=fcfs_auth_load_passwd_ex(g_fcfs_auth_client_vars.
                             client_ctx.auth_cfg.secret_key_filename.str,

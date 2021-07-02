@@ -379,8 +379,8 @@ static int session_htable_insert(ServerSessionHashEntry *se, const bool replace)
     return result;
 }
 
-ServerSessionEntry *server_session_add(const ServerSessionEntry *entry,
-        const bool publish)
+ServerSessionEntry *server_session_add_ex(const ServerSessionEntry *entry,
+        const bool publish, const bool persistent)
 {
     int result;
     ServerSessionIdInfo sid;
@@ -402,7 +402,8 @@ ServerSessionEntry *server_session_add(const ServerSessionEntry *entry,
         do {
             sid.fields.ts = g_current_time;
             sid.fields.publish = (publish ? 1 : 0);
-            sid.fields.rn = (int64_t)rand() * 32768LL / RAND_MAX;
+            sid.fields.persistent = (persistent ? 1 : 0);
+            sid.fields.rn = (int64_t)rand() * 16384LL / RAND_MAX;
             sid.fields.sn = __sync_add_and_fetch(&session_ctx.sn, 1);
             se->entry.session_id = sid.id;
 
@@ -562,16 +563,33 @@ int server_session_delete(const uint64_t session_id)
     }
 }
 
+#define SERVER_SESSION_ADD_TO_CHAIN(chain, node) \
+    if (chain.tail == NULL) {  \
+        chain.head = node;  \
+    } else {  \
+        chain.tail->next = node;  \
+    } \
+    chain.tail = node
+
 void server_session_clear()
 {
+    typedef struct {
+        ServerSessionHashEntry *head;
+        ServerSessionHashEntry *tail;
+    } ServerSessionHashChain;
+
     ServerSessionHashEntry *current;
     ServerSessionHashEntry *deleted;
     ServerSessionHashEntry **bucket;
     ServerSessionHashEntry **end;
+    ServerSessionHashChain keep;
+    ServerSessionHashChain remove;
     pthread_mutex_t *lock;
-    int64_t count;
+    int64_t keep_count;
+    int64_t remove_count;
+    ServerSessionIdInfo sid;
 
-    count = 0;
+    keep_count = remove_count = 0;
     current = NULL;
     end = session_ctx.htable.buckets + session_ctx.htable.capacity;
     for (bucket=session_ctx.htable.buckets; bucket<end; bucket++) {
@@ -579,8 +597,31 @@ void server_session_clear()
                     htable.buckets) % session_ctx.lock_array.count);
         PTHREAD_MUTEX_LOCK(lock);
         if (*bucket != NULL) {
+            keep.head = keep.tail = NULL;
+            remove.head = remove.tail = NULL;
             current = *bucket;
-            *bucket = NULL;
+            do {
+                sid.id = current->entry.session_id;
+                if (sid.fields.persistent) {
+                    SERVER_SESSION_ADD_TO_CHAIN(keep, current);
+                    keep_count++;
+                } else {
+                    SERVER_SESSION_ADD_TO_CHAIN(remove, current);
+                    remove_count++;
+                }
+
+                current = current->next;
+            } while (current != NULL);
+
+            *bucket = keep.head;
+            if (keep.tail != NULL) {
+                keep.tail->next = NULL;
+            }
+
+            current = remove.head;
+            if (remove.tail != NULL) {
+                remove.tail->next = NULL;
+            }
         }
         PTHREAD_MUTEX_UNLOCK(lock);
 
@@ -589,13 +630,12 @@ void server_session_clear()
             current = current->next;
 
             free_hash_entry(deleted);
-            ++count;
         }
     }
 
-    //if (count > 0) {
+    if (keep_count > 0 || remove_count > 0) {
         logInfo("file: "__FILE__", line: %d, "
-                "%"PRId64" sessions cleared",
-                __LINE__, count);
-    //}
+                "%"PRId64" sessions persisted, %"PRId64" sessions cleared",
+                __LINE__, keep_count, remove_count);
+    }
 }
