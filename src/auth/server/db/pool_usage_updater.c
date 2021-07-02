@@ -18,6 +18,7 @@
 #include <limits.h>
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
+#include "fastcommon/fc_atomic.h"
 #include "fastdir/client/fdir_client.h"
 #include "../server_global.h"
 #include "auth_db.h"
@@ -25,13 +26,20 @@
 
 typedef struct {
     bool inited;
-    volatile bool running;
+    volatile char running;
+    struct {
+        volatile uint32_t current;
+        volatile uint32_t next;
+    } generation;
     FDIRClientNamespaceStatArray nss_array;
 } PoolUsageUpdaterContext;
 
-static PoolUsageUpdaterContext updater_ctx = {false, false};
+static PoolUsageUpdaterContext updater_ctx = {false, 0, {0, 0}};
 
 #define NSS_ARRAY updater_ctx.nss_array
+
+#define IS_SAME_GENERATION (updater_ctx.generation.current == \
+        updater_ctx.generation.next)
 
 static int nss_fetch(ConnectionInfo *conn)
 {
@@ -62,13 +70,14 @@ static int nss_fetch(ConnectionInfo *conn)
             adb_spool_set_used_bytes(&entry->ns_name, entry->used_bytes);
         }
 
-    } while (!is_last);
+    } while (!is_last && IS_SAME_GENERATION);
 
     return result;
 }
 
 static int pool_usage_refresh(ConnectionInfo *conn)
 {
+    int i;
     int result;
 
     if ((result=fdir_client_proto_nss_subscribe(&g_fdir_client_vars.
@@ -77,12 +86,16 @@ static int pool_usage_refresh(ConnectionInfo *conn)
         return result;
     }
 
-    while (SF_G_CONTINUE_FLAG) {
+    while (SF_G_CONTINUE_FLAG && IS_SAME_GENERATION) {
         if ((result=nss_fetch(conn)) != 0) {
             break;
         }
 
-        sleep(POOL_USAGE_REFRESH_INTERVAL);
+        for (i=0; i<POOL_USAGE_REFRESH_INTERVAL &&
+                IS_SAME_GENERATION; i++)
+        {
+            sleep(1);
+        }
     }
 
     return result;
@@ -98,20 +111,24 @@ static void *pool_usage_refresh_thread_func(void *arg)
     prctl(PR_SET_NAME, "pool-usage-updater");
 #endif
 
-    updater_ctx.running = true;
+    FC_ATOMIC_SET(updater_ctx.running, 1);
     cm = &g_fdir_client_vars.client_ctx.cm;
     while (SF_G_CONTINUE_FLAG) {
         if ((conn=cm->ops.get_master_connection(cm, 0, &result)) == NULL) {
-            sleep(3);
+            sleep(1);
             continue;
         }
 
         pool_usage_refresh(conn);
         cm->ops.close_connection(cm, conn);
-        sleep(1);
+        if (IS_SAME_GENERATION) {
+            sleep(1);
+        } else {
+            break;
+        }
     }
 
-    updater_ctx.running = false;
+    FC_ATOMIC_SET(updater_ctx.running, 0);
     return NULL;
 }
 
@@ -134,7 +151,6 @@ static int pool_usage_updater_init()
 int pool_usage_updater_start()
 {
     int result;
-    int count;
     pthread_t tid;
 
     if (!updater_ctx.inited) {
@@ -145,15 +161,34 @@ int pool_usage_updater_start()
         updater_ctx.inited = true;
     }
 
-    count = 0;
-    while (updater_ctx.running && count++ < 3) {
-        sleep(1);
-    }
-
-    if (updater_ctx.running) {
+    if (FC_ATOMIC_GET(updater_ctx.running) != 0) {
+        logWarning("file: "__FILE__", line: %d, "
+                "pool_usage_updater thread already running",
+                __LINE__);
         return 0;
     }
 
+    updater_ctx.generation.current = ++updater_ctx.generation.next;
     return fc_create_thread(&tid, pool_usage_refresh_thread_func,
             NULL, SF_G_THREAD_STACK_SIZE);
+}
+
+void pool_usage_updater_terminate()
+{
+    int count;
+
+    if (FC_ATOMIC_GET(updater_ctx.running) == 0) {
+        return;
+    }
+
+    count = 0;
+    ++updater_ctx.generation.next;
+    while (FC_ATOMIC_GET(updater_ctx.running) != 0) {
+        sleep(1);
+        count++;
+    }
+
+    logInfo("file: "__FILE__", line: %d, "
+            "pool_usage_updater thread exit after waiting count: %d",
+            __LINE__, count);
 }

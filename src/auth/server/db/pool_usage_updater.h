@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 int pool_usage_updater_start();
+void pool_usage_updater_terminate();
 
 #ifdef __cplusplus
 }

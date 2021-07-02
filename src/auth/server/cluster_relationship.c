@@ -159,6 +159,7 @@ static inline void cluster_unset_master()
         if (old_master == CLUSTER_MYSELF_PTR) {
             session_subscribe_clear_session();
             server_session_clear();
+            pool_usage_updater_terminate();
             auth_db_destroy();
         }
     }
