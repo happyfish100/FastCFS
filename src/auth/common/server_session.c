@@ -324,19 +324,19 @@ static inline ServerSessionHashEntry *session_htable_find(ServerSessionHashEntry
     if (*bucket == NULL) {
         *prev = NULL;
         return NULL;
-    } else if ((*bucket)->entry.session_id == session_id) {
+    } else if ((*bucket)->entry.id_info.id == session_id) {
         *prev = NULL;
         return *bucket;
-    } else if ((*bucket)->entry.session_id > session_id) {
+    } else if ((*bucket)->entry.id_info.id > session_id) {
         *prev = NULL;
         return NULL;
     }
 
     *prev = *bucket;
     while ((current=(*prev)->next) != NULL) {
-        if (current->entry.session_id == session_id) {
+        if (current->entry.id_info.id == session_id) {
             return current;
-        } else if (current->entry.session_id > session_id) {
+        } else if (current->entry.id_info.id > session_id) {
             return NULL;
         }
 
@@ -352,10 +352,10 @@ static int session_htable_insert(ServerSessionHashEntry *se, const bool replace)
     ServerSessionHashEntry *previous;
     ServerSessionHashEntry *found;
 
-    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, se->entry.session_id);
+    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, se->entry.id_info.id);
     PTHREAD_MUTEX_LOCK(lock);
     if ((found=session_htable_find(bucket, se->entry.
-                    session_id, &previous)) == NULL)
+                    id_info.id, &previous)) == NULL)
     {
         if (previous == NULL) {
             se->next = *bucket;
@@ -383,7 +383,6 @@ ServerSessionEntry *server_session_add_ex(const ServerSessionEntry *entry,
         const bool publish, const bool persistent)
 {
     int result;
-    ServerSessionIdInfo sid;
     bool replace;
     struct fast_mblock_man *allocator;
     ServerSessionHashEntry *se;
@@ -397,26 +396,28 @@ ServerSessionEntry *server_session_add_ex(const ServerSessionEntry *entry,
     }
 
     memcpy(se->entry.fields, entry->fields, session_ctx.fields_size);
-    if (entry->session_id == 0) {
+    if (entry->id_info.id == 0) {
         replace = false;
         do {
-            sid.fields.ts = g_current_time;
-            sid.fields.publish = (publish ? 1 : 0);
-            sid.fields.persistent = (persistent ? 1 : 0);
-            sid.fields.rn = (int64_t)rand() * 16384LL / RAND_MAX;
-            sid.fields.sn = __sync_add_and_fetch(&session_ctx.sn, 1);
-            se->entry.session_id = sid.id;
+            se->entry.id_info.fields.ts = g_current_time;
+            se->entry.id_info.fields.publish = (publish ? 1 : 0);
+            se->entry.id_info.fields.persistent = (persistent ? 1 : 0);
+            se->entry.id_info.fields.rn = (int64_t)rand() * 16384LL / RAND_MAX;
+            se->entry.id_info.fields.sn = __sync_add_and_fetch(
+                    &session_ctx.sn, 1);
 
             /*
             logInfo("session_id: %"PRId64", ts: %d, publish: %d, "
-                    "rand: %u, sn: %u", se->entry.session_id, sid.fields.ts,
-                    publish, sid.fields.rn, sid.fields.sn);
+                    "rand: %u, sn: %u", se->entry.id_info.id,
+                    se->entry.id_info.fields.ts, publish,
+                    se->entry.id_info.fields.rn,
+                    se->entry.id_info.fields.sn);
                     */
             result = session_htable_insert(se, replace);
         } while (result == EEXIST);
     } else {
         replace = true;
-        se->entry.session_id = entry->session_id;
+        se->entry.id_info.id = entry->id_info.id;
         session_htable_insert(se, replace);
     }
 
@@ -587,7 +588,6 @@ void server_session_clear()
     pthread_mutex_t *lock;
     int64_t keep_count;
     int64_t remove_count;
-    ServerSessionIdInfo sid;
 
     keep_count = remove_count = 0;
     current = NULL;
@@ -601,8 +601,7 @@ void server_session_clear()
             remove.head = remove.tail = NULL;
             current = *bucket;
             do {
-                sid.id = current->entry.session_id;
-                if (sid.fields.persistent) {
+                if (current->entry.id_info.fields.persistent) {
                     SERVER_SESSION_ADD_TO_CHAIN(keep, current);
                     keep_count++;
                 } else {

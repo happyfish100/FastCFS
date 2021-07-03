@@ -47,7 +47,7 @@ static void set_session_subscribe_entry(const ServerSessionEntry *session,
     ServerSessionFields *fields;
 
     subs_entry->operation = FCFS_AUTH_SESSION_OP_TYPE_CREATE;
-    subs_entry->session_id = session->session_id;
+    subs_entry->session_id = session->id_info.id;
 
     fields = (ServerSessionFields *)(session->fields);
     subs_entry->fields.user.id = fields->dbuser->user.id;
@@ -128,7 +128,7 @@ static void server_session_del_callback(ServerSessionEntry *session)
 
         memset(&subs_entry, 0, sizeof(subs_entry));
         subs_entry.operation = FCFS_AUTH_SESSION_OP_TYPE_REMOVE;
-        subs_entry.session_id = session->session_id;
+        subs_entry.session_id = session->id_info.id;
         publish_entry_to_all_subscribers(&subs_entry);
     }
 }
@@ -237,6 +237,11 @@ static int push_all_sessions_to_queue(ServerSessionSubscriber *subscriber)
     head = tail = NULL;
     PTHREAD_MUTEX_LOCK(&subscribe_ctx.sessions.lock);
     fc_list_for_each_entry(fields, &subscribe_ctx.sessions.head, dlink) {
+        session = FCFS_AUTH_SERVER_SESSION_BY_FIELDS(fields);
+        if (!session->id_info.fields.publish) {
+            continue;
+        }
+
         subs_entry = (ServerSessionSubscribeEntry *)
             fast_mblock_alloc_object(&subscribe_ctx.entry_allocator);
         if (subs_entry == NULL) {
@@ -244,7 +249,6 @@ static int push_all_sessions_to_queue(ServerSessionSubscriber *subscriber)
             break;
         }
 
-        session = FCFS_AUTH_SERVER_SESSION_BY_FIELDS(fields);
         set_session_subscribe_entry(session, subs_entry);
 
         if (head == NULL) {

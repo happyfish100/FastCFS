@@ -187,7 +187,7 @@ static void deal_session_array()
         }
 
         if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
-            session.session_id = entry->session_id;
+            session.id_info.id = entry->session_id;
             session.fields = &entry->fields;
             server_session_add(&session, publish);
         } else {

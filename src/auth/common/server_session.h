@@ -58,7 +58,7 @@ typedef struct session_synced_fields {
 } SessionSyncedFields;
 
 typedef struct server_session_entry {
-    uint64_t session_id;
+    ServerSessionIdInfo id_info;
     void *fields;
 } ServerSessionEntry;
 
