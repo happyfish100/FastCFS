@@ -633,8 +633,27 @@ void server_session_clear()
     }
 
     if (keep_count > 0 || remove_count > 0) {
-        logInfo("file: "__FILE__", line: %d, "
-                "%"PRId64" sessions persisted, %"PRId64" sessions cleared",
-                __LINE__, keep_count, remove_count);
+        char keep_buff[256];
+        char remove_buff[256];
+
+        if (keep_count > 0) {
+            sprintf(keep_buff, "%"PRId64" sessions persisted", keep_count);
+        } else {
+            *keep_buff = '\0';
+        }
+        if (remove_count > 0) {
+            sprintf(remove_buff, "%"PRId64" sessions cleared", remove_count);
+        } else {
+            *remove_buff = '\0';
+        }
+
+        if (keep_count > 0 && remove_count > 0) {
+            logInfo("file: "__FILE__", line: %d, "
+                    "%s, %s", __LINE__, keep_buff, remove_buff);
+        } else {
+            logInfo("file: "__FILE__", line: %d, "
+                    "%s", __LINE__, (*keep_buff != '\0') ?
+                    keep_buff : remove_buff);
+        }
     }
 }

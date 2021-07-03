@@ -163,6 +163,7 @@ static int service_deal_user_login(struct fast_task_info *task)
         RESPONSE.error.length = sprintf(
                 RESPONSE.error.message,
                 "user already logined");
+        TASK_CTX.common.log_level = LOG_NOTHING;
         return -EEXIST;
     }
 
