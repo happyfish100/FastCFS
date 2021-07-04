@@ -213,13 +213,16 @@ static void server_log_configs()
             sizeof(sz_session_config));
 
     snprintf(sz_server_config, sizeof(sz_server_config),
-            "admin_generate {mode: %s, username: %s, "
-            "secret_key_filename: %s}, pool_generate: "
-            "{auto_id_initial: %"PRId64", pool_name_template: %s}",
+            "admin-generate {mode: %s, username: %s, "
+            "secret_key_filename: %s}, pool-generate: "
+            "{auto_id_initial: %"PRId64", pool_name_template: %s}, "
+            "master-election {master_lost_timeout: %ds, "
+            "max_wait_time: %ds}",
             (ADMIN_GENERATE_MODE == AUTH_ADMIN_GENERATE_MODE_FIRST ?
              "first" : "always"), ADMIN_GENERATE_USERNAME.str,
             ADMIN_GENERATE_KEY_FILENAME.str, AUTO_ID_INITIAL,
-            POOL_NAME_TEMPLATE.str);
+            POOL_NAME_TEMPLATE.str, ELECTION_MASTER_LOST_TIMEOUT,
+            ELECTION_MAX_WAIT_TIME);
 
     logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s",
             g_fcfs_auth_global_vars.version.major,
@@ -237,6 +240,30 @@ static void server_log_configs()
     log_cluster_server_config();
 }
 
+static int load_master_election_config(const char *cluster_filename)
+{
+    IniContext ini_context;
+    IniFullContext ini_ctx;
+    int result;
+
+    if ((result=iniLoadFromFile(cluster_filename, &ini_context)) != 0) {
+        logError("file: "__FILE__", line: %d, "
+                "load conf file \"%s\" fail, ret code: %d",
+                __LINE__, cluster_filename, result);
+        return result;
+    }
+
+    FAST_INI_SET_FULL_CTX_EX(ini_ctx, cluster_filename,
+            "master-election", &ini_context);
+    ELECTION_MASTER_LOST_TIMEOUT = iniGetIntCorrectValue(
+            &ini_ctx, "master_lost_timeout", 3, 1, 30);
+    ELECTION_MAX_WAIT_TIME = iniGetIntCorrectValue(
+            &ini_ctx, "max_wait_time", 5, 1, 300);
+
+    iniFreeContext(&ini_context);
+    return 0;
+}
+
 static int load_cluster_config(IniFullContext *ini_ctx,
         char *full_cluster_filename)
 {
@@ -249,11 +276,11 @@ static int load_cluster_config(IniFullContext *ini_ctx,
         return result;
     }
 
-    if ((result=cluster_info_init(full_cluster_filename)) != 0) {
+    if ((result=load_master_election_config(full_cluster_filename)) != 0) {
         return result;
     }
 
-    return 0;
+    return cluster_info_init(full_cluster_filename);
 }
 
 int server_load_config(const char *filename)
