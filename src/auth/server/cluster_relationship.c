@@ -812,10 +812,10 @@ static void *cluster_thread_entrance(void* arg)
             } else if (is_ping) {
                 ++fail_count;
                 logError("file: "__FILE__", line: %d, "
-                        "%dth ping master id: %d, ip %s:%u fail, result: %d",
+                        "%dth ping master id: %d, ip %s:%u fail",
                         __LINE__, fail_count, master->server->id,
                         CLUSTER_GROUP_ADDRESS_FIRST_IP(master->server),
-                        CLUSTER_GROUP_ADDRESS_FIRST_PORT(master->server), result);
+                        CLUSTER_GROUP_ADDRESS_FIRST_PORT(master->server));
                 if (result == SF_RETRIABLE_ERROR_NOT_MASTER) {
                     cluster_unset_master();
                     fail_count = 0;

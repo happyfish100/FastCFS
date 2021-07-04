@@ -156,8 +156,13 @@ static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
 
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
     if (extra->master_cache.valid) {
-        return conn_pool_get_connection(&extra->cpool,
-                &extra->master_cache.conn, err_no);
+        if ((conn=conn_pool_get_connection(&extra->cpool,
+                        &extra->master_cache.conn, err_no)) != NULL)
+        {
+            return conn;
+        } else {
+            extra->master_cache.valid = false;
+        }
     }
 
     sf_init_net_retry_interval_context(&net_retry_ctx,
