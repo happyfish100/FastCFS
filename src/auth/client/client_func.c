@@ -72,16 +72,16 @@ static int fcfs_auth_client_do_init_ex(FCFSAuthClientContext *client_ctx,
 
     client_ctx->common_cfg.connect_timeout = iniGetIntValueEx(
             ini_ctx->section_name, "connect_timeout",
-            ini_ctx->context, DEFAULT_CONNECT_TIMEOUT, true);
+            ini_ctx->context, SF_DEFAULT_CONNECT_TIMEOUT, true);
     if (client_ctx->common_cfg.connect_timeout <= 0) {
-        client_ctx->common_cfg.connect_timeout = DEFAULT_CONNECT_TIMEOUT;
+        client_ctx->common_cfg.connect_timeout = SF_DEFAULT_CONNECT_TIMEOUT;
     }
 
     client_ctx->common_cfg.network_timeout = iniGetIntValueEx(
             ini_ctx->section_name, "network_timeout",
-            ini_ctx->context, DEFAULT_NETWORK_TIMEOUT, true);
+            ini_ctx->context, SF_DEFAULT_NETWORK_TIMEOUT, true);
     if (client_ctx->common_cfg.network_timeout <= 0) {
-        client_ctx->common_cfg.network_timeout = DEFAULT_NETWORK_TIMEOUT;
+        client_ctx->common_cfg.network_timeout = SF_DEFAULT_NETWORK_TIMEOUT;
     }
     if ((result=fcfs_auth_load_server_config(client_ctx, ini_ctx)) != 0) {
         return result;
