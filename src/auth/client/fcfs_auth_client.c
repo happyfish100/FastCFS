@@ -189,11 +189,11 @@ int fcfs_auth_load_config_ex(FCFSAuthClientFullContext *auth,
     return result;
 }
 
-void fcfs_auth_config_to_string(const FCFSAuthClientFullContext *auth,
-        char *output, const int size)
+void fcfs_auth_config_to_string_ex(const FCFSAuthClientFullContext *auth,
+        const char *caption, char *output, const int size)
 {
     int len;
-    len = snprintf(output, size, "auth {enabled: %d", auth->enabled);
+    len = snprintf(output, size, "%s{enabled: %d", caption, auth->enabled);
     if (auth->enabled) {
         len += snprintf(output + len, size - len, ", username: %s, "
                 "secret_key_filename: %s",

@@ -36,8 +36,15 @@ int fcfs_auth_load_config_ex(FCFSAuthClientFullContext *auth,
         const char *config_filename, const char *section_name,
         const SFServerGroupIndexType index_type);
 
-void fcfs_auth_config_to_string(const FCFSAuthClientFullContext *auth,
-        char *output, const int size);
+void fcfs_auth_config_to_string_ex(const FCFSAuthClientFullContext *auth,
+        const char *caption, char *output, const int size);
+
+static inline void fcfs_auth_config_to_string(const FCFSAuthClientFullContext
+        *auth, char *output, const int size)
+{
+    const char *caption = "auth ";
+    fcfs_auth_config_to_string_ex(auth, caption, output, size);
+}
 
 int fcfs_auth_client_user_login_ex(FCFSAuthClientContext *client_ctx,
         const string_t *username, const string_t *passwd,

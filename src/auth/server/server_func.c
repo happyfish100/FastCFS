@@ -72,7 +72,7 @@ static int server_load_fdir_client_config(IniContext *ini_context,
 static int server_load_admin_generate_config(IniContext *ini_context,
         const char *config_filename)
 {
-#define SECTION_NAME_ADMIN_GENERATE  "admin_generate"
+#define SECTION_NAME_ADMIN_GENERATE  "admin-generate"
 #define USERNAME_VARIABLE_STR  "${username}"
 #define USERNAME_VARIABLE_LEN  (sizeof(USERNAME_VARIABLE_STR) - 1)
 
@@ -147,7 +147,7 @@ static int server_load_admin_generate_config(IniContext *ini_context,
 static int server_load_pool_generate_config(IniContext *ini_context,
         const char *config_filename)
 {
-#define SECTION_NAME_POOL_GENERATE  "pool_generate"
+#define SECTION_NAME_POOL_GENERATE  "pool-generate"
 
     char *name_template;
     int result;
@@ -205,7 +205,7 @@ static void server_log_configs()
     char sz_session_config[512];
 
     sf_global_config_to_string(sz_global_config, sizeof(sz_global_config));
-    sf_slow_log_config_to_string(&SLOW_LOG_CFG, "slow_log",
+    sf_slow_log_config_to_string(&SLOW_LOG_CFG, "slow-log",
             sz_slowlog_config, sizeof(sz_slowlog_config));
     sf_context_config_to_string(&g_sf_context,
             sz_service_config, sizeof(sz_service_config));
