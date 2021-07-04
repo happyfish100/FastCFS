@@ -56,6 +56,27 @@ int cluster_handler_destroy()
     return 0;
 }
 
+int cluster_recv_timeout_callback(struct fast_task_info *task)
+{
+    if (SERVER_TASK_TYPE == AUTH_SERVER_TASK_TYPE_RELATIONSHIP &&
+            CLUSTER_PEER != NULL)
+    {
+        logWarning("file: "__FILE__", line: %d, "
+                "cluster client ip: %s, server id: %d, recv timeout",
+                __LINE__, task->client_ip, CLUSTER_PEER->server->id);
+        return ETIMEDOUT;
+    } else if (SERVER_TASK_TYPE == AUTH_SERVER_TASK_TYPE_SUBSCRIBE &&
+            SESSION_SUBSCRIBER != NULL)
+    {
+        logWarning("file: "__FILE__", line: %d, "
+                "subscribe client ip: %s, recv timeout",
+                __LINE__, task->client_ip);
+        return ETIMEDOUT;
+    }
+
+    return 0;
+}
+
 static void session_subscriber_cleanup(AuthServerContext *server_ctx,
         ServerSessionSubscriber *subscriber)
 {
@@ -379,11 +400,13 @@ static int cluster_deal_join_master(struct fast_task_info *task)
         return result;
     }
 
-    if (CLUSTER_MYSELF_PTR != CLUSTER_MASTER_ATOM_PTR) {
+    if (CLUSTER_MYSELF_PTR != CLUSTER_MASTER_ATOM_PTR &&
+            CLUSTER_MYSELF_PTR != CLUSTER_NEXT_MASTER)
+    {
         RESPONSE.error.length = sprintf(
                 RESPONSE.error.message,
                 "i am not master");
-        return EINVAL;
+        return SF_RETRIABLE_ERROR_NOT_MASTER;
     }
 
     if (peer == CLUSTER_MYSELF_PTR) {
@@ -422,11 +445,13 @@ static int cluster_deal_ping_master(struct fast_task_info *task)
         return EINVAL;
     }
 
-    if (CLUSTER_MYSELF_PTR != CLUSTER_MASTER_ATOM_PTR) {
+    if (CLUSTER_MYSELF_PTR != CLUSTER_MASTER_ATOM_PTR &&
+            CLUSTER_MYSELF_PTR != CLUSTER_NEXT_MASTER)
+    {
         RESPONSE.error.length = sprintf(
                 RESPONSE.error.message,
                 "i am not master");
-        return EINVAL;
+        return SF_RETRIABLE_ERROR_NOT_MASTER;
     }
 
     RESPONSE.header.cmd = FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_RESP;

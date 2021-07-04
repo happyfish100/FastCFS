@@ -400,14 +400,16 @@ static int do_notify_master_changed(FCFSAuthClusterServerInfo *cs,
 		FCFSAuthClusterServerInfo *master, const unsigned char cmd,
         bool *bConnectFail)
 {
+    int connect_timeout;
     char out_buff[sizeof(FCFSAuthProtoHeader) + 4];
     ConnectionInfo conn;
     FCFSAuthProtoHeader *header;
     SFResponseInfo response;
     int result;
 
+    connect_timeout = FC_MIN(SF_G_CONNECT_TIMEOUT, 2);
     if ((result=fc_server_make_connection(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                        cs->server), &conn, SF_G_CONNECT_TIMEOUT)) != 0)
+                        cs->server), &conn, connect_timeout)) != 0)
     {
         *bConnectFail = true;
         return result;
@@ -464,8 +466,6 @@ static int load_data()
         return result;
     }
 
-    logInfo("load data done.");
-
     return 0;
 }
 
@@ -490,7 +490,6 @@ static int cluster_relationship_set_master(FCFSAuthClusterServerInfo
             sf_terminate_myself();
             return result;
         }
-        init_inactive_server_array();
     } else {
         char time_used[128];
         if (start_time > 0) {
@@ -522,7 +521,6 @@ static int cluster_relationship_set_master(FCFSAuthClusterServerInfo
             sf_terminate_myself();
             return result;
         }
-        logInfo("pool_usage_updater_start.");
     }
 
     return 0;
@@ -562,9 +560,14 @@ static int cluster_notify_next_master(FCFSAuthClusterServerInfo *cs,
         FCFSAuthClusterServerStatus *server_status, bool *bConnectFail)
 {
     FCFSAuthClusterServerInfo *master;
+    int result;
+
     master = server_status->cs;
     if (cs == CLUSTER_MYSELF_PTR) {
-        return cluster_relationship_pre_set_master(master);
+        if ((result=cluster_relationship_pre_set_master(master)) == 0) {
+            init_inactive_server_array();
+        }
+        return result;
     } else {
         return do_notify_master_changed(cs, master,
                 FCFS_AUTH_CLUSTER_PROTO_PRE_SET_NEXT_MASTER, bConnectFail);
@@ -762,6 +765,7 @@ static void *cluster_thread_entrance(void* arg)
 {
 #define MAX_SLEEP_SECONDS  10
 
+    int result;
     int fail_count;
     int sleep_seconds;
     int ping_remain_time;
@@ -799,8 +803,8 @@ static void *cluster_thread_entrance(void* arg)
             if (ping_remain_time < 2) {
                 ping_remain_time = 2;
             }
-            if (cluster_ping_master(master, &mconn,
-                        ping_remain_time, &is_ping) == 0)
+            if ((result=cluster_ping_master(master, &mconn,
+                            ping_remain_time, &is_ping)) == 0)
             {
                 fail_count = 0;
                 ping_start_time = g_current_time;
@@ -808,12 +812,15 @@ static void *cluster_thread_entrance(void* arg)
             } else if (is_ping) {
                 ++fail_count;
                 logError("file: "__FILE__", line: %d, "
-                        "%dth ping master id: %d, ip %s:%u fail",
+                        "%dth ping master id: %d, ip %s:%u fail, result: %d",
                         __LINE__, fail_count, master->server->id,
                         CLUSTER_GROUP_ADDRESS_FIRST_IP(master->server),
-                        CLUSTER_GROUP_ADDRESS_FIRST_PORT(master->server));
-
-                if (g_current_time - ping_start_time >
+                        CLUSTER_GROUP_ADDRESS_FIRST_PORT(master->server), result);
+                if (result == SF_RETRIABLE_ERROR_NOT_MASTER) {
+                    cluster_unset_master();
+                    fail_count = 0;
+                    sleep_seconds = 0;
+                } else if (g_current_time - ping_start_time >
                         ELECTION_MASTER_LOST_TIMEOUT)
                 {
                     if (fail_count > 1) {
