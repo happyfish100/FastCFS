@@ -671,12 +671,12 @@ static int cluster_select_master()
 
         ++i;
         sleep_secs = FC_MIN(remain_time, max_sleep_secs);
-        sleep(sleep_secs);
         logInfo("file: "__FILE__", line: %d, "
                 "round %dth select master, alive server count: %d "
                 "< server count: %d, try again after %d seconds.",
                 __LINE__, i, active_count, CLUSTER_SERVER_ARRAY.count,
                 sleep_secs);
+
         sleep(sleep_secs);
         if ((i % 2 == 0) && (max_sleep_secs < 8)) {
             max_sleep_secs *= 2;
