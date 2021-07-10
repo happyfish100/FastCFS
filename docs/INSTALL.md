@@ -1,4 +1,16 @@
-### 1. libfastcommon
+### 1. Linux need install libaio devel
+
+for CentOS or REHL:
+```
+yum install libaio-devel -y
+```
+
+for Unbuntu or Debian:
+```
+apt install libaio-dev -y
+```
+
+### 2. libfastcommon
 
 ```
 git clone git@github.com:happyfish100/libfastcommon.git || git clone https://github.com/happyfish100/libfastcommon.git
@@ -14,7 +26,7 @@ default install directories:
 /usr/include/fastcommon
 ```
 
-### 2. libserverframe
+### 3. libserverframe
 
 ```
 git clone git@github.com:happyfish100/libserverframe.git || git clone https://github.com/happyfish100/libserverframe.git
@@ -22,7 +34,7 @@ cd libserverframe/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-### 3. Auth client
+### 4. Auth client
 
 ```
 git clone git@github.com:happyfish100/FastCFS.git || git clone https://github.com/happyfish100/FastCFS.git
@@ -30,7 +42,7 @@ cd FastCFS/
 ./make.sh clean && ./make.sh --module=auth_client && ./make.sh --module=auth_client install
 ```
 
-### 4. fastDIR
+### 5. fastDIR
 
 ```
 git clone git@github.com:happyfish100/fastDIR.git || git clone https://github.com/happyfish100/fastDIR.git
@@ -40,7 +52,7 @@ mkdir -p /etc/fastcfs/fdir/
 cp conf/*.conf /etc/fastcfs/fdir/
 ```
 
-### 5. faststore
+### 6. faststore
 
 ```
 git clone git@github.com:happyfish100/faststore.git || git clone https://github.com/happyfish100/faststore.git
@@ -51,7 +63,7 @@ cp conf/*.conf /etc/fastcfs/fstore/
 ```
 
 
-### 6. libfuse
+### 7. libfuse
 
 libfuse requires meson and ninja which require python3.5 or higher version
 
@@ -102,7 +114,7 @@ ninja && ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 ```
 
-### 7. FastCFS
+### 8. FastCFS
 
 ```
 cd FastCFS/

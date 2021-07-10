@@ -5,14 +5,14 @@
 
 fastcfs.sh 命令参数说明：
 ```
-* setup: 安装程序包
+* install: 安装程序包
 * config: 复制配置文件并自动配置为单节点
 * start | stop | restart: 服务进程控制
 ```
 
 或执行如下命令（需要root身份执行）：
 ```
-./fastcfs.sh setup
+./fastcfs.sh install
 ./fastcfs.sh config
 ./fastcfs.sh restart
 ```
@@ -27,7 +27,22 @@ df -h /opt/fastcfs/fuse | grep fuse
 
 ## 二、DIY编译和安装
 
-### 1. libfastcommon
+### 1. Linux下需要安装libaio devel包
+
+对于 CentOS或REHL，执行：
+```
+yum install libaio-devel -y
+```
+
+对于 Unbuntu或Debian，执行：
+```
+apt install libaio-dev -y
+```
+
+其他Linux系统，需要编译安装 libaio库
+
+
+### 2. libfastcommon
 
 ```
 git clone https://gitee.com/fastdfs100/libfastcommon.git; cd libfastcommon/
@@ -42,21 +57,21 @@ git checkout master
 /usr/include/fastcommon
 ```
 
-### 2. libserverframe
+### 3. libserverframe
 
 ```
 git clone https://gitee.com/fastdfs100/libserverframe.git; cd libserverframe/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-### 3. Auth client
+### 4. Auth client
 
 ```
 git clone https://gitee.com/fastdfs100/FastCFS.git; cd FastCFS/
 ./make.sh clean && ./make.sh --module=auth_client && ./make.sh --module=auth_client install
 ```
 
-### 4. fastDIR
+### 5. fastDIR
 
 ```
 git clone https://gitee.com/fastdfs100/fastDIR.git; cd fastDIR/
@@ -65,7 +80,7 @@ mkdir -p /etc/fastcfs/fdir/
 cp conf/*.conf /etc/fastcfs/fdir/
 ```
 
-### 5. faststore
+### 6. faststore
 
 ```
 git clone https://gitee.com/fastdfs100/faststore.git; cd faststore/
@@ -75,7 +90,7 @@ cp conf/*.conf /etc/fastcfs/fstore/
 ```
 
 
-### 6. libfuse
+### 7. libfuse
 
 libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编译和安装。或者执行如下步骤DIY：
 
@@ -127,7 +142,7 @@ ninja && ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 ```
 
-### 7. FastCFS
+### 8. FastCFS
 
 进入之前clone下来的FastCFS目录，然后执行：
 ```

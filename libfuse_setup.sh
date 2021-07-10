@@ -136,6 +136,7 @@ else
       apt install make -y
     fi
 
+    dpkg -s libaio-dev >/dev/null 2>&1 || apt install libaio-dev -y
     if [ -z "$PKG_CONFIG_PRG" ]; then
       apt install pkg-config -y
     fi
