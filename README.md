@@ -87,9 +87,17 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 
 ## 8. Chinese Relative articles
 
-[OSChina blog](https://my.oschina.net/u/3334339)
+[CSDN blog](https://blog.csdn.net/happy_fish100/)
 
-## 9. Contact us
+## 9. TODO List
+
+*  [fdir] use cache + external storage to support massive files
+*  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + SAS
+*  [fstore] provide cluster tools for automatic expansion
+*  [fdir & fstore] binlog deduplication (fdir binlog, fstore replica & slice binlog)
+*  [fstore] after the machine recovery, the data masters should be rebalanced
+
+## 10. Contact us
 
 email: 384681(at)qq(dot)com
 
