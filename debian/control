@@ -1,0 +1,49 @@
+Source: fastcfs
+Section: admin
+Priority: optional
+Maintainer: YuQing <384681@qq.com>
+Build-Depends: debhelper (>=11~),
+               libfastcommon-dev (>= 1.0.53),
+               libserverframe-dev (>= 1.1.10)
+Standards-Version: 4.1.4
+Homepage: http://github.com/happyfish100/FastCFS/
+
+Package: fastcfs-auth
+Architecture: linux-any
+Multi-Arch: foreign
+Depends: libfastcommon (>= 1.0.53),
+         libserverframe (>= 1.1.10),
+         fastcfs-auth-server,
+         fastcfs-auth-client,
+         fastcfs-auth-config,
+         ${misc:Depends}, ${shlibs:Depends}
+Description: the auth client library and config files of FastCFS.
+ FastCFS is a high performance distributed file system which can be used as the back-end storage of databases and cloud platforms.
+
+
+Package: fastcfs-auth-dev
+Architecture: linux-any
+Multi-Arch: foreign
+Depends: fastcfs-auth-client (= ${binary:Version}),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: header files of FastCFS auth client
+ This package provides the header files of libfcfsauthclient
+
+ 
+Package: fastcfs-auth-client
+Architecture: linux-any
+Multi-Arch: foreign
+Depends: libfastcommon (>= 1.0.53),
+         libserverframe (>= 1.1.10)
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS auth client
+ FastCFS auth client
+
+Package: fastcfs-auth-config
+Architecture: linux-any
+Multi-Arch: foreign
+Depends: libfastcommon (>= 1.0.53),
+         libserverframe (>= 1.1.10)
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS auth config files for sample
+ FastCFS auth config files for sample

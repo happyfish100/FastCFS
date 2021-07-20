@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+
+export DESTDIR = ../debian/tmp
+
+%:
+	dh $@
+
+
+override_dh_auto_build:
+	./make.sh --module=auth_client clean && ./make.sh --module=auth_client
+
+override_dh_auto_install:
+	./make.sh --module=auth_client install
+	AUTH_CONFDIR=$DESTDIR/etc/fastcfs/auth/
+	mkdir -p $AUTH_CONFDIR
+	cp src/auth/conf/*.conf $AUTH_CONFDIR
+	cp -R src/auth/conf/keys $AUTH_CONFDIR

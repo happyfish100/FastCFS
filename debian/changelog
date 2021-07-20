@@ -1,0 +1,6 @@
+fastcfs (2.3.0-1) UNRELEASED; urgency=low
+
+  * Initial release. Closes: #nnnn
+    <nnnn is the bug number of your ITP>
+
+ --  <>  Tue, 20 Jul 2021 00:55:33 +0800
