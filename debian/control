@@ -3,6 +3,11 @@ Section: admin
 Priority: optional
 Maintainer: YuQing <384681@qq.com>
 Build-Depends: debhelper (>=11~)
+               fastDIR-devel (>= 2.3.0) <pkg.fastcfs.core>,
+               faststore-devel (>= 2.3.0) <pkg.fastcfs.core>,
+               fuse3-devel (>= 3.10.1) <pkg.fastcfs.core>,
+               libfastcommon-dev (>= 1.0.53) <pkg.auth.client>,
+               libserverframe-dev (>= 1.1.10) <pkg.auth.client>
 Standards-Version: 4.1.4
 Homepage: http://github.com/happyfish100/FastCFS/
 
@@ -10,9 +15,7 @@ Homepage: http://github.com/happyfish100/FastCFS/
 Package: fastcfs
 Architecture: any
 Multi-Arch: foreign
-Build-Depends: fastDIR-devel (>= 2.3.0),
-               faststore-devel (>= 2.3.0),
-               fuse3-devel (>= 3.10.1)
+Build-Profiles: <pkg.fastcfs.core>
 Depends: fastcfs-fused (= ${binary:Version}),
          fastcfs-utils (= ${binary:Version}),
          ${misc:Depends}, ${shlibs:Depends}
@@ -23,6 +26,7 @@ Description: the auth client library and config files of FastCFS.
 Package: fastcfs-fused
 Architecture: any
 Multi-Arch: foreign
+Build-Profiles: <pkg.fastcfs.core>
 Depends: fastcfs-api-libs (= ${binary:Version}),
          fuse3 (>= 3.10.1),
          fastcfs-fuse-config (>= 1.0.0),
@@ -32,6 +36,7 @@ Description: FastCFS fuse
 Package: fastcfs-utils
 Architecture: any
 Multi-Arch: foreign
+Build-Profiles: <pkg.fastcfs.core>
 Depends: libserverframe (>= 1.1.8),
          ${misc:Depends}, ${shlibs:Depends}
 Description: FastCFS utils
@@ -39,6 +44,7 @@ Description: FastCFS utils
 Package: fastcfs-api-libs
 Architecture: any
 Multi-Arch: foreign
+Build-Profiles: <pkg.fastcfs.core>
 Depends: fastdir-client (>= 2.3.0),
          faststore-client (>= 2.3.0),
          ${misc:Depends}, ${shlibs:Depends}
@@ -47,6 +53,7 @@ Description: FastCFS api library
 Package: fastcfs-api-libs-dev
 Architecture: any
 Multi-Arch: foreign
+Build-Profiles: <pkg.fastcfs.core>
 Depends: fastcfs-api-libs (= ${binary:Version}),
          ${misc:Depends}, ${shlibs:Depends}
 Description: header files of FastCFS api library
@@ -54,6 +61,7 @@ Description: header files of FastCFS api library
 Package: fastcfs-auth-server
 Architecture: any
 Multi-Arch: foreign
+Build-Profiles: <pkg.fastcfs.core>
 Depends: fastdir-client (>= 2.3.0),
          fastcfs-auth-config (>= 2.3.0),
          ${misc:Depends}, ${shlibs:Depends}
@@ -62,6 +70,7 @@ Description: FastCFS auth server
 Package: fastcfs-fuse-config
 Architecture: any
 Multi-Arch: foreign
+Build-Profiles: <pkg.fastcfs.core>
 Depends: faststore-config (>= 1.0.0)
          ${misc:Depends}, ${shlibs:Depends}
 Description: FastCFS fuse config files for sample
@@ -69,8 +78,7 @@ Description: FastCFS fuse config files for sample
 Package: fastcfs-auth
 Architecture: any
 Multi-Arch: foreign
-Build-Depends: libfastcommon-dev (>= 1.0.53),
-               libserverframe-dev (>= 1.1.10)
+Build-Profiles: <pkg.auth.client>
 Depends: libfastcommon (>= 1.0.53),
          libserverframe (>= 1.1.10),
          fastcfs-auth-server (= ${binary:Version}),
@@ -84,6 +92,7 @@ Description: the auth client library and config files of FastCFS.
 Package: fastcfs-auth-dev
 Architecture: any
 Multi-Arch: foreign
+Build-Profiles: <pkg.auth.client>
 Depends: fastcfs-auth-client (= ${binary:Version}),
          ${misc:Depends}, ${shlibs:Depends}
 Description: header files of FastCFS auth client
@@ -93,6 +102,7 @@ Description: header files of FastCFS auth client
 Package: fastcfs-auth-client
 Architecture: any
 Multi-Arch: foreign
+Build-Profiles: <pkg.auth.client>
 Depends: libfastcommon (>= 1.0.53),
          libserverframe (>= 1.1.10)
          ${misc:Depends}, ${shlibs:Depends}
@@ -102,6 +112,7 @@ Description: FastCFS auth client
 Package: fastcfs-auth-config
 Architecture: any
 Multi-Arch: foreign
+Build-Profiles: <pkg.auth.client>
 Depends: libfastcommon (>= 1.0.53),
          libserverframe (>= 1.1.10)
          ${misc:Depends}, ${shlibs:Depends}

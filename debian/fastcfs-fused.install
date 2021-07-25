@@ -1,1 +1,1 @@
-conffile /usr/lib/systemd/system/fastcfs.service
+usr/lib/systemd/system/fastcfs.service

@@ -1,5 +1,5 @@
-/usr/lib64/libfcfsauthclient.so*
-/usr/bin/fcfs_user
-/usr/bin/fcfs_pool
-/usr/bin/fauth_list_servers
-/usr/bin/fauth_cluster_stat
+usr/lib64/libfcfsauthclient.so*
+usr/bin/fcfs_user
+usr/bin/fcfs_pool
+usr/bin/fauth_list_servers
+usr/bin/fauth_cluster_stat
