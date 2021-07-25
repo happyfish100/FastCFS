@@ -2,27 +2,87 @@ Source: fastcfs
 Section: admin
 Priority: optional
 Maintainer: YuQing <384681@qq.com>
-Build-Depends: debhelper (>=11~),
-               libfastcommon-dev (>= 1.0.53),
-               libserverframe-dev (>= 1.1.10)
+Build-Depends: debhelper (>=11~)
 Standards-Version: 4.1.4
 Homepage: http://github.com/happyfish100/FastCFS/
 
-Package: fastcfs-auth
-Architecture: linux-any
+
+Package: fastcfs
+Architecture: any
 Multi-Arch: foreign
+Build-Depends: fastDIR-devel (>= 2.3.0),
+               faststore-devel (>= 2.3.0),
+               fuse3-devel (>= 3.10.1)
+Depends: fastcfs-fused (= ${binary:Version}),
+         fastcfs-utils (= ${binary:Version}),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: the auth client library and config files of FastCFS.
+ a high performance distributed file system which can be used as the back-end storage of databases and cloud platforms.
+
+
+Package: fastcfs-fused
+Architecture: any
+Multi-Arch: foreign
+Depends: fastcfs-api-libs (= ${binary:Version}),
+         fuse3 (>= 3.10.1),
+         fastcfs-fuse-config (>= 1.0.0),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS fuse
+
+Package: fastcfs-utils
+Architecture: any
+Multi-Arch: foreign
+Depends: libserverframe (>= 1.1.8),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS utils
+
+Package: fastcfs-api-libs
+Architecture: any
+Multi-Arch: foreign
+Depends: fastdir-client (>= 2.3.0),
+         faststore-client (>= 2.3.0),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS api library
+
+Package: fastcfs-api-libs-dev
+Architecture: any
+Multi-Arch: foreign
+Depends: fastcfs-api-libs (= ${binary:Version}),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: header files of FastCFS api library
+
+Package: fastcfs-auth-server
+Architecture: any
+Multi-Arch: foreign
+Depends: fastdir-client (>= 2.3.0),
+         fastcfs-auth-config (>= 2.3.0),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS auth server
+
+Package: fastcfs-fuse-config
+Architecture: any
+Multi-Arch: foreign
+Depends: faststore-config (>= 1.0.0)
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS fuse config files for sample
+
+Package: fastcfs-auth
+Architecture: any
+Multi-Arch: foreign
+Build-Depends: libfastcommon-dev (>= 1.0.53),
+               libserverframe-dev (>= 1.1.10)
 Depends: libfastcommon (>= 1.0.53),
          libserverframe (>= 1.1.10),
-         fastcfs-auth-server,
-         fastcfs-auth-client,
-         fastcfs-auth-config,
+         fastcfs-auth-server (= ${binary:Version}),
+         fastcfs-auth-client (= ${binary:Version}),
+         fastcfs-auth-config (= ${binary:Version}),
          ${misc:Depends}, ${shlibs:Depends}
 Description: the auth client library and config files of FastCFS.
  FastCFS is a high performance distributed file system which can be used as the back-end storage of databases and cloud platforms.
 
 
 Package: fastcfs-auth-dev
-Architecture: linux-any
+Architecture: any
 Multi-Arch: foreign
 Depends: fastcfs-auth-client (= ${binary:Version}),
          ${misc:Depends}, ${shlibs:Depends}
@@ -31,7 +91,7 @@ Description: header files of FastCFS auth client
 
  
 Package: fastcfs-auth-client
-Architecture: linux-any
+Architecture: any
 Multi-Arch: foreign
 Depends: libfastcommon (>= 1.0.53),
          libserverframe (>= 1.1.10)
@@ -40,7 +100,7 @@ Description: FastCFS auth client
  FastCFS auth client
 
 Package: fastcfs-auth-config
-Architecture: linux-any
+Architecture: any
 Multi-Arch: foreign
 Depends: libfastcommon (>= 1.0.53),
          libserverframe (>= 1.1.10)

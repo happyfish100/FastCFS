@@ -1,0 +1,2 @@
+usr/bin/fcfs_authd
+usr/lib/systemd/system/fcfs_authd.service

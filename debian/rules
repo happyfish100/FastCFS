@@ -1,4 +1,19 @@
 #!/usr/bin/make -f
 
+export DESTDIR = $(CURDIR)/debian/tmp
+
 %:
 	dh $@
+
+override_dh_auto_build:
+	./make.sh --exclude=auth_client clean && ./make.sh --exclude=auth_client
+
+override_dh_auto_install:
+	./make.sh --exclude=auth_client install
+	FUSE_CONFDIR=$DESTDIR/etc/fastcfs/fcfs/
+	SYSTEMDIR=$DESTDIR/usr/lib/systemd/system/
+	mkdir -p $FUSE_CONFDIR
+	mkdir -p $SYSTEMDIR
+	cp conf/*.conf $FUSE_CONFDIR
+	cp systemd/fastcfs.service $SYSTEMDIR
+	cp systemd/fcfs_authd.service $SYSTEMDIR
