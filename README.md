@@ -92,7 +92,7 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 ## 9. TODO List
 
 *  [fdir] use cache + external storage to support massive files
-*  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + SAS
+*  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [fstore] provide cluster tools for automatic expansion
 *  [fdir & fstore] binlog deduplication (fdir binlog, fstore replica & slice binlog)
 *  [fstore] after the machine recovery, the data masters should be rebalanced
