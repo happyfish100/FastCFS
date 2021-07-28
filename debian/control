@@ -2,10 +2,10 @@ Source: fastcfs
 Section: admin
 Priority: optional
 Maintainer: YuQing <384681@qq.com>
-Build-Depends: debhelper (>=11~)
-               fastDIR-devel (>= 2.3.0) <pkg.fastcfs.core>,
-               faststore-devel (>= 2.3.0) <pkg.fastcfs.core>,
-               fuse3-devel (>= 3.10.1) <pkg.fastcfs.core>,
+Build-Depends: debhelper (>=11~),
+               fastdir-dev (>= 2.3.0) <pkg.fastcfs.core>,
+               faststore-dev (>= 2.3.0) <pkg.fastcfs.core>,
+               libfuse3-dev (>= 3.10.1) <pkg.fastcfs.core>,
                libfastcommon-dev (>= 1.0.53) <pkg.auth.client>,
                libserverframe-dev (>= 1.1.10) <pkg.auth.client>
 Standards-Version: 4.1.4

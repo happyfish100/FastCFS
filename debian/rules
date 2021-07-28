@@ -1,6 +1,9 @@
 #!/usr/bin/make -f
 
 export DESTDIR = $(CURDIR)/debian/tmp
+export FUSE_CONFDIR=$(DESTDIR)/etc/fastcfs/fcfs/
+export SYSTEMDIR=$(DESTDIR)/usr/lib/systemd/system/
+export AUTH_CONFDIR=$(DESTDIR)/etc/fastcfs/auth/
 
 %:
 	dh $@
@@ -17,19 +20,17 @@ endif
 override_dh_auto_install:
 ifneq ($(filter pkg.fastcfs.core,$(DEB_BUILD_PROFILES)),)
 	./make.sh --exclude=auth_client install
-	FUSE_CONFDIR=$DESTDIR/etc/fastcfs/fcfs/
-	SYSTEMDIR=$DESTDIR/usr/lib/systemd/system/
-	mkdir -p $FUSE_CONFDIR
-	mkdir -p $SYSTEMDIR
-	cp conf/*.conf $FUSE_CONFDIR
-	cp systemd/fastcfs.service $SYSTEMDIR
-	cp systemd/fcfs_authd.service $SYSTEMDIR
+	mkdir -p $(FUSE_CONFDIR)
+	mkdir -p $(SYSTEMDIR)
+	cp conf/*.conf $(FUSE_CONFDIR)
+	cp systemd/fastcfs.service $(SYSTEMDIR)
+	cp systemd/fcfs_authd.service $(SYSTEMDIR)
 endif
 ifneq ($(filter pkg.auth.client,$(DEB_BUILD_PROFILES)),)
 	./make.sh --module=auth_client install
-	AUTH_CONFDIR=$DESTDIR/etc/fastcfs/auth/
-	mkdir -p $AUTH_CONFDIR
-	cp src/auth/conf/*.conf $AUTH_CONFDIR
-	cp -R src/auth/conf/keys $AUTH_CONFDIR
+	AUTH_CONFDIR=$(DESTDIR)/etc/fastcfs/auth/
+	mkdir -p $(AUTH_CONFDIR)
+	cp src/auth/conf/*.conf $(AUTH_CONFDIR)
+	cp -R src/auth/conf/keys $(AUTH_CONFDIR)
 endif
 	dh_auto_install
