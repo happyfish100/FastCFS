@@ -1,6 +1,5 @@
-fastcfs (2.3.0-1) UNRELEASED; urgency=low
+fastcfs (2.3.0-1) unstable; urgency=medium
 
-  * Initial release. Closes: #nnnn
-    <nnnn is the bug number of your ITP>
+  * Initial release.
 
- --  <>  Tue, 20 Jul 2021 00:55:33 +0800
+ -- YuQing <384681@qq.com>  Tue, 20 Jul 2021 00:55:33 +0800
