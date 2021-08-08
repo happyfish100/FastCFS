@@ -17,6 +17,7 @@ FDIR_CONF_FILES=(client.conf cluster.conf server.conf)
 AUTH_CONF_FILES=(auth.conf client.conf cluster.conf server.conf session.conf)
 AUTH_KEYS_FILES=(session_validate.key)
 FUSE_CONF_FILES=(fuse.conf)
+TRANCATE_MARK_LINE="## Important:server group mark, don't modify this line."
 
 shell_name=$0
 shell_command=$1
@@ -102,7 +103,6 @@ create_path_not_exist() {
   fi
 }
 #---Tool functions end---#
-
 
 #---Settings and cluster info section begin---#
 # Load cluster settings from file fcfs.settings
@@ -229,6 +229,10 @@ create_fdir_conf_files() {
       echo "ERROR: fdir cluster file not exist, $fdir_cluster_file, can't append server to it"
       exit 1
     fi
+    
+    # Trancate cluster.conf with mark line
+    sed_replace "/$TRANCATE_MARK_LINE/,$ d" $fdir_cluster_file
+
     # Replace server ip
     let server_id=1
     for fdir_server_ip in ${fdir_ip_array[@]}; do
@@ -244,7 +248,31 @@ create_fdir_conf_files() {
 }
 
 create_fstore_conf_files() {
-  if [ ${#fstore_group_array[@]} -gt 0 ]; then
+  if [ -z $data_group_count ]; then
+    echo "ERROR: Param data_group_count in $fcfs_settings_file must not empty."
+    exit 1
+  fi
+  if [ -z $fstore_group_count ]; then
+    echo "ERROR: Param fstore_group_count in $fcfs_settings_file must not empty."
+    exit 1
+  fi
+  let data_group_count_int=$data_group_count
+  let fstore_group_count_int=$fstore_group_count
+
+  if [ $fstore_group_count_int -gt 0 ]; then
+    # Check params setting valid.
+    if [ $data_group_count_int -lt $fstore_group_count_int ]; then
+      echo "ERROR: Param data_group_count in $fcfs_settings_file must be great than fstore_group_count."
+      exit 1
+    fi
+    for (( i=1 ; i <= $fstore_group_count_int ; i++ )); do
+      local fstore_group="fstore_group_$i"
+      if [ -z ${!fstore_group} ]; then
+        echo "ERROR: Param $fstore_group in $fcfs_settings_file cannot be empty."
+        exit 1
+      fi
+    done
+    
     echo "INFO: Begin create fstore config files."
     local fstore_path="$LOCAL_CONF_PATH/fstore"
     local fstore_tpl_path="$config_file_template_path/fstore"
@@ -255,24 +283,29 @@ create_fstore_conf_files() {
       echo "ERROR: fstore cluster file not exist, $fstore_cluster_file, can't append server to it"
       exit 1
     fi
+
+    # Trancate cluster.conf with mark line
+    sed_replace "/$TRANCATE_MARK_LINE/,$ d" $fstore_cluster_file
+
     # Replace server_group_count and data_group_count, and append server ips
-    let fstore_group_count=${#fstore_group_array[@]}
-    let data_group_count_step=64
-    let data_group_ids_step=32
-    let data_group_count=$fstore_group_count*$data_group_count_step
+    let data_groups_per_fstore_group=$data_group_count_int/$fstore_group_count_int
+    let remainder_count=$data_group_count_int-$data_groups_per_fstore_group*$fstore_group_count_int
     let data_group_ids_start=1
-    let data_group_ids_end=32
-    let server_group_id=1
-    sed_replace "s#^server_group_count *=.*#server_group_count = $fstore_group_count#g" $fstore_cluster_file
-    sed_replace "s#^data_group_count *=.*#data_group_count = $data_group_count#g" $fstore_cluster_file
+    let data_group_ids_end=$data_groups_per_fstore_group
+
+    sed_replace "s#^server_group_count *=.*#server_group_count = $fstore_group_count_int#g" $fstore_cluster_file
+    sed_replace "s#^data_group_count *=.*#data_group_count = $data_group_count_int#g" $fstore_cluster_file
 
     let server_id_start=1
     let store_server_id=1
-    for fstore_group in ${fstore_group_array[@]}; do
+    # for fstore_group in ${fstore_group_array[@]}; do
+    for (( i=1 ; i <= $fstore_group_count_int ; i++ )); do
+      local fstore_group="fstore_group_$i"
       split_to_array ${!fstore_group} fstore_ips_array
       let server_ids=${#fstore_ips_array[@]}
       if [ $server_ids -gt 0 ]; then
-        echo "[server-group-$server_group_id]" >> $fstore_cluster_file
+        # Append server group and server ids
+        echo "[server-group-$i]" >> $fstore_cluster_file
         if [ $server_ids -eq 1 ]; then
           echo "server_ids = $server_id_start" >> $fstore_cluster_file
         else
@@ -280,27 +313,31 @@ create_fstore_conf_files() {
           echo "server_ids = [$server_id_start, $server_id_end]" >> $fstore_cluster_file
         fi
         let server_id_start=$server_id_start+$server_ids
-        echo "data_group_ids = [$data_group_ids_start, $data_group_ids_end]" >> $fstore_cluster_file
-        let data_group_ids_start=$data_group_ids_start+$data_group_ids_step
-        let data_group_ids_end=$data_group_ids_end+$data_group_ids_step
+
+        # Append data group ids
+        if [ $remainder_count -gt 0 ]; then
+          let data_group_ids_end=$data_group_ids_end+1
+          let remainder_count=$remainder_count-1
+        fi
         echo "data_group_ids = [$data_group_ids_start, $data_group_ids_end]" >> $fstore_cluster_file
         echo "" >> $fstore_cluster_file
-        let data_group_ids_start=$data_group_ids_start+$data_group_ids_step
-        let data_group_ids_end=$data_group_ids_end+$data_group_ids_step
+        let data_group_ids_start=$data_group_ids_start+$data_groups_per_fstore_group
+        let data_group_ids_end=$data_group_ids_end+$data_groups_per_fstore_group
+
+        # Append server hosts
         for fstore_server_ip in ${fstore_ips_array[@]}; do
           echo "[server-$store_server_id]" >> $fstore_cluster_file
           echo "host = $fstore_server_ip" >> $fstore_cluster_file
           echo "" >> $fstore_cluster_file
           let store_server_id=$store_server_id+1
         done
-        let server_group_id=$server_group_id+1
       else
         echo "ERROR: Param $fstore_group in $fcfs_settings_file cannot be empty."
         exit 1 
       fi
     done
   else
-    echo "ERROR: Param fstore_groups in $fcfs_settings_file cannot be empty."
+    echo "ERROR: Param fstore_group_count in $fcfs_settings_file must be great than 0."
     exit 1
   fi
 }
@@ -317,6 +354,10 @@ create_fauth_conf_files() {
       echo "ERROR: auth cluster file not exist, $auth_cluster_file, can't append server to it"
       exit 1
     fi
+
+    # Trancate cluster.conf with mark line
+    sed_replace "/$TRANCATE_MARK_LINE/,$ d" $auth_cluster_file
+
     # Replace server ip
     let server_id=1
     for auth_server_ip in ${auth_ip_array[@]}; do
