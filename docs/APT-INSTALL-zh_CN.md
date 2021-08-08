@@ -21,7 +21,7 @@ sudo apt update
 
 在需要运行 fastDIR server的服务器上执行：
 ```shell
-sudo apt install fastdir-server
+sudo apt install fastdir-server -y
 ```
 
 
@@ -29,7 +29,7 @@ sudo apt install fastdir-server
 
 在需要运行 faststore server的服务器上执行：
 ```shell
-sudo apt install faststore-server
+sudo apt install faststore-server -y
 ```
 
 
@@ -38,7 +38,7 @@ sudo apt install faststore-server
 在需要使用FastCFS存储服务的机器（即FastCFS客户端）上执行：
 ```shell
 # 注：fastcfs-fused依赖fuse3
-sudo apt install fastcfs-fused
+sudo apt install fastcfs-fused -y
 ```
 
 
@@ -48,7 +48,7 @@ sudo apt install fastcfs-fused
 
 在需要运行 Auth server的服务器上执行：
 ```shell
-sudo apt install fastcfs-auth-server
+sudo apt install fastcfs-auth-server -y
 ```
 
 ### 6. 集群配置（必须）
