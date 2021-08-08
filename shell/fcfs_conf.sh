@@ -17,7 +17,7 @@ FDIR_CONF_FILES=(client.conf cluster.conf server.conf)
 AUTH_CONF_FILES=(auth.conf client.conf cluster.conf server.conf session.conf)
 AUTH_KEYS_FILES=(session_validate.key)
 FUSE_CONF_FILES=(fuse.conf)
-TRANCATE_MARK_LINE="## Important:server group mark, don't modify this line."
+TRUNCATE_MARK_LINE="## Important:server group mark, don't modify this line."
 
 shell_name=$0
 shell_command=$1
@@ -231,7 +231,7 @@ create_fdir_conf_files() {
     fi
     
     # Trancate cluster.conf with mark line
-    sed_replace "/$TRANCATE_MARK_LINE/,$ d" $fdir_cluster_file
+    sed_replace "/$TRUNCATE_MARK_LINE/,$ d" $fdir_cluster_file
 
     # Replace server ip
     let server_id=1
@@ -285,7 +285,7 @@ create_fstore_conf_files() {
     fi
 
     # Trancate cluster.conf with mark line
-    sed_replace "/$TRANCATE_MARK_LINE/,$ d" $fstore_cluster_file
+    sed_replace "/$TRUNCATE_MARK_LINE/,$ d" $fstore_cluster_file
 
     # Replace server_group_count and data_group_count, and append server ips
     let data_groups_per_fstore_group=$data_group_count_int/$fstore_group_count_int
@@ -356,7 +356,7 @@ create_fauth_conf_files() {
     fi
 
     # Trancate cluster.conf with mark line
-    sed_replace "/$TRANCATE_MARK_LINE/,$ d" $auth_cluster_file
+    sed_replace "/$TRUNCATE_MARK_LINE/,$ d" $auth_cluster_file
 
     # Replace server ip
     let server_id=1
