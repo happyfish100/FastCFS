@@ -1,5 +1,7 @@
 # FastCFS -- 可以跑数据库的高性能分布式文件系统
 
+[English](./README.md) | 简体中文
+
 ## 1. 关于
 
 FastCFS 是一款基于块存储的通用分布式文件系统，可以作为MySQL、PostgresSQL、Oracle等数据库和云平台的后端存储。
@@ -53,10 +55,10 @@ df -h /opt/fastcfs/fuse | grep fuse
 
 ### DIY安装
 
-如果你要自己搭建FastCFS环境，可以采用如下两种安装方式之一：
+如果你要自己搭建FastCFS环境，可以采用如下三种安装方式之一：
 
 * yum安装（仅支持CentOS 7.x 和 8.x），参阅 [YUM安装文档](docs/YUMINSTALL-zh_CN.md)
-
+* apt安装，参阅 [apt 安装文档](docs/APT-INSTALL-zh_CN.md)
 * 源码编译安装，参阅 [安装文档](docs/INSTALL-zh_CN.md)
 
 ### 配置指南
@@ -82,7 +84,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 
 ## 9. 待完成工作
 
-*  [fdir] 采用缓存 + 外存方案支持海量文件
+*  [fdir] 采用缓存 + 外存方案支持海量文件（进行中，预计9月中旬完成)
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 *  [fstore] 提供集群扩容工具，实现自动化扩容
 *  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）

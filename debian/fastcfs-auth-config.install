@@ -1,0 +1,2 @@
+etc/fastcfs/auth/*.conf
+etc/fastcfs/auth/keys/*
