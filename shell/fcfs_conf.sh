@@ -8,7 +8,9 @@
 # this is for you.
 #
 fcfs_settings_file="fcfs.settings"
-fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
+# fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
+#conf.2.0.1.tpl.tar.gz
+fcfs_dependency_file_server="http://localhost:8082"
 fcfs_cache_path=".fcfs"
 
 LOCAL_CONF_PATH="conf"
@@ -126,14 +128,16 @@ check_conf_template() {
     echo "ERROR: Config file version cannot be empty."
     exit 1
   fi
-  config_file_template_path="$fcfs_cache_path/conf.$conf_file_version.template"
+  local conf_tpl_dir="conf.$conf_file_version.tpl"
+  config_file_template_path="$fcfs_cache_path/$conf_tpl_dir"
   if ! [ -d $config_file_template_path ]; then
     # Template path not exist in local cache path,
     # will create it and download templates from remote server match the version
     echo "WARN: Template path $config_file_template_path does not exist, getting it from remote server $fcfs_dependency_file_server."
     create_path_not_exist $fcfs_cache_path
-    local template_tar_file="$config_file_template_path.tar.gz"
-    remote_template_url="$fcfs_dependency_file_server/$conf_file_version"
+    cd $fcfs_cache_path
+    local template_tar_file="$conf_tpl_dir.tar.gz"
+    remote_template_url="$fcfs_dependency_file_server/$template_tar_file"
     download_res=`curl -f -o $template_tar_file $remote_template_url`
 
     if ! [ -f $template_tar_file ]; then
@@ -142,7 +146,12 @@ check_conf_template() {
       exit 1
     fi
     # 解压模版文件
-    # todo: 将下载的模版压缩包解压到当前临时目录
+    tar -xzvf $template_tar_file
+    if ! [ -d $conf_tpl_dir ]; then
+      echo "ERROR: dir $conf_tpl_dir still not exist after unzip file $template_tar_file."
+      exit 1
+    fi
+    cd -
   fi
 }
 

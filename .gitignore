@@ -56,3 +56,4 @@ data
 build
 
 .DS_Store
+.fcfs
