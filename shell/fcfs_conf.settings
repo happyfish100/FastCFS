@@ -1,0 +1,13 @@
+# FastCFS cluster ops settings be used with shell fcfs_conf.sh
+# This settings file must be placed at same path with fcfs_conf.sh
+# You can edit it, or download it from http://www.fastcfs.com/ops.
+
+# 要生成配置的集群版本号（例如：2.3.0）
+fastcfs_version=2.3.0
+
+# 以下参数在生成集群配置文件时使用
+auth_ips=10.0.1.11,10.0.1.12,10.0.1.13
+fdir_ips=10.0.1.11,10.0.1.12,10.0.1.13
+fstore_group_count=1
+fstore_group_1=10.0.1.11,10.0.1.12,10.0.1.13
+data_group_count=64

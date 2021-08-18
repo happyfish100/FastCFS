@@ -1,16 +1,16 @@
 #!/bin/bash
 #
 # fcfs_conf.sh is a ops tool for quickly generate FastCFS cluster config files.
-# It only relying on bash shell access to the local fcfs.settings file.
+# It only relying on bash shell access to the local fcfs_conf.settings file.
 # It runs fully on your workstation, requiring no servers, databases, or anything like that.
 #
 # If you want to generate cluster config files with specify server ips quickly,
 # this is for you.
 #
-fcfs_settings_file="fcfs.settings"
-# fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
-#conf.2.0.1.tpl.tar.gz
-fcfs_dependency_file_server="http://localhost:8082"
+fcfs_settings_file="fcfs_conf.settings"
+# fcfs_tpl_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
+#conf.2.3.0.tpl.tar.gz
+fcfs_tpl_file_server="http://fastcfs.cn/fastcfs/ops/config"
 fcfs_cache_path=".fcfs"
 
 LOCAL_CONF_PATH="conf"
@@ -133,11 +133,11 @@ check_conf_template() {
   if ! [ -d $config_file_template_path ]; then
     # Template path not exist in local cache path,
     # will create it and download templates from remote server match the version
-    echo "WARN: Template path $config_file_template_path does not exist, getting it from remote server $fcfs_dependency_file_server."
+    echo "WARN: Template path $config_file_template_path does not exist, getting it from remote server $fcfs_tpl_file_server."
     create_path_not_exist $fcfs_cache_path
     cd $fcfs_cache_path
     local template_tar_file="$conf_tpl_dir.tar.gz"
-    remote_template_url="$fcfs_dependency_file_server/$template_tar_file"
+    remote_template_url="$fcfs_tpl_file_server/$template_tar_file"
     download_res=`curl -f -o $template_tar_file $remote_template_url`
 
     if ! [ -f $template_tar_file ]; then
@@ -323,14 +323,17 @@ create_fstore_conf_files() {
         fi
         let server_id_start=$server_id_start+$server_ids
 
+        let next_start_add_one=0
         # Append data group ids
         if [ $remainder_count -gt 0 ]; then
           let data_group_ids_end=$data_group_ids_end+1
           let remainder_count=$remainder_count-1
+          let next_start_add_one=1
         fi
         echo "data_group_ids = [$data_group_ids_start, $data_group_ids_end]" >> $fstore_cluster_file
         echo "" >> $fstore_cluster_file
-        let data_group_ids_start=$data_group_ids_start+$data_groups_per_fstore_group
+
+        let data_group_ids_start=$data_group_ids_end+1
         let data_group_ids_end=$data_group_ids_end+$data_groups_per_fstore_group
 
         # Append server hosts
