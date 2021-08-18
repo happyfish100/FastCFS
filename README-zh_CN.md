@@ -82,7 +82,11 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 
 参见<a href="https://my.oschina.net/u/3334339" target="_blank">技术博客</a>
 
-## 9. 待完成工作
+## 9. 常见问题
+
+* 参见 [常见问题](docs/FAQ-zh_CN.md)
+
+## 10. 待完成工作
 
 *  [fdir] 采用缓存 + 外存方案支持海量文件（进行中，预计9月中旬完成)
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
@@ -90,7 +94,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）
 *  [fstore] 机器故障恢复后，master需重新均衡分配
 
-## 10. 联系我们
+## 11. 联系我们
 
 查看FastCFS相关技术文章，请关注微信公众号：
 
