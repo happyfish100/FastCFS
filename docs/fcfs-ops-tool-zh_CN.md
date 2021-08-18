@@ -313,7 +313,7 @@ fcfs_conf.sh 是一个快速创建 FastCFS集群配置文件的运维工具。�
 
 * fcfs_conf.settings -- 生成集群配置文件的参数配置，放置在当前工作目录中
 
-你必须为每个集群创建一个独立的工作目录（例如：***fastcfs-ops***），将 ***fcfs_conf.settings***。然后在该工作目录中执行fcfs_conf.sh命令。
+你必须为每个集群创建一个独立的工作目录（例如：***fastcfs-ops***），将 ***fcfs_conf.settings***放入其中。然后在该工作目录中执行fcfs_conf.sh命令。
 
 #### 2.2.1. fcfs_conf.settings
 
