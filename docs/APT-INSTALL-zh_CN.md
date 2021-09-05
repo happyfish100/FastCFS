@@ -4,7 +4,7 @@
 
 ### 1. 配置 apt 存储库
 
-配置 apt 存储库和签名密钥，以使用系统的包管理器启用自动更新。
+配置 apt 存储库和签名密钥，以使系统的包管理器启用自动更新。
 
 ```shell
 curl http://www.fastken.com/aptrepo/packages.fastos.pub | sudo apt-key add
