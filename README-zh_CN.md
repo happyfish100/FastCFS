@@ -88,7 +88,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 
 ## 10. 待完成工作
 
-*  [fdir] 采用缓存 + 外存方案支持海量文件（进行中，预计9月中旬完成)
+*  [fdir] 采用缓存 + 外存方案支持海量文件（进行中，预计10月底完成)
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 *  [fstore] 提供集群扩容工具，实现自动化扩容
 *  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）

@@ -3,7 +3,6 @@
 %define FastCFSAPI          FastCFS-api-libs
 %define FastCFSAuthServer   FastCFS-auth-server
 %define FastCFSAPIDevel     FastCFS-api-devel
-%define FastCFSDebuginfo    FastCFS-debuginfo
 %define FastCFSFuseConfig   FastCFS-fuse-config
 %define CommitVersion %(echo $COMMIT_VERSION)
 
