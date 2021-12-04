@@ -113,7 +113,7 @@ static inline int dao_get_xattr_string(FDIRClientContext *client_ctx,
         const int size)
 {
     int result;
-    result = fdir_client_get_xattr_by_inode_ex(client_ctx,
+    result = fdir_client_get_xattr_by_inode_ex(client_ctx, &DAO_NAMESPACE,
             inode, name, LOG_WARNING, value, size);
     if (result == ENODATA) {
         value->len = 0;
@@ -132,8 +132,8 @@ static inline int dao_get_xattr_int64(FDIRClientContext *client_ctx,
     int result;
 
     value.str = buff;
-    if ((result=dao_get_xattr_string(client_ctx, inode, name,
-                    &value, sizeof(buff) - 1)) != 0)
+    if ((result=dao_get_xattr_string(client_ctx, inode,
+                    name, &value, sizeof(buff) - 1)) != 0)
     {
         return result;
     }

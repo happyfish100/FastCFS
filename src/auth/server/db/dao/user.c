@@ -219,7 +219,7 @@ int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
     }
 
     if ((result=fdir_client_list_dentry_by_inode(client_ctx,
-                    dentry.inode, &dentry_array)) != 0)
+                    &DAO_NAMESPACE, dentry.inode, &dentry_array)) != 0)
     {
         fdir_client_dentry_array_free(&dentry_array);
         return result;

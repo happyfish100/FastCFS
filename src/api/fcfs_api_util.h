@@ -128,7 +128,7 @@ static inline int fcfs_api_stat_dentry_by_inode_ex(FCFSAPIContext *ctx,
         inode_htable_check_conflict_and_wait(inode);
     }
     return fdir_client_stat_dentry_by_inode(ctx->contexts.fdir,
-            inode, dentry);
+            &ctx->ns, inode, dentry);
 }
 
 static inline int fcfs_api_stat_dentry_by_fullname_ex(FCFSAPIContext *ctx,
@@ -170,8 +170,8 @@ static inline int fcfs_api_stat_dentry_by_pname_ex(FCFSAPIContext *ctx,
     if (ctx->async_report.enabled) {
         int result;
         int64_t inode;
-        if ((result=fdir_client_lookup_inode_by_pname_ex(ctx->contexts.
-                        fdir, &pname, enoent_log_level, &inode)) != 0)
+        if ((result=fdir_client_lookup_inode_by_pname_ex(ctx->contexts.fdir,
+                        &ctx->ns, &pname, enoent_log_level, &inode)) != 0)
         {
             return result;
         }
@@ -179,7 +179,7 @@ static inline int fcfs_api_stat_dentry_by_pname_ex(FCFSAPIContext *ctx,
         return fcfs_api_stat_dentry_by_inode_ex(ctx, inode, dentry);
     } else {
         return fdir_client_stat_dentry_by_pname_ex(ctx->contexts.fdir,
-                &pname, enoent_log_level, dentry);
+                &ctx->ns, &pname, enoent_log_level, dentry);
     }
 }
 
@@ -211,14 +211,14 @@ static inline int fcfs_api_readlink_by_pname_ex(FCFSAPIContext *ctx,
     FDIRDEntryPName pname;
     FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
     return fdir_client_readlink_by_pname(ctx->contexts.fdir,
-            &pname, link, size);
+            &ctx->ns, &pname, link, size);
 }
 
 static inline int fcfs_api_readlink_by_inode_ex(FCFSAPIContext *ctx,
         const int64_t inode, string_t *link, const int size)
 {
     return fdir_client_readlink_by_inode(ctx->contexts.fdir,
-            inode, link, size);
+            &ctx->ns, inode, link, size);
 }
 
 int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
@@ -270,14 +270,14 @@ static inline int fcfs_api_get_xattr_by_inode_ex(FCFSAPIContext *ctx,
         const int enoattr_log_level, string_t *value, const int size)
 {
     return fdir_client_get_xattr_by_inode_ex(ctx->contexts.fdir,
-            inode, name, enoattr_log_level, value, size);
+            &ctx->ns, inode, name, enoattr_log_level, value, size);
 }
 
 static inline int fcfs_api_list_xattr_by_inode_ex(FCFSAPIContext *ctx,
         const int64_t inode, string_t *list, const int size)
 {
     return fdir_client_list_xattr_by_inode(ctx->contexts.fdir,
-            inode, list, size);
+            &ctx->ns, inode, list, size);
 }
 
 static inline int fcfs_api_list_dentry_by_inode_ex(FCFSAPIContext *ctx,
@@ -286,7 +286,8 @@ static inline int fcfs_api_list_dentry_by_inode_ex(FCFSAPIContext *ctx,
     if (ctx->async_report.enabled) {
         async_reporter_wait_all(inode);
     }
-    return fdir_client_list_dentry_by_inode(ctx->contexts.fdir, inode, array);
+    return fdir_client_list_dentry_by_inode(ctx->contexts.fdir,
+            &ctx->ns, inode, array);
 }
 
 static inline FCFSAPIOpendirSession *fcfs_api_alloc_opendir_session_ex(
@@ -310,8 +311,8 @@ static inline int fcfs_api_dentry_sys_lock_ex(FCFSAPIContext *ctx,
     if ((result=fdir_client_init_session(ctx->contexts.fdir, session)) != 0) {
         return result;
     }
-    return fdir_client_dentry_sys_lock(session, inode,
-            flags, file_size, space_end);
+    return fdir_client_dentry_sys_lock(session, &ctx->ns,
+            inode, flags, file_size, space_end);
 }
 
 static inline int fcfs_api_dentry_sys_unlock(FDIRClientSession *session,
