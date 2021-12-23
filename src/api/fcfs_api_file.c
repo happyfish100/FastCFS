@@ -920,8 +920,8 @@ static inline int flock_lock(FCFSAPIFileInfo *fi, const int operation,
     }
 
     if ((result=fdir_client_flock_dentry_ex2(&fi->sessions.flock,
-                    fi->dentry.inode, operation, offset, length,
-                    owner_id, pid)) != 0)
+                    &fi->ctx->ns, fi->dentry.inode, operation,
+                    offset, length, owner_id, pid)) != 0)
     {
         fdir_client_close_session(&fi->sessions.flock, result != 0);
     }
@@ -937,7 +937,8 @@ static inline int flock_unlock(FCFSAPIFileInfo *fi, const int operation,
     const int64_t length = 0;
 
     result = fdir_client_flock_dentry_ex2(&fi->sessions.flock,
-            fi->dentry.inode, operation, offset, length, owner_id, pid);
+            &fi->ctx->ns, fi->dentry.inode, operation,
+            offset, length, owner_id, pid);
     fdir_client_close_session(&fi->sessions.flock, result != 0);
     return result;
 }
@@ -979,8 +980,8 @@ static inline int fcntl_lock(FCFSAPIFileInfo *fi, const int operation,
     }
 
     if ((result=fdir_client_flock_dentry_ex2(&fi->sessions.flock,
-                    fi->dentry.inode, operation, offset, length,
-                    owner_id, pid)) != 0)
+                    &fi->ctx->ns, fi->dentry.inode, operation,
+                    offset, length, owner_id, pid)) != 0)
     {
         fdir_client_close_session(&fi->sessions.flock, result != 0);
     }
@@ -994,7 +995,8 @@ static inline int fcntl_unlock(FCFSAPIFileInfo *fi, const int operation,
 {
     int result;
     result = fdir_client_flock_dentry_ex2(&fi->sessions.flock,
-            fi->dentry.inode, operation, offset, length, owner_id, pid);
+            &fi->ctx->ns, fi->dentry.inode, operation,
+            offset, length, owner_id, pid);
     fdir_client_close_session(&fi->sessions.flock, result != 0);
     return result;
 }
@@ -1103,8 +1105,8 @@ int fcfs_api_getlk(FCFSAPIFileInfo *fi, struct flock *lock, int64_t *owner_id)
 
     length = lock->l_len;
     if ((result=fdir_client_getlk_dentry(fi->ctx->contexts.fdir,
-                    fi->dentry.inode, &operation, &offset, &length,
-                    owner_id, &lock->l_pid)) == 0)
+                    &fi->ctx->ns, fi->dentry.inode, &operation,
+                    &offset, &length, owner_id, &lock->l_pid)) == 0)
     {
         flock_op_to_fcntl_type(operation, &lock->l_type);
         lock->l_whence = SEEK_SET;
