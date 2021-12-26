@@ -3,8 +3,8 @@ Section: admin
 Priority: optional
 Maintainer: YuQing <384681@qq.com>
 Build-Depends: debhelper (>=11~),
-               fastdir-dev (>= 2.3.0) <pkg.fastcfs.core>,
-               faststore-dev (>= 2.3.0) <pkg.fastcfs.core>,
+               fastdir-dev (>= 3.0.0) <pkg.fastcfs.core>,
+               faststore-dev (>= 3.0.0) <pkg.fastcfs.core>,
                libfuse3-dev (>= 3.10.1) <pkg.fastcfs.core>,
                libfastcommon-dev (>= 1.0.53) <pkg.auth.client>,
                libserverframe-dev (>= 1.1.10) <pkg.auth.client>
@@ -45,8 +45,8 @@ Package: fastcfs-api-libs
 Architecture: any
 Multi-Arch: foreign
 Build-Profiles: <pkg.fastcfs.core>
-Depends: fastdir-client (>= 2.3.0),
-         faststore-client (>= 2.3.0),
+Depends: fastdir-client (>= 3.0.0),
+         faststore-client (>= 3.0.0),
          ${misc:Depends}, ${shlibs:Depends}
 Description: FastCFS api library
 
@@ -62,8 +62,8 @@ Package: fastcfs-auth-server
 Architecture: any
 Multi-Arch: foreign
 Build-Profiles: <pkg.fastcfs.core>
-Depends: fastdir-client (>= 2.3.0),
-         fastcfs-auth-config (>= 2.3.0),
+Depends: fastdir-client (>= 3.0.0),
+         fastcfs-auth-config (>= 3.0.0),
          ${misc:Depends}, ${shlibs:Depends}
 Description: FastCFS auth server
 
@@ -79,8 +79,8 @@ Package: fastcfs-auth
 Architecture: any
 Multi-Arch: foreign
 Build-Profiles: <pkg.auth.client>
-Depends: libfastcommon (>= 1.0.53),
-         libserverframe (>= 1.1.10),
+Depends: libfastcommon (>= 1.0.54),
+         libserverframe (>= 1.1.11),
          fastcfs-auth-server (= ${binary:Version}),
          fastcfs-auth-client (= ${binary:Version}),
          fastcfs-auth-config (= ${binary:Version}),
@@ -103,8 +103,8 @@ Package: fastcfs-auth-client
 Architecture: any
 Multi-Arch: foreign
 Build-Profiles: <pkg.auth.client>
-Depends: libfastcommon (>= 1.0.53),
-         libserverframe (>= 1.1.10)
+Depends: libfastcommon (>= 1.0.54),
+         libserverframe (>= 1.1.11)
          ${misc:Depends}, ${shlibs:Depends}
 Description: FastCFS auth client
  FastCFS auth client
@@ -113,8 +113,8 @@ Package: fastcfs-auth-config
 Architecture: any
 Multi-Arch: foreign
 Build-Profiles: <pkg.auth.client>
-Depends: libfastcommon (>= 1.0.53),
-         libserverframe (>= 1.1.10)
+Depends: libfastcommon (>= 1.0.54),
+         libserverframe (>= 1.1.11)
          ${misc:Depends}, ${shlibs:Depends}
 Description: FastCFS auth config files for sample
  FastCFS auth config files for sample
