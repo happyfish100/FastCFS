@@ -15,6 +15,7 @@
         |__ fdir: FastDIR目录服务
         |    |__ cluster.conf: 服务器列表，配置服务器ID、IP和端口
         |    |__ server.conf: fdir_serverd对应的配置文件
+        |    |__ storage.conf: 持久化存储配置文件
         |    |__ client.conf: 客户端配置文件
         |
         |__ fstore: faststore存储服务
@@ -90,6 +91,16 @@ host = 172.16.168.128
 ERROR - file: cluster_info.c, line: 119, cluster config file: /etc/fastcfs/fdir/cluster.conf,
       can't find myself by my local ip and listen port
 ```
+
+  * V3.0支持的持久化特性默认是关闭的，在[storage-engine]中设置，详情参见配置示例
+
+
+1.3 配置 storage.conf
+
+  * 使用存储特性的情况下，才需要配置storage.conf
+
+  * 通常采用默认设置即可
+
 
   fastDIR重启：
 ```

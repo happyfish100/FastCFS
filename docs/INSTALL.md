@@ -34,7 +34,15 @@ cd libserverframe/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-### 4. Auth client
+### 4. libdiskallocator
+
+```
+git clone https://gitee.com/fastdfs100/libdiskallocator.git  || git clone https://github.com/happyfish100/libdiskallocator.git
+cd libdiskallocator/
+./make.sh clean && ./make.sh && ./make.sh install
+```
+
+### 5. Auth client
 
 ```
 git clone git@github.com:happyfish100/FastCFS.git || git clone https://github.com/happyfish100/FastCFS.git
@@ -42,7 +50,7 @@ cd FastCFS/
 ./make.sh clean && ./make.sh --module=auth_client && ./make.sh --module=auth_client install
 ```
 
-### 5. fastDIR
+### 6. fastDIR
 
 ```
 git clone git@github.com:happyfish100/fastDIR.git || git clone https://github.com/happyfish100/fastDIR.git
@@ -52,7 +60,7 @@ mkdir -p /etc/fastcfs/fdir/
 cp conf/*.conf /etc/fastcfs/fdir/
 ```
 
-### 6. faststore
+### 7. faststore
 
 ```
 git clone git@github.com:happyfish100/faststore.git || git clone https://github.com/happyfish100/faststore.git
@@ -63,7 +71,7 @@ cp conf/*.conf /etc/fastcfs/fstore/
 ```
 
 
-### 7. libfuse
+### 8. libfuse
 
 libfuse requires meson and ninja which require python3.5 or higher version
 
@@ -114,7 +122,7 @@ ninja && ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 ```
 
-### 8. FastCFS
+### 9. FastCFS
 
 ```
 cd FastCFS/

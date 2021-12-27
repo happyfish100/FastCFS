@@ -8,7 +8,7 @@ FastCFS 是一款基于块存储的通用分布式文件系统，可以作为MyS
 
 ## 2. 当前版本
 
-V2.3.0
+V3.0.0
 
 ## 3. 支持的操作系统
 
@@ -21,15 +21,15 @@ V2.3.0
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
-* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.53)
-* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.10)
-* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V2.3.0)
-* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V2.3.0)
-* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V2.3.0)
+* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.54)
+* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.11)
+* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V3.0.0)
+* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V3.0.0)
+* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V3.0.0)
 
 ## 5. 安装
 
-FastCFS包含 libfastcommon、libserverframe、fastDIR、faststore和FastCFS 五个安装包。
+FastCFS包含 libfastcommon、libserverframe、libdiskallocator、fastDIR、faststore和FastCFS 六个安装包。
 
 ### 一键部署
 
@@ -88,7 +88,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 
 ## 10. 待完成工作
 
-*  [fdir] 采用缓存 + 外存方案支持海量文件（进行中，预计10月底完成)
+*  [fdir] 采用缓存 + 外存方案支持海量文件（进行中，预计12月底完成)
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 *  [fstore] 提供集群扩容工具，实现自动化扩容
 *  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）

@@ -1,7 +1,7 @@
 
 ## 一、fastcfs.sh 脚本统一安装
 
-通过执行fastcfs.sh脚本，可自动从gitee仓库拉取或更新五个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
+通过执行fastcfs.sh脚本，可自动从gitee仓库拉取或更新六个仓库代码，按照依赖顺序进行编译、安装，并能根据配置文件模版自动生成集群相关配置文件。
 
 fastcfs.sh 命令参数说明：
 ```
@@ -64,14 +64,21 @@ git clone https://gitee.com/fastdfs100/libserverframe.git; cd libserverframe/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-### 4. Auth client
+### 4. libdiskallocator
+
+```
+git clone https://gitee.com/fastdfs100/libdiskallocator.git; cd libdiskallocator/
+./make.sh clean && ./make.sh && ./make.sh install
+```
+
+### 5. Auth client
 
 ```
 git clone https://gitee.com/fastdfs100/FastCFS.git; cd FastCFS/
 ./make.sh clean && ./make.sh --module=auth_client && ./make.sh --module=auth_client install
 ```
 
-### 5. fastDIR
+### 6. fastDIR
 
 ```
 git clone https://gitee.com/fastdfs100/fastDIR.git; cd fastDIR/
@@ -80,7 +87,7 @@ mkdir -p /etc/fastcfs/fdir/
 cp conf/*.conf /etc/fastcfs/fdir/
 ```
 
-### 6. faststore
+### 7. faststore
 
 ```
 git clone https://gitee.com/fastdfs100/faststore.git; cd faststore/
@@ -90,7 +97,7 @@ cp conf/*.conf /etc/fastcfs/fstore/
 ```
 
 
-### 7. libfuse
+### 8. libfuse
 
 libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编译和安装。或者执行如下步骤DIY：
 
@@ -142,7 +149,7 @@ ninja && ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 ```
 
-### 8. FastCFS
+### 9. FastCFS
 
 进入之前clone下来的FastCFS目录，然后执行：
 ```

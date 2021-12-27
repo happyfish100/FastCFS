@@ -8,7 +8,7 @@ FastCFS is a block based standard distributed file system which can be used as t
 
 ## 2. Current Version
 
-V2.3.0
+V3.0.0
 
 ## 3. Supported Platforms
 
@@ -21,11 +21,11 @@ V2.3.0
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.53)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.10)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V2.3.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V2.3.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V2.3.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.54)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.11)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V3.0.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V3.0.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V3.0.0)
 
 ## 5. Installation
 
