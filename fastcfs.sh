@@ -45,7 +45,7 @@ AUTHCLIENT_LIB=".."
 STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf)
 STORE_CONF_PATH="/etc/fastcfs/fstore/"
 
-FDIR_CONF_FILES=(client.conf cluster.conf server.conf)
+FDIR_CONF_FILES=(client.conf cluster.conf server.conf storage.conf)
 FDIR_CONF_PATH="/etc/fastcfs/fdir/"
 
 AUTH_CONF_FILES=(auth.conf client.conf cluster.conf server.conf session.conf)
