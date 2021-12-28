@@ -15,6 +15,7 @@
 # When setup, This shell will make and install these six libs in order:
 #     libfastcommon
 #     libserverframe
+#     libdiskallocator
 #     auth_client
 #     fastDIR
 #     faststore
@@ -23,6 +24,7 @@
 # If no source code in build path, it will git clone from:
 #     https://gitee.com/fastdfs100/libfastcommon.git
 #     https://gitee.com/fastdfs100/libserverframe.git
+#     https://gitee.com/fastdfs100/libdiskallocator.git
 #     https://gitee.com/fastdfs100/fastDIR.git
 #     https://gitee.com/fastdfs100/faststore.git
 #
@@ -31,6 +33,8 @@ COMMON_LIB="libfastcommon"
 COMMON_LIB_URL="https://gitee.com/fastdfs100/libfastcommon.git"
 FRAME_LIB="libserverframe"
 FRAME_LIB_URL="https://gitee.com/fastdfs100/libserverframe.git"
+DISK_ALLOCATOR_LIB="libdiskallocator"
+DISK_ALLOCATOR_LIB_URL="https://gitee.com/fastdfs100/libdiskallocator.git"
 FDIR_LIB="fastDIR"
 FDIR_LIB_URL="https://gitee.com/fastdfs100/fastDIR.git"
 STORE_LIB="faststore"
@@ -280,6 +284,9 @@ pull_source_codes() {
   # Pull libserverframe
   pull_source_code $FRAME_LIB $FRAME_LIB_URL
 
+  # Pull libdiskallocator
+  pull_source_code $DISK_ALLOCATOR_LIB $DISK_ALLOCATOR_LIB_URL
+
   # Pull fastDIR
   pull_source_code $FDIR_LIB $FDIR_LIB_URL
 
@@ -301,6 +308,7 @@ make_installs() {
   # Make and install all lib repositories sequentially.
   make_install $COMMON_LIB $COMMON_LIB
   make_install $FRAME_LIB $FRAME_LIB
+  make_install $DISK_ALLOCATOR_LIB $DISK_ALLOCATOR_LIB
   make_install auth_client $AUTHCLIENT_LIB --module=auth_client
   make_install $FDIR_LIB $FDIR_LIB
   make_install $STORE_LIB $STORE_LIB
@@ -375,14 +383,14 @@ config_all_modules() {
 case "$mode" in
   'setup')
     install_all_softwares
-    config_all_modules
+    config_all_modules $*
     service_op restart
   ;;
   'install')
     install_all_softwares
   ;;
   'config')
-    config_all_modules
+    config_all_modules $*
   ;;
   'start')
     # Start services.
