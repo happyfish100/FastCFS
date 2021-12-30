@@ -1,10 +1,11 @@
-# FastCFS -- a high performance distributed file system for databases, K8s and VM etc.
+# FastCFS -- a high performance general distributed file system for databases, K8s and VM etc.
 
-English | [简体中文](./README-zh_CN.md)
+English | [Chinese](./README-zh_CN.md)
 
 ## 1. About
 
-FastCFS is a block based standard distributed file system which can be used as the back-end storage of databases (MySQL, PostgresSQL, Oracle etc.), K8s and virtual machines such as KVM.
+FastCFS is a general distributed file system with strong consistency, high performance, high availability and supporting 10 billion massive files.
+FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Oracle etc.), K8s and virtual machines such as KVM.
 
 ## 2. Current Version
 
@@ -91,9 +92,8 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 
 ## 9. TODO List
 
-*  [fdir] use cache + external storage to support massive files (Done with V3.0)
-*  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [fstore] provide cluster tools for automatic expansion
+*  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [fdir & fstore] binlog deduplication (fdir binlog, fstore replica & slice binlog)
 *  [fstore] after the machine recovery, the data masters should be rebalanced
 

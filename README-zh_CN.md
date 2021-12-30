@@ -1,10 +1,10 @@
-# FastCFS -- 可以跑数据库的高性能分布式文件系统
+# FastCFS -- 可以跑数据库的高性能通用分布式文件系统
 
 [English](./README.md) | 简体中文
 
 ## 1. 关于
 
-FastCFS 是一款基于块存储的通用分布式文件系统，可以作为MySQL、PostgresSQL、Oracle等数据库和云平台的后端存储。
+FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文件的通用分布式文件系统，可以作为MySQL、PostgresSQL、Oracle等数据库和云平台的后端存储。
 
 ## 2. 当前版本
 
@@ -88,9 +88,8 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 
 ## 10. 待完成工作
 
-*  [fdir] 采用缓存 + 外存方案支持100亿级海量文件（已完成，随V3.0发布)
-*  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 *  [fstore] 提供集群扩容工具，实现自动化扩容
+*  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 *  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）
 *  [fstore] 机器故障恢复后，master需重新均衡分配
 
