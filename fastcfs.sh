@@ -253,16 +253,18 @@ config_fuse() {
 }
 
 get_first_local_ip() {
-  if [ -f /usr/sbin/ifconfig ]; then
-    IFCONFIG=/usr/sbin/ifconfig
-  elif [ -f /sbin/ifconfig ]; then
-    IFCONFIG=/sbin/ifconfig
+  ip_cmd=`which ip`
+  if [ -z "$ip_cmd" ]; then
+    ipconfig_cmd=`which ifconfig`
+    if [ -z "$ipconfig_cmd" ]; then
+      echo "ERROR: Command ip or ifconfig not found, please install one first." 1>&2
+      exit
+    else
+      CMD="$ipconfig_cmd -a | grep -w inet | grep -v 127.0.0.1 | awk '{print \$2}' | tr -d 'addr:' | head -n 1"
+    fi
   else
-    echo "ERROR: can't find ifconfig command" 1>&2
-    exit
+    CMD="$ip_cmd addr | grep -w inet | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v 127.0.0.1 | head -n 1"
   fi
-
-  CMD="$IFCONFIG -a | grep -w inet | grep -v 127.0.0.1 | awk '{print \$2}' | tr -d 'addr:' | head -n 1"
   sh -c "$CMD"
 }
 
