@@ -7,7 +7,7 @@
 %define CommitVersion %(echo $COMMIT_VERSION)
 
 Name: FastCFS
-Version: 3.0.0
+Version: 3.1.0
 Release: 1%{?dist}
 Summary: a high performance cloud native distributed file system for databases, KVM and K8s
 License: AGPL v3.0
@@ -17,8 +17,8 @@ Source: http://github.com/happyfish100/FastCFS/%{name}-%{version}.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires: fastDIR-devel >= 3.0.0
-BuildRequires: faststore-devel >= 3.0.0
+BuildRequires: fastDIR-devel >= 3.1.0
+BuildRequires: faststore-devel >= 3.1.0
 BuildRequires: fuse3-devel >= 3.10.1
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
 Requires: %{FastCFSFused} = %{version}-%{release}
@@ -39,8 +39,8 @@ Requires: libserverframe >= 1.1.8
 Summary: FastCFS utils 
 
 %package -n %{FastCFSAPI}
-Requires: fastDIR-client >= 3.0.0
-Requires: faststore-client >= 3.0.0
+Requires: fastDIR-client >= 3.1.0
+Requires: faststore-client >= 3.1.0
 Summary: FastCFS api library
 
 %package -n %{FastCFSAPIDevel}
@@ -48,7 +48,7 @@ Requires: %{FastCFSAPI} = %{version}-%{release}
 Summary: header files of FastCFS api library
 
 %package -n %{FastCFSAuthServer}
-Requires: fastDIR-client >= 3.0.0
+Requires: fastDIR-client >= 3.1.0
 Requires: FastCFS-auth-config >= 2.0.0
 Summary: FastCFS auth server
 

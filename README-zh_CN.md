@@ -8,7 +8,7 @@ FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文
 
 ## 2. 当前版本
 
-V3.0.0
+V3.1.0
 
 ## 3. 支持的操作系统
 
@@ -21,11 +21,12 @@ V3.0.0
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
-* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.54)
-* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.11)
-* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V3.0.0)
-* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V3.0.0)
-* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V3.0.0)
+* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.55)
+* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.12)
+* [libdiskallocator](https://gitee.com/fastdfs100/libdiskallocator) (tag: V1.0.1)
+* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V3.1.0)
+* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V3.1.0)
+* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V3.1.0)
 
 ## 5. 安装
 
