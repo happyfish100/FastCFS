@@ -1,6 +1,5 @@
 %define FastCFSAuthClient    FastCFS-auth-client
 %define FastCFSAuthDevel     FastCFS-auth-devel
-%define FastCFSAuthDebuginfo FastCFS-auth-debuginfo
 %define FastCFSAuthConfig    FastCFS-auth-config
 %define CommitVersion %(echo $COMMIT_VERSION)
 
