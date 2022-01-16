@@ -43,7 +43,7 @@ recommend to execute libfuse_setup.sh for compiling and installing libfuse
 
 libfastcommon, libserverframe, fastDIR, faststore and FastCFS can be compiled, installed and auto configurated by fastcfs.sh
 
-fastcfs.sh can automatically pull or update above five projects codes from GitHub, compile and install according to dependency orders, and automatically generate cluster related configuration files according to the config templates.
+fastcfs.sh can automatically pull or update above six projects codes from GitHub, compile and install according to dependency orders, and automatically generate cluster related configuration files according to the config templates.
 
 ```
 git clone https://github.com/happyfish100/FastCFS.git; cd FastCFS/
