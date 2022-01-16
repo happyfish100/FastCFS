@@ -475,6 +475,7 @@ execute_command_on_fdir_servers() {
     for fdir_server_ip in ${fdir_group[@]}; do
       if [ -z $node_host_need_execute ] || [ $fdir_server_ip = "$node_host_need_execute" ]; then
         if [ $command_name = 'status' ]; then
+          echo ""
           echo "INFO: Begin display $module_name status on server $fdir_server_ip."
         else
           echo "INFO: Begin $command_name $module_name on server $fdir_server_ip."
@@ -502,6 +503,7 @@ execute_command_on_fstore_servers() {
       for fstore_server_ip in ${!fstore_group}; do
         if [ -z $node_host_need_execute ] || [ $fstore_server_ip = "$node_host_need_execute" ]; then
           if [ $command_name = 'status' ]; then
+            echo ""
             echo "INFO: Begin display $module_name status on server $fstore_server_ip."
           else
             echo "INFO: Begin $command_name $module_name on server $fstore_server_ip."
@@ -528,6 +530,7 @@ execute_command_on_fauth_servers() {
     for fauth_server_ip in ${fauth_group[@]}; do
       if [ -z $node_host_need_execute ] || [ $fauth_server_ip = "$node_host_need_execute" ]; then
         if [ $command_name = 'status' ]; then
+          echo ""
           echo "INFO: Begin display $module_name status on server $fauth_server_ip."
         else
           echo "INFO: Begin $command_name $module_name on server $fauth_server_ip."
@@ -557,6 +560,7 @@ execute_command_on_fuseclient_servers() {
       for fuseclient_server_ip in ${fuseclient_ip_array[@]}; do
         if [ -z $node_host_need_execute ] || [ $fuseclient_server_ip = "$node_host_need_execute" ]; then
           if [ $command_name = 'status' ]; then
+            echo ""
             echo "INFO: Begin display $module_name status on server $fuseclient_server_ip."
           else
             echo "INFO: begin $command_name $module_name on server $fuseclient_server_ip."
