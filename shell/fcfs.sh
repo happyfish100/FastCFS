@@ -53,6 +53,7 @@ print_usage() {
   echo "  stop       Stop all or one module service in cluster"
   echo "  restart    Restart all or one module service in cluster"
   echo "  tail       Display the last part of the specified module's log"
+  echo "  status     Display the service processes status"
   echo "  help       Show the detail of commands and examples"
   echo ""
 }
@@ -98,11 +99,17 @@ print_detail_usage() {
   echo "  $shell_name tail fdir 172.16.168.128 -n 100"
   echo "          Display the last 100 lines of fdir server log."
   echo ""
+  echo "  $shell_name status"
+  echo "          Display all modules service process status."
+  echo ""
+  echo "  $shell_name status fdir"
+  echo "          Display all the status of fdir service processes status."
+  echo ""
   echo ""
 }
 
 case "$shell_command" in
-  'setup' | 'install' | 'reinstall' | 'erase' | 'remove' | 'config' | 'start' | 'restart' | 'stop' | 'tail')
+  'setup' | 'install' | 'reinstall' | 'erase' | 'remove' | 'config' | 'start' | 'restart' | 'stop' | 'tail' | 'status')
   ;;
   'help')
     print_detail_usage
@@ -467,7 +474,11 @@ execute_command_on_fdir_servers() {
     local fdir_node_match_setting=0
     for fdir_server_ip in ${fdir_group[@]}; do
       if [ -z $node_host_need_execute ] || [ $fdir_server_ip = "$node_host_need_execute" ]; then
-        echo "INFO: Begin $command_name $module_name on server $fdir_server_ip."
+        if [ $command_name = 'status' ]; then
+          echo "INFO: Begin display $module_name status on server $fdir_server_ip."
+        else
+          echo "INFO: Begin $command_name $module_name on server $fdir_server_ip."
+        fi
         $function_name $fdir_server_ip "$module_name" $command_name
       fi
       if [ $fdir_server_ip = "$node_host_need_execute" ]; then
@@ -490,7 +501,11 @@ execute_command_on_fstore_servers() {
       local fstore_group="fstore_group_$i[@]"
       for fstore_server_ip in ${!fstore_group}; do
         if [ -z $node_host_need_execute ] || [ $fstore_server_ip = "$node_host_need_execute" ]; then
-          echo "INFO: Begin $command_name $module_name on server $fstore_server_ip."
+          if [ $command_name = 'status' ]; then
+            echo "INFO: Begin display $module_name status on server $fstore_server_ip."
+          else
+            echo "INFO: Begin $command_name $module_name on server $fstore_server_ip."
+          fi
           $function_name $fstore_server_ip "$module_name" $command_name
         fi
         if [ $fstore_server_ip = "$node_host_need_execute" ]; then
@@ -512,7 +527,11 @@ execute_command_on_fauth_servers() {
     local fauth_node_match_setting=0
     for fauth_server_ip in ${fauth_group[@]}; do
       if [ -z $node_host_need_execute ] || [ $fauth_server_ip = "$node_host_need_execute" ]; then
-        echo "INFO: Begin $command_name $module_name on server $fauth_server_ip."
+        if [ $command_name = 'status' ]; then
+          echo "INFO: Begin display $module_name status on server $fauth_server_ip."
+        else
+          echo "INFO: Begin $command_name $module_name on server $fauth_server_ip."
+        fi
         $function_name $fauth_server_ip "$module_name" $command_name
       fi
       if [ $fauth_server_ip = "$node_host_need_execute" ]; then
@@ -537,7 +556,11 @@ execute_command_on_fuseclient_servers() {
       local fuseclient_node_match_setting=0
       for fuseclient_server_ip in ${fuseclient_ip_array[@]}; do
         if [ -z $node_host_need_execute ] || [ $fuseclient_server_ip = "$node_host_need_execute" ]; then
-          echo "INFO: begin $command_name $module_name on server $fuseclient_server_ip."
+          if [ $command_name = 'status' ]; then
+            echo "INFO: Begin display $module_name status on server $fuseclient_server_ip."
+          else
+            echo "INFO: begin $command_name $module_name on server $fuseclient_server_ip."
+          fi
           $function_name $fuseclient_server_ip "$module_name" $command_name
         fi
         if [ $fuseclient_server_ip = "$node_host_need_execute" ]; then
@@ -897,7 +920,7 @@ service_op_on_remote() {
   operate_mode=$2
   conf_file=$3
   $service_name $conf_file $operate_mode
-  if [ $? -ne 0 ] && [ $operate_mode != "stop" ]; then
+  if [ $? -ne 0 ] && [ $operate_mode != "stop" ] && [ $operate_mode != "status" ]; then
     echo "ERROR: Service $service_name $operate_mode failed."
     exit 1
   fi
@@ -942,11 +965,11 @@ cluster_service_op() {
   operate_mode=$1
   execute_command_on_fdir_servers $operate_mode service_op fdir
   execute_command_on_fstore_servers $operate_mode service_op fstore
-  if [ $operate_mode != 'stop' ]; then
+  if [ $operate_mode != 'stop' ] && [ $operate_mode != 'status' ]; then
      sleep 3
   fi
   execute_command_on_fauth_servers $operate_mode service_op fauth
-  if [ $operate_mode != 'stop' ]; then
+  if [ $operate_mode != 'stop' ] && [ $operate_mode != 'status' ]; then
      sleep 1
   fi
   execute_command_on_fuseclient_servers $operate_mode service_op fuseclient
@@ -994,7 +1017,7 @@ check_if_client_share_servers
 load_installed_settings
 if [ -z $fastcfs_version_installed ]; then
   case "$shell_command" in
-    'reinstall' | 'erase' | 'remove' | 'config' | 'start' | 'restart' | 'stop' | 'tail')
+    'reinstall' | 'erase' | 'remove' | 'config' | 'start' | 'restart' | 'stop' | 'tail' | 'status')
       echo "ERROR: The FastCFS softwares has not been installed, you must execute setup or install first."
       exit 1
     ;;
@@ -1002,7 +1025,7 @@ if [ -z $fastcfs_version_installed ]; then
 fi
 if [ -z $fastcfs_configed ]; then
   case "$shell_command" in
-    'start' | 'restart' | 'stop' | 'tail')
+    'start' | 'restart' | 'stop' | 'tail' | 'status')
       echo "ERROR: The FastCFS softwares has not been configed, you must execute config first."
       exit 1
     ;;
@@ -1038,6 +1061,9 @@ case "$shell_command" in
   ;;
   'tail')
     tail_log $*
+  ;;
+  'status')
+    cluster_service_op status
   ;;
   *)
     print_usage
