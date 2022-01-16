@@ -121,13 +121,13 @@ fcfs_pool create fs unlimited
 
 ## 5. FastStore server
 
-参见 2. FastDIR server 部分
+参见 4. FastDIR server 部分
  
 拷贝完成后重启FastStore服务（fs_serverd）
 
 ## 6. FastCFS客户端（fused）
 
-参见 2. FastDIR server 部分
+参见 4. FastDIR server 部分
 
 拷贝完成后重启fuse服务（fcfs_fused）
 
