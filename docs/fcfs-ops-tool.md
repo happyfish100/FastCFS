@@ -137,6 +137,7 @@ Usage:
 * restart -- Restart all or one module service in cluster
 * stop -- Stop all or one module service in cluster
 * tail -- Display the last part of the specified module's log
+* status -- Display the service processes status
 * help -- Show the detail of commands and examples
 
 **Modules**:
@@ -281,6 +282,24 @@ or:
 Display the last 10 lines of each fdir server log:
 
 > fcfs.sh tail fdir
+
+#### 1.6.9. Display cluster service status
+
+When you want to query FastCFS services process status, you can use command ***status*** to display the status of the specified module's service process.
+
+**Example**
+
+Display the status of fdir service process:
+
+> fcfs.sh status fdir 10.0.1.11
+
+Display the status of each fdir service process:
+
+> fcfs.sh status fdir
+
+Display the status of all service processes:
+
+> fcfs.sh status
 
 <a name="fcfs_conf.sh"></a>
 ## 2. fcfs_conf.sh introduction
