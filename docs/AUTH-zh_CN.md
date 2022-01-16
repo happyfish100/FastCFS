@@ -1,12 +1,12 @@
 
-## Auth (认证模块)配置及运行
+# Auth (认证模块)配置及运行
 
 如果你不需要使用存储池或访问权限控制，可以跳过本文档。
 
 本文档以FastCFS RPM包设定的路径（配置文件目录和程序工作目录等）进行说明，如果你采用自助编译安装方式的话，请自行对应。
 
 
-### Auth配置文件目录结构
+## 1. Auth配置文件目录结构
 
 ```
 /etc/fastcfs/
@@ -22,7 +22,7 @@
 ```
 
 
-### authd程序工作目录
+## 2. authd程序工作目录
 
 ```
 /opt/fastcfs/
@@ -36,7 +36,7 @@
 
 开启认证功能需要设置认证中心、FastDIR server、FastStore server和FastCFS客户端。
 
-### 1. 认证中心（authd server）配置
+## 3. 认证中心（authd server）配置
 
 配置文件路径：/etc/fastcfs/auth
 
@@ -44,59 +44,65 @@ Auth集群内各个server配置的cluster.conf必须完全一样。
 
 建议配置一次，分发到其他服务器即可。
 
-1.1 把Auth集群中的所有服务实例配置到cluster.conf中；
+### 3.1 把Auth集群中的所有服务实例配置到cluster.conf中
 
-  每个Auth服务实例包含2个服务端口：cluster 和 service
+每个Auth服务实例包含2个服务端口：cluster 和 service
 
-  一个Auth服务实例需要配置一个[server-$id]的section，其中$id为实例ID。
+一个Auth服务实例需要配置一个[server-$id]的section，其中$id为实例ID。
 
-  * 注：目前仅支持一个服务实例，后续版本将支持多服务实例。
+* **_注：目前仅支持一个服务实例，后续版本将支持多服务实例。_**
 
-1.2 配置 server.conf
+### 3.2 配置 server.conf
 
-  * [cluster] 和 [service] 配置的端口（port）必须与cluster.conf中本机的一致，否则启动会报错
+* [cluster] 和 [service] 配置的端口（port）必须与cluster.conf中本机的一致，否则启动会报错
 
-1.3 配置 auth.conf
+### 3.3 配置 auth.conf
 
 将 auth_enabled 设置为 true 以开启认证功能
 
-1.4 复制FastDIR server上的如下配置文件到 /etc/fastcfs/fdir/
+### 3.4 复制FastDIR server上的如下配置文件到 /etc/fastcfs/fdir/
 
 ```
 /etc/fastcfs/fdir/client.conf
 /etc/fastcfs/fdir/cluster.conf
 ```
 
-1.5 启动authd
+### 3.5 启动authd
 
-  authd重启：
+authd命令直接重启：
+
 ```
 /usr/bin/fcfs_authd /etc/fastcfs/auth/server.conf restart
 ```
-或者：
+
+或者系统服务命令启动：
+
 ```
 sudo systemctl restart fcfs_authd
 ```
 
 查看日志：
+
 ```
 tail /opt/fastcfs/auth/logs/fcfs_authd.log
 ```
 
-* 第一次运行将自动创建 admin 用户，默认生成的密钥文件名为 /etc/fastcfs/auth/keys/admin.key
+* 第一次运行将自动创建 admin 用户，默认生成的密钥文件名为 **/etc/fastcfs/auth/keys/admin.key**
 
-1.6 创建存储池
+### 3.6 创建存储池
 
 创建名为 fs 的存储池，配额无限制：
+
 ```
 fcfs_pool create fs unlimited
 ```
 
-注：存储池名称必须和FastCFS fuse客户端配置文件fuse.conf中的命名空间一致（缺省配置为fs，可按需修改）
+**_注：存储池名称必须和FastCFS fuse客户端配置文件fuse.conf中的命名空间一致（缺省配置为fs，可按需修改）_**
 
-### 2. FastDIR server
+## 4. FastDIR server
 
-2.1 复制auth server上的如下配置文件到 /etc/fastcfs/auth/
+### 4.1 复制auth server上的如下配置文件到 /etc/fastcfs/auth/
+
 ```
 /etc/fastcfs/auth/auth.conf
 /etc/fastcfs/auth/session.conf
@@ -104,7 +110,8 @@ fcfs_pool create fs unlimited
 /etc/fastcfs/auth/client.conf
 ```
 
-2.2 复制auth server上的如下密钥文件到 /etc/fastcfs/auth/keys
+### 4.2 复制auth server上的如下密钥文件到 /etc/fastcfs/auth/keys
+
 ```
 /etc/fastcfs/auth/keys/admin.key
 /etc/fastcfs/auth/keys/session_validate.key
@@ -112,23 +119,24 @@ fcfs_pool create fs unlimited
 
 拷贝完成后重启FastDIR服务（fdir_serverd）
 
-### 3. FastStore server
+## 5. FastStore server
 
 参见 2. FastDIR server 部分
  
 拷贝完成后重启FastStore服务（fs_serverd）
 
-### 4. FastCFS客户端（fused）
+## 6. FastCFS客户端（fused）
 
 参见 2. FastDIR server 部分
 
 拷贝完成后重启fuse服务（fcfs_fused）
 
-### 命令行工具
+## 7. 命令行工具
 
-  * fcfs_user：用户管理
+* fcfs_user：用户管理
 
-  * fcfs_pool：储存池管理
+* fcfs_pool：储存池管理
 
-### 注意事项
-  * Auth server依赖FastDIR server，需要先启动FastDIR server，然后启动Auth server。
+## 8. 注意事项
+
+* Auth server依赖FastDIR server，需要先启动FastDIR server，然后启动Auth server。
