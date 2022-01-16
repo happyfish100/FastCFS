@@ -16,7 +16,7 @@ STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf)
 STORE_CONF_PATH="/etc/fastcfs/fstore/"
 STORE_LOG_FILE="/opt/fastcfs/fstore/logs/fs_serverd.log"
 
-FDIR_CONF_FILES=(client.conf cluster.conf server.conf)
+FDIR_CONF_FILES=(client.conf cluster.conf server.conf storage.conf)
 FDIR_CONF_PATH="/etc/fastcfs/fdir/"
 FDIR_LOG_FILE="/opt/fastcfs/fdir/logs/fdir_serverd.log "
 

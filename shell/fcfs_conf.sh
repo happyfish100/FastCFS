@@ -15,7 +15,7 @@ fcfs_cache_path=".fcfs"
 
 LOCAL_CONF_PATH="conf"
 STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf)
-FDIR_CONF_FILES=(client.conf cluster.conf server.conf)
+FDIR_CONF_FILES=(client.conf cluster.conf server.conf storage.conf)
 AUTH_CONF_FILES=(auth.conf client.conf cluster.conf server.conf session.conf)
 AUTH_KEYS_FILES=(session_validate.key)
 FUSE_CONF_FILES=(fuse.conf)
