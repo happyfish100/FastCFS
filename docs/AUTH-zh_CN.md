@@ -50,8 +50,6 @@ Auth集群内各个server配置的cluster.conf必须完全一样。
 
 一个Auth服务实例需要配置一个[server-$id]的section，其中$id为实例ID。
 
-* **_注：目前仅支持一个服务实例，后续版本将支持多服务实例。_**
-
 ### 3.2 配置 server.conf
 
 * [cluster] 和 [service] 配置的端口（port）必须与cluster.conf中本机的一致，否则启动会报错
