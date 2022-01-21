@@ -108,7 +108,7 @@ fcfs_pool create fs unlimited
 /etc/fastcfs/auth/client.conf
 ```
 
-### 4.2 复制auth server上的如下密钥文件到 /etc/fastcfs/auth/keys
+### 4.2 复制auth server上的如下密钥文件到 /etc/fastcfs/auth/keys/
 
 ```
 /etc/fastcfs/auth/keys/admin.key
@@ -119,21 +119,24 @@ fcfs_pool create fs unlimited
 
 ## 5. FastStore server
 
-参见 4. FastDIR server 部分
+* 参见 4. FastDIR server 部分
  
 拷贝完成后重启FastStore服务（fs_serverd）
 
 ## 6. FastCFS客户端（fused）
 
-参见 4. FastDIR server 部分
+* 参见 4. FastDIR server 部分
 
 拷贝完成后重启fuse服务（fcfs_fused）
 
+* 友情提示：4 ~ 6部分的配置及启动参见 [配置指南](CONFIGURE-zh_CN.md)
+
+
 ## 7. 命令行工具
 
-* fcfs_user：用户管理
+* fcfs_user：用户管理，主要包括创建用户、删除用户、设置用户权限
 
-* fcfs_pool：储存池管理
+* fcfs_pool：储存池管理，主要包括创建pool、删除pool、把pool读写权限授权给用户
 
 ## 8. 注意事项
 
