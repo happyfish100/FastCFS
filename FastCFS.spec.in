@@ -95,7 +95,7 @@ mkdir -p $FUSE_CONFDIR
 mkdir -p $SYSTEMDIR
 cp conf/*.conf $FUSE_CONFDIR
 cp systemd/fastcfs.service $SYSTEMDIR
-cp systemd/fcfs_authd.service $SYSTEMDIR
+cp systemd/fastauth.service $SYSTEMDIR
 
 %post
 
@@ -132,7 +132,7 @@ mkdir -p /opt/fastcfs/auth
 
 %files -n %{FastCFSAuthServer}
 /usr/bin/fcfs_authd
-%config(noreplace) /usr/lib/systemd/system/fcfs_authd.service
+%config(noreplace) /usr/lib/systemd/system/fastauth.service
 
 %files -n %{FastCFSFuseConfig}
 %defattr(-,root,root,-)
