@@ -137,9 +137,9 @@ fcfs_pool create fs unlimited
 
 ## 7. 命令行工具
 
-* fcfs_user：用户管理，主要包括创建用户、删除用户、设置用户权限
+* fcfs_user：用户管理，主要包括创建用户、删除用户、设置用户权限（权限包括用户管理、创建存储池等等）
 
-* fcfs_pool：储存池管理，主要包括创建pool、删除pool、把pool读写权限授权给用户
+* fcfs_pool：储存池管理，主要包括创建pool、删除pool、把pool读写权限授权给其他用户
 
 ## 8. 注意事项
 

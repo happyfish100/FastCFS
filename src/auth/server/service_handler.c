@@ -535,6 +535,16 @@ static int service_deal_spool_create(struct fast_task_info *task)
     return result;
 }
 
+#define SPOOL_GET(username, poolname) \
+    do { \
+        if ((spool=adb_spool_get(SERVER_CTX, &username, &poolname)) == NULL) { \
+            RESPONSE.error.length = sprintf(RESPONSE.error.message, \
+                    "user: %.*s, pool: %.*s not exist", username.len, \
+                    username.str, poolname.len, poolname.str); \
+            return ENOENT; \
+        } \
+    } while (0)
+
 static int service_deal_spool_list(struct fast_task_info *task)
 {
     FCFSAuthStoragePoolArray array;
@@ -568,23 +578,33 @@ static int service_deal_spool_list(struct fast_task_info *task)
 
     if (username.len == 0) {
         username = SESSION_USER.name;
+    } else if (fc_string_equal(&username, &SESSION_USER.name)) {
+        //do nothing
     } else {
         if ((SESSION_USER.priv & FCFS_AUTH_USER_PRIV_USER_MANAGE) == 0) {
-            RESPONSE.error.length = sprintf(
-                    RESPONSE.error.message,
-                    "permission denied");
-            return EPERM;
+            if (poolname.len > 0) {
+                FCFSAuthGrantedPoolFullInfo gf;
+                SPOOL_GET(username, poolname);
+                if ((result=adb_granted_full_get(SERVER_CTX, &SESSION_USER.
+                                name, spool->id, &gf)) != 0)
+                {
+                    result = EPERM;
+                }
+            } else {
+                result = EPERM;
+            }
+
+            if (result == EPERM) {
+                RESPONSE.error.length = sprintf(
+                        RESPONSE.error.message,
+                        "permission denied");
+                return result;
+            }
         }
     }
 
     if (poolname.len > 0) {
-        if ((spool=adb_spool_get(SERVER_CTX, &username, &poolname)) == NULL) {
-            RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                    "user: %.*s, pool: %.*s not exist", username.len,
-                    username.str, poolname.len, poolname.str);
-            return ENOENT;
-        }
-
+        SPOOL_GET(username, poolname);
         fcfs_auth_spool_init_array(&array);
         array.spools[0] = *spool;
         array.count = 1;

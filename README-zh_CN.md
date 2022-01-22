@@ -4,7 +4,7 @@
 
 ## 1. 简介
 
-FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文件的通用分布式文件系统，可以作为MySQL、PostgresSQL、Oracle等数据库以及k8s和NAS的后端存储。
+FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文件的通用分布式文件系统，可以作为MySQL、PostgresSQL、Oracle等数据库，k8s和NAS的后端存储。
 
 FastCFS 主要特点：
 
