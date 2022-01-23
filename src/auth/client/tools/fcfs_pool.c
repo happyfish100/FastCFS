@@ -287,7 +287,6 @@ static int list_spool(int argc, char *argv[])
     } else {
         fprintf(stderr, "list storage pool fail\n");
     }
-    result = 0;
 
     fcfs_auth_spool_free_array(&spool_array);
     fast_mpool_destroy(&mpool);
@@ -315,7 +314,6 @@ static int list_gpool(int argc, char *argv[])
     } else {
         fprintf(stderr, "list storage pool fail\n");
     }
-    result = 0;
 
     fcfs_auth_granted_free_array(&gpool_array);
     fast_mpool_destroy(&mpool);
