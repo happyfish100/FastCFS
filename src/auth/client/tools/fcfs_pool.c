@@ -227,7 +227,7 @@ static void output_spools(FCFSAuthStoragePoolArray *array)
     FCFSAuthStoragePoolInfo *end;
     char buff[64];
 
-    printf("%5s %32s %50s\n", "No.", "pool_name", "quota (GiB)");
+    printf("%5s %50s %16s\n", "No.", "pool_name", "quota (GiB)");
     end = array->spools + array->count;
     for (spool=array->spools; spool<end; spool++) {
         if (spool->quota == FCFS_AUTH_UNLIMITED_QUOTA_VAL) {
@@ -235,7 +235,7 @@ static void output_spools(FCFSAuthStoragePoolArray *array)
         } else {
             long_to_comma_str(spool->quota / (1024 * 1024 * 1024), buff);
         }
-        printf("%4d. %32.*s %50s\n", (int)((spool - array->spools) + 1),
+        printf("%4d. %50.*s %16s\n", (int)((spool - array->spools) + 1),
                 spool->name.len, spool->name.str, buff);
     }
 }
