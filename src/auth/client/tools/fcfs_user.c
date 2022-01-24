@@ -40,21 +40,26 @@ static void usage(char *argv[])
             "\t[-u admin_username=admin]\n"
             "\t[-k admin_secret_key_filename=/etc/fastcfs/auth/keys/"
             "${username}.key]\n"
-            "\t[-p priviledge_list=pool]\n"
+            "\t[-p priviledges=%s]\n"
             "\t<operation> [username]\n"
             "\t[user_secret_key_filename=keys/${username}.key]\n\n"
             "\tthe operations and parameters are: \n"
             "\t  create <username> [user_secret_key_filename]\n"
+            "\t  passwd | secret-key <username> [user_secret_key_filename]\n"
             "\t  grant <username>, the option <-p priviledges> is required\n"
             "\t  delete | remove <username>\n"
             "\t  list [username]\n\n"
-            "\tgranted priviledges seperate by comma, priviledges:\n"
+            "\t[user_secret_key_filename]: specify the filename to store the "
+            "generated secret key of the user\n"
+            "\t[priviledges]: the granted priviledges seperate by comma, "
+            "priviledges:\n"
             "\t  %s: user management\n"
             "\t  %s: create storage pool\n"
             "\t  %s: monitor cluster\n"
             "\t  %s: subscribe session for FastDIR and FastStore server side\n"
             "\t  %s: for all priviledges\n\n",
             argv[0], FCFS_AUTH_CLIENT_DEFAULT_CONFIG_FILENAME,
+            USER_PRIV_NAME_CREATE_POOL_STR,
             USER_PRIV_NAME_USER_MANAGE_STR,
             USER_PRIV_NAME_CREATE_POOL_STR,
             USER_PRIV_NAME_MONITOR_CLUSTER_STR,
@@ -62,11 +67,12 @@ static void usage(char *argv[])
             USER_PRIV_NAME_ALL_PRIVS_STR);
 }
 
-static int create_user(int argc, char *argv[])
+static int user_create_or_passwd(int argc, char *argv[], const int cmd)
 {
     string_t input_key_filename;
     FilenameString user_key_filename;
     unsigned char passwd_buff[FCFS_AUTH_PASSWD_LEN + 1];
+    const char *caption;
     char *filename;
     char abs_path[PATH_MAX];
     int result;
@@ -88,25 +94,45 @@ static int create_user(int argc, char *argv[])
 
     fcfs_auth_generate_passwd(passwd_buff);
     FC_SET_STRING_EX(user.passwd, (char *)passwd_buff, FCFS_AUTH_PASSWD_LEN);
-    if ((result=fcfs_auth_client_user_create(&g_fcfs_auth_client_vars.
-                    client_ctx, &user)) == 0)
-    {
+
+    if (cmd == FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ) {
+        caption = "create user";
+        result = fcfs_auth_client_user_create(&g_fcfs_auth_client_vars.
+                client_ctx, &user);
+    } else {
+        caption = "regenerate secret key for user";
+        result = fcfs_auth_client_user_passwd(&g_fcfs_auth_client_vars.
+                client_ctx, &user.name, &user.passwd);
+    }
+    if (result == 0) {
         if ((result=fcfs_auth_save_passwd(filename, passwd_buff)) == 0) {
-            printf("create user %s success, secret key store to file: %s\n",
-                    user.name.str, filename);
+            printf("%s %s success, secret key store to file: %s\n",
+                    caption, user.name.str, filename);
         } else {
             char hex_buff[2 * FCFS_AUTH_PASSWD_LEN + 1];
 
             bin2hex((char *)passwd_buff, FCFS_AUTH_PASSWD_LEN, hex_buff);
-            printf("create user %s success, but secret key store to "
+            printf("%s %s success, but secret key store to "
                     "file: %s fail, the secret key is:\n%s\n",
-                    user.name.str, filename, hex_buff);
+                    caption, user.name.str, filename, hex_buff);
         }
     } else {
-        fprintf(stderr, "create user %s fail\n", user.name.str);
+        fprintf(stderr, "%s %s fail\n", caption, user.name.str);
     }
 
     return result;
+}
+
+static inline int create_user(int argc, char *argv[])
+{
+    return user_create_or_passwd(argc, argv,
+            FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ);
+}
+
+static inline int passwd_user(int argc, char *argv[])
+{
+    return user_create_or_passwd(argc, argv,
+            FCFS_AUTH_SERVICE_PROTO_USER_PASSWD_REQ);
 }
 
 static int grant_privilege(int argc, char *argv[])
@@ -248,6 +274,10 @@ int main(int argc, char *argv[])
     operation = argv[current_index++];
     if (strcasecmp(operation, "create") == 0) {
         need_username = true;
+    } else if (strcasecmp(operation, "passwd") == 0 ||
+            strcasecmp(operation, "secret-key") == 0)
+    {
+        need_username = true;
     } else if (strcasecmp(operation, "grant") == 0) {
         need_username = true;
     } else if (strcasecmp(operation, "delete") == 0 ||
@@ -306,6 +336,10 @@ int main(int argc, char *argv[])
 
     if (strcasecmp(operation, "create") == 0) {
         return create_user(argc, argv);
+    } else if (strcasecmp(operation, "passwd") == 0 ||
+            strcasecmp(operation, "secret-key") == 0)
+    {
+        return passwd_user(argc, argv);
     } else if (strcasecmp(operation, "grant") == 0) {
         return grant_privilege(argc, argv);
     } else if (strcasecmp(operation, "delete") == 0 ||

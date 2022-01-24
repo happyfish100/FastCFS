@@ -86,6 +86,7 @@ static int check_user_priv(struct fast_task_info *task)
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_GET_QUOTA_REQ:
             return 0;
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
+        case FCFS_AUTH_SERVICE_PROTO_USER_PASSWD_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ:
         case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ:
@@ -262,6 +263,34 @@ static int service_deal_user_create(struct fast_task_info *task)
 
     user.status = FCFS_AUTH_USER_STATUS_NORMAL;
     return adb_user_create(SERVER_CTX, &user);
+}
+
+static int service_deal_user_passwd(struct fast_task_info *task)
+{
+    FCFSAuthProtoUserPasswdReq *req;
+    string_t username;
+    string_t passwd;
+    int result;
+
+    if ((result=server_check_body_length(sizeof(FCFSAuthProtoUserPasswdReq)
+                    + 1, sizeof(FCFSAuthProtoUserPasswdReq) + NAME_MAX)) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSAuthProtoUserPasswdReq *)REQUEST.body;
+    FC_SET_STRING_EX(username, req->up_pair.username.str,
+            req->up_pair.username.len);
+    FC_SET_STRING_EX(passwd, req->up_pair.passwd,
+            FCFS_AUTH_PASSWD_LEN);
+    if ((result=server_expect_body_length(
+                    sizeof(FCFSAuthProtoUserPasswdReq)
+                    + username.len)) != 0)
+    {
+        return result;
+    }
+
+    return adb_user_update_passwd(SERVER_CTX, &username, &passwd);
 }
 
 static int service_parse_limit(struct fast_task_info *task,
@@ -997,6 +1026,9 @@ static int service_process(struct fast_task_info *task)
         case FCFS_AUTH_SERVICE_PROTO_USER_CREATE_REQ:
             RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP;
             return service_deal_user_create(task);
+        case FCFS_AUTH_SERVICE_PROTO_USER_PASSWD_REQ:
+            RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_PASSWD_RESP;
+            return service_deal_user_passwd(task);
         case FCFS_AUTH_SERVICE_PROTO_USER_LIST_REQ:
             return service_deal_user_list(task);
         case FCFS_AUTH_SERVICE_PROTO_USER_GRANT_REQ:

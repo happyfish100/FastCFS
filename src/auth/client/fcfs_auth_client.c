@@ -235,6 +235,14 @@ int fcfs_auth_client_user_create(FCFSAuthClientContext *client_ctx,
             GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_user_create, user);
 }
 
+int fcfs_auth_client_user_passwd(FCFSAuthClientContext *client_ctx,
+        const string_t *username, const string_t *passwd)
+{
+    SF_CLIENT_IDEMPOTENCY_QUERY_WRAPPER(client_ctx, &client_ctx->cm,
+            GET_MASTER_CONNECTION, 0, fcfs_auth_client_proto_user_passwd,
+            username, passwd);
+}
+
 int fcfs_auth_client_user_list(FCFSAuthClientContext *client_ctx,
         const string_t *username, const SFListLimitInfo *limit,
         struct fast_mpool_man *mpool, FCFSAuthUserArray *array)

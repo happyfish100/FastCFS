@@ -54,6 +54,10 @@ const char *fcfs_auth_get_cmd_caption(const int cmd)
             return "USER_REMOVE_REQ";
         case FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP:
             return "USER_REMOVE_RESP";
+        case FCFS_AUTH_SERVICE_PROTO_USER_PASSWD_REQ:
+            return "USER_PASSWD_REQ";
+        case FCFS_AUTH_SERVICE_PROTO_USER_PASSWD_RESP:
+            return "USER_PASSWD_RESP";
 
         case FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_REQ:
             return "SPOOL_CREATE_REQ";

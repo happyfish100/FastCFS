@@ -37,6 +37,8 @@
 #define FCFS_AUTH_SERVICE_PROTO_USER_GRANT_RESP           26
 #define FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_REQ           27
 #define FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP          28
+#define FCFS_AUTH_SERVICE_PROTO_USER_PASSWD_REQ           29
+#define FCFS_AUTH_SERVICE_PROTO_USER_PASSWD_RESP          30
 
 #define FCFS_AUTH_SERVICE_PROTO_GET_MASTER_REQ            61
 #define FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP           62
@@ -146,6 +148,10 @@ typedef struct fcfs_auth_proto_user_create_req {
     char priv[8];
     FCFSAuthProtoUserPasswdPair up_pair;
 } FCFSAuthProtoUserCreateReq;
+
+typedef struct fcfs_auth_proto_user_passwd_req {
+    FCFSAuthProtoUserPasswdPair up_pair;
+} FCFSAuthProtoUserPasswdReq;
 
 typedef struct fcfs_auth_proto_user_list_req {
     SFProtoLimitInfo limit;
