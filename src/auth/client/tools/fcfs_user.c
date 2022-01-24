@@ -33,6 +33,7 @@ const SFListLimitInfo limit = {0, 0};
 static int current_index;
 static FCFSAuthUserInfo user;
 static bool priv_set = false;
+static bool confirmed = false;  //for option -y
 
 static void usage(char *argv[])
 {
@@ -45,7 +46,8 @@ static void usage(char *argv[])
             "\t[user_secret_key_filename=keys/${username}.key]\n\n"
             "\tthe operations and parameters are: \n"
             "\t  create <username> [user_secret_key_filename]\n"
-            "\t  passwd | secret-key <username> [user_secret_key_filename]\n"
+            "\t  passwd | secret-key <username> [user_secret_key_filename] "
+            "[-y]: regenerate user's secret key\n"
             "\t  grant <username>, the option <-p priviledges> is required\n"
             "\t  delete | remove <username>\n"
             "\t  list [username]\n\n"
@@ -237,7 +239,7 @@ int main(int argc, char *argv[])
     FC_SET_STRING(admin.key_filename,
             "/etc/fastcfs/auth/keys/${username}.key");
     FC_SET_STRING_NULL(privs);
-    while ((ch=getopt(argc, argv, "hc:u:k:p:")) != -1) {
+    while ((ch=getopt(argc, argv, "hc:u:k:p:y")) != -1) {
         switch (ch) {
             case 'h':
                 usage(argv);
@@ -253,6 +255,9 @@ int main(int argc, char *argv[])
                 break;
             case 'p':
                 FC_SET_STRING(privs, optarg);
+                break;
+            case 'y':
+                confirmed = true;
                 break;
             default:
                 usage(argv);
@@ -339,6 +344,11 @@ int main(int argc, char *argv[])
     } else if (strcasecmp(operation, "passwd") == 0 ||
             strcasecmp(operation, "secret-key") == 0)
     {
+        if (fc_string_equal(&admin.username, &user.name) && !confirmed) {
+            fprintf(stderr, "\nyou MUST use -y option to regenerate the "
+                    "secret key when the user is same with the admin user.\n");
+            return EAGAIN;
+        }
         return passwd_user(argc, argv);
     } else if (strcasecmp(operation, "grant") == 0) {
         return grant_privilege(argc, argv);
