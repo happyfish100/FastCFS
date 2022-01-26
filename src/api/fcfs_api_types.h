@@ -31,6 +31,12 @@ typedef enum {
     fcfs_api_owner_type_fixed
 } FCFSAPIOwnerType;
 
+typedef struct fcfs_api_owner_info {
+    FCFSAPIOwnerType type;
+    uid_t uid;
+    gid_t gid;
+} FCFSAPIOwnerInfo;
+
 typedef struct fcfs_api_opendir_session {
     FDIRClientDentryArray array;
     int btype;   //buffer type

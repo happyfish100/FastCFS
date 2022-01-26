@@ -15,6 +15,8 @@
 
 #include <sys/stat.h>
 #include <limits.h>
+#include <grp.h>
+#include <pwd.h>
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "async_reporter.h"
@@ -327,4 +329,69 @@ void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
         }
     }
     snprintf(output + len, size - len, " } ");
+}
+
+int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
+        FCFSAPIOwnerInfo *owner_info)
+{
+    int result;
+    char *owner_type;
+    char *owner_user;
+    char *owner_group;
+    struct group *group;
+    struct passwd *user;
+
+    owner_type = iniGetStrValue(ini_ctx->section_name,
+            "owner_type", ini_ctx->context);
+    if (owner_type == NULL || *owner_type == '\0') {
+        owner_info->type = fcfs_api_owner_type_caller;
+    } else if (strcasecmp(owner_type, FCFS_API_OWNER_TYPE_CALLER_STR) == 0) {
+        owner_info->type = fcfs_api_owner_type_caller;
+    } else if (strcasecmp(owner_type, FCFS_API_OWNER_TYPE_FIXED_STR) == 0) {
+        owner_info->type = fcfs_api_owner_type_fixed;
+    } else {
+        owner_info->type = fcfs_api_owner_type_caller;
+    }
+
+    if (owner_info->type == fcfs_api_owner_type_caller) {
+        owner_info->uid = geteuid();
+        owner_info->gid = getegid();
+        return 0;
+    }
+
+    owner_user = iniGetStrValue(ini_ctx->section_name,
+            "owner_user", ini_ctx->context);
+    if (owner_user == NULL || *owner_user == '\0') {
+        owner_info->uid = geteuid();
+    } else {
+        user = getpwnam(owner_user);
+        if (user == NULL)
+        {
+            result = errno != 0 ? errno : ENOENT;
+            logError("file: "__FILE__", line: %d, "
+                    "getpwnam %s fail, errno: %d, error info: %s",
+                    __LINE__, owner_user, result, STRERROR(result));
+            return result;
+        }
+        owner_info->uid = user->pw_uid;
+    }
+
+    owner_group = iniGetStrValue(ini_ctx->section_name,
+            "owner_group", ini_ctx->context);
+    if (owner_group == NULL || *owner_group == '\0') {
+        owner_info->gid = getegid();
+    } else {
+        group = getgrnam(owner_group);
+        if (group == NULL) {
+            result = errno != 0 ? errno : ENOENT;
+            logError("file: "__FILE__", line: %d, "
+                    "getgrnam %s fail, errno: %d, error info: %s",
+                    __LINE__, owner_group, result, STRERROR(result));
+            return result;
+        }
+
+        owner_info->gid = group->gr_gid;
+    }
+
+    return 0;
 }

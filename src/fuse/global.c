@@ -121,70 +121,6 @@ static int load_fuse_mountpoint(IniFullContext *ini_ctx, string_t *mountpoint)
     return 0;
 }
 
-static int load_owner_config(IniFullContext *ini_ctx)
-{
-    int result;
-    char *owner_type;
-    char *owner_user;
-    char *owner_group;
-    struct group *group;
-    struct passwd *user;
-
-    owner_type = iniGetStrValue(ini_ctx->section_name,
-            "owner_type", ini_ctx->context);
-    if (owner_type == NULL || *owner_type == '\0') {
-        g_fuse_global_vars.owner.type = fcfs_api_owner_type_caller;
-    } else if (strcasecmp(owner_type, FCFS_API_OWNER_TYPE_CALLER_STR) == 0) {
-        g_fuse_global_vars.owner.type = fcfs_api_owner_type_caller;
-    } else if (strcasecmp(owner_type, FCFS_API_OWNER_TYPE_FIXED_STR) == 0) {
-        g_fuse_global_vars.owner.type = fcfs_api_owner_type_fixed;
-    } else {
-        g_fuse_global_vars.owner.type = fcfs_api_owner_type_caller;
-    }
-
-    if (g_fuse_global_vars.owner.type == fcfs_api_owner_type_caller) {
-        g_fuse_global_vars.owner.uid = geteuid();
-        g_fuse_global_vars.owner.gid = getegid();
-        return 0;
-    }
-
-    owner_user = iniGetStrValue(ini_ctx->section_name,
-            "owner_user", ini_ctx->context);
-    if (owner_user == NULL || *owner_user == '\0') {
-        g_fuse_global_vars.owner.uid = geteuid();
-    } else {
-        user = getpwnam(owner_user);
-        if (user == NULL)
-        {
-            result = errno != 0 ? errno : ENOENT;
-            logError("file: "__FILE__", line: %d, "
-                    "getpwnam %s fail, errno: %d, error info: %s",
-                    __LINE__, owner_user, result, STRERROR(result));
-            return result;
-        }
-        g_fuse_global_vars.owner.uid = user->pw_uid;
-    }
-
-    owner_group = iniGetStrValue(ini_ctx->section_name,
-            "owner_group", ini_ctx->context);
-    if (owner_group == NULL || *owner_group == '\0') {
-        g_fuse_global_vars.owner.gid = getegid();
-    } else {
-        group = getgrnam(owner_group);
-        if (group == NULL) {
-            result = errno != 0 ? errno : ENOENT;
-            logError("file: "__FILE__", line: %d, "
-                    "getgrnam %s fail, errno: %d, error info: %s",
-                    __LINE__, owner_group, result, STRERROR(result));
-            return result;
-        }
-
-        g_fuse_global_vars.owner.gid = group->gr_gid;
-    }
-
-    return 0;
-}
-
 static int load_fuse_config(IniFullContext *ini_ctx)
 {
     string_t mountpoint;
@@ -263,7 +199,7 @@ static int load_fuse_config(IniFullContext *ini_ctx)
             section_name, "entry_timeout", ini_ctx->context,
             FCFS_FUSE_DEFAULT_ENTRY_TIMEOUT);
 
-    return load_owner_config(ini_ctx);
+    return fcfs_api_load_owner_config(ini_ctx, &g_fuse_global_vars.owner);
 }
 
 static const char *get_allow_others_caption(

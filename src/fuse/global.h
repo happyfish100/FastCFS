@@ -39,11 +39,7 @@ typedef struct {
     double attribute_timeout;
     double entry_timeout;
     FUSEAllowOthersMode allow_others;
-    struct {
-        FCFSAPIOwnerType type;
-        uid_t uid;
-        gid_t gid;
-    } owner;
+    FCFSAPIOwnerInfo owner;
 } FUSEGlobalVars;
 
 #ifdef __cplusplus
