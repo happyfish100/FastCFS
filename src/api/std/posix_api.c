@@ -15,9 +15,21 @@
 
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
-#include "fcfs_posix_api.h"
+#include "posix_api.h"
 
 FCFSPosixAPIContext g_fcfs_papi_ctx;
+
+__attribute__ ((constructor)) static void posix_api_global_init(void)
+{
+    fprintf(stderr, "file: "__FILE__", line: %d, "
+            "constructor\n", __LINE__);
+}
+
+__attribute__ ((destructor)) static void posix_api_global_destroy(void)
+{
+    fprintf(stderr, "file: "__FILE__", line: %d, "
+            "destructor\n", __LINE__);
+}
 
 static int load_posix_api_config(FCFSPosixAPIContext *ctx,
         IniFullContext *ini_ctx)
@@ -73,19 +85,33 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char *ns,
         return result;
     }
 
-    FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename, NULL, &iniContext);
-    if ((result=load_posix_api_config(ctx, &ini_ctx)) != 0) {
-        return result;
-    }
+    do {
+        FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename, NULL, &iniContext);
+        if ((result=load_posix_api_config(ctx, &ini_ctx)) != 0) {
+            break;
+        }
 
-    if ((result=fcfs_api_pooled_init_ex1(&ctx->api_ctx, ns, &ini_ctx,
-                    fdir_section_name, fs_section_name)) != 0)
-    {
-        return result;
-    }
+        if ((result=fcfs_api_pooled_init_ex1(&ctx->api_ctx, ns, &ini_ctx,
+                        fdir_section_name, fs_section_name)) != 0)
+        {
+            break;
+        }
+    } while (0);
 
     iniFreeContext(&iniContext);
-
-    return fcfs_api_client_session_create(&ctx->api_ctx, publish);
+    if (result == 0) {
+        return fcfs_api_client_session_create(&ctx->api_ctx, publish);
+    } else {
+        return result;
+    }
 }
 
+void fcfs_posix_api_destroy_ex(FCFSPosixAPIContext *ctx)
+{
+    if (ctx->mountpoint.str != NULL) {
+        free(ctx->mountpoint.str);
+        ctx->mountpoint.str = NULL;
+
+        fcfs_api_destroy_ex(&ctx->api_ctx);
+    }
+}

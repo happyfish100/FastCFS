@@ -7,15 +7,17 @@ TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
 
 FAST_SHARED_OBJS = ../common/fcfs_global.lo fcfs_api.lo fcfs_api_file.lo    \
                    fcfs_api_util.lo fcfs_api_allocator.lo async_reporter.lo \
-                   inode_htable.lo fcfs_posix_api.lo
+                   inode_htable.lo std/posix_api.lo
 
 FAST_STATIC_OBJS = ../common/fcfs_global.o fcfs_api.o fcfs_api_file.o    \
                    fcfs_api_util.o fcfs_api_allocator.o async_reporter.o \
-                   inode_htable.o fcfs_posix_api.o
+                   inode_htable.o std/posix_api.o
 
-HEADER_FILES = ../common/fcfs_global.h fcfs_api.h fcfs_api_types.h  \
+API_HEADER_FILES = ../common/fcfs_global.h fcfs_api.h fcfs_api_types.h  \
                fcfs_api_file.h fcfs_api_util.h fcfs_api_allocator.h \
-               async_reporter.h inode_htable.h fcfs_posix_api.h
+               async_reporter.h inode_htable.h
+
+STD_HEADER_FILES = std/posix_api.h
 
 ALL_OBJS = $(FAST_STATIC_OBJS) $(FAST_SHARED_OBJS)
 
@@ -40,10 +42,11 @@ libfcfsapi.a: $(FAST_STATIC_OBJS)
 install:
 	mkdir -p $(TARGET_LIB)
 	mkdir -p $(TARGET_PREFIX)/lib
-	mkdir -p $(TARGET_PREFIX)/include/fastcfs/api
+	mkdir -p $(TARGET_PREFIX)/include/fastcfs/api/std
 
 	install -m 755 $(SHARED_LIBS) $(TARGET_LIB)
-	install -m 644 $(HEADER_FILES) $(TARGET_PREFIX)/include/fastcfs/api
+	install -m 644 $(API_HEADER_FILES) $(TARGET_PREFIX)/include/fastcfs/api/
+	install -m 644 $(STD_HEADER_FILES) $(TARGET_PREFIX)/include/fastcfs/api/std/
 	@BUILDROOT=$$(echo "$(TARGET_PREFIX)" | grep BUILDROOT); \
 	if [ -z "$$BUILDROOT" ] && [ ! -e $(TARGET_PREFIX)/lib/libfcfsapi.so ]; then ln -s $(TARGET_LIB)/libfcfsapi.so $(TARGET_PREFIX)/lib/libfcfsapi.so; fi
 clean:

@@ -17,7 +17,7 @@
 #ifndef _FCFS_POSIX_API_H
 #define _FCFS_POSIX_API_H
 
-#include "fcfs_api.h"
+#include "../fcfs_api.h"
 
 typedef struct fcfs_posix_api_context {
     bool forward;
@@ -37,9 +37,9 @@ extern "C" {
             const char *fs_section_name, const bool publish);
 
     static inline int fcfs_posix_api_init_ex(FCFSPosixAPIContext *ctx,
-            const char *ns, const char *config_filename,
-            const bool publish)
+            const char *ns, const char *config_filename)
     {
+        const bool publish = true;
         return fcfs_posix_api_init_ex1(ctx, ns, config_filename,
                 FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
                 FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
@@ -47,17 +47,38 @@ extern "C" {
     }
 
     static inline int fcfs_posix_api_init(const char *ns,
-            const char *config_filename, const bool publish)
+            const char *config_filename)
     {
         return fcfs_posix_api_init_ex(&g_fcfs_papi_ctx,
-                ns, config_filename, publish);
+                ns, config_filename);
+    }
+
+    static inline int fcfs_posix_api_start_ex(FCFSPosixAPIContext *ctx)
+    {
+        return fcfs_api_start_ex(&ctx->api_ctx);
+    }
+
+    static inline void fcfs_posix_api_terminate_ex(FCFSPosixAPIContext *ctx)
+    {
+        fcfs_api_terminate_ex(&ctx->api_ctx);
     }
 
     void fcfs_posix_api_destroy_ex(FCFSPosixAPIContext *ctx);
 
-    int fcfs_posix_api_start_ex(FCFSPosixAPIContext *ctx);
+    static inline int fcfs_posix_api_start()
+    {
+        return fcfs_posix_api_start_ex(&g_fcfs_papi_ctx);
+    }
 
-    void fcfs_posix_api_terminate_ex(FCFSPosixAPIContext *ctx);
+    static inline void fcfs_posix_api_terminate()
+    {
+        fcfs_posix_api_terminate_ex(&g_fcfs_papi_ctx);
+    }
+
+    static inline void fcfs_posix_api_destroy()
+    {
+        fcfs_posix_api_destroy_ex(&g_fcfs_papi_ctx);
+    }
 
 #ifdef __cplusplus
 }
