@@ -17,14 +17,8 @@
 #ifndef _FCFS_POSIX_API_H
 #define _FCFS_POSIX_API_H
 
-#include "../fcfs_api.h"
-
-typedef struct fcfs_posix_api_context {
-    bool forward;
-    string_t mountpoint;
-    FCFSAPIOwnerInfo owner;
-    FCFSAPIContext api_ctx;
-} FCFSPosixAPIContext;
+#include "api_types.h"
+#include "fd_manager.h"
 
 #ifdef __cplusplus
 extern "C" {
