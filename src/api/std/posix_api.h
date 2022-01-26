@@ -17,8 +17,13 @@
 #ifndef _FCFS_POSIX_API_H
 #define _FCFS_POSIX_API_H
 
+#include <unistd.h>
+#include <sys/types.h>
+#include "fastcommon/shared_func.h"
 #include "api_types.h"
 #include "fd_manager.h"
+#include "papi_dir.h"
+#include "papi_file.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,6 +78,30 @@ extern "C" {
     {
         fcfs_posix_api_destroy_ex(&g_fcfs_papi_ctx);
     }
+
+    static inline void fcfs_posix_api_set_omp(FDIRClientOwnerModePair *omp,
+            const FCFSPosixAPIContext *pctx, const mode_t mode)
+    {
+        omp->mode = (mode & (~fc_get_umask()));
+        if (pctx->owner.type == fcfs_api_owner_type_fixed) {
+            omp->uid = pctx->owner.uid;
+            omp->gid = pctx->owner.gid;
+        } else {
+            omp->uid = geteuid();
+            omp->gid = getegid();
+        }
+    }
+
+    static inline void fcfs_posix_api_set_fctx(FCFSAPIFileContext *fctx,
+            const FCFSPosixAPIContext *pctx, const mode_t mode)
+    {
+        fcfs_posix_api_set_omp(&fctx->omp, pctx, mode);
+        fctx->tid = fc_gettid();
+    }
+
+#define FCFS_PAPI_IS_MY_MOUNT_PATH(ctx, path)   \
+        (strlen(path) >= ctx->mountpoint.len && (ctx->mountpoint.len == 0 || \
+         memcmp(path, ctx->mountpoint.str, ctx->mountpoint.len) == 0))
 
 #ifdef __cplusplus
 }

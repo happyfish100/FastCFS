@@ -13,7 +13,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "posix_api.h"
 

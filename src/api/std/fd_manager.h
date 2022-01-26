@@ -27,7 +27,7 @@ extern "C" {
 
     void fcfs_fd_manager_destroy();
 
-    FCFSPosixAPIFileInfo *fcfs_fd_manager_alloc();
+    FCFSPosixAPIFileInfo *fcfs_fd_manager_alloc(const char *filename);
 
     FCFSPosixAPIFileInfo *fcfs_fd_manager_get(const int fd);
 

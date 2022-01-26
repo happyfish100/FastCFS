@@ -27,16 +27,7 @@
 #include "fuse3/fuse_lowlevel.h"
 
 #define FCFS_FUSE_SET_OMP(omp, m, euid, egid) \
-    do {  \
-        omp.mode = m;  \
-        if (g_fuse_global_vars.owner.type == fcfs_api_owner_type_fixed) { \
-            omp.uid = g_fuse_global_vars.owner.uid; \
-            omp.gid = g_fuse_global_vars.owner.gid; \
-        } else {  \
-            omp.uid = euid; \
-            omp.gid = egid; \
-        }  \
-    } while (0)
+    FCFS_API_SET_OMP(omp, g_fuse_global_vars.owner, m, euid, egid)
 
 #define FCFS_FUSE_SET_OMP_BY_REQ(omp, m, req) \
     do { \

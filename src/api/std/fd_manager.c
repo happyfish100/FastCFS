@@ -112,12 +112,18 @@ void fcfs_fd_manager_destroy()
 
 #define FCFS_FD_TO_INDEX(fd) ((fd - FCFS_POSIX_API_FD_BASE) - 1)
 
-FCFSPosixAPIFileInfo *fcfs_fd_manager_alloc()
+FCFSPosixAPIFileInfo *fcfs_fd_manager_alloc(const char *filename)
 {
     FCFSPosixAPIFileInfo *finfo;
 
     if ((finfo=fast_mblock_alloc_object(&FINFO_ALLOCATOR)) == NULL) {
         return finfo;
+    }
+
+    finfo->filename = fc_strdup(filename);
+    if (finfo->filename == NULL) {
+        fast_mblock_free_object(&FINFO_ALLOCATOR, finfo);
+        return NULL;
     }
 
     PTHREAD_MUTEX_LOCK(&PAPI_LOCK);
@@ -149,7 +155,6 @@ FCFSPosixAPIFileInfo *fcfs_fd_manager_get(const int fd)
                 "get file info fail, fd: %d, errno: %d, error info: %s",
                 __LINE__, fd, result, STRERROR(result));
     }
-
     return finfo;
 }
 
@@ -174,12 +179,13 @@ int fcfs_fd_manager_free(FCFSPosixAPIFileInfo *finfo)
     PTHREAD_MUTEX_UNLOCK(&PAPI_LOCK);
 
     if (result == 0) {
+        free(finfo->filename);
+        finfo->filename = NULL;
         fast_mblock_free_object(&FINFO_ALLOCATOR, finfo);
     } else {
         logError("file: "__FILE__", line: %d, "
                 "free file info fail, fd: %d, errno: %d, error info: %s",
                 __LINE__, finfo->fd, result, STRERROR(result));
     }
-
     return result;
 }

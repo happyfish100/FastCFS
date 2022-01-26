@@ -130,6 +130,20 @@ typedef struct fcfs_api_async_report_event_ptr_array {
     FCFSAPIAsyncReportEvent **events;
 } FCFSAPIAsyncReportEventPtrArray;
 
+
+#define FCFS_API_SET_OMP(omp, owner, m, euid, egid) \
+    do {  \
+        omp.mode = m;  \
+        if (owner.type == fcfs_api_owner_type_fixed) { \
+            omp.uid = owner.uid; \
+            omp.gid = owner.gid; \
+        } else {  \
+            omp.uid = euid; \
+            omp.gid = egid; \
+        }  \
+    } while (0)
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

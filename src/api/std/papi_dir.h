@@ -14,32 +14,21 @@
  */
 
 
-#ifndef _FCFS_POSIX_API_TYPES_H
-#define _FCFS_POSIX_API_TYPES_H
+#ifndef _FCFS_PAPI_DIR_H
+#define _FCFS_PAPI_DIR_H
 
-#include "../fcfs_api.h"
+#include "api_types.h"
 
-#define FCFS_POSIX_API_FD_BASE  (2 << 28)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-typedef struct fcfs_posix_api_context {
-    bool forward;
-    string_t mountpoint;
-    FCFSAPIOwnerInfo owner;
-    FCFSAPIContext api_ctx;
-} FCFSPosixAPIContext;
+    int fcfs_mkdir(const char *path, mode_t mode);
 
-typedef struct fcfs_posix_api_file_info {
-    int fd;
-    char *filename;
-    FCFSAPIFileInfo fi;
-} FCFSPosixAPIFileInfo;
+    int fcfs_mkdirat(int fd, const char *path, mode_t mode);
 
-typedef struct fcfs_posix_file_ptr_array {
-    FCFSPosixAPIFileInfo **files;
-    int count;
-} FCFSPosixFilePtrArray;
-
-#define FCFS_PAPI_IS_MY_FD(fd) \
-    (fd > FCFS_POSIX_API_FD_BASE)
+#ifdef __cplusplus
+}
+#endif
 
 #endif
