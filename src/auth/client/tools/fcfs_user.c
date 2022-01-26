@@ -346,8 +346,8 @@ int main(int argc, char *argv[])
     {
         if (fc_string_equal(&admin.username, &user.name) && !confirmed) {
             fprintf(stderr, "you MUST use -y option to regenerate "
-                    "the secret key when the user is same with "
-                    "the admin user.\n\n");
+                    "the secret key \nwhen the user is same with "
+                    "the admin user!\n\n");
             return EAGAIN;
         }
         return passwd_user(argc, argv);

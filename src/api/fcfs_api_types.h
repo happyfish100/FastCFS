@@ -26,6 +26,11 @@
 
 #define FCFS_FUSE_DEFAULT_CONFIG_FILENAME "/etc/fastcfs/fcfs/fuse.conf"
 
+typedef enum {
+    fcfs_api_owner_type_caller,
+    fcfs_api_owner_type_fixed
+} FCFSAPIOwnerType;
+
 typedef struct fcfs_api_opendir_session {
     FDIRClientDentryArray array;
     int btype;   //buffer type

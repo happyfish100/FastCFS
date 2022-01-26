@@ -29,7 +29,7 @@
 #define FCFS_FUSE_SET_OMP(omp, m, euid, egid) \
     do {  \
         omp.mode = m;  \
-        if (g_fuse_global_vars.owner.type == owner_type_fixed) { \
+        if (g_fuse_global_vars.owner.type == fcfs_api_owner_type_fixed) { \
             omp.uid = g_fuse_global_vars.owner.uid; \
             omp.gid = g_fuse_global_vars.owner.gid; \
         } else {  \

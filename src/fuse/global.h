@@ -17,7 +17,7 @@
 #ifndef _FCFS_FUSE_GLOBAL_H
 #define _FCFS_FUSE_GLOBAL_H
 
-#include "fastcommon/logger.h"
+#include "fastcfs/api/fcfs_api.h"
 #include "common/fcfs_global.h"
 
 #define FCFS_FUSE_DEFAULT_ATTRIBUTE_TIMEOUT 1.0
@@ -28,11 +28,6 @@ typedef enum {
     allow_all,
     allow_root
 } FUSEAllowOthersMode;
-
-typedef enum {
-    owner_type_caller,
-    owner_type_fixed
-} FUSEOwnerType;
 
 typedef struct {
     char *ns;
@@ -45,7 +40,7 @@ typedef struct {
     double entry_timeout;
     FUSEAllowOthersMode allow_others;
     struct {
-        FUSEOwnerType type;
+        FCFSAPIOwnerType type;
         uid_t uid;
         gid_t gid;
     } owner;

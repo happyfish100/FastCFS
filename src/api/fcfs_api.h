@@ -25,6 +25,9 @@
 #define FCFS_API_DEFAULT_FASTDIR_SECTION_NAME    "FastDIR"
 #define FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME  "FastStore"
 
+#define FCFS_API_OWNER_TYPE_CALLER_STR  "caller"
+#define FCFS_API_OWNER_TYPE_FIXED_STR   "fixed"
+
 #define fcfs_api_set_contexts(ns)  fcfs_api_set_contexts_ex(&g_fcfs_api_ctx, ns)
 
 #define fcfs_api_init(ns, config_filename)   \
@@ -148,6 +151,19 @@ extern "C" {
 
     void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
             char *output, const int size);
+
+    static inline const char *fcfs_api_get_owner_type_caption(
+            const FCFSAPIOwnerType owner_type)
+    {
+        switch (owner_type) {
+            case fcfs_api_owner_type_caller:
+                return FCFS_API_OWNER_TYPE_CALLER_STR;
+            case fcfs_api_owner_type_fixed:
+                return FCFS_API_OWNER_TYPE_FIXED_STR;
+            default:
+                return "";
+        }
+    }
 
 #ifdef __cplusplus
 }

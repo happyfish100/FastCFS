@@ -39,7 +39,6 @@
 #include "fastcommon/system_info.h"
 #include "sf/sf_global.h"
 #include "sf/idempotency/client/client_channel.h"
-#include "fastcfs/api/fcfs_api.h"
 #include "fuse_wrapper.h"
 #include "global.h"
 
@@ -53,9 +52,6 @@
 
 #define FUSE_ALLOW_ALL_STR   "all"
 #define FUSE_ALLOW_ROOT_STR  "root"
-
-#define FUSE_OWNER_TYPE_CALLER_STR  "caller"
-#define FUSE_OWNER_TYPE_FIXED_STR   "fixed"
 
 FUSEGlobalVars g_fuse_global_vars = {NULL, NULL};
 
@@ -137,16 +133,16 @@ static int load_owner_config(IniFullContext *ini_ctx)
     owner_type = iniGetStrValue(ini_ctx->section_name,
             "owner_type", ini_ctx->context);
     if (owner_type == NULL || *owner_type == '\0') {
-        g_fuse_global_vars.owner.type = owner_type_caller;
-    } else if (strcasecmp(owner_type, FUSE_OWNER_TYPE_CALLER_STR) == 0) {
-        g_fuse_global_vars.owner.type = owner_type_caller;
-    } else if (strcasecmp(owner_type, FUSE_OWNER_TYPE_FIXED_STR) == 0) {
-        g_fuse_global_vars.owner.type = owner_type_fixed;
+        g_fuse_global_vars.owner.type = fcfs_api_owner_type_caller;
+    } else if (strcasecmp(owner_type, FCFS_API_OWNER_TYPE_CALLER_STR) == 0) {
+        g_fuse_global_vars.owner.type = fcfs_api_owner_type_caller;
+    } else if (strcasecmp(owner_type, FCFS_API_OWNER_TYPE_FIXED_STR) == 0) {
+        g_fuse_global_vars.owner.type = fcfs_api_owner_type_fixed;
     } else {
-        g_fuse_global_vars.owner.type = owner_type_caller;
+        g_fuse_global_vars.owner.type = fcfs_api_owner_type_caller;
     }
 
-    if (g_fuse_global_vars.owner.type == owner_type_caller) {
+    if (g_fuse_global_vars.owner.type == fcfs_api_owner_type_caller) {
         g_fuse_global_vars.owner.uid = geteuid();
         g_fuse_global_vars.owner.gid = getegid();
         return 0;
@@ -283,19 +279,6 @@ static const char *get_allow_others_caption(
     }
 }
 
-static const char *get_owner_type_caption(
-        const FUSEOwnerType owner_type)
-{
-    switch (owner_type) {
-        case owner_type_caller:
-            return FUSE_OWNER_TYPE_CALLER_STR;
-        case owner_type_fixed:
-            return FUSE_OWNER_TYPE_FIXED_STR;
-        default:
-            return "";
-    }
-}
-
 int fcfs_fuse_global_init(const char *config_filename)
 {
 #define MIN_THREAD_STACK_SIZE  (320 * 1024)
@@ -407,7 +390,7 @@ int fcfs_fuse_global_init(const char *config_filename)
         *sf_idempotency_config = '\0';
     }
 
-    if (g_fuse_global_vars.owner.type == owner_type_fixed) {
+    if (g_fuse_global_vars.owner.type == fcfs_api_owner_type_fixed) {
         struct passwd *user;
         struct group *group;
 
@@ -449,7 +432,7 @@ int fcfs_fuse_global_init(const char *config_filename)
             g_fcfs_global_vars.version.patch,
             fuse_pkgversion(), g_fuse_global_vars.ns,
             sf_idempotency_config, g_fuse_global_vars.mountpoint,
-            get_owner_type_caption(g_fuse_global_vars.owner.type),
+            fcfs_api_get_owner_type_caption(g_fuse_global_vars.owner.type),
             owner_config, g_fuse_global_vars.singlethread,
             g_fuse_global_vars.clone_fd, g_fuse_global_vars.max_idle_threads,
             get_allow_others_caption(g_fuse_global_vars.allow_others),
