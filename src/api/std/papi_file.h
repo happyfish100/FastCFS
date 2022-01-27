@@ -29,6 +29,23 @@ extern "C" {
     int fcfs_openat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, int flags, ...);
 
+    int fcfs_creat_ex(FCFSPosixAPIContext *ctx,
+            const char *path, mode_t mode);
+
+    int fcfs_close_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    ssize_t fcfs_write_ex(FCFSPosixAPIContext *ctx,
+            int fd, const void *buff, size_t count);
+
+    ssize_t fcfs_pwrite_ex(FCFSPosixAPIContext *ctx, int fd,
+            const void *buff, size_t count, off_t offset);
+
+    ssize_t fcfs_writev_ex(FCFSPosixAPIContext *ctx, int fd,
+            const struct iovec *iov, int iovcnt);
+
+    ssize_t fcfs_pwritev_ex(FCFSPosixAPIContext *ctx, int fd,
+            const struct iovec *iov, int iovcnt, off_t offset);
+
 #ifdef __cplusplus
 }
 #endif

@@ -79,6 +79,11 @@ extern "C" {
         fcfs_posix_api_destroy_ex(&g_fcfs_papi_ctx);
     }
 
+    static inline pid_t fcfs_posix_api_gettid()
+    {
+        return fc_gettid();
+    }
+
     static inline void fcfs_posix_api_set_omp(FDIRClientOwnerModePair *omp,
             const FCFSPosixAPIContext *pctx, const mode_t mode)
     {
@@ -96,12 +101,49 @@ extern "C" {
             const FCFSPosixAPIContext *pctx, const mode_t mode)
     {
         fcfs_posix_api_set_omp(&fctx->omp, pctx, mode);
-        fctx->tid = fc_gettid();
+        fctx->tid = fcfs_posix_api_gettid();
     }
+
 
 #define FCFS_PAPI_IS_MY_MOUNT_PATH(ctx, path)   \
         (strlen(path) >= ctx->mountpoint.len && (ctx->mountpoint.len == 0 || \
          memcmp(path, ctx->mountpoint.str, ctx->mountpoint.len) == 0))
+
+
+#define FCFS_API_CHECK_FD_FORWARD_EX(file, line, cxt, fd, func, retval) \
+    do { \
+        if (!ctx->forward) { \
+            if (fd >= 0) { \
+                logError("file: %s, line: %d, " \
+                        "fd: %d, forward %s disabled!", \
+                        file, line, fd, func); \
+                errno = EOPNOTSUPP; \
+            } else { \
+                errno = EBADF; \
+            } \
+            return retval; \
+        } \
+    } while (0)
+
+
+#define FCFS_API_CHECK_PATH_FORWARD_EX(file, line, cxt, path, func, retval) \
+    do { \
+        if (!ctx->forward) { \
+            logError("file: %s, line: %d, " \
+                    "path: %s, forward %s disabled!", \
+                    file, line, path, func); \
+            errno = EOPNOTSUPP; \
+            return retval; \
+        } \
+    } while (0)
+
+
+#define FCFS_API_CHECK_FD_FORWARD(cxt, fd, func) \
+    FCFS_API_CHECK_FD_FORWARD_EX(__FILE__, __LINE__, cxt, fd, func, -1)
+
+#define FCFS_API_CHECK_PATH_FORWARD(cxt, path, func) \
+    FCFS_API_CHECK_PATH_FORWARD_EX(__FILE__, __LINE__, cxt, path, func, -1)
+
 
 #ifdef __cplusplus
 }

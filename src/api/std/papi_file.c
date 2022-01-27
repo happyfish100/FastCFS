@@ -14,6 +14,7 @@
  */
 
 #include <stdarg.h>
+#include <sys/uio.h>
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "posix_api.h"
@@ -63,6 +64,7 @@ int fcfs_open_ex(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
 
     va_start(ap, flags);
     if (!FCFS_PAPI_IS_MY_MOUNT_PATH(ctx, path)) {
+        FCFS_API_CHECK_PATH_FORWARD(ctx, path, "open");
         fd = open(path, flags, ap);
     } else {
         fd = do_open(ctx, path + ctx->mountpoint.len, flags, ap);
@@ -88,10 +90,11 @@ int fcfs_openat_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 
     if (!FCFS_PAPI_IS_MY_FD(fd)) {
+        FCFS_API_CHECK_FD_FORWARD(ctx, fd, "openat");
+
         va_start(ap, flags);
         new_fd = openat(fd, path, flags, ap);
         va_end(ap);
-
         return new_fd;
     }
 
@@ -106,4 +109,113 @@ int fcfs_openat_ex(FCFSPosixAPIContext *ctx, int fd,
     new_fd = do_open(ctx, full_filename, flags, ap);
     va_end(ap);
     return new_fd;
+}
+
+int fcfs_creat_ex(FCFSPosixAPIContext *ctx, const char *path, mode_t mode)
+{
+    return fcfs_open_ex(ctx, path, O_CREAT | O_TRUNC | O_WRONLY, mode);
+}
+
+int fcfs_close_ex(FCFSPosixAPIContext *ctx, int fd)
+{
+    FCFSPosixAPIFileInfo *file;
+
+    if (!FCFS_PAPI_IS_MY_FD(fd)) {
+        FCFS_API_CHECK_FD_FORWARD(ctx, fd, "close");
+        return close(fd);
+    }
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    fcfs_api_close(&file->fi);
+    fcfs_fd_manager_free(file);
+    return 0;
+}
+
+ssize_t fcfs_write_ex(FCFSPosixAPIContext *ctx,
+        int fd, const void *buff, size_t count)
+{
+    int result;
+    int written;
+    FCFSPosixAPIFileInfo *file;
+
+    if (!FCFS_PAPI_IS_MY_FD(fd)) {
+        FCFS_API_CHECK_FD_FORWARD(ctx, fd, "write");
+        return write(fd, buff, count);
+    }
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((result=fcfs_api_write_ex(&file->fi, buff, count, &written,
+                    fcfs_posix_api_gettid())) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return written;
+    }
+}
+
+ssize_t fcfs_pwrite_ex(FCFSPosixAPIContext *ctx, int fd,
+        const void *buff, size_t count, off_t offset)
+{
+    int result;
+    int written;
+    FCFSPosixAPIFileInfo *file;
+
+    if (!FCFS_PAPI_IS_MY_FD(fd)) {
+        FCFS_API_CHECK_FD_FORWARD(ctx, fd, "pwrite");
+        return pwrite(fd, buff, count, offset);
+    }
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((result=fcfs_api_pwrite_ex(&file->fi, buff, count, offset,
+                    &written, fcfs_posix_api_gettid())) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return written;
+    }
+}
+
+ssize_t fcfs_writev_ex(FCFSPosixAPIContext *ctx, int fd,
+        const struct iovec *iov, int iovcnt)
+{
+    int result;
+    int written;
+    FCFSPosixAPIFileInfo *file;
+
+    if (!FCFS_PAPI_IS_MY_FD(fd)) {
+        FCFS_API_CHECK_FD_FORWARD(ctx, fd, "pwrite");
+        return writev(fd, iov, iovcnt);
+    }
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    /*
+    if ((result=fcfs_api_pwrite_ex(&file->fi, buff, count, offset,
+                    &written, fcfs_posix_api_gettid())) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return written;
+    }
+    */
+    written = 0;
+    return written;
 }
