@@ -59,6 +59,18 @@ extern "C" {
 #define fcfs_api_pread(fi, buff, size, offset, read_bytes)  \
     fcfs_api_pread_ex(fi, buff, size, offset, read_bytes, (fi)->tid)
 
+#define fcfs_api_writev(fi, iov, iovcnt, written_bytes)  \
+    fcfs_api_writev_ex(fi, iov, iovcnt, written_bytes, (fi)->tid)
+
+#define fcfs_api_pwritev(fi, iov, iovcnt, offset, written_bytes)  \
+    fcfs_api_pwritev_ex(fi, iov, iovcnt, offset, written_bytes, (fi)->tid)
+
+#define fcfs_api_readv(fi, iov, iovcnt, read_bytes)  \
+    fcfs_api_readv_ex(fi, iov, iovcnt, read_bytes, (fi)->tid)
+
+#define fcfs_api_preadv(fi, iov, iovcnt, offset, read_bytes)  \
+    fcfs_api_preadv_ex(fi, iov, iovcnt, offset, read_bytes, (fi)->tid)
+
 #define fcfs_api_ftruncate(fi, new_size) \
     fcfs_api_ftruncate_ex(fi, new_size, getpid())
 
@@ -113,6 +125,20 @@ extern "C" {
 
     int fcfs_api_read_ex(FCFSAPIFileInfo *fi, char *buff,
             const int size, int *read_bytes, const int64_t tid);
+
+    int fcfs_api_pwritev_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
+            const int iovcnt, const int64_t offset, int *written_bytes,
+            const int64_t tid);
+
+    int fcfs_api_writev_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
+            const int iovcnt, int *written_bytes, const int64_t tid);
+
+    int fcfs_api_preadv_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
+            const int iovcnt, const int64_t offset, int *read_bytes,
+            const int64_t tid);
+
+    int fcfs_api_readv_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
+            const int iovcnt, int *read_bytes, const int64_t tid);
 
     int fcfs_api_ftruncate_ex(FCFSAPIFileInfo *fi, const int64_t new_size,
             const int64_t tid);

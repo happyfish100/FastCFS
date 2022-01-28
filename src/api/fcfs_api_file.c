@@ -19,6 +19,7 @@
 #include "fastcommon/logger.h"
 #include "fastcommon/sockopt.h"
 #include "fastcommon/sched_thread.h"
+#include "sf/sf_iov.h"
 #include "fcfs_api_util.h"
 #include "async_reporter.h"
 #include "fcfs_api_file.h"
@@ -276,33 +277,46 @@ static inline void print_block_slice_key(FSBlockSliceKeyInfo *bs_key)
 }
 */
 
-static int do_pwrite(FCFSAPIFileInfo *fi, const char *buff,
+static int do_pwrite(FCFSAPIFileInfo *fi, FSAPIWriteBuffer *wbuffer,
         const int size, const int64_t offset, int *written_bytes,
         int *total_inc_alloc, const bool need_report_modified,
         const int64_t tid)
 {
     FSAPIOperationContext op_ctx;
-    FSAPIWriteBuffer wbuffer;
     FCFSAPIWriteDoneCallbackArg callback_arg;
+    SFDynamicIOVArray iova;
     int64_t new_offset;
+    int loop_flags;
     int result;
     int remain;
 
     FS_API_SET_CTX_AND_TID_EX(op_ctx, fi->ctx->contexts.fsapi, tid);
-    wbuffer.extra_data = &callback_arg.extra;
+    wbuffer->extra_data = &callback_arg.extra;
     callback_arg.extra.ctx = fi->ctx;
 
     *total_inc_alloc = *written_bytes = 0;
     new_offset = offset;
     fs_set_block_slice(&op_ctx.bs_key, fi->dentry.inode, offset, size);
-    while (1) {
+
+    loop_flags = 1;
+    if (wbuffer->is_writev) {
+        sf_iova_init(iova, wbuffer->iov, wbuffer->iovcnt);
+        if (op_ctx.bs_key.slice.length < size) {
+            if ((result=sf_iova_first_slice(&iova, op_ctx.
+                            bs_key.slice.length)) != 0)
+            {
+                loop_flags = 0;
+            }
+        }
+    }
+
+    while (loop_flags) {
         //print_block_slice_key(&op_ctx.bs_key);
         callback_arg.arg.bs_key = &op_ctx.bs_key;
         callback_arg.extra.file_size = fi->dentry.stat.size;
         callback_arg.extra.space_end = fi->dentry.stat.space_end;
         callback_arg.extra.last_modified_time = fi->write_notify.last_modified_time;
-        wbuffer.buff = buff + *written_bytes;
-        if ((result=fs_api_slice_write(&op_ctx, &wbuffer, &callback_arg.
+        if ((result=fs_api_slice_write(&op_ctx, wbuffer, &callback_arg.
                         arg.write_bytes, &callback_arg.arg.inc_alloc)) != 0)
         {
             if (callback_arg.arg.write_bytes == 0) {
@@ -314,16 +328,6 @@ static int do_pwrite(FCFSAPIFileInfo *fi, const char *buff,
         *written_bytes += callback_arg.arg.write_bytes;
         *total_inc_alloc += callback_arg.arg.inc_alloc;
         if (need_report_modified) {
-            /*
-            if (wbuffer.combined) {
-                if (new_offset > fi->dentry.stat.size) {
-                    fi->dentry.stat.size = new_offset;
-                }
-                fi->write_notify.last_modified_time = get_current_time();
-                } else {
-                }
-                */
-
             int flags;
             fcfs_api_file_report_size_and_time(&callback_arg,
                     &flags, &fi->dentry);
@@ -343,12 +347,25 @@ static int do_pwrite(FCFSAPIFileInfo *fi, const char *buff,
         } else {  //partially completed, try again the remain part
             fs_set_slice_size(&op_ctx.bs_key, new_offset, remain);
         }
+
+        if (wbuffer->is_writev) {
+            if ((result=sf_iova_next_slice(&iova, *written_bytes,
+                            op_ctx.bs_key.slice.length)) != 0)
+            {
+                break;
+            }
+        } else {
+            wbuffer->buff += *written_bytes;
+        }
     }
 
+    if (wbuffer->is_writev) {
+        sf_iova_destroy(iova);
+    }
     return (*written_bytes > 0) ? 0 : EIO;
 }
 
-int fcfs_api_pwrite_ex(FCFSAPIFileInfo *fi, const char *buff,
+static int pwrite_wrapper(FCFSAPIFileInfo *fi, FSAPIWriteBuffer *wbuffer,
         const int size, const int64_t offset, int *written_bytes,
         const int64_t tid)
 {
@@ -366,11 +383,21 @@ int fcfs_api_pwrite_ex(FCFSAPIFileInfo *fi, const char *buff,
         return EBADF;
     }
 
-    return do_pwrite(fi, buff, size, offset, written_bytes,
+    return do_pwrite(fi, wbuffer, size, offset, written_bytes,
             &total_inc_alloc, true, tid);
 }
 
-int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
+int fcfs_api_pwrite_ex(FCFSAPIFileInfo *fi, const char *buff,
+        const int size, const int64_t offset, int *written_bytes,
+        const int64_t tid)
+{
+    FSAPIWriteBuffer wbuffer;
+
+    FS_API_SET_WBUFFER_BUFF(wbuffer, buff);
+    return pwrite_wrapper(fi, &wbuffer, size, offset, written_bytes, tid);
+}
+
+static int do_write(FCFSAPIFileInfo *fi, FSAPIWriteBuffer *wbuffer,
         const int size, int *written_bytes, const int64_t tid)
 {
     FDIRClientSession session;
@@ -407,7 +434,7 @@ int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
         old_size = fi->dentry.stat.size;
     }
 
-    if ((result=do_pwrite(fi, buff, size, fi->offset, written_bytes,
+    if ((result=do_pwrite(fi, wbuffer, size, fi->offset, written_bytes,
                     &total_inc_alloc, !use_sys_lock, tid)) == 0)
     {
         fi->offset += *written_bytes;
@@ -433,10 +460,42 @@ int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
     return result;
 }
 
-int fcfs_api_pread_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
+int fcfs_api_write_ex(FCFSAPIFileInfo *fi, const char *buff,
+        const int size, int *written_bytes, const int64_t tid)
+{
+    FSAPIWriteBuffer wbuffer;
+
+    FS_API_SET_WBUFFER_BUFF(wbuffer, buff);
+    return do_write(fi, &wbuffer, size, written_bytes, tid);
+}
+
+int fcfs_api_pwritev_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
+        const int iovcnt, const int64_t offset, int *written_bytes,
+        const int64_t tid)
+{
+    FSAPIWriteBuffer wbuffer;
+
+    FS_API_SET_WBUFFER_IOV(wbuffer, iov, iovcnt);
+    return pwrite_wrapper(fi, &wbuffer, fc_iov_get_bytes(iov, iovcnt),
+            offset, written_bytes, tid);
+}
+
+int fcfs_api_writev_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
+        const int iovcnt, int *written_bytes, const int64_t tid)
+{
+    FSAPIWriteBuffer wbuffer;
+
+    FS_API_SET_WBUFFER_IOV(wbuffer, iov, iovcnt);
+    return do_write(fi, &wbuffer, fc_iov_get_bytes(iov, iovcnt),
+            written_bytes, tid);
+}
+
+static int do_pread(FCFSAPIFileInfo *fi, const bool is_readv,
+        const void *data, const int iovcnt, const int size,
         const int64_t offset, int *read_bytes, const int64_t tid)
 {
     FSAPIOperationContext op_ctx;
+    SFDynamicIOVArray iova;
     int result;
     int current_read;
     int remain;
@@ -457,11 +516,20 @@ int fcfs_api_pread_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
 
     FS_API_SET_CTX_AND_TID_EX(op_ctx, fi->ctx->contexts.fsapi, tid);
     fs_set_block_slice(&op_ctx.bs_key, fi->dentry.inode, offset, size);
+    if (is_readv) {
+        sf_iova_init(iova, (struct iovec *)data, iovcnt);
+    }
     while (1) {
         //print_block_slice_key(&op_ctx.bs_key);
-        if ((result=fs_api_slice_read(&op_ctx, buff + *read_bytes,
-                        &current_read)) != 0)
-        {
+        if (is_readv) {
+            result = fs_api_slice_readv(&op_ctx, iova.iov,
+                    iova.cnt, &current_read);
+        } else {
+            result = fs_api_slice_read(&op_ctx, (char *)data +
+                    (*read_bytes), &current_read);
+        }
+
+        if (result != 0) {
             if (result == ENODATA) {
                 result = 0;
             } else {
@@ -480,13 +548,13 @@ int fcfs_api_pread_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
                 if ((result=fcfs_api_stat_dentry_by_inode_ex(fi->ctx,
                                 fi->dentry.inode, &fi->dentry)) != 0)
                 {
-                    return result;
+                    break;
                 }
             }
 
             hole_bytes = fi->dentry.stat.size - current_offset;
             if (hole_bytes > 0) {
-                if (current_read + hole_bytes > (int64_t)
+                if ((int64_t)current_read + hole_bytes > (int64_t)
                         op_ctx.bs_key.slice.length)
                 {
                     fill_bytes = op_ctx.bs_key.slice.length - current_read;
@@ -501,7 +569,16 @@ int fcfs_api_pread_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
                         hole_bytes, fill_bytes, *read_bytes + current_read);
                         */
 
-                memset(buff + *read_bytes + current_read, 0, fill_bytes);
+                if (is_readv) {
+                    if ((result=sf_iova_memset(iova, 0, current_read,
+                                    fill_bytes)) != 0)
+                    {
+                        break;
+                    }
+                } else {
+                    memset((char *)data + (*read_bytes) +
+                            current_read, 0, fill_bytes);
+                }
                 current_read += fill_bytes;
             }
 
@@ -519,19 +596,67 @@ int fcfs_api_pread_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
             break;
         }
 
+        if (is_readv) {
+            if ((result=sf_iova_consume(&iova, current_read)) != 0) {
+                break;
+            }
+        }
         fs_next_block_slice_key(&op_ctx.bs_key, remain);
     }
 
+    if (is_readv) {
+        sf_iova_destroy(iova);
+    }
     return result;
+}
+
+int fcfs_api_pread_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
+        const int64_t offset, int *read_bytes, const int64_t tid)
+{
+    const bool is_readv = false;
+    const int iovcnt = 0;
+
+    return do_pread(fi, is_readv, buff, iovcnt,
+            size, offset, read_bytes, tid);
 }
 
 int fcfs_api_read_ex(FCFSAPIFileInfo *fi, char *buff, const int size,
         int *read_bytes, const int64_t tid)
 {
+    const bool is_readv = false;
+    const int iovcnt = 0;
     int result;
 
-    if ((result=fcfs_api_pread_ex(fi, buff, size, fi->offset,
-                    read_bytes, tid)) != 0)
+    if ((result=do_pread(fi, is_readv, buff, iovcnt, size,
+                    fi->offset, read_bytes, tid)) != 0)
+    {
+        return result;
+    }
+
+    fi->offset += *read_bytes;
+    return 0;
+}
+
+int fcfs_api_preadv_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
+        const int iovcnt, const int64_t offset, int *read_bytes,
+        const int64_t tid)
+{
+    const bool is_readv = true;
+
+    return do_pread(fi, is_readv, iov, iovcnt,
+            fc_iov_get_bytes(iov, iovcnt),
+            offset, read_bytes, tid);
+}
+
+int fcfs_api_readv_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
+        const int iovcnt, int *read_bytes, const int64_t tid)
+{
+    const bool is_readv = true;
+    int result;
+
+    if ((result=do_pread(fi, is_readv, iov, iovcnt,
+                    fc_iov_get_bytes(iov, iovcnt),
+                    fi->offset, read_bytes, tid)) != 0)
     {
         return result;
     }
