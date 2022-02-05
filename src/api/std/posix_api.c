@@ -37,8 +37,6 @@ static int load_posix_api_config(FCFSPosixAPIContext *ctx,
     char *mountpoint;
     int len;
 
-    ctx->forward = iniGetBoolValue(ini_ctx->section_name,
-            "forward", ini_ctx->context, true);
     mountpoint = iniGetStrValue(ini_ctx->section_name,
             "mountpoint", ini_ctx->context);
     if (mountpoint == NULL || *mountpoint == '\0') {

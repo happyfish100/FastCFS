@@ -22,7 +22,6 @@
 #define FCFS_POSIX_API_FD_BASE  (2 << 28)
 
 typedef struct fcfs_posix_api_context {
-    bool forward;
     string_t mountpoint;
     FCFSAPIOwnerInfo owner;
     FCFSAPIContext api_ctx;
