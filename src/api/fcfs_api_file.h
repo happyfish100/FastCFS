@@ -83,6 +83,9 @@ extern "C" {
 #define fcfs_api_stat(path, buf)  \
     fcfs_api_stat_ex(&g_fcfs_api_ctx, path, buf)
 
+#define fcfs_api_lstat(path, buf)  \
+    fcfs_api_lstat_ex(&g_fcfs_api_ctx, path, buf)
+
 #define fcfs_api_rename(old_path, new_path, fctx)  \
     fcfs_api_rename_ex(&g_fcfs_api_ctx, old_path, new_path, 0, fctx)
 
@@ -152,11 +155,16 @@ extern "C" {
     int fcfs_api_unlink_ex(FCFSAPIContext *ctx, const char *path,
             const FCFSAPIFileContext *fctx);
 
-    int fcfs_api_lseek(FCFSAPIFileInfo *fi, const int64_t offset, const int whence);
+    int fcfs_api_lseek(FCFSAPIFileInfo *fi, const int64_t offset,
+            const int whence);
 
     int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf);
 
-    int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path, struct stat *buf);
+    int fcfs_api_lstat_ex(FCFSAPIContext *ctx, const char *path,
+            struct stat *buf);
+
+    int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path,
+            struct stat *buf);
 
     int fcfs_api_flock_ex2(FCFSAPIFileInfo *fi, const int operation,
             const int64_t owner_id, const pid_t pid);
@@ -172,7 +180,8 @@ extern "C" {
         return fcfs_api_flock_ex2(fi, operation, (long)pthread_self(), getpid());
     }
 
-    int fcfs_api_getlk(FCFSAPIFileInfo *fi, struct flock *lock, int64_t *owner_id);
+    int fcfs_api_getlk(FCFSAPIFileInfo *fi, struct flock *lock,
+            int64_t *owner_id);
 
     int fcfs_api_setlk(FCFSAPIFileInfo *fi, const struct flock *lock,
         const int64_t owner_id);

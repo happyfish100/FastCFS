@@ -67,8 +67,17 @@
 #define fcfs_fallocate(fd, mode, offset, length) \
     fcfs_fallocate_ex(&g_fcfs_papi_ctx, fd, mode, offset, length)
 
+#define fcfs_truncate(path, length) \
+    fcfs_truncate_ex(&g_fcfs_papi_ctx, path, length)
+
 #define fcfs_ftruncate(fd, length) \
     fcfs_ftruncate_ex(&g_fcfs_papi_ctx, fd, length)
+
+#define fcfs_lstat(path, buf) \
+    fcfs_lstat_ex(&g_fcfs_papi_ctx, path, buf)
+
+#define fcfs_stat(path, buf) \
+    fcfs_stat_ex(&g_fcfs_papi_ctx, path, buf)
 
 #define fcfs_fstat(fd, buf) \
     fcfs_fstat_ex(&g_fcfs_papi_ctx, fd, buf)
@@ -132,7 +141,16 @@ extern "C" {
     int fcfs_fallocate_ex(FCFSPosixAPIContext *ctx, int fd,
             int mode, off_t offset, off_t length);
 
+    int fcfs_truncate_ex(FCFSPosixAPIContext *ctx,
+            const char *path, off_t length);
+
     int fcfs_ftruncate_ex(FCFSPosixAPIContext *ctx, int fd, off_t length);
+
+    int fcfs_lstat_ex(FCFSPosixAPIContext *ctx,
+            const char *path, struct stat *buf);
+
+    int fcfs_stat_ex(FCFSPosixAPIContext *ctx,
+            const char *path, struct stat *buf);
 
     int fcfs_fstat_ex(FCFSPosixAPIContext *ctx, int fd, struct stat *buf);
 

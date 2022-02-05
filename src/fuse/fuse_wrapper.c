@@ -90,6 +90,7 @@ static inline void do_reply_attr(fuse_req_t req, FDIRDEntryInfo *dentry)
 static void fs_do_getattr(fuse_req_t req, fuse_ino_t ino,
 			     struct fuse_file_info *fi)
 {
+    const int flags = 0;
     int64_t new_inode;
     FDIRDEntryInfo dentry;
 
@@ -98,7 +99,7 @@ static void fs_do_getattr(fuse_req_t req, fuse_ino_t ino,
         return;
     }
 
-    if (fcfs_api_stat_dentry_by_inode(new_inode, &dentry) == 0) {
+    if (fcfs_api_stat_dentry_by_inode(new_inode, flags, &dentry) == 0) {
         do_reply_attr(req, &dentry);
     } else {
         fuse_reply_err(req, ENOENT);
@@ -108,6 +109,7 @@ static void fs_do_getattr(fuse_req_t req, fuse_ino_t ino,
 void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
              int to_set, struct fuse_file_info *fi)
 {
+    const int flags = 0;
     int result;
     int64_t new_inode;
     FDIRStatModifyFlags options;
@@ -200,7 +202,7 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     if (options.flags == 0) {
         if (pe == NULL) {
             pe = &dentry;
-            result = fcfs_api_stat_dentry_by_inode(new_inode, &dentry);
+            result = fcfs_api_stat_dentry_by_inode(new_inode, flags, &dentry);
         } else {
             result = 0;
         }
@@ -219,6 +221,7 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
 
 static void fs_do_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
+    const int flags = 0;
     int result;
     int64_t parent_inode;
     FDIRDEntryInfo dentry;
@@ -232,7 +235,9 @@ static void fs_do_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
     }
 
     FC_SET_STRING(nm, (char *)name);
-    if ((result=fcfs_api_stat_dentry_by_pname(parent_inode, &nm, &dentry)) != 0) {
+    if ((result=fcfs_api_stat_dentry_by_pname(parent_inode,
+                    &nm, flags, &dentry)) != 0)
+    {
         /*
         logError("file: "__FILE__", line: %d, func: %s, "
                 "parent: %"PRId64", name: %s(%d), result: %d",
@@ -281,6 +286,7 @@ static int dentry_list_to_buff(fuse_req_t req, FCFSAPIOpendirSession *session)
         }
 
         if (session->btype == FS_READDIR_BUFFER_INIT_NORMAL) {
+            memset(&stat, 0, sizeof(stat));
             fill_stat(&cd->dentry, &stat);
             fuse_add_direntry(req, session->buffer.data + session->buffer.length,
                     session->buffer.alloc_size - session->buffer.length,
@@ -429,7 +435,8 @@ static void fs_do_access(fuse_req_t req, fuse_ino_t ino, int mask)
 #define USER_PERM_MASK(mask)  ((mask << 6) & 0700)
 #define GROUP_PERM_MASK(mask) ((mask << 3) & 0070)
 #define OTHER_PERM_MASK(mask) (mask & 0007)
-
+ 
+    const int flags = 0;
     int result;
     int64_t new_inode;
     FDIRDEntryInfo dentry;
@@ -439,7 +446,9 @@ static void fs_do_access(fuse_req_t req, fuse_ino_t ino, int mask)
         return;
     }
 
-    if ((result=fcfs_api_stat_dentry_by_inode(new_inode, &dentry)) != 0) {
+    if ((result=fcfs_api_stat_dentry_by_inode(new_inode,
+                    flags, &dentry)) != 0)
+    {
         fuse_reply_err(req, ENOENT);
         return;
     }
@@ -475,6 +484,8 @@ static void fs_do_access(fuse_req_t req, fuse_ino_t ino, int mask)
 static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
         const char *name, mode_t mode, struct fuse_file_info *fi)
 {
+    const dev_t rdev = 0;
+    const int flags = 0;
     FCFSAPIFileContext fctx;
     int result;
     int64_t parent_inode;
@@ -490,7 +501,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
     FCFS_FUSE_SET_FCTX_BY_REQ(fctx, mode, req);
     FC_SET_STRING(nm, (char *)name);
     if ((result=fcfs_api_create_dentry_by_pname(parent_inode,
-                    &nm, &fctx.omp, &dentry)) != 0)
+                    &nm, &fctx.omp, rdev, &dentry)) != 0)
     {
         if (result != EEXIST) {
             fuse_reply_err(req, ENOENT);
@@ -503,7 +514,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
         }
 
         if ((result=fcfs_api_stat_dentry_by_pname(parent_inode,
-                        &nm, &dentry)) != 0)
+                        &nm, flags, &dentry)) != 0)
         {
             fuse_reply_err(req, ENOENT);
             return;
@@ -521,7 +532,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
 }
 
 static void do_mknod(fuse_req_t req, fuse_ino_t parent,
-        const char *name, mode_t mode, dev_t rdev)
+        const char *name, mode_t mode, const dev_t rdev)
 {
     int result;
     int64_t parent_inode;
@@ -544,7 +555,7 @@ static void do_mknod(fuse_req_t req, fuse_ino_t parent,
     FCFS_FUSE_SET_OMP_BY_REQ(omp, mode, req);
     FC_SET_STRING(nm, (char *)name);
     if ((result=fcfs_api_create_dentry_by_pname(parent_inode, &nm,
-                    &omp, &dentry)) != 0)
+                    &omp, rdev, &dentry)) != 0)
     {
         if (result == EEXIST || result == ENOENT) {
             fuse_reply_err(req, result);
@@ -748,6 +759,7 @@ static void fs_do_forget_multi(fuse_req_t req, size_t count,
 static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
 			  struct fuse_file_info *fi)
 {
+    const int flags = 0;
     int result;
     int64_t new_inode;
     FCFSAPIFileContext fctx;
@@ -765,7 +777,9 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
         return;
     }
 
-    if ((result=fcfs_api_stat_dentry_by_inode(new_inode, &dentry)) != 0) {
+    if ((result=fcfs_api_stat_dentry_by_inode(new_inode,
+                    flags, &dentry)) != 0)
+    {
         fuse_reply_err(req, ENOENT);
         return;
     }

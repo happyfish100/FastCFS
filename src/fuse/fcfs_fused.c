@@ -262,6 +262,7 @@ int main(int argc, char *argv[])
 
 static int check_create_root_path()
 {
+    const dev_t rdev = 0;
     int result;
     int64_t inode;
     FDIRClientOwnerModePair omp;
@@ -276,7 +277,7 @@ static int check_create_root_path()
 
             FCFS_FUSE_SET_OMP(omp, (0777 | S_IFDIR), geteuid(), getegid());
             result = fdir_client_create_dentry(g_fcfs_api_ctx.contexts.fdir,
-                    &fullname, &omp, &dentry);
+                    &fullname, &omp, rdev, &dentry);
         }
     }
 

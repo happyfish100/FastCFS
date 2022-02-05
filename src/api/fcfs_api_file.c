@@ -26,12 +26,24 @@
 
 #define FCFS_API_MAGIC_NUMBER    1588076578
 
+#ifdef O_SYMLINK
+#define FCFS_API_NOFOLLOW_SYMLINK_FLAGS  (O_NOFOLLOW | O_SYMLINK)
+#else
+#define FCFS_API_NOFOLLOW_SYMLINK_FLAGS  (O_NOFOLLOW)
+#endif
+
 static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
         const int64_t new_size, const int64_t tid);
+
+#define GET_STAT_FLAGS(open_flags) \
+    ((((open_flags) & FCFS_API_NOFOLLOW_SYMLINK_FLAGS) != 0) ? \
+     0 : FDIR_FLAGS_FOLLOW_SYMLINK)
 
 static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
         const FDIRClientOwnerModePair *omp, const int64_t tid, int result)
 {
+    const dev_t rdev = 0;
+
     if (result == 0) {
         if (S_ISDIR(fi->dentry.stat.mode)) {
             return EISDIR;
@@ -51,7 +63,7 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
             }
         } else if (result == ENOENT) {
             if ((result=fdir_client_create_dentry(fi->ctx->contexts.fdir,
-                    fullname, omp, &fi->dentry)) != 0)
+                    fullname, omp, rdev, &fi->dentry)) != 0)
             {
                 if (result == EEXIST) {
                     if ((fi->flags & O_EXCL)) {
@@ -59,7 +71,8 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
                     }
 
                     if ((result=fcfs_api_stat_dentry_by_fullname_ex(fi->ctx,
-                                    fullname, LOG_DEBUG, &fi->dentry)) != 0)
+                                    fullname, GET_STAT_FLAGS(fi->flags),
+                                    LOG_DEBUG, &fi->dentry)) != 0)
                     {
                         return result;
                     }
@@ -120,8 +133,9 @@ int fcfs_api_open_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
     fi->sessions.flock.mconn = NULL;
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
-    result = fcfs_api_stat_dentry_by_fullname_ex(ctx,
-            &fullname, LOG_DEBUG, &fi->dentry);
+
+    result = fcfs_api_stat_dentry_by_fullname_ex(ctx, &fullname,
+            GET_STAT_FLAGS(flags), LOG_DEBUG, &fi->dentry);
     if ((result=deal_open_flags(fi, &fullname, &new_omp,
                     fctx->tid, result)) != 0)
     {
@@ -159,8 +173,8 @@ int fcfs_api_open_by_inode_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
 {
     int result;
 
-    if ((result=fcfs_api_stat_dentry_by_inode_ex(
-                    ctx, inode, &fi->dentry)) != 0)
+    if ((result=fcfs_api_stat_dentry_by_inode_ex(ctx, inode,
+                    GET_STAT_FLAGS(flags), &fi->dentry)) != 0)
     {
         return result;
     }
@@ -494,6 +508,7 @@ static int do_pread(FCFSAPIFileInfo *fi, const bool is_readv,
         const void *data, const int iovcnt, const int size,
         const int64_t offset, int *read_bytes, const int64_t tid)
 {
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FSAPIOperationContext op_ctx;
     SFDynamicIOVArray iova;
     int result;
@@ -546,7 +561,7 @@ static int do_pread(FCFSAPIFileInfo *fi, const bool is_readv,
 
             if (current_offset > fi->dentry.stat.size) {
                 if ((result=fcfs_api_stat_dentry_by_inode_ex(fi->ctx,
-                                fi->dentry.inode, &fi->dentry)) != 0)
+                                fi->dentry.inode, flags, &fi->dentry)) != 0)
                 {
                     break;
                 }
@@ -754,6 +769,7 @@ static inline int check_and_sys_lock(FCFSAPIContext *ctx,
         FDIRClientSession *session, const int64_t oid,
         int64_t *old_size, int64_t *space_end)
 {
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FDIRDEntryInfo dentry;
     int result;
 
@@ -761,8 +777,8 @@ static inline int check_and_sys_lock(FCFSAPIContext *ctx,
         result = fcfs_api_dentry_sys_lock(session,
                 oid, 0, old_size, space_end);
     } else {
-        if ((result=fcfs_api_stat_dentry_by_inode_ex(
-                        ctx, oid, &dentry)) == 0)
+        if ((result=fcfs_api_stat_dentry_by_inode_ex(ctx,
+                        oid, flags, &dentry)) == 0)
         {
             *old_size = dentry.stat.size;
             *space_end = dentry.stat.space_end;
@@ -857,14 +873,15 @@ int fcfs_api_ftruncate_ex(FCFSAPIFileInfo *fi, const int64_t new_size,
 static int get_regular_file_inode(FCFSAPIContext *ctx, const char *path,
         int64_t *inode)
 {
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FDIRDEntryFullName fullname;
     FDIRDEntryInfo dentry;
     int result;
 
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
-    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx,
-                    &fullname, LOG_DEBUG, &dentry)) != 0)
+    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx, &fullname,
+                    flags, LOG_DEBUG, &dentry)) != 0)
     {
         return result;
     }
@@ -892,14 +909,15 @@ int fcfs_api_truncate_ex(FCFSAPIContext *ctx, const char *path,
 int fcfs_api_unlink_ex(FCFSAPIContext *ctx, const char *path,
         const FCFSAPIFileContext *fctx)
 {
+    const int flags = 0;
     FDIRDEntryFullName fullname;
     FDIRDEntryInfo dentry;
     int result;
 
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
-    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx,
-                    &fullname, LOG_DEBUG, &dentry)) != 0)
+    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx, &fullname,
+                    flags, LOG_DEBUG, &dentry)) != 0)
     {
         return result;
     }
@@ -928,6 +946,7 @@ static inline int calc_file_offset_ex(FCFSAPIFileInfo *fi,
         const int64_t offset, const int whence,
         const bool refresh_fsize, int64_t *new_offset)
 {
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     int result;
 
     switch (whence) {
@@ -945,8 +964,8 @@ static inline int calc_file_offset_ex(FCFSAPIFileInfo *fi,
             break;
         case SEEK_END:
             if (refresh_fsize) {
-                if ((result=fcfs_api_stat_dentry_by_inode_ex(fi->ctx,
-                                fi->dentry.inode, &fi->dentry)) != 0)
+                if ((result=fcfs_api_stat_dentry_by_inode_ex(fi->ctx, fi->
+                                dentry.inode, flags, &fi->dentry)) != 0)
                 {
                     return result;
                 }
@@ -997,6 +1016,7 @@ static void fill_stat(const FDIRDEntryInfo *dentry, struct stat *buf)
 
 int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf)
 {
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     int result;
 
     if (fi->magic != FCFS_API_MAGIC_NUMBER) {
@@ -1004,7 +1024,7 @@ int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf)
     }
 
     if ((result=fcfs_api_stat_dentry_by_inode_ex(fi->ctx,
-                    fi->dentry.inode, &fi->dentry)) != 0)
+                    fi->dentry.inode, flags, &fi->dentry)) != 0)
     {
         return result;
     }
@@ -1013,7 +1033,8 @@ int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf)
     return 0;
 }
 
-int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path, struct stat *buf)
+static inline int fapi_stat(FCFSAPIContext *ctx, const char *path,
+        struct stat *buf, const int flags)
 {
     int result;
     FDIRDEntryFullName fullname;
@@ -1022,13 +1043,25 @@ int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path, struct stat *buf)
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
     if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx,
-                    &fullname, LOG_DEBUG, &dentry)) != 0)
+                    &fullname, flags, LOG_DEBUG, &dentry)) != 0)
     {
         return result;
     }
 
     fill_stat(&dentry, buf);
     return 0;
+}
+
+int fcfs_api_lstat_ex(FCFSAPIContext *ctx, const char *path, struct stat *buf)
+{
+    const int flags = 0;
+    return fapi_stat(ctx, path, buf, flags);
+}
+
+int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path, struct stat *buf)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    return fapi_stat(ctx, path, buf, flags);
 }
 
 static inline int flock_lock(FCFSAPIFileInfo *fi, const int operation,
