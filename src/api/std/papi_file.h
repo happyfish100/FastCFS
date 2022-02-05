@@ -31,6 +31,12 @@
 #define fcfs_close(fd) \
     fcfs_close_ex(&g_fcfs_papi_ctx, fd)
 
+#define fcfs_fsync(fd) \
+    fcfs_fsync_ex(&g_fcfs_papi_ctx, fd)
+
+#define fcfs_fdatasync(fd) \
+    fcfs_fdatasync_ex(&g_fcfs_papi_ctx, fd)
+
 #define fcfs_write(fd, buff, count) \
     fcfs_write_ex(&g_fcfs_papi_ctx, fd, buff, count)
 
@@ -55,6 +61,24 @@
 #define fcfs_preadv(fd, iov, iovcnt, offset) \
     fcfs_preadv_ex(&g_fcfs_papi_ctx, fd, iov, iovcnt, offset)
 
+#define fcfs_lseek(fd, offset, whence) \
+    fcfs_lseek_ex(&g_fcfs_papi_ctx, fd, offset, whence)
+
+#define fcfs_fallocate(fd, mode, offset, length) \
+    fcfs_fallocate_ex(&g_fcfs_papi_ctx, fd, mode, offset, length)
+
+#define fcfs_ftruncate(fd, length) \
+    fcfs_ftruncate_ex(&g_fcfs_papi_ctx, fd, length)
+
+#define fcfs_fstat(fd, buf) \
+    fcfs_fstat_ex(&g_fcfs_papi_ctx, fd, buf)
+
+#define fcfs_fstatat(fd, path, buf, flags) \
+    fcfs_fstatat_ex(&g_fcfs_papi_ctx, fd, path, buf, flags)
+
+#define fcfs_readlinkat(fd, path, buff, size) \
+    fcfs_readlinkat_ex(&g_fcfs_papi_ctx, fd, path, buff, size)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,6 +93,10 @@ extern "C" {
             const char *path, mode_t mode);
 
     int fcfs_close_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    int fcfs_fsync_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    int fcfs_fdatasync_ex(FCFSPosixAPIContext *ctx, int fd);
 
     ssize_t fcfs_write_ex(FCFSPosixAPIContext *ctx,
             int fd, const void *buff, size_t count);
@@ -93,6 +121,28 @@ extern "C" {
 
     ssize_t fcfs_preadv_ex(FCFSPosixAPIContext *ctx, int fd,
             const struct iovec *iov, int iovcnt, off_t offset);
+
+    off_t fcfs_lseek_ex(FCFSPosixAPIContext *ctx,
+            int fd, off_t offset, int whence);
+
+    int fcfs_fallocate_ex(FCFSPosixAPIContext *ctx, int fd,
+            int mode, off_t offset, off_t length);
+
+    int fcfs_ftruncate_ex(FCFSPosixAPIContext *ctx, int fd, off_t length);
+
+    int fcfs_fstat_ex(FCFSPosixAPIContext *ctx, int fd, struct stat *buf);
+
+    int fcfs_fstatat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, struct stat *buf, int flags);
+
+    int fcfs_symlinkat_ex(FCFSPosixAPIContext *ctx, const char *link,
+            int fd, const char *path);
+
+    int fcfs_linkat_ex(FCFSPosixAPIContext *ctx, int fd1, const char *path1,
+            int fd2, const char *path2, int flags);
+
+    ssize_t fcfs_readlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, char *buff, size_t size);
 
 #ifdef __cplusplus
 }
