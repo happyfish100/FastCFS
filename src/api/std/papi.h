@@ -14,8 +14,8 @@
  */
 
 
-#ifndef _FCFS_PAPI_FILE_H
-#define _FCFS_PAPI_FILE_H
+#ifndef _FCFS_PAPI_H
+#define _FCFS_PAPI_H
 
 #include "api_types.h"
 
@@ -92,6 +92,10 @@ extern "C" {
     int fcfs_creat_ex(FCFSPosixAPIContext *ctx,
             const char *path, mode_t mode);
 
+    int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    int fcfs_dup2_ex(FCFSPosixAPIContext *ctx, int fd1, int fd2);
+
     int fcfs_close_ex(FCFSPosixAPIContext *ctx, int fd);
 
     int fcfs_fsync_ex(FCFSPosixAPIContext *ctx, int fd);
@@ -135,6 +139,10 @@ extern "C" {
     int fcfs_fstatat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, struct stat *buf, int flags);
 
+    int fcfs_flock_ex(FCFSPosixAPIContext *ctx, int fd, int operation);
+
+    int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...);
+
     int fcfs_symlinkat_ex(FCFSPosixAPIContext *ctx, const char *link,
             int fd, const char *path);
 
@@ -143,6 +151,56 @@ extern "C" {
 
     ssize_t fcfs_readlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, char *buff, size_t size);
+
+    //TODO
+    //
+    int fcfs_mknodat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, mode_t mode, dev_t dev);
+
+    int fcfs_faccessat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, int mode, int flags);
+
+    int fcfs_futimes_ex(FCFSPosixAPIContext *ctx,
+            int fd, const struct timeval times[2]);
+
+    int fcfs_futimesat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, const struct timeval times[2]);
+
+    int fcfs_futimens_ex(FCFSPosixAPIContext *ctx, int fd,
+            const struct timespec times[2]);
+
+    int fcfs_utimensat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, const struct timespec times[2], int flag);
+
+    int fcfs_unlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, int flag);
+
+    int fcfs_renameat_ex(FCFSPosixAPIContext *ctx, int fd1,
+            const char *path1, int fd2, const char *path2);
+
+    int fcfs_renameat2_ex(FCFSPosixAPIContext *ctx, int fd1,
+            const char *path1, int fd2, const char *path2,
+            unsigned int flags);
+
+    int fcfs_mkdirat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, mode_t mode);
+
+    int fcfs_fchown_ex(FCFSPosixAPIContext *ctx, int fd,
+            uid_t owner, gid_t group);
+
+    int fcfs_fchownat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, uid_t owner, gid_t group, int flag);
+
+    int fcfs_fchmod_ex(FCFSPosixAPIContext *ctx,
+            int fd, mode_t mode);
+
+    int fcfs_fchmodat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, mode_t mode, int flag);
+
+    int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    int fcfs_fstatvfs_ex(FCFSPosixAPIContext *ctx, int fd,
+            struct statvfs *buf);
 
 #ifdef __cplusplus
 }

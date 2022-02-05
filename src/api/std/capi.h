@@ -14,18 +14,14 @@
  */
 
 
-#ifndef _FCFS_PAPI_DIR_H
-#define _FCFS_PAPI_DIR_H
+#ifndef _FCFS_CAPI_H
+#define _FCFS_CAPI_H
 
 #include "api_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-    int fcfs_mkdir(const char *path, mode_t mode);
-
-    int fcfs_mkdirat(int fd, const char *path, mode_t mode);
 
 #ifdef __cplusplus
 }

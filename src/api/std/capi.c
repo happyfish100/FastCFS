@@ -15,5 +15,5 @@
 
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
-#include "papi_dir.h"
+#include "capi.h"
 

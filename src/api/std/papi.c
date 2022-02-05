@@ -19,7 +19,7 @@
 #include "fastcommon/logger.h"
 #include "posix_api.h"
 #include "fd_manager.h"
-#include "papi_file.h"
+#include "papi.h"
 
 static int do_open(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
 {

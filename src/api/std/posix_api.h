@@ -22,8 +22,8 @@
 #include "fastcommon/shared_func.h"
 #include "api_types.h"
 #include "fd_manager.h"
-#include "papi_dir.h"
-#include "papi_file.h"
+#include "papi.h"
+#include "capi.h"
 
 #ifdef __cplusplus
 extern "C" {
