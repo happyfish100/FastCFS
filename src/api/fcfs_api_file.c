@@ -391,7 +391,7 @@ static inline int check_writable(FCFSAPIFileInfo *fi)
     if (S_ISDIR(fi->dentry.stat.mode)) {
         return EISDIR;
     }
-    return (S_ISLNK(fi->dentry.stat.mode) ? EPERM : 0);
+    return (S_ISREG(fi->dentry.stat.mode) ? 0 : EPERM);
 }
 
 static inline int check_readable(FCFSAPIFileInfo *fi)
@@ -403,7 +403,7 @@ static inline int check_readable(FCFSAPIFileInfo *fi)
     if (S_ISDIR(fi->dentry.stat.mode)) {
         return EISDIR;
     }
-    return (S_ISLNK(fi->dentry.stat.mode) ? EPERM : 0);
+    return (S_ISREG(fi->dentry.stat.mode) ? 0 : EPERM);
 }
 
 static int pwrite_wrapper(FCFSAPIFileInfo *fi, FSAPIWriteBuffer *wbuffer,
@@ -928,39 +928,6 @@ int fcfs_api_truncate_ex(FCFSAPIContext *ctx, const char *path,
     }
 
     return file_truncate(ctx, inode, new_size, fctx->tid);
-}
-
-int fcfs_api_unlink_ex(FCFSAPIContext *ctx, const char *path,
-        const FCFSAPIFileContext *fctx)
-{
-    const int flags = 0;
-    FDIRDEntryFullName fullname;
-    FDIRDEntryInfo dentry;
-    int result;
-
-    fullname.ns = ctx->ns;
-    FC_SET_STRING(fullname.path, (char *)path);
-    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx, &fullname,
-                    flags, LOG_DEBUG, &dentry)) != 0)
-    {
-        return result;
-    }
-
-    if (S_ISDIR(dentry.stat.mode)) {
-        return EISDIR;
-    }
-
-    if ((result=fdir_client_remove_dentry_ex(ctx->contexts.fdir,
-                    &fullname, &dentry)) != 0)
-    {
-        return result;
-    }
-
-    if (dentry.stat.nlink == 0) {
-        result = fs_api_unlink_file(ctx->contexts.fsapi,
-                dentry.inode, dentry.stat.size, fctx->tid);
-    }
-    return result;
 }
 
 #define calc_file_offset(fi, offset, whence, new_offset)  \

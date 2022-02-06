@@ -23,7 +23,7 @@
 
 int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name,
-        const int64_t tid)
+        const int flags, const int64_t tid)
 {
     FDIRDEntryPName pname;
     FDIRDEntryInfo dentry;
@@ -31,7 +31,29 @@ int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
 
     FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
     if ((result=fdir_client_remove_dentry_by_pname_ex(
-            ctx->contexts.fdir, &ctx->ns, &pname, &dentry)) != 0)
+            ctx->contexts.fdir, &ctx->ns, &pname,
+            flags, &dentry)) != 0)
+    {
+        return result;
+    }
+
+    if (S_ISREG(dentry.stat.mode) && dentry.stat.nlink == 0) {
+        result = fs_api_unlink_file(ctx->contexts.fsapi,
+                dentry.inode, dentry.stat.size, tid);
+    }
+    return result;
+}
+
+int fcfs_api_remove_dentry_ex(FCFSAPIContext *ctx,
+        const char *path, const int flags, const int64_t tid)
+{
+    FDIRDEntryFullName fullname;
+    FDIRDEntryInfo dentry;
+    int result;
+
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    if ((result=fdir_client_remove_dentry_ex(ctx->contexts.fdir,
+                    &fullname, flags, &dentry)) != 0)
     {
         return result;
     }
@@ -71,7 +93,7 @@ int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
     return result;
 }
 
-int fcfs_api_rename_dentry_by_path_ex(FCFSAPIContext *ctx,
+int fcfs_api_rename_dentry_ex(FCFSAPIContext *ctx,
         const char *path1, const char *path2,
         const int flags, const int64_t tid)
 {

@@ -934,7 +934,6 @@ int fcfs_utimensat_ex(FCFSPosixAPIContext *ctx, int fd,
 
 int fcfs_unlink_ex(FCFSPosixAPIContext *ctx, const char *path)
 {
-    FCFSAPIFileContext fctx;
     char full_fname[PATH_MAX];
     int result;
 
@@ -944,8 +943,9 @@ int fcfs_unlink_ex(FCFSPosixAPIContext *ctx, const char *path)
         return result;
     }
 
-    fcfs_posix_api_set_fctx(&fctx, ctx, 0);
-    if ((result=fcfs_api_unlink_ex(&ctx->api_ctx, path, &fctx)) != 0) {
+    if ((result=fcfs_api_unlink_ex(&ctx->api_ctx, path,
+                    fcfs_posix_api_gettid())) != 0)
+    {
         errno = result;
         return -1;
     } else {
@@ -956,7 +956,6 @@ int fcfs_unlink_ex(FCFSPosixAPIContext *ctx, const char *path)
 int fcfs_unlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
         const char *path, int flags)
 {
-    FCFSAPIFileContext fctx;
     char full_fname[PATH_MAX];
     int result;
 
@@ -966,15 +965,11 @@ int fcfs_unlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    if ((flags & AT_REMOVEDIR)) {
-        //TODO call rmdir
-        //result = fcfs_api_unlink_ex(&ctx->api_ctx, path, &fctx);
-        result = 0;
-    } else {
-        fcfs_posix_api_set_fctx(&fctx, ctx, 0);
-        result = fcfs_api_unlink_ex(&ctx->api_ctx, path, &fctx);
-    }
-    if (result != 0) {
+    if ((result=fcfs_api_remove_dentry_ex(&ctx->api_ctx, path,
+                    ((flags & AT_REMOVEDIR) ? FDIR_UNLINK_FLAGS_MATCH_DIR :
+                     FDIR_UNLINK_FLAGS_MATCH_FILE),
+                    fcfs_posix_api_gettid())) != 0)
+    {
         errno = result;
         return -1;
     } else {
@@ -1002,7 +997,7 @@ int fcfs_rename_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    if ((result=fcfs_api_rename_dentry_by_path_ex(&ctx->api_ctx, path1,
+    if ((result=fcfs_api_rename_dentry_ex(&ctx->api_ctx, path1,
                     path2, flags, fcfs_posix_api_gettid())) != 0)
     {
         errno = result;
@@ -1032,7 +1027,7 @@ static inline int do_renameat(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    if ((result=fcfs_api_rename_dentry_by_path_ex(&ctx->api_ctx, path1,
+    if ((result=fcfs_api_rename_dentry_ex(&ctx->api_ctx, path1,
                     path2, flags, fcfs_posix_api_gettid())) != 0)
     {
         errno = result;

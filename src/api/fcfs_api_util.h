@@ -68,17 +68,20 @@ extern "C" {
     fcfs_api_link_dentry_by_pname_ex(&g_fcfs_api_ctx, src_inode, \
             dest_parent_inode, dest_name, omp, flags, dentry)
 
-#define fcfs_api_remove_dentry_by_pname(parent_inode, name, tid)  \
+#define fcfs_api_remove_dentry_by_pname(parent_inode, name, flags, tid)  \
     fcfs_api_remove_dentry_by_pname_ex(&g_fcfs_api_ctx, \
-            parent_inode, name, tid)
+            parent_inode, name, flags, tid)
+
+#define fcfs_api_remove_dentry(path, flags, tid)  \
+    fcfs_api_remove_dentry_ex(&g_fcfs_api_ctx, path, flags, tid)
 
 #define fcfs_api_rename_dentry_by_pname(src_parent_inode, src_name, \
         dest_parent_inode, dest_name, flags, tid)  \
     fcfs_api_rename_dentry_by_pname_ex(&g_fcfs_api_ctx, src_parent_inode, \
             src_name, dest_parent_inode, dest_name, flags, tid)
 
-#define fcfs_api_rename_dentry_by_path(path1, path2, flags, tid) \
-    fcfs_api_rename_dentry_by_path_ex(&g_fcfs_api_ctx, \
+#define fcfs_api_rename_dentry(path1, path2, flags, tid) \
+    fcfs_api_rename_dentry_ex(&g_fcfs_api_ctx, \
             path1, path2, flags, tid)
 
 #define fcfs_api_modify_stat_by_inode(inode, attr, flags, dentry)  \
@@ -231,14 +234,17 @@ static inline int fcfs_api_readlink_by_inode_ex(FCFSAPIContext *ctx,
 
 int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name,
-        const int64_t tid);
+        const int flags, const int64_t tid);
+
+int fcfs_api_remove_dentry_ex(FCFSAPIContext *ctx, const char *path,
+        const int flags, const int64_t tid);
 
 int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t src_parent_inode, const string_t *src_name,
         const int64_t dest_parent_inode, const string_t *dest_name,
         const int flags, const int64_t tid);
 
-int fcfs_api_rename_dentry_by_path_ex(FCFSAPIContext *ctx,
+int fcfs_api_rename_dentry_ex(FCFSAPIContext *ctx,
         const char *path1, const char *path2,
         const int flags, const int64_t tid);
 

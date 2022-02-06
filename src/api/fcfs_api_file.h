@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <utime.h>
 #include "fcfs_api_types.h"
+#include "fcfs_api_util.h"
 
 #ifndef FALLOC_FL_KEEP_SIZE
 #define FALLOC_FL_KEEP_SIZE  0x01
@@ -78,8 +79,8 @@ extern "C" {
 #define fcfs_api_truncate(path, new_size, fctx) \
     fcfs_api_truncate_ex(&g_fcfs_api_ctx, path, new_size, fctx)
 
-#define fcfs_api_unlink(path, fctx)  \
-    fcfs_api_unlink_ex(&g_fcfs_api_ctx, path, fctx)
+#define fcfs_api_unlink(path, tid)  \
+    fcfs_api_unlink_ex(&g_fcfs_api_ctx, path, tid)
 
 #define fcfs_api_stat(path, buf, flags)  \
     fcfs_api_stat_ex(&g_fcfs_api_ctx, path, buf, flags)
@@ -154,8 +155,12 @@ extern "C" {
     int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
             const int64_t offset, const int64_t len, const int64_t tid);
 
-    int fcfs_api_unlink_ex(FCFSAPIContext *ctx, const char *path,
-            const FCFSAPIFileContext *fctx);
+    static inline int fcfs_api_unlink_ex(FCFSAPIContext *ctx,
+            const char *path, const int64_t tid)
+    {
+        const int flags = FDIR_UNLINK_FLAGS_MATCH_FILE;
+        return fcfs_api_remove_dentry_ex(ctx, path, flags, tid);
+    }
 
     int fcfs_api_lseek(FCFSAPIFileInfo *fi, const int64_t offset,
             const int whence);

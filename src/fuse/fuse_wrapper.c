@@ -582,9 +582,10 @@ static void fs_do_mkdir(fuse_req_t req, fuse_ino_t parent,
     do_mknod(req, parent, name, mode, 0);
 }
 
-static int remove_dentry(fuse_req_t req, fuse_ino_t parent, const char *name)
+static int remove_dentry(fuse_req_t req, fuse_ino_t parent,
+        const char *name, const int flags)
 {
-    FCFSAPIFileContext fctx;
+    const struct fuse_ctx *fctx;
     int64_t parent_inode;
     string_t nm;
 
@@ -598,16 +599,17 @@ static int remove_dentry(fuse_req_t req, fuse_ino_t parent, const char *name)
             __LINE__, __FUNCTION__, parent_inode, name);
             */
 
-    FCFS_FUSE_SET_FCTX_BY_REQ(fctx, 0, req);
+    fctx = fuse_req_ctx(req);
     FC_SET_STRING(nm, (char *)name);
-    return fcfs_api_remove_dentry_by_pname(parent_inode, &nm, &fctx);
+    return fcfs_api_remove_dentry_by_pname(
+            parent_inode, &nm, flags, fctx->pid);
 }
 
 static void fs_do_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
     int result;
 
-    result = remove_dentry(req, parent, name);
+    result = remove_dentry(req, parent, name, FDIR_UNLINK_FLAGS_MATCH_DIR);
     fuse_reply_err(req, result);
 }
 
@@ -615,7 +617,7 @@ static void fs_do_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
     int result;
 
-    result = remove_dentry(req, parent, name);
+    result = remove_dentry(req, parent, name, FDIR_UNLINK_FLAGS_MATCH_FILE);
     fuse_reply_err(req, result);
 }
 
@@ -624,7 +626,7 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
 {
     int64_t old_parent_inode;
     int64_t new_parent_inode;
-    FCFSAPIFileContext fctx;
+    const struct fuse_ctx *fctx;
     string_t old_nm;
     string_t new_nm;
     int result;
@@ -647,11 +649,11 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
             new_parent_inode, newname);
             */
 
-    FCFS_FUSE_SET_FCTX_BY_REQ(fctx, 0, req);
+    fctx = fuse_req_ctx(req);
     FC_SET_STRING(old_nm, (char *)oldname);
     FC_SET_STRING(new_nm, (char *)newname);
     result = fcfs_api_rename_dentry_by_pname(old_parent_inode, &old_nm,
-            new_parent_inode, &new_nm, flags, &fctx);
+            new_parent_inode, &new_nm, flags, fctx->pid);
     fuse_reply_err(req, result);
 }
 
