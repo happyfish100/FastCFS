@@ -208,7 +208,7 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
         }
     } else {
         pe = &dentry;
-        result = fcfs_api_modify_dentry_stat(new_inode,
+        result = fcfs_api_modify_stat_by_inode(new_inode,
                 attr, options.flags, &dentry);
     }
     if (result != 0) {
@@ -658,6 +658,7 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
 static void fs_do_link(fuse_req_t req, fuse_ino_t ino,
         fuse_ino_t parent, const char *name)
 {
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     const struct fuse_ctx *fctx;
     FDIRDEntryInfo dentry;
     FDIRClientOwnerModePair omp;
@@ -675,7 +676,7 @@ static void fs_do_link(fuse_req_t req, fuse_ino_t ino,
     FCFS_FUSE_SET_OMP(omp, (0777 & (~fctx->umask)), fctx->uid, fctx->gid);
     FC_SET_STRING(nm, (char *)name);
     if ((result=fcfs_api_link_dentry_by_pname(ino, parent_inode,
-                    &nm, &omp, &dentry)) == 0)
+                    &nm, &omp, flags, &dentry)) == 0)
     {
         fill_entry_param(&dentry, &param);
         fuse_reply_entry(req, &param);

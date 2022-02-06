@@ -700,3 +700,368 @@ ssize_t fcfs_readlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
         return 0;
     }
 }
+
+int fcfs_mknod_ex(FCFSPosixAPIContext *ctx,
+        const char *path, mode_t mode, dev_t dev)
+{
+    FDIRClientOwnerModePair omp;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "mknod", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, mode);
+    if ((result=fcfs_api_mknod_ex(&ctx->api_ctx,
+                    path, &omp, dev)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_mknodat_ex(FCFSPosixAPIContext *ctx, int fd,
+        const char *path, mode_t mode, dev_t dev)
+{
+    FDIRClientOwnerModePair omp;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, "mknodat", fd, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, mode);
+    if ((result=fcfs_api_mknod_ex(&ctx->api_ctx,
+                    path, &omp, dev)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_access_ex(FCFSPosixAPIContext *ctx,
+        const char *path, int mode)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FDIRClientOwnerModePair omp;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "access", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    if ((result=fcfs_api_access_ex(&ctx->api_ctx,
+                    path, mode, &omp, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_faccessat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, int mode, int flags)
+{
+    FDIRClientOwnerModePair omp;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, "faccessat", fd, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    if ((result=fcfs_api_access_ex(&ctx->api_ctx, path, mode, &omp,
+                    (flags & AT_SYMLINK_NOFOLLOW) ? 0 :
+                    FDIR_FLAGS_FOLLOW_SYMLINK)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_utime_ex(FCFSPosixAPIContext *ctx, const char *path,
+        const struct utimbuf *times)
+{
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "utime", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_utime_ex(&ctx->api_ctx, path, times)) != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_utimes_ex(FCFSPosixAPIContext *ctx, const char *path,
+        const struct timeval times[2])
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "utimes", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_utimes_by_path_ex(&ctx->api_ctx,
+                    path, times, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_futimes_ex(FCFSPosixAPIContext *ctx,
+        int fd, const struct timeval times[2])
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FCFSPosixAPIFileInfo *file;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((result=fcfs_api_utimes_by_inode_ex(&ctx->api_ctx, file->
+                    fi.dentry.inode, times, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_futimesat_ex(FCFSPosixAPIContext *ctx, int fd,
+        const char *path, const struct timeval times[2])
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, "futimesat", fd, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_utimes_by_path_ex(&ctx->api_ctx,
+                    path, times, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_futimens_ex(FCFSPosixAPIContext *ctx, int fd,
+        const struct timespec times[2])
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FCFSPosixAPIFileInfo *file;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((result=fcfs_api_utimens_by_inode_ex(&ctx->api_ctx, file->
+                    fi.dentry.inode, times, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_utimensat_ex(FCFSPosixAPIContext *ctx, int fd,
+        const char *path, const struct timespec times[2], int flags)
+{
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, "futimensat", fd, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_utimens_by_path_ex(&ctx->api_ctx, path,
+                    times, (flags & AT_SYMLINK_NOFOLLOW) ?
+                    0 : FDIR_FLAGS_FOLLOW_SYMLINK)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_unlink_ex(FCFSPosixAPIContext *ctx, const char *path)
+{
+    FCFSAPIFileContext fctx;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "unlink", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_fctx(&fctx, ctx, 0);
+    if ((result=fcfs_api_unlink_ex(&ctx->api_ctx, path, &fctx)) != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_unlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
+        const char *path, int flags)
+{
+    FCFSAPIFileContext fctx;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, "unlinkat", fd, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((flags & AT_REMOVEDIR)) {
+        //TODO call rmdir
+        //result = fcfs_api_unlink_ex(&ctx->api_ctx, path, &fctx);
+        result = 0;
+    } else {
+        fcfs_posix_api_set_fctx(&fctx, ctx, 0);
+        result = fcfs_api_unlink_ex(&ctx->api_ctx, path, &fctx);
+    }
+    if (result != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_rename_ex(FCFSPosixAPIContext *ctx,
+        const char *path1, const char *path2)
+{
+    const int flags = 0;
+    char full_fname1[PATH_MAX];
+    char full_fname2[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "rename", &path1,
+                    full_fname1, sizeof(full_fname1))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=papi_resolve_path(ctx, "rename", &path2,
+                    full_fname2, sizeof(full_fname2))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_rename_dentry_by_path_ex(&ctx->api_ctx, path1,
+                    path2, flags, fcfs_posix_api_gettid())) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+static inline int do_renameat(FCFSPosixAPIContext *ctx,
+        const char *func_name, int fd1, const char *path1,
+        int fd2, const char *path2, const int flags)
+{
+    char full_fname1[PATH_MAX];
+    char full_fname2[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, func_name, fd1, &path1,
+                    full_fname1, sizeof(full_fname1))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=papi_resolve_pathat(ctx, func_name, fd2, &path2,
+                    full_fname2, sizeof(full_fname2))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_rename_dentry_by_path_ex(&ctx->api_ctx, path1,
+                    path2, flags, fcfs_posix_api_gettid())) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_renameat_ex(FCFSPosixAPIContext *ctx, int fd1,
+        const char *path1, int fd2, const char *path2)
+{
+    const int flags = 0;
+    return do_renameat(ctx, "renameat", fd1, path1, fd2, path2, flags);
+}
+
+int fcfs_renameat2_ex(FCFSPosixAPIContext *ctx, int fd1,
+        const char *path1, int fd2, const char *path2,
+        unsigned int flags)
+{
+
+    /* flags convert from FreeBSD to Linux */
+#if defined(RENAME_SWAP) && defined(RENAME_EXCL)
+    if ((flags & RENAME_SWAP)) {
+        flags = ((flags & (~RENAME_SWAP)) | RENAME_EXCHANGE);
+    } else if ((flags & RENAME_EXCL)) {
+        flags = ((flags & (~RENAME_EXCL)) | RENAME_NOREPLACE);
+    }
+#endif
+
+    return do_renameat(ctx, "renameat2", fd1, path1, fd2, path2, flags);
+}

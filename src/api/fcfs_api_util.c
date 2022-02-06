@@ -23,7 +23,7 @@
 
 int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name,
-        const FCFSAPIFileContext *fctx)
+        const int64_t tid)
 {
     FDIRDEntryPName pname;
     FDIRDEntryInfo dentry;
@@ -38,7 +38,7 @@ int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
 
     if (S_ISREG(dentry.stat.mode) && dentry.stat.nlink == 0) {
         result = fs_api_unlink_file(ctx->contexts.fsapi,
-                dentry.inode, dentry.stat.size, fctx->tid);
+                dentry.inode, dentry.stat.size, tid);
     }
     return result;
 }
@@ -46,7 +46,7 @@ int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
 int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t src_parent_inode, const string_t *src_name,
         const int64_t dest_parent_inode, const string_t *dest_name,
-        const int flags, const FCFSAPIFileContext *fctx)
+        const int flags, const int64_t tid)
 {
     FDIRDEntryPName src_pname;
     FDIRDEntryPName dest_pname;
@@ -66,7 +66,33 @@ int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
 
     if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0) {
         fs_api_unlink_file(ctx->contexts.fsapi, pe->inode,
-                pe->stat.size, fctx->tid);
+                pe->stat.size, tid);
+    }
+    return result;
+}
+
+int fcfs_api_rename_dentry_by_path_ex(FCFSAPIContext *ctx,
+        const char *path1, const char *path2,
+        const int flags, const int64_t tid)
+{
+    FDIRDEntryFullName src;
+    FDIRDEntryFullName dest;
+    FDIRDEntryInfo dentry;
+    FDIRDEntryInfo *pe;
+    int result;
+
+    FCFSAPI_SET_PATH_FULLNAME(src, ctx, path1);
+    FCFSAPI_SET_PATH_FULLNAME(dest, ctx, path2);
+    pe = &dentry;
+    if ((result=fdir_client_rename_dentry_ex(ctx->contexts.fdir,
+                    &src, &dest, flags, &pe)) != 0)
+    {
+        return result;
+    }
+
+    if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0) {
+        fs_api_unlink_file(ctx->contexts.fsapi, pe->inode,
+                pe->stat.size, tid);
     }
     return result;
 }

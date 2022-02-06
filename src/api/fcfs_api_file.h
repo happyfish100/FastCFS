@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <fcntl.h>
+#include <utime.h>
 #include "fcfs_api_types.h"
 
 #ifndef FALLOC_FL_KEEP_SIZE
@@ -104,8 +105,9 @@ extern "C" {
             const FDIRDEntryInfo *dentry, const int flags,
             const FCFSAPIFileContext *fctx);
 
-    static inline int fcfs_api_create_ex(FCFSAPIContext *ctx,FCFSAPIFileInfo *fi,
-            const char *path, const FCFSAPIFileContext *fctx)
+    static inline int fcfs_api_create_ex(FCFSAPIContext *ctx,
+            FCFSAPIFileInfo *fi, const char *path,
+            const FCFSAPIFileContext *fctx)
     {
         const int flags = O_CREAT | O_TRUNC | O_WRONLY;
         return fcfs_api_open_ex(ctx, fi, path, flags, fctx);
@@ -199,6 +201,13 @@ extern "C" {
 
     int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
             const char *new_path, const FDIRClientOwnerModePair *omp,
+            const int flags);
+
+    int fcfs_api_mknod_ex(FCFSAPIContext *ctx, const char *path,
+            const FDIRClientOwnerModePair *omp, const dev_t dev);
+
+    int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
+            const int mask, const FDIRClientOwnerModePair *omp,
             const int flags);
 
     int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,

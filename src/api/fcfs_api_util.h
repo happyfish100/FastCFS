@@ -17,6 +17,7 @@
 #ifndef _FCFS_API_UTIL_H
 #define _FCFS_API_UTIL_H
 
+#include <utime.h>
 #include "fastcommon/logger.h"
 #include "fcfs_api_types.h"
 #include "inode_htable.h"
@@ -63,21 +64,25 @@ extern "C" {
     fcfs_api_readlink_by_inode_ex(&g_fcfs_api_ctx, inode, link, size)
 
 #define fcfs_api_link_dentry_by_pname(src_inode, dest_parent_inode, \
-        dest_name, omp, dentry)  \
+        dest_name, omp, flags, dentry)  \
     fcfs_api_link_dentry_by_pname_ex(&g_fcfs_api_ctx, src_inode, \
-            dest_parent_inode, dest_name, omp, dentry)
+            dest_parent_inode, dest_name, omp, flags, dentry)
 
-#define fcfs_api_remove_dentry_by_pname(parent_inode, name, fctx)  \
+#define fcfs_api_remove_dentry_by_pname(parent_inode, name, tid)  \
     fcfs_api_remove_dentry_by_pname_ex(&g_fcfs_api_ctx, \
-            parent_inode, name, fctx)
+            parent_inode, name, tid)
 
 #define fcfs_api_rename_dentry_by_pname(src_parent_inode, src_name, \
-        dest_parent_inode, dest_name, flags, fctx)  \
+        dest_parent_inode, dest_name, flags, tid)  \
     fcfs_api_rename_dentry_by_pname_ex(&g_fcfs_api_ctx, src_parent_inode, \
-            src_name, dest_parent_inode, dest_name, flags, fctx)
+            src_name, dest_parent_inode, dest_name, flags, tid)
 
-#define fcfs_api_modify_dentry_stat(inode, attr, flags, dentry)  \
-    fcfs_api_modify_dentry_stat_ex(&g_fcfs_api_ctx, inode, attr, flags, dentry)
+#define fcfs_api_rename_dentry_by_path(path1, path2, flags, tid) \
+    fcfs_api_rename_dentry_by_path_ex(&g_fcfs_api_ctx, \
+            path1, path2, flags, tid)
+
+#define fcfs_api_modify_stat_by_inode(inode, attr, flags, dentry)  \
+    fcfs_api_modify_stat_by_inode_ex(&g_fcfs_api_ctx, inode, attr, flags, dentry)
 
 #define fcfs_api_set_xattr_by_inode(inode, xattr, flags) \
     fcfs_api_set_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, xattr, flags)
@@ -226,17 +231,22 @@ static inline int fcfs_api_readlink_by_inode_ex(FCFSAPIContext *ctx,
 
 int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name,
-        const FCFSAPIFileContext *fctx);
+        const int64_t tid);
 
 int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t src_parent_inode, const string_t *src_name,
         const int64_t dest_parent_inode, const string_t *dest_name,
-        const int flags, const FCFSAPIFileContext *fctx);
+        const int flags, const int64_t tid);
 
-static inline int fcfs_api_modify_dentry_stat_ex(FCFSAPIContext *ctx,
-        const int64_t inode, const struct stat *attr, const int64_t flags,
+int fcfs_api_rename_dentry_by_path_ex(FCFSAPIContext *ctx,
+        const char *path1, const char *path2,
+        const int flags, const int64_t tid);
+
+static inline int fcfs_api_modify_stat_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, const struct stat *attr, const int64_t mflags,
         FDIRDEntryInfo *dentry)
 {
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FDIRDEntryStat stat;
 
     if (ctx->async_report.enabled) {
@@ -249,8 +259,139 @@ static inline int fcfs_api_modify_dentry_stat_ex(FCFSAPIContext *ctx,
     stat.ctime = attr->st_ctime;
     stat.mtime = attr->st_mtime;
     stat.size = attr->st_size;
-    return fdir_client_modify_dentry_stat(ctx->contexts.fdir,
-            &ctx->ns, inode, flags, &stat, dentry);
+    return fdir_client_modify_stat_by_inode(ctx->contexts.fdir,
+            &ctx->ns, inode, mflags, &stat, flags, dentry);
+}
+
+#define FCFS_API_SET_UTIMES(stat, options, times) \
+    do { \
+        options.flags = 0; \
+        options.atime = options.mtime = 1; \
+        memset(&stat, 0, sizeof(stat)); \
+        if (times == NULL) { \
+            stat.atime = stat.mtime = get_current_time(); \
+        } else { \
+            stat.atime = times[0].tv_sec; \
+            stat.mtime = times[1].tv_sec; \
+        } \
+    } while (0)
+
+
+#define SET_ONE_UTIMENS(var, option, tp) \
+    do { \
+        if (tp.tv_nsec == UTIME_NOW) { \
+            var = get_current_time();  \
+            option = 1; \
+        } else if (tp.tv_nsec == UTIME_OMIT) { \
+            option = 0; \
+        } else { \
+            var = tp.tv_sec; \
+            option = 1; \
+        } \
+    } while (0)
+
+#define FCFS_API_SET_UTIMENS(stat, options, times) \
+    do { \
+        options.flags = 0; \
+        memset(&stat, 0, sizeof(stat)); \
+        if (times == NULL) { \
+            stat.atime = stat.mtime = get_current_time(); \
+        } else { \
+            SET_ONE_UTIMENS(stat.atime, options.atime, times[0]); \
+            SET_ONE_UTIMENS(stat.mtime, options.mtime, times[1]); \
+        } \
+    } while (0)
+
+static inline int fcfs_api_utimes_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, const struct timeval times[2], const int flags)
+{
+    FDIRStatModifyFlags options;
+    FDIRDEntryStat stat;
+    FDIRDEntryInfo dentry;
+
+    if (ctx->async_report.enabled) {
+        inode_htable_check_conflict_and_wait(inode);
+    }
+
+    FCFS_API_SET_UTIMES(stat, options, times);
+    return fdir_client_modify_stat_by_inode(ctx->contexts.fdir,
+            &ctx->ns, inode, options.flags, &stat, flags, &dentry);
+}
+
+static inline int fcfs_api_utimes_by_path_ex(FCFSAPIContext *ctx,
+        const char *path, const struct timeval times[2], const int flags)
+{
+    FDIRDEntryFullName fullname;
+    FDIRStatModifyFlags options;
+    FDIRDEntryStat stat;
+    FDIRDEntryInfo dentry;
+
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    FCFS_API_SET_UTIMES(stat, options, times);
+    return fdir_client_modify_stat_by_path(ctx->contexts.fdir,
+            &fullname, options.flags, &stat, flags, &dentry);
+}
+
+static inline int fcfs_api_utimens_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, const struct timespec times[2], const int flags)
+{
+    FDIRStatModifyFlags options;
+    FDIRDEntryStat stat;
+    FDIRDEntryInfo dentry;
+
+    if (ctx->async_report.enabled) {
+        inode_htable_check_conflict_and_wait(inode);
+    }
+
+    FCFS_API_SET_UTIMENS(stat, options, times);
+    if (options.flags == 0) {
+        return 0;
+    } else {
+        return fdir_client_modify_stat_by_inode(ctx->contexts.fdir,
+                &ctx->ns, inode, options.flags, &stat, flags, &dentry);
+    }
+}
+
+static inline int fcfs_api_utimens_by_path_ex(FCFSAPIContext *ctx,
+        const char *path, const struct timespec times[2], const int flags)
+{
+    FDIRDEntryFullName fullname;
+    FDIRStatModifyFlags options;
+    FDIRDEntryStat stat;
+    FDIRDEntryInfo dentry;
+
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    FCFS_API_SET_UTIMENS(stat, options, times);
+    if (options.flags == 0) {
+        return 0;
+    } else {
+        return fdir_client_modify_stat_by_path(ctx->contexts.fdir,
+                &fullname, options.flags, &stat, flags, &dentry);
+    }
+}
+
+static inline int fcfs_api_utime_ex(FCFSAPIContext *ctx,
+        const char *path, const struct utimbuf *times)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FDIRDEntryFullName fullname;
+    FDIRStatModifyFlags options;
+    FDIRDEntryStat stat;
+    FDIRDEntryInfo dentry;
+
+    options.flags = 0;
+    options.atime = options.mtime = 1;
+    memset(&stat, 0, sizeof(stat));
+    if (times == NULL) {
+        stat.atime = stat.mtime = get_current_time();
+    } else {
+        stat.atime = times->actime;
+        stat.mtime = times->modtime;
+    }
+
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    return fdir_client_modify_stat_by_path(ctx->contexts.fdir,
+            &fullname, options.flags, &stat, flags, &dentry);
 }
 
 static inline int fcfs_api_set_xattr_by_inode_ex(FCFSAPIContext *ctx,

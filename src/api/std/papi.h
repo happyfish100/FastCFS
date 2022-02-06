@@ -107,6 +107,51 @@
 #define fcfs_readlinkat(fd, path, buff, size) \
     fcfs_readlinkat_ex(&g_fcfs_papi_ctx, fd, path, buff, size)
 
+#define fcfs_mknod(path, mode, dev) \
+    fcfs_mknod_ex(&g_fcfs_papi_ctx, path, mode, dev)
+
+#define fcfs_mknodat(fd, path, mode, dev) \
+    fcfs_mknodat_ex(&g_fcfs_papi_ctx, fd, path, mode, dev)
+
+#define fcfs_access(path, mode) \
+    fcfs_access_ex(&g_fcfs_papi_ctx, path, mode)
+
+#define fcfs_faccessat(fd, path, mode, flags) \
+    fcfs_faccessat_ex(&g_fcfs_papi_ctx, fd, path, mode, flags)
+
+#define fcfs_utime(path, times) \
+    fcfs_utime_ex(&g_fcfs_papi_ctx, path, times)
+
+#define fcfs_utimes(path, times) \
+    fcfs_utimes_ex(&g_fcfs_papi_ctx, path, times)
+
+#define fcfs_futimes(fd, times) \
+    fcfs_futimes_ex(&g_fcfs_papi_ctx, fd, times)
+
+#define fcfs_futimesat(fd, path, times) \
+    fcfs_futimesat_ex(&g_fcfs_papi_ctx, fd, path, times)
+
+#define fcfs_futimens(fd, times) \
+    fcfs_futimens_ex(&g_fcfs_papi_ctx, fd, times)
+
+#define fcfs_utimensat(fd, path, times, flags) \
+    fcfs_utimensat_ex(&g_fcfs_papi_ctx, fd, path, times, flags)
+
+#define fcfs_unlink(path) \
+    fcfs_unlink_ex(&g_fcfs_papi_ctx, path)
+
+#define fcfs_unlinkat(fd, path, flags) \
+    fcfs_unlinkat_ex(&g_fcfs_papi_ctx, fd, path, flags)
+
+#define fcfs_rename(path1, path2) \
+    fcfs_rename_ex(&g_fcfs_papi_ctx, path1, path2)
+
+#define fcfs_renameat(fd1, path1, fd2, path2) \
+    fcfs_renameat_ex(&g_fcfs_papi_ctx, fd1, path1, fd2, path2)
+
+#define fcfs_renameat2(fd1, path1, fd2, path2, flags) \
+    fcfs_renameat2_ex(&g_fcfs_papi_ctx, fd1, path1, fd2, path2, flags)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -202,7 +247,6 @@ extern "C" {
     ssize_t fcfs_readlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, char *buff, size_t size);
 
-    //TODO
     int fcfs_mknod_ex(FCFSPosixAPIContext *ctx,
             const char *path, mode_t mode, dev_t dev);
 
@@ -231,12 +275,12 @@ extern "C" {
             const struct timespec times[2]);
 
     int fcfs_utimensat_ex(FCFSPosixAPIContext *ctx, int fd,
-            const char *path, const struct timespec times[2], int flag);
+            const char *path, const struct timespec times[2], int flags);
 
     int fcfs_unlink_ex(FCFSPosixAPIContext *ctx, const char *path);
 
     int fcfs_unlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
-            const char *path, int flag);
+            const char *path, int flags);
 
     int fcfs_rename_ex(FCFSPosixAPIContext *ctx,
             const char *path1, const char *path2);
@@ -244,18 +288,19 @@ extern "C" {
     int fcfs_renameat_ex(FCFSPosixAPIContext *ctx, int fd1,
             const char *path1, int fd2, const char *path2);
 
-    int fcfs_chroot_ex(FCFSPosixAPIContext *ctx, const char *path);
-
-    //renameatx_np for FreeBSD
     int fcfs_renameat2_ex(FCFSPosixAPIContext *ctx, int fd1,
             const char *path1, int fd2, const char *path2,
             unsigned int flags);
 
+    //TODO
+    //renameatx_np for FreeBSD
     int fcfs_mkdir_ex(FCFSPosixAPIContext *ctx,
             const char *path, mode_t mode);
 
     int fcfs_mkdirat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, mode_t mode);
+
+    int fcfs_rmdir_ex(FCFSPosixAPIContext *ctx, const char *path);
 
     int fcfs_chown_ex(FCFSPosixAPIContext *ctx, const char *path,
             uid_t owner, gid_t group);
@@ -285,6 +330,8 @@ extern "C" {
     char *fcfs_getcwd_ex(FCFSPosixAPIContext *ctx, char *buf, size_t size);
 
     char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf);
+
+    int fcfs_chroot_ex(FCFSPosixAPIContext *ctx, const char *path);
 
     int fcfs_statvfs_ex(FCFSPosixAPIContext *ctx,
             const char *path, struct statvfs *buf);

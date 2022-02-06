@@ -1450,6 +1450,18 @@ int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
             &dest_fullname, omp, flags, &dentry);
 }
 
+int fcfs_api_mknod_ex(FCFSAPIContext *ctx, const char *path,
+        const FDIRClientOwnerModePair *omp, const dev_t dev)
+{
+    FDIRDEntryFullName fullname;
+    FDIRDEntryInfo dentry;
+
+    fullname.ns = ctx->ns;
+    FC_SET_STRING(fullname.path, (char *)path);
+    return fdir_client_create_dentry(ctx->contexts.fdir,
+            &fullname, omp, dev, &dentry);
+}
+
 int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
         struct statvfs *stbuf)
 {
@@ -1521,4 +1533,39 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
     stbuf->f_fsid = 0;
     stbuf->f_flag = 0;
     return 0;
+}
+
+int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
+        const int mask, const FDIRClientOwnerModePair *omp,
+        const int flags)
+{
+#define USER_PERM_MASK(mask)  ((mask << 6) & 0700)
+#define GROUP_PERM_MASK(mask) ((mask << 3) & 0070)
+#define OTHER_PERM_MASK(mask) (mask & 0007)
+
+    int result;
+    FDIRDEntryInfo dentry;
+
+    if ((result=fcfs_api_stat_dentry_by_path_ex(ctx, path,
+                    flags, LOG_DEBUG, &dentry)) != 0)
+    {
+        return result;
+    }
+
+    if (mask != F_OK) {
+        if (omp->uid != 0) {
+            if (omp->uid == dentry.stat.uid) {
+                result = (dentry.stat.mode & USER_PERM_MASK(mask)) ==
+                    USER_PERM_MASK(mask) ? 0 : EPERM;
+            } else if (omp->gid == dentry.stat.gid) {
+                result = (dentry.stat.mode & GROUP_PERM_MASK(mask)) ==
+                    GROUP_PERM_MASK(mask) ? 0 : EPERM;
+            } else {
+                result = (dentry.stat.mode & OTHER_PERM_MASK(mask)) ==
+                    OTHER_PERM_MASK(mask) ? 0 : EPERM;
+            }
+        }
+    }
+
+    return result;
 }
