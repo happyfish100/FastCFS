@@ -85,6 +85,24 @@
 #define fcfs_fstatat(fd, path, buf, flags) \
     fcfs_fstatat_ex(&g_fcfs_papi_ctx, fd, path, buf, flags)
 
+#define fcfs_flock(fd, operation) \
+    fcfs_flock_ex(&g_fcfs_papi_ctx, fd, operation)
+
+#define fcfs_symlink(link, path) \
+    fcfs_symlink_ex(&g_fcfs_papi_ctx, link, path)
+
+#define fcfs_symlinkat(link, fd, path) \
+    fcfs_symlinkat_ex(&g_fcfs_papi_ctx, link, fd, path)
+
+#define fcfs_link(path1, path2) \
+    fcfs_link_ex(&g_fcfs_papi_ctx, path1, path2)
+
+#define fcfs_linkat(fd1, path1, fd2, path2, flags) \
+    fcfs_linkat_ex(&g_fcfs_papi_ctx, fd1, path1, fd2, path2, flags)
+
+#define fcfs_readlink(path, buff, size) \
+    fcfs_readlink_ex(&g_fcfs_papi_ctx, path, buff, size)
+
 #define fcfs_readlinkat(fd, path, buff, size) \
     fcfs_readlinkat_ex(&g_fcfs_papi_ctx, fd, path, buff, size)
 
@@ -101,8 +119,10 @@ extern "C" {
     int fcfs_creat_ex(FCFSPosixAPIContext *ctx,
             const char *path, mode_t mode);
 
+    //TODO
     int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd);
 
+    //TODO
     int fcfs_dup2_ex(FCFSPosixAPIContext *ctx, int fd1, int fd2);
 
     int fcfs_close_ex(FCFSPosixAPIContext *ctx, int fd);
@@ -159,19 +179,33 @@ extern "C" {
 
     int fcfs_flock_ex(FCFSPosixAPIContext *ctx, int fd, int operation);
 
+    //TODO
     int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...);
 
-    int fcfs_symlinkat_ex(FCFSPosixAPIContext *ctx, const char *link,
-            int fd, const char *path);
+    int fcfs_symlink_ex(FCFSPosixAPIContext *ctx,
+            const char *link, const char *path);
 
-    int fcfs_linkat_ex(FCFSPosixAPIContext *ctx, int fd1, const char *path1,
-            int fd2, const char *path2, int flags);
+    int fcfs_symlinkat_ex(FCFSPosixAPIContext *ctx,
+            const char *link, int fd, const char *path);
+
+    int fcfs_link_ex(FCFSPosixAPIContext *ctx,
+            const char *path1, const char *path2);
+
+    int fcfs_linkat_ex(FCFSPosixAPIContext *ctx, int fd1,
+            const char *path1, int fd2, const char *path2,
+            int flags);
+
+    ssize_t fcfs_readlink_ex(FCFSPosixAPIContext *ctx,
+            const char *path, char *buff, size_t size);
 
     ssize_t fcfs_readlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, char *buff, size_t size);
 
     //TODO
     //
+    int fcfs_mknod_ex(FCFSPosixAPIContext *ctx,
+            const char *path, mode_t mode, dev_t dev);
+
     int fcfs_mknodat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, mode_t mode, dev_t dev);
 

@@ -1058,9 +1058,9 @@ int fcfs_api_lstat_ex(FCFSAPIContext *ctx, const char *path, struct stat *buf)
     return fapi_stat(ctx, path, buf, flags);
 }
 
-int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path, struct stat *buf)
+int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path,
+        struct stat *buf, const int flags)
 {
-    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     return fapi_stat(ctx, path, buf, flags);
 }
 
@@ -1410,7 +1410,8 @@ int fcfs_api_readlink(FCFSAPIContext *ctx, const char *path,
 }
 
 int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
-        const char *new_path, const FDIRClientOwnerModePair *omp)
+        const char *new_path, const FDIRClientOwnerModePair *omp,
+        const int flags)
 {
     FDIRDEntryFullName src_fullname;
     FDIRDEntryFullName dest_fullname;
@@ -1421,8 +1422,8 @@ int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
     dest_fullname.ns = ctx->ns;
     FC_SET_STRING(dest_fullname.path, (char *)new_path);
 
-    return fdir_client_link_dentry(ctx->contexts.fdir,
-            &src_fullname, &dest_fullname, omp, &dentry);
+    return fdir_client_link_dentry(ctx->contexts.fdir, &src_fullname,
+            &dest_fullname, omp, flags, &dentry);
 }
 
 int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,

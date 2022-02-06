@@ -331,12 +331,12 @@ static inline int fcfs_api_dentry_sys_unlock(FDIRClientSession *session,
 static inline int fcfs_api_link_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t src_inode, const int64_t dest_parent_inode,
         const string_t *dest_name, const FDIRClientOwnerModePair *omp,
-        FDIRDEntryInfo *dentry)
+        const int flags, FDIRDEntryInfo *dentry)
 {
     FDIRDEntryPName dest_pname;
     FDIR_SET_DENTRY_PNAME_PTR(&dest_pname, dest_parent_inode, dest_name);
-    return fdir_client_link_dentry_by_pname(ctx->contexts.fdir,
-            src_inode, &ctx->ns, &dest_pname, omp, dentry);
+    return fdir_client_link_dentry_by_pname(ctx->contexts.fdir, src_inode,
+            &ctx->ns, &dest_pname, omp, flags, dentry);
 }
 
 #ifdef __cplusplus

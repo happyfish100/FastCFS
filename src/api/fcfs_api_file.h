@@ -80,8 +80,8 @@ extern "C" {
 #define fcfs_api_unlink(path, fctx)  \
     fcfs_api_unlink_ex(&g_fcfs_api_ctx, path, fctx)
 
-#define fcfs_api_stat(path, buf)  \
-    fcfs_api_stat_ex(&g_fcfs_api_ctx, path, buf)
+#define fcfs_api_stat(path, buf, flags)  \
+    fcfs_api_stat_ex(&g_fcfs_api_ctx, path, buf, flags)
 
 #define fcfs_api_lstat(path, buf)  \
     fcfs_api_lstat_ex(&g_fcfs_api_ctx, path, buf)
@@ -164,20 +164,21 @@ extern "C" {
             struct stat *buf);
 
     int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path,
-            struct stat *buf);
+            struct stat *buf, const int flags);
 
     int fcfs_api_flock_ex2(FCFSAPIFileInfo *fi, const int operation,
             const int64_t owner_id, const pid_t pid);
 
-    static inline int fcfs_api_flock_ex(FCFSAPIFileInfo *fi, const int operation,
-            const int64_t owner_id)
+    static inline int fcfs_api_flock_ex(FCFSAPIFileInfo *fi,
+            const int operation, const int64_t owner_id)
     {
         return fcfs_api_flock_ex2(fi, operation, owner_id, getpid());
     }
 
     static inline int fcfs_api_flock(FCFSAPIFileInfo *fi, const int operation)
     {
-        return fcfs_api_flock_ex2(fi, operation, (long)pthread_self(), getpid());
+        return fcfs_api_flock_ex2(fi, operation,
+                (long)pthread_self(), getpid());
     }
 
     int fcfs_api_getlk(FCFSAPIFileInfo *fi, struct flock *lock,
@@ -197,7 +198,8 @@ extern "C" {
             char *buff, const int size);
 
     int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
-            const char *new_path, const FDIRClientOwnerModePair *omp);
+            const char *new_path, const FDIRClientOwnerModePair *omp,
+            const int flags);
 
     int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
             struct statvfs *stbuf);

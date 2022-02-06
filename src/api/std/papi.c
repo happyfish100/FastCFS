@@ -459,6 +459,7 @@ int fcfs_lstat_ex(FCFSPosixAPIContext *ctx,
 int fcfs_stat_ex(FCFSPosixAPIContext *ctx,
         const char *path, struct stat *buf)
 {
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     char full_fname[PATH_MAX];
     int result;
 
@@ -468,7 +469,7 @@ int fcfs_stat_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    if ((result=fcfs_api_stat_ex(&ctx->api_ctx, path, buf)) != 0) {
+    if ((result=fcfs_api_stat_ex(&ctx->api_ctx, path, buf, flags)) != 0) {
         errno = result;
         return -1;
     } else {
@@ -506,11 +507,57 @@ int fcfs_fstatat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    if ((flags & AT_SYMLINK_NOFOLLOW)) {
+    if ((result=fcfs_api_stat_ex(&ctx->api_ctx, path, buf,
+                    ((flags & AT_SYMLINK_NOFOLLOW) != 0 ? 0 :
+                     FDIR_FLAGS_FOLLOW_SYMLINK))) != 0)
+    {
+        errno = result;
+        return -1;
     } else {
+        return 0;
+    }
+}
+
+int fcfs_flock_ex(FCFSPosixAPIContext *ctx, int fd, int operation)
+{
+    FCFSPosixAPIFileInfo *file;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
     }
 
-    if ((result=fcfs_api_stat_ex(&ctx->api_ctx, path, buf)) != 0) {
+    if ((result=fcfs_api_flock(&file->fi, operation)) != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_symlink_ex(FCFSPosixAPIContext *ctx,
+        const char *link, const char *path)
+{
+    char full_fname[PATH_MAX];
+    FDIRClientOwnerModePair omp;
+    int result;
+
+    if (*link == '/') {
+        FCFS_API_CHECK_PATH_MOUNTPOINT(ctx, link, "symlink");
+        link += ctx->mountpoint.len;
+    }
+
+    if ((result=papi_resolve_path(ctx, "symlink", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    if ((result=fcfs_api_symlink_ex(&ctx->api_ctx,
+                    link, path, &omp)) != 0)
+    {
         errno = result;
         return -1;
     } else {
@@ -547,8 +594,39 @@ int fcfs_symlinkat_ex(FCFSPosixAPIContext *ctx, const char *link,
     }
 }
 
-int fcfs_linkat_ex(FCFSPosixAPIContext *ctx, int fd1, const char *path1,
-        int fd2, const char *path2, int flags)
+int fcfs_link_ex(FCFSPosixAPIContext *ctx,
+        const char *path1, const char *path2)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    char full_fname1[PATH_MAX];
+    char full_fname2[PATH_MAX];
+    FDIRClientOwnerModePair omp;
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "linkat", &path1,
+                    full_fname1, sizeof(full_fname1))) != 0)
+    {
+        return result;
+    }
+    if ((result=papi_resolve_path(ctx, "linkat", &path2,
+                    full_fname2, sizeof(full_fname2))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    if ((result=fcfs_api_link_ex(&ctx->api_ctx, path1,
+                    path2, &omp, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_linkat_ex(FCFSPosixAPIContext *ctx, int fd1,
+        const char *path1, int fd2, const char *path2, int flags)
 {
     char full_fname1[PATH_MAX];
     char full_fname2[PATH_MAX];
@@ -567,11 +645,31 @@ int fcfs_linkat_ex(FCFSPosixAPIContext *ctx, int fd1, const char *path1,
         return result;
     }
 
-    if ((flags & AT_SYMLINK_FOLLOW)) {
+    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    if ((result=fcfs_api_link_ex(&ctx->api_ctx, path1, path2,
+                    &omp, ((flags & AT_SYMLINK_FOLLOW) != 0) ?
+                    FDIR_FLAGS_FOLLOW_SYMLINK : 0)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+ssize_t fcfs_readlink_ex(FCFSPosixAPIContext *ctx,
+        const char *path, char *buff, size_t size)
+{
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "readlink", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, 0777);
-    if ((result=fcfs_api_link_ex(&ctx->api_ctx, path1, path2, &omp)) != 0) {
+    if ((result=fcfs_api_readlink(&ctx->api_ctx, path, buff, size)) != 0) {
         errno = result;
         return -1;
     } else {
