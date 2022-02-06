@@ -44,12 +44,6 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
 {
     const dev_t rdev = 0;
 
-    if (result == 0) {
-        if (S_ISDIR(fi->dentry.stat.mode)) {
-            return EISDIR;
-        }
-    }
-
     fi->tid = tid;
     if (!((fi->flags & O_WRONLY) || (fi->flags & O_RDWR))) {
         fi->offset = 0;
@@ -63,7 +57,7 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
             }
         } else if (result == ENOENT) {
             if ((result=fdir_client_create_dentry(fi->ctx->contexts.fdir,
-                    fullname, omp, rdev, &fi->dentry)) != 0)
+                            fullname, omp, rdev, &fi->dentry)) != 0)
             {
                 if (result == EEXIST) {
                     if ((fi->flags & O_EXCL)) {
@@ -76,9 +70,6 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
                     {
                         return result;
                     }
-                    if (S_ISDIR(fi->dentry.stat.mode)) {
-                        return EISDIR;
-                    }
                 } else {
                     return result;
                 }
@@ -90,9 +81,19 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
         return result;
     }
 
+    if (S_ISDIR(fi->dentry.stat.mode)) {
+        return EISDIR;  //flags O_WRONLY or O_RDWR are forbidden for directory
+    }
+    if ((fi->flags & O_NOFOLLOW) && S_ISLNK(fi->dentry.stat.mode)) {
+        return ELOOP;
+    }
+
     fi->write_notify.last_modified_time = fi->dentry.stat.mtime;
     if ((fi->flags & O_TRUNC)) {
         if (fi->dentry.stat.size > 0) {
+            if (S_ISLNK(fi->dentry.stat.mode)) {
+                return EPERM;
+            }
             if ((result=file_truncate(fi->ctx, fi->dentry.
                             inode, 0, tid)) != 0)
             {
@@ -379,11 +380,38 @@ static int do_pwrite(FCFSAPIFileInfo *fi, FSAPIWriteBuffer *wbuffer,
     return (*written_bytes > 0) ? 0 : EIO;
 }
 
+static inline int check_writable(FCFSAPIFileInfo *fi)
+{
+    if (fi->magic != FCFS_API_MAGIC_NUMBER || !((fi->flags & O_WRONLY) ||
+                (fi->flags & O_RDWR)))
+    {
+        return EBADF;
+    }
+
+    if (S_ISDIR(fi->dentry.stat.mode)) {
+        return EISDIR;
+    }
+    return (S_ISLNK(fi->dentry.stat.mode) ? EPERM : 0);
+}
+
+static inline int check_readable(FCFSAPIFileInfo *fi)
+{
+    if (fi->magic != FCFS_API_MAGIC_NUMBER || (fi->flags & O_WRONLY)) {
+        return EBADF;
+    }
+
+    if (S_ISDIR(fi->dentry.stat.mode)) {
+        return EISDIR;
+    }
+    return (S_ISLNK(fi->dentry.stat.mode) ? EPERM : 0);
+}
+
 static int pwrite_wrapper(FCFSAPIFileInfo *fi, FSAPIWriteBuffer *wbuffer,
         const int size, const int64_t offset, int *written_bytes,
         const int64_t tid)
 {
     int total_inc_alloc;
+    int result;
 
     if (size == 0) {
         return 0;
@@ -391,10 +419,8 @@ static int pwrite_wrapper(FCFSAPIFileInfo *fi, FSAPIWriteBuffer *wbuffer,
         return EINVAL;
     }
 
-    if (fi->magic != FCFS_API_MAGIC_NUMBER || !((fi->flags & O_WRONLY) ||
-                (fi->flags & O_RDWR)))
-    {
-        return EBADF;
+    if ((result=check_writable(fi)) != 0) {
+        return result;
     }
 
     return do_pwrite(fi, wbuffer, size, offset, written_bytes,
@@ -428,10 +454,8 @@ static int do_write(FCFSAPIFileInfo *fi, FSAPIWriteBuffer *wbuffer,
         return EINVAL;
     }
 
-    if (fi->magic != FCFS_API_MAGIC_NUMBER || !((fi->flags & O_WRONLY) ||
-                (fi->flags & O_RDWR)))
-    {
-        return EBADF;
+    if ((result=check_writable(fi)) != 0) {
+        return result;
     }
 
     use_sys_lock = fi->ctx->use_sys_lock_for_append &&
@@ -525,8 +549,8 @@ static int do_pread(FCFSAPIFileInfo *fi, const bool is_readv,
         return EINVAL;
     }
 
-    if (fi->magic != FCFS_API_MAGIC_NUMBER || (fi->flags & O_WRONLY)) {
-        return EBADF;
+    if ((result=check_readable(fi)) != 0) {
+        return result;
     }
 
     FS_API_SET_CTX_AND_TID_EX(op_ctx, fi->ctx->contexts.fsapi, tid);
@@ -861,10 +885,10 @@ static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
 int fcfs_api_ftruncate_ex(FCFSAPIFileInfo *fi, const int64_t new_size,
         const int64_t tid)
 {
-    if (fi->magic != FCFS_API_MAGIC_NUMBER || !((fi->flags & O_WRONLY) ||
-                (fi->flags & O_RDWR)))
-    {
-        return EBADF;
+    int result;
+
+    if ((result=check_writable(fi)) != 0) {
+        return result;
     }
 
     return file_truncate(fi->ctx, fi->dentry.inode, new_size, tid);
@@ -1289,8 +1313,8 @@ int fcfs_api_fallocate_ex(FCFSAPIFileInfo *fi, const int mode,
         return EINVAL;
     }
 
-    if (fi->magic != FCFS_API_MAGIC_NUMBER) {
-        return EBADF;
+    if ((result=check_writable(fi)) != 0) {
+        return result;
     }
 
     op = mode & (~FALLOC_FL_KEEP_SIZE);

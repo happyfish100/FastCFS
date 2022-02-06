@@ -31,6 +31,17 @@ extern "C" {
 
     FCFSPosixAPIFileInfo *fcfs_fd_manager_get(const int fd);
 
+    static inline void fcfs_fd_manager_normalize_path(
+            FCFSPosixAPIFileInfo *finfo)
+    {
+        if (!(finfo->filename.len > 0 &&  finfo->filename.str
+                    [finfo->filename.len - 1] == '/'))
+        {
+            *(finfo->filename.str + finfo->filename.len++) = '/';
+            *(finfo->filename.str + finfo->filename.len) = '\0';
+        }
+    }
+
     int fcfs_fd_manager_free(FCFSPosixAPIFileInfo *finfo);
 
 #ifdef __cplusplus

@@ -28,8 +28,8 @@ typedef struct fcfs_posix_api_context {
 } FCFSPosixAPIContext;
 
 typedef struct fcfs_posix_api_file_info {
+    string_t filename;
     int fd;
-    char *filename;
     FCFSAPIFileInfo fi;
 } FCFSPosixAPIFileInfo;
 

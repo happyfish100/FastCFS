@@ -17,6 +17,7 @@
 #ifndef _FCFS_PAPI_H
 #define _FCFS_PAPI_H
 
+#include <utime.h>
 #include "api_types.h"
 
 #define fcfs_open(path, flags, ...) \
@@ -202,15 +203,23 @@ extern "C" {
             const char *path, char *buff, size_t size);
 
     //TODO
-    //
     int fcfs_mknod_ex(FCFSPosixAPIContext *ctx,
             const char *path, mode_t mode, dev_t dev);
 
     int fcfs_mknodat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, mode_t mode, dev_t dev);
 
+    int fcfs_access_ex(FCFSPosixAPIContext *ctx,
+            const char *path, int mode);
+
     int fcfs_faccessat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, int mode, int flags);
+
+    int fcfs_utime_ex(FCFSPosixAPIContext *ctx, const char *path,
+            const struct utimbuf *times);
+
+    int fcfs_utimes_ex(FCFSPosixAPIContext *ctx, const char *path,
+            const struct timeval times[2]);
 
     int fcfs_futimes_ex(FCFSPosixAPIContext *ctx,
             int fd, const struct timeval times[2]);
@@ -224,18 +233,35 @@ extern "C" {
     int fcfs_utimensat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, const struct timespec times[2], int flag);
 
+    int fcfs_unlink_ex(FCFSPosixAPIContext *ctx, const char *path);
+
     int fcfs_unlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, int flag);
+
+    int fcfs_rename_ex(FCFSPosixAPIContext *ctx,
+            const char *path1, const char *path2);
 
     int fcfs_renameat_ex(FCFSPosixAPIContext *ctx, int fd1,
             const char *path1, int fd2, const char *path2);
 
+    int fcfs_chroot_ex(FCFSPosixAPIContext *ctx, const char *path);
+
+    //renameatx_np for FreeBSD
     int fcfs_renameat2_ex(FCFSPosixAPIContext *ctx, int fd1,
             const char *path1, int fd2, const char *path2,
             unsigned int flags);
 
+    int fcfs_mkdir_ex(FCFSPosixAPIContext *ctx,
+            const char *path, mode_t mode);
+
     int fcfs_mkdirat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, mode_t mode);
+
+    int fcfs_chown_ex(FCFSPosixAPIContext *ctx, const char *path,
+            uid_t owner, gid_t group);
+
+    int fcfs_lchown_ex(FCFSPosixAPIContext *ctx, const char *path,
+            uid_t owner, gid_t group);
 
     int fcfs_fchown_ex(FCFSPosixAPIContext *ctx, int fd,
             uid_t owner, gid_t group);
@@ -243,16 +269,69 @@ extern "C" {
     int fcfs_fchownat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, uid_t owner, gid_t group, int flag);
 
+    int fcfs_chmod_ex(FCFSPosixAPIContext *ctx,
+            const char *path, mode_t mode);
+
     int fcfs_fchmod_ex(FCFSPosixAPIContext *ctx,
             int fd, mode_t mode);
 
     int fcfs_fchmodat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, mode_t mode, int flag);
 
+    int fcfs_chdir_ex(FCFSPosixAPIContext *ctx, const char *path);
+
     int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    char *fcfs_getcwd_ex(FCFSPosixAPIContext *ctx, char *buf, size_t size);
+
+    char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf);
+
+    int fcfs_statvfs_ex(FCFSPosixAPIContext *ctx,
+            const char *path, struct statvfs *buf);
 
     int fcfs_fstatvfs_ex(FCFSPosixAPIContext *ctx, int fd,
             struct statvfs *buf);
+
+    int fcfs_setxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
+            const char *name, const void *value, size_t size, int flags);
+
+    int fcfs_lsetxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
+            const char *name, const void *value, size_t size, int flags);
+
+    int fcfs_fsetxattr_ex(FCFSPosixAPIContext *ctx, int fd, const char *name,
+            const void *value, size_t size, int flags);
+
+    ssize_t fcfs_getxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
+            const char *name, void *value, size_t size);
+
+    ssize_t fcfs_lgetxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
+            const char *name, void *value, size_t size);
+
+    ssize_t fcfs_fgetxattr_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *name, void *value, size_t size);
+
+    ssize_t fcfs_listxattr_ex(FCFSPosixAPIContext *ctx,
+            const char *path, char *list, size_t size);
+
+    ssize_t fcfs_llistxattr_ex(FCFSPosixAPIContext *ctx,
+            const char *path, char *list, size_t size);
+
+    ssize_t fcfs_flistxattr_ex(FCFSPosixAPIContext *ctx,
+            int fd, char *list, size_t size);
+
+    int fcfs_removexattr_ex(FCFSPosixAPIContext *ctx,
+            const char *path, const char *name);
+
+    int fcfs_lremovexattr_ex(FCFSPosixAPIContext *ctx,
+            const char *path, const char *name);
+
+    int fcfs_fremovexattr_ex(FCFSPosixAPIContext *ctx,
+            int fd, const char *name);
+
+    void *fcfs_mmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length,
+            int prot, int flags, int fd, off_t offset);
+
+    int fcfs_munmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length);
 
 #ifdef __cplusplus
 }

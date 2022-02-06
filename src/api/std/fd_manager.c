@@ -120,11 +120,13 @@ FCFSPosixAPIFileInfo *fcfs_fd_manager_alloc(const char *filename)
         return finfo;
     }
 
-    finfo->filename = fc_strdup(filename);
-    if (finfo->filename == NULL) {
+    finfo->filename.len = strlen(filename);
+    finfo->filename.str = (char *)fc_malloc(finfo->filename.len + 2);
+    if (finfo->filename.str == NULL) {
         fast_mblock_free_object(&FINFO_ALLOCATOR, finfo);
         return NULL;
     }
+    memcpy(finfo->filename.str, filename, finfo->filename.len + 1);
 
     PTHREAD_MUTEX_LOCK(&PAPI_LOCK);
     FILE_PARRAY.files[FCFS_FD_TO_INDEX(finfo->fd)] = finfo;
@@ -179,8 +181,8 @@ int fcfs_fd_manager_free(FCFSPosixAPIFileInfo *finfo)
     PTHREAD_MUTEX_UNLOCK(&PAPI_LOCK);
 
     if (result == 0) {
-        free(finfo->filename);
-        finfo->filename = NULL;
+        free(finfo->filename.str);
+        FC_SET_STRING_NULL(finfo->filename);
         fast_mblock_free_object(&FINFO_ALLOCATOR, finfo);
     } else {
         logError("file: "__FILE__", line: %d, "

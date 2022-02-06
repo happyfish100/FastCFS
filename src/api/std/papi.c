@@ -47,6 +47,10 @@ static int do_open(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
         return -1;
     }
 
+    if (S_ISDIR(file->fi.dentry.stat.mode)) {
+        fcfs_fd_manager_normalize_path(file);
+    }
+
     return file->fd;
 }
 
@@ -88,7 +92,7 @@ static int papi_resolve_pathat(FCFSPosixAPIContext *ctx, const char *func,
         return -1;
     }
 
-    normalize_path(file->filename, *path, full_filename, size);
+    normalize_path(file->filename.str, *path, full_filename, size);
     *path = full_filename;
     return 0;
 }
