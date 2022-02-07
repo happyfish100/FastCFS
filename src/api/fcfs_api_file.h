@@ -188,11 +188,37 @@ extern "C" {
                 (long)pthread_self(), getpid());
     }
 
-    int fcfs_api_getlk(FCFSAPIFileInfo *fi, struct flock *lock,
+    int fcfs_api_getlk_ex(FCFSAPIFileInfo *fi, struct flock *lock,
             int64_t *owner_id);
 
-    int fcfs_api_setlk(FCFSAPIFileInfo *fi, const struct flock *lock,
-        const int64_t owner_id);
+    static inline int fcfs_api_getlk(FCFSAPIFileInfo *fi, struct flock *lock)
+    {
+        int64_t owner_id;
+        return fcfs_api_getlk_ex(fi, lock, &owner_id);
+    }
+
+    int fcfs_api_setlk_ex(FCFSAPIFileInfo *fi, const struct flock *lock,
+            const int64_t owner_id, const bool blocked);
+
+    static inline int fcfs_api_setlk(FCFSAPIFileInfo *fi,
+            const struct flock *lock)
+    {
+        const bool blocked = false;
+        int64_t owner_id;
+
+        owner_id = fc_gettid();
+        return fcfs_api_setlk_ex(fi, lock, owner_id, blocked);
+    }
+
+    static inline int fcfs_api_setlkw(FCFSAPIFileInfo *fi,
+            const struct flock *lock)
+    {
+        const bool blocked = true;
+        int64_t owner_id;
+
+        owner_id = fc_gettid();
+        return fcfs_api_setlk_ex(fi, lock, owner_id, blocked);
+    }
 
     int fcfs_api_rename_ex(FCFSAPIContext *ctx, const char *old_path,
             const char *new_path, const int flags,
@@ -211,6 +237,9 @@ extern "C" {
     int fcfs_api_mknod_ex(FCFSAPIContext *ctx, const char *path,
             const FDIRClientOwnerModePair *omp, const dev_t dev);
 
+    int fcfs_api_mkfifo_ex(FCFSAPIContext *ctx, const char *path,
+            FDIRClientOwnerModePair *omp);
+
     int fcfs_api_mkdir_ex(FCFSAPIContext *ctx, const char *path,
             FDIRClientOwnerModePair *omp);
 
@@ -220,6 +249,8 @@ extern "C" {
 
     int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
             struct statvfs *stbuf);
+
+    int fcfs_api_set_file_flags(FCFSAPIFileInfo *fi, const int flags);
 
 #ifdef __cplusplus
 }

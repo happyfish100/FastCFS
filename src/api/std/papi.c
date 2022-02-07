@@ -556,6 +556,67 @@ int fcfs_flock_ex(FCFSPosixAPIContext *ctx, int fd, int operation)
     }
 }
 
+int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...)
+{
+    FCFSPosixAPIFileInfo *file;
+    va_list ap;
+    int64_t owner_id;
+    struct flock *lock;
+    int flags;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    switch (cmd) {
+        /*
+        case F_DUPFD:
+            errno = EOPNOTSUPP;
+            return -1;
+        */
+        case F_GETFD:
+        case F_SETFD:
+            return 0;
+        case F_GETFL:
+            return file->fi.flags;
+        case F_SETFL:
+            va_start(ap, cmd);
+            flags = va_arg(ap, int);
+            va_end(ap);
+            result = fcfs_api_set_file_flags(&file->fi, flags);
+            break;
+        case F_GETLK:
+        case F_SETLK:
+        case F_SETLKW:
+            va_start(ap, cmd);
+            lock = va_arg(ap, struct flock *);
+            va_end(ap);
+
+            if (cmd == F_GETLK) {
+                result = fcfs_api_getlk_ex(&file->fi, lock, &owner_id);
+            } else {
+                owner_id = fc_gettid();
+                result = fcfs_api_setlk_ex(&file->fi, lock,
+                        owner_id, (cmd == F_SETLKW));
+            }
+            break;
+        default:
+            logError("file: "__FILE__", line: %d, "
+                    "unsupport fcntl cmd: %d", __LINE__, cmd);
+            errno = EOPNOTSUPP;
+            return -1;
+    }
+
+    if (result != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
 int fcfs_symlink_ex(FCFSPosixAPIContext *ctx,
         const char *link, const char *path)
 {
@@ -758,6 +819,50 @@ int fcfs_mknodat_ex(FCFSPosixAPIContext *ctx, int fd,
     if ((result=fcfs_api_mknod_ex(&ctx->api_ctx,
                     path, &omp, dev)) != 0)
     {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_mkfifo_ex(FCFSPosixAPIContext *ctx,
+        const char *path, mode_t mode)
+{
+    FDIRClientOwnerModePair omp;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "mkfifo", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, mode);
+    if ((result=fcfs_api_mkfifo_ex(&ctx->api_ctx, path, &omp)) != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_mkfifoat_ex(FCFSPosixAPIContext *ctx, int fd,
+        const char *path, mode_t mode)
+{
+    FDIRClientOwnerModePair omp;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, "mkfifoat", fd, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, mode);
+    if ((result=fcfs_api_mkfifo_ex(&ctx->api_ctx, path, &omp)) != 0) {
         errno = result;
         return -1;
     } else {

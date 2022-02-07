@@ -1188,8 +1188,8 @@ static inline int flock_op_to_fcntl_type(const int operation, short *type)
     return 0;
 }
 
-int fcfs_api_setlk(FCFSAPIFileInfo *fi, const struct flock *lock,
-        const int64_t owner_id)
+int fcfs_api_setlk_ex(FCFSAPIFileInfo *fi, const struct flock *lock,
+        const int64_t owner_id, const bool blocked)
 {
     int operation;
     int result;
@@ -1213,8 +1213,8 @@ int fcfs_api_setlk(FCFSAPIFileInfo *fi, const struct flock *lock,
         if (fi->sessions.flock.mconn == NULL) {
             return ENOENT;
         }
-        return fcntl_unlock(fi, operation, offset, lock->l_len,
-                owner_id, lock->l_pid);
+        return fcntl_unlock(fi, operation, offset,
+                lock->l_len, owner_id, lock->l_pid);
     } else {
         if (fi->sessions.flock.mconn != NULL) {
             logError("file: "__FILE__", line: %d, "
@@ -1222,12 +1222,16 @@ int fcfs_api_setlk(FCFSAPIFileInfo *fi, const struct flock *lock,
                     __LINE__, fi->dentry.inode);
             return EEXIST;
         }
+        if (!blocked) {
+            operation |= LOCK_NB;
+        }
         return fcntl_lock(fi, operation, offset, lock->l_len,
                 owner_id, lock->l_pid);
     }
 }
 
-int fcfs_api_getlk(FCFSAPIFileInfo *fi, struct flock *lock, int64_t *owner_id)
+int fcfs_api_getlk_ex(FCFSAPIFileInfo *fi,
+        struct flock *lock, int64_t *owner_id)
 {
     int operation;
     int result;
@@ -1432,8 +1436,8 @@ int fcfs_api_mknod_ex(FCFSAPIContext *ctx, const char *path,
             &fullname, omp, dev, &dentry);
 }
 
-int fcfs_api_mkdir_ex(FCFSAPIContext *ctx, const char *path,
-        FDIRClientOwnerModePair *omp)
+static inline int do_make_dentry(FCFSAPIContext *ctx, const char *path,
+        FDIRClientOwnerModePair *omp, const int mtype)
 {
     const dev_t dev = 0;
     FDIRDEntryFullName fullname;
@@ -1441,9 +1445,21 @@ int fcfs_api_mkdir_ex(FCFSAPIContext *ctx, const char *path,
 
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
-    omp->mode = ((omp->mode & (~S_IFMT)) | S_IFDIR);
+    omp->mode = ((omp->mode & (~S_IFMT)) | mtype);
     return fdir_client_create_dentry(ctx->contexts.fdir,
             &fullname, omp, dev, &dentry);
+}
+
+int fcfs_api_mkfifo_ex(FCFSAPIContext *ctx, const char *path,
+        FDIRClientOwnerModePair *omp)
+{
+    return do_make_dentry(ctx, path, omp, S_IFIFO);
+}
+
+int fcfs_api_mkdir_ex(FCFSAPIContext *ctx, const char *path,
+        FDIRClientOwnerModePair *omp)
+{
+    return do_make_dentry(ctx, path, omp, S_IFDIR);
 }
 
 int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
@@ -1552,4 +1568,19 @@ int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
     }
 
     return result;
+}
+
+int fcfs_api_set_file_flags(FCFSAPIFileInfo *fi, const int flags)
+{
+    if ((flags & O_APPEND) == 0) {
+        return 0;
+    }
+
+    if (!((fi->flags & O_WRONLY) || (fi->flags & O_RDWR))) {
+        return EBADF;
+    }
+
+    fi->flags |= O_APPEND;
+    fi->offset = fi->dentry.stat.size;
+    return 0;
 }

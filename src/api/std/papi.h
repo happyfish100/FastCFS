@@ -90,6 +90,9 @@
 #define fcfs_flock(fd, operation) \
     fcfs_flock_ex(&g_fcfs_papi_ctx, fd, operation)
 
+#define fcfs_fcntl(fd, cmd, ...) \
+    fcfs_fcntl_ex(&g_fcfs_papi_ctx, fd, cmd, ##__VA_ARGS__)
+
 #define fcfs_symlink(link, path) \
     fcfs_symlink_ex(&g_fcfs_papi_ctx, link, path)
 
@@ -113,6 +116,12 @@
 
 #define fcfs_mknodat(fd, path, mode, dev) \
     fcfs_mknodat_ex(&g_fcfs_papi_ctx, fd, path, mode, dev)
+
+#define fcfs_mkfifo(path, mode) \
+    fcfs_mkfifo_ex(&g_fcfs_papi_ctx, path, mode)
+
+#define fcfs_mkfifoat(fd, path, mode) \
+    fcfs_mkfifoat_ex(&g_fcfs_papi_ctx, fd, path, mode)
 
 #define fcfs_access(path, mode) \
     fcfs_access_ex(&g_fcfs_papi_ctx, path, mode)
@@ -325,7 +334,6 @@ extern "C" {
 
     int fcfs_flock_ex(FCFSPosixAPIContext *ctx, int fd, int operation);
 
-    //TODO
     int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...);
 
     int fcfs_symlink_ex(FCFSPosixAPIContext *ctx,
@@ -352,6 +360,12 @@ extern "C" {
 
     int fcfs_mknodat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, mode_t mode, dev_t dev);
+
+    int fcfs_mkfifo_ex(FCFSPosixAPIContext *ctx,
+            const char *path, mode_t mode);
+
+    int fcfs_mkfifoat_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *path, mode_t mode);
 
     int fcfs_access_ex(FCFSPosixAPIContext *ctx,
             const char *path, int mode);

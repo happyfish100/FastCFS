@@ -962,7 +962,7 @@ static void fs_do_getlk(fuse_req_t req, fuse_ino_t ino,
     if (fh == NULL) {
         result = EBADF;
     } else {
-        result = fcfs_api_getlk(fh, lock, &owner_id);
+        result = fcfs_api_getlk_ex(fh, lock, &owner_id);
     }
 
     if (result == 0) {
@@ -975,6 +975,7 @@ static void fs_do_getlk(fuse_req_t req, fuse_ino_t ino,
 static void fs_do_setlk(fuse_req_t req, fuse_ino_t ino,
         struct fuse_file_info *fi, struct flock *lock, int sleep)
 {
+    const bool blocked = false;
     int result;
     FCFSAPIFileInfo *fh;
 
@@ -988,7 +989,7 @@ static void fs_do_setlk(fuse_req_t req, fuse_ino_t ino,
     if (fh == NULL) {
         result = EBADF;
     } else {
-        result = fcfs_api_setlk(fh, lock, fi->lock_owner);
+        result = fcfs_api_setlk_ex(fh, lock, fi->lock_owner, blocked);
     }
     fuse_reply_err(req, result);
 }
