@@ -1072,6 +1072,7 @@ static void fs_do_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
 static void fs_do_removexattr(fuse_req_t req, fuse_ino_t ino,
         const char *name)
 {
+    const int flags = 0;
     int64_t new_inode;
     int result;
     string_t nm;
@@ -1082,13 +1083,14 @@ static void fs_do_removexattr(fuse_req_t req, fuse_ino_t ino,
     }
 
     FC_SET_STRING(nm, (char *)name);
-    result = fcfs_api_remove_xattr_by_inode(new_inode, &nm);
+    result = fcfs_api_remove_xattr_by_inode(new_inode, &nm, flags);
     fuse_reply_err(req, result);
 }
 
 static void fs_do_getxattr(fuse_req_t req, fuse_ino_t ino,
         const char *name, size_t size)
 {
+    const int flags = 0;
     int64_t new_inode;
     int value_size;
     int result;
@@ -1117,7 +1119,7 @@ static void fs_do_getxattr(fuse_req_t req, fuse_ino_t ino,
     value.str = v;
     FC_SET_STRING(nm, (char *)name);
     if ((result=fcfs_api_get_xattr_by_inode(new_inode,
-                    &nm, &value, value_size)) != 0)
+                    &nm, &value, value_size, flags)) != 0)
     {
         fuse_reply_err(req, result == EOVERFLOW ? ERANGE : result);
         return;
@@ -1134,6 +1136,7 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
 {
 #define MAX_LIST_SIZE  (8 * 1024)
 
+    const int flags = 0;
     int64_t new_inode;
     int list_size;
     int result;
@@ -1155,7 +1158,7 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
 
     list.str = v;
     if ((result=fcfs_api_list_xattr_by_inode(new_inode,
-                    &list, list_size)) != 0)
+                    &list, list_size, flags)) != 0)
     {
         fuse_reply_err(req, result == EOVERFLOW ? ERANGE : result);
         return;

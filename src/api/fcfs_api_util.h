@@ -18,6 +18,7 @@
 #define _FCFS_API_UTIL_H
 
 #include <utime.h>
+#include <sys/xattr.h>
 #include "fastcommon/logger.h"
 #include "fcfs_api_types.h"
 #include "inode_htable.h"
@@ -90,15 +91,28 @@ extern "C" {
 #define fcfs_api_set_xattr_by_inode(inode, xattr, flags) \
     fcfs_api_set_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, xattr, flags)
 
-#define fcfs_api_remove_xattr_by_inode(inode, name) \
-    fcfs_api_remove_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, name)
+#define fcfs_api_set_xattr_by_path(path, xattr, flags) \
+    fcfs_api_set_xattr_by_path_ex(&g_fcfs_api_ctx, path, xattr, flags)
 
-#define fcfs_api_get_xattr_by_inode(inode, name, value, size) \
+#define fcfs_api_remove_xattr_by_inode(inode, name, flags) \
+    fcfs_api_remove_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, name, flags)
+
+#define fcfs_api_remove_xattr_by_path(path, name, flags) \
+    fcfs_api_remove_xattr_by_path_ex(&g_fcfs_api_ctx, path, name, flags)
+
+#define fcfs_api_get_xattr_by_inode(inode, name, value, size, flags) \
     fcfs_api_get_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, \
-            name, LOG_DEBUG, value, size)
+            name, LOG_DEBUG, value, size, flags)
 
-#define fcfs_api_list_xattr_by_inode(inode, list, size) \
-    fcfs_api_list_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, list, size)
+#define fcfs_api_get_xattr_by_path(path, name, value, size, flags) \
+    fcfs_api_get_xattr_by_path_ex(&g_fcfs_api_ctx, path, \
+            name, LOG_DEBUG, value, size, flags)
+
+#define fcfs_api_list_xattr_by_inode(inode, list, size, flags) \
+    fcfs_api_list_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, list, size, flags)
+
+#define fcfs_api_list_xattr_by_path(path, list, size, flags) \
+    fcfs_api_list_xattr_by_path_ex(&g_fcfs_api_ctx, path, list, size, flags)
 
 #define fcfs_api_list_dentry_by_inode(inode, array)  \
     fcfs_api_list_dentry_by_inode_ex(&g_fcfs_api_ctx, inode, array)
@@ -400,34 +414,162 @@ static inline int fcfs_api_utime_ex(FCFSAPIContext *ctx,
             &fullname, options.flags, &stat, flags, &dentry);
 }
 
+static inline int fcfs_api_chown_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, const uid_t uid, const gid_t gid,
+        const int flags)
+{
+    FDIRStatModifyFlags options;
+    FDIRDEntryStat stat;
+    FDIRDEntryInfo dentry;
+
+    options.flags = 0;
+    options.uid = options.gid = 1;
+    memset(&stat, 0, sizeof(stat));
+    stat.uid = uid;
+    stat.gid = gid;
+    return fdir_client_modify_stat_by_inode(ctx->contexts.fdir,
+            &ctx->ns, inode, options.flags, &stat, flags, &dentry);
+}
+
+static inline int fcfs_api_chown_ex(FCFSAPIContext *ctx,
+        const char *path, const uid_t uid, const gid_t gid,
+        const int flags)
+{
+    FDIRDEntryFullName fullname;
+    FDIRStatModifyFlags options;
+    FDIRDEntryStat stat;
+    FDIRDEntryInfo dentry;
+
+    options.flags = 0;
+    options.uid = options.gid = 1;
+    memset(&stat, 0, sizeof(stat));
+    stat.uid = uid;
+    stat.gid = gid;
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    return fdir_client_modify_stat_by_path(ctx->contexts.fdir,
+            &fullname, options.flags, &stat, flags, &dentry);
+}
+
+static inline int fcfs_api_chmod_by_inode_ex(FCFSAPIContext *ctx,
+        const int64_t inode, const mode_t mode, const int flags)
+{
+    FDIRStatModifyFlags options;
+    FDIRDEntryStat stat;
+    FDIRDEntryInfo dentry;
+
+    options.flags = 0;
+    options.mode = 1;
+    memset(&stat, 0, sizeof(stat));
+    stat.mode = (mode & ALLPERMS);
+    return fdir_client_modify_stat_by_inode(ctx->contexts.fdir,
+            &ctx->ns, inode, options.flags, &stat, flags, &dentry);
+}
+
+static inline int fcfs_api_chmod_ex(FCFSAPIContext *ctx,
+        const char *path, const mode_t mode, const int flags)
+{
+    FDIRDEntryFullName fullname;
+    FDIRStatModifyFlags options;
+    FDIRDEntryStat stat;
+    FDIRDEntryInfo dentry;
+
+    options.flags = 0;
+    options.mode = 1;
+    memset(&stat, 0, sizeof(stat));
+    stat.mode = (mode & ALLPERMS);
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    return fdir_client_modify_stat_by_path(ctx->contexts.fdir,
+            &fullname, options.flags, &stat, flags, &dentry);
+}
+
+static inline int convert_xattr_flags(const int flags)
+{
+    int new_flags;
+
+    if (flags == 0) {
+        return 0;
+    }
+
+    new_flags = (flags & FDIR_FLAGS_FOLLOW_SYMLINK);
+    if ((flags & XATTR_CREATE) != 0) {
+        return (new_flags | FDIR_FLAGS_XATTR_CREATE);
+    } else if ((flags & XATTR_REPLACE) != 0) {
+        return (new_flags | FDIR_FLAGS_XATTR_REPLACE);
+    } else {
+        return new_flags;
+    }
+}
+
 static inline int fcfs_api_set_xattr_by_inode_ex(FCFSAPIContext *ctx,
         const int64_t inode, const key_value_pair_t *xattr,
         const int flags)
 {
     return fdir_client_set_xattr_by_inode(ctx->contexts.fdir,
-            &ctx->ns, inode, xattr, flags);
+            &ctx->ns, inode, xattr, convert_xattr_flags(flags));
+}
+
+static inline int fcfs_api_set_xattr_by_path_ex(FCFSAPIContext *ctx,
+        const char *path, const key_value_pair_t *xattr, const int flags)
+{
+    FDIRDEntryFullName fullname;
+
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    return fdir_client_set_xattr_by_path(ctx->contexts.fdir,
+            &fullname, xattr, convert_xattr_flags(flags));
 }
 
 static inline int fcfs_api_remove_xattr_by_inode_ex(FCFSAPIContext *ctx,
-        const int64_t inode, const string_t *name)
+        const int64_t inode, const string_t *name, const int flags)
 {
     return fdir_client_remove_xattr_by_inode_ex(ctx->contexts.fdir,
-            &ctx->ns, inode, name, LOG_DEBUG);
+            &ctx->ns, inode, name, flags, LOG_DEBUG);
+}
+
+static inline int fcfs_api_remove_xattr_by_path_ex(FCFSAPIContext *ctx,
+        const char *path, const string_t *name, const int flags)
+{
+    FDIRDEntryFullName fullname;
+
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    return fdir_client_remove_xattr_by_path_ex(ctx->contexts.fdir,
+            &fullname, name, flags, LOG_DEBUG);
 }
 
 static inline int fcfs_api_get_xattr_by_inode_ex(FCFSAPIContext *ctx,
-        const int64_t inode, const string_t *name,
-        const int enoattr_log_level, string_t *value, const int size)
+        const int64_t inode, const string_t *name, const int enoattr_log_level,
+        string_t *value, const int size, const int flags)
 {
-    return fdir_client_get_xattr_by_inode_ex(ctx->contexts.fdir,
-            &ctx->ns, inode, name, enoattr_log_level, value, size);
+    return fdir_client_get_xattr_by_inode_ex(ctx->contexts.fdir, &ctx->ns,
+            inode, name, enoattr_log_level, value, size, flags);
+}
+
+static inline int fcfs_api_get_xattr_by_path_ex(FCFSAPIContext *ctx,
+        const char *path, const string_t *name, const int enoattr_log_level,
+        string_t *value, const int size, const int flags)
+{
+    FDIRDEntryFullName fullname;
+
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    return fdir_client_get_xattr_by_path_ex(ctx->contexts.fdir,
+            &fullname, name, enoattr_log_level, value, size, flags);
 }
 
 static inline int fcfs_api_list_xattr_by_inode_ex(FCFSAPIContext *ctx,
-        const int64_t inode, string_t *list, const int size)
+        const int64_t inode, string_t *list, const int size,
+        const int flags)
 {
     return fdir_client_list_xattr_by_inode(ctx->contexts.fdir,
-            &ctx->ns, inode, list, size);
+            &ctx->ns, inode, list, size, flags);
+}
+
+static inline int fcfs_api_list_xattr_by_path_ex(FCFSAPIContext *ctx,
+        const char *path, string_t *list, const int size, const int flags)
+{
+    FDIRDEntryFullName fullname;
+
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    return fdir_client_list_xattr_by_path(ctx->contexts.fdir,
+            &fullname, list, size, flags);
 }
 
 static inline int fcfs_api_list_dentry_by_inode_ex(FCFSAPIContext *ctx,

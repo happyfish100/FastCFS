@@ -1425,6 +1425,23 @@ int fcfs_api_mknod_ex(FCFSAPIContext *ctx, const char *path,
 
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
+    if (!(S_ISCHR(omp->mode) || S_ISBLK(omp->mode))) {
+        return EINVAL;
+    }
+    return fdir_client_create_dentry(ctx->contexts.fdir,
+            &fullname, omp, dev, &dentry);
+}
+
+int fcfs_api_mkdir_ex(FCFSAPIContext *ctx, const char *path,
+        FDIRClientOwnerModePair *omp)
+{
+    const dev_t dev = 0;
+    FDIRDEntryFullName fullname;
+    FDIRDEntryInfo dentry;
+
+    fullname.ns = ctx->ns;
+    FC_SET_STRING(fullname.path, (char *)path);
+    omp->mode = ((omp->mode & (~S_IFMT)) | S_IFDIR);
     return fdir_client_create_dentry(ctx->contexts.fdir,
             &fullname, omp, dev, &dentry);
 }

@@ -409,7 +409,7 @@ int fcfs_truncate_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_fctx(&fctx, ctx, 0777);
+    fcfs_posix_api_set_fctx(&fctx, ctx, ACCESSPERMS);
     if ((result=fcfs_api_truncate_ex(&ctx->api_ctx,
                     path, length, &fctx)) != 0)
     {
@@ -558,7 +558,7 @@ int fcfs_symlink_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
     if ((result=fcfs_api_symlink_ex(&ctx->api_ctx,
                     link, path, &omp)) != 0)
     {
@@ -587,7 +587,7 @@ int fcfs_symlinkat_ex(FCFSPosixAPIContext *ctx, const char *link,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
     if ((result=fcfs_api_symlink_ex(&ctx->api_ctx,
                     link, path, &omp)) != 0)
     {
@@ -618,7 +618,7 @@ int fcfs_link_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
     if ((result=fcfs_api_link_ex(&ctx->api_ctx, path1,
                     path2, &omp, flags)) != 0)
     {
@@ -649,7 +649,7 @@ int fcfs_linkat_ex(FCFSPosixAPIContext *ctx, int fd1,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
     if ((result=fcfs_api_link_ex(&ctx->api_ctx, path1, path2,
                     &omp, ((flags & AT_SYMLINK_FOLLOW) != 0) ?
                     FDIR_FLAGS_FOLLOW_SYMLINK : 0)) != 0)
@@ -763,7 +763,7 @@ int fcfs_access_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
     if ((result=fcfs_api_access_ex(&ctx->api_ctx,
                     path, mode, &omp, flags)) != 0)
     {
@@ -787,7 +787,7 @@ int fcfs_faccessat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, 0777);
+    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
     if ((result=fcfs_api_access_ex(&ctx->api_ctx, path, mode, &omp,
                     (flags & AT_SYMLINK_NOFOLLOW) ? 0 :
                     FDIR_FLAGS_FOLLOW_SYMLINK)) != 0)
@@ -1059,4 +1059,526 @@ int fcfs_renameat2_ex(FCFSPosixAPIContext *ctx, int fd1,
 #endif
 
     return do_renameat(ctx, "renameat2", fd1, path1, fd2, path2, flags);
+}
+
+int fcfs_mkdir_ex(FCFSPosixAPIContext *ctx,
+        const char *path, mode_t mode)
+{
+    FDIRClientOwnerModePair omp;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "mkdir", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, mode);
+    if ((result=fcfs_api_mkdir_ex(&ctx->api_ctx, path, &omp)) != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_mkdirat_ex(FCFSPosixAPIContext *ctx, int fd,
+        const char *path, mode_t mode)
+{
+    FDIRClientOwnerModePair omp;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, "mkdirat", fd, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, mode);
+    if ((result=fcfs_api_mkdir_ex(&ctx->api_ctx, path, &omp)) != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_rmdir_ex(FCFSPosixAPIContext *ctx, const char *path)
+{
+    const int flags = FDIR_UNLINK_FLAGS_MATCH_DIR;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "rmdir", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_remove_dentry_ex(&ctx->api_ctx, path,
+                    flags, fcfs_posix_api_gettid())) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_chown_ex(FCFSPosixAPIContext *ctx, const char *path,
+        uid_t owner, gid_t group)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "chown", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_chown_ex(&ctx->api_ctx, path,
+                    owner, group, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_lchown_ex(FCFSPosixAPIContext *ctx, const char *path,
+        uid_t owner, gid_t group)
+{
+    const int flags = 0;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "lchown", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_chown_ex(&ctx->api_ctx, path,
+                    owner, group, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_fchown_ex(FCFSPosixAPIContext *ctx, int fd,
+        uid_t owner, gid_t group)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FCFSPosixAPIFileInfo *file;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((result=fcfs_api_chown_by_inode_ex(&ctx->api_ctx, file->
+                    fi.dentry.inode, owner, group, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_fchownat_ex(FCFSPosixAPIContext *ctx, int fd,
+        const char *path, uid_t owner, gid_t group, int flags)
+{
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, "fchownat", fd, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_chown_ex(&ctx->api_ctx, path, owner,
+                    group, (flags & AT_SYMLINK_NOFOLLOW) ?
+                    0 : FDIR_FLAGS_FOLLOW_SYMLINK)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_chmod_ex(FCFSPosixAPIContext *ctx,
+        const char *path, mode_t mode)
+{
+    const int flags = 0;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "chmod", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_chmod_ex(&ctx->api_ctx,
+                    path, mode, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_fchmod_ex(FCFSPosixAPIContext *ctx,
+        int fd, mode_t mode)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FCFSPosixAPIFileInfo *file;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((result=fcfs_api_chmod_by_inode_ex(&ctx->api_ctx, file->
+                    fi.dentry.inode, mode, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_fchmodat_ex(FCFSPosixAPIContext *ctx, int fd,
+        const char *path, mode_t mode, int flags)
+{
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_pathat(ctx, "fchmodat", fd, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_chmod_ex(&ctx->api_ctx, path,
+                    mode, (flags & AT_SYMLINK_NOFOLLOW) ?
+                    0 : FDIR_FLAGS_FOLLOW_SYMLINK)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_statvfs_ex(FCFSPosixAPIContext *ctx,
+        const char *path, struct statvfs *buf)
+{
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "chmod", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=fcfs_api_statvfs(path, buf)) != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_fstatvfs_ex(FCFSPosixAPIContext *ctx, int fd,
+        struct statvfs *buf)
+{
+    FCFSPosixAPIFileInfo *file;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((result=fcfs_api_statvfs(file->filename.str, buf)) != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+static inline int do_setxattr(FCFSPosixAPIContext *ctx, const char *func,
+        const char *path, const char *name, const void *value,
+        size_t size, int flags)
+{
+    char full_fname[PATH_MAX];
+    key_value_pair_t xattr;
+    int result;
+
+    if ((result=papi_resolve_path(ctx, func, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    FC_SET_STRING(xattr.key, (char *)name);
+    FC_SET_STRING_EX(xattr.value, (char *)value, size);
+    if ((result=fcfs_api_set_xattr_by_path_ex(&ctx->api_ctx,
+                    path, &xattr, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_setxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
+        const char *name, const void *value, size_t size, int flags)
+{
+    return do_setxattr(ctx, "setxattr", path, name, value, size,
+            (flags | FDIR_FLAGS_FOLLOW_SYMLINK));
+}
+
+int fcfs_lsetxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
+        const char *name, const void *value, size_t size, int flags)
+{
+    return do_setxattr(ctx, "lsetxattr", path, name, value, size,
+            (flags & (~FDIR_FLAGS_FOLLOW_SYMLINK)));
+}
+
+int fcfs_fsetxattr_ex(FCFSPosixAPIContext *ctx, int fd, const char *name,
+        const void *value, size_t size, int flags)
+{
+    key_value_pair_t xattr;
+    FCFSPosixAPIFileInfo *file;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    FC_SET_STRING(xattr.key, (char *)name);
+    FC_SET_STRING_EX(xattr.value, (char *)value, size);
+    if ((result=fcfs_api_set_xattr_by_inode_ex(&ctx->api_ctx,
+                    file->fi.dentry.inode, &xattr, (flags |
+                        FDIR_FLAGS_FOLLOW_SYMLINK))) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+static inline ssize_t do_getxattr(FCFSPosixAPIContext *ctx,
+        const char *func, const char *path, const char *name,
+        void *value, size_t size, int flags)
+{
+    char full_fname[PATH_MAX];
+    string_t nm;
+    string_t vl;
+    int result;
+
+    if ((result=papi_resolve_path(ctx, func, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    FC_SET_STRING(nm, (char *)name);
+    FC_SET_STRING(vl, (char *)value);
+    if ((result=fcfs_api_get_xattr_by_path_ex(&ctx->api_ctx, path,
+                    &nm, LOG_DEBUG, &vl, size, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return vl.len;
+    }
+}
+
+ssize_t fcfs_getxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
+        const char *name, void *value, size_t size)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    return do_getxattr(ctx, "getxattr", path, name, value, size, flags);
+}
+
+ssize_t fcfs_lgetxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
+        const char *name, void *value, size_t size)
+{
+    const int flags = 0;
+    return do_getxattr(ctx, "lgetxattr", path, name, value, size, flags);
+}
+
+ssize_t fcfs_fgetxattr_ex(FCFSPosixAPIContext *ctx, int fd,
+        const char *name, void *value, size_t size)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FCFSPosixAPIFileInfo *file;
+    string_t nm;
+    string_t vl;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    FC_SET_STRING(nm, (char *)name);
+    FC_SET_STRING(vl, (char *)value);
+    if ((result=fcfs_api_get_xattr_by_inode_ex(&ctx->api_ctx,
+                    file->fi.dentry.inode, &nm, LOG_DEBUG,
+                    &vl, size, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return vl.len;
+    }
+}
+
+static inline ssize_t do_listxattr(FCFSPosixAPIContext *ctx,
+        const char *func, const char *path, char *list,
+        size_t size, int flags)
+{
+    char full_fname[PATH_MAX];
+    string_t ls;
+    int result;
+
+    if ((result=papi_resolve_path(ctx, func, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    FC_SET_STRING(ls, list);
+    if ((result=fcfs_api_list_xattr_by_path_ex(&ctx->api_ctx,
+                    path, &ls, size, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return ls.len;
+    }
+}
+
+ssize_t fcfs_listxattr_ex(FCFSPosixAPIContext *ctx,
+        const char *path, char *list, size_t size)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    return do_listxattr(ctx, "listattr", path, list, size, flags);
+}
+
+ssize_t fcfs_llistxattr_ex(FCFSPosixAPIContext *ctx,
+        const char *path, char *list, size_t size)
+{
+    const int flags = 0;
+    return do_listxattr(ctx, "listattr", path, list, size, flags);
+}
+
+ssize_t fcfs_flistxattr_ex(FCFSPosixAPIContext *ctx,
+        int fd, char *list, size_t size)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FCFSPosixAPIFileInfo *file;
+    string_t ls;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    FC_SET_STRING(ls, list);
+    if ((result=fcfs_api_list_xattr_by_inode_ex(&ctx->api_ctx,
+                    file->fi.dentry.inode, &ls, size, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return ls.len;
+    }
+}
+
+static inline int do_removexattr(FCFSPosixAPIContext *ctx, const char *func,
+        const char *path, const char *name, int flags)
+{
+    char full_fname[PATH_MAX];
+    string_t nm;
+    int result;
+
+    if ((result=papi_resolve_path(ctx, func, &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    FC_SET_STRING(nm, (char *)name);
+    if ((result=fcfs_api_remove_xattr_by_path_ex(&ctx->api_ctx,
+                    path, &nm, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_removexattr_ex(FCFSPosixAPIContext *ctx,
+        const char *path, const char *name)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    return do_removexattr(ctx, "removexattr", path, name, flags);
+}
+
+int fcfs_lremovexattr_ex(FCFSPosixAPIContext *ctx,
+        const char *path, const char *name)
+{
+    const int flags = 0;
+    return do_removexattr(ctx, "lremovexattr", path, name, flags);
+}
+
+int fcfs_fremovexattr_ex(FCFSPosixAPIContext *ctx,
+        int fd, const char *name)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FCFSPosixAPIFileInfo *file;
+    string_t nm;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    FC_SET_STRING(nm, (char *)name);
+    if ((result=fcfs_api_remove_xattr_by_inode_ex(&ctx->api_ctx,
+                    file->fi.dentry.inode, &nm, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
 }

@@ -152,6 +152,79 @@
 #define fcfs_renameat2(fd1, path1, fd2, path2, flags) \
     fcfs_renameat2_ex(&g_fcfs_papi_ctx, fd1, path1, fd2, path2, flags)
 
+#define fcfs_mkdir(path, mode) \
+    fcfs_mkdir_ex(&g_fcfs_papi_ctx, path, mode)
+
+#define fcfs_mkdirat(fd, path, mode) \
+    fcfs_mkdirat_ex(&g_fcfs_papi_ctx, fd, path, mode)
+
+#define fcfs_rmdir(path) \
+    fcfs_rmdir_ex(&g_fcfs_papi_ctx, path)
+
+#define fcfs_chown(path, owner, group) \
+    fcfs_chown_ex(&g_fcfs_papi_ctx, path, owner, group)
+
+#define fcfs_lchown(path, owner, group) \
+    fcfs_lchown_ex(&g_fcfs_papi_ctx, path, owner, group)
+
+#define fcfs_fchown(fd, owner, group) \
+    fcfs_fchown_ex(&g_fcfs_papi_ctx, fd, owner, group)
+
+#define fcfs_fchownat(fd, path, owner, group, flags) \
+    fcfs_fchownat_ex(&g_fcfs_papi_ctx, fd, path, owner, group, flags)
+
+#define fcfs_chmod(path, mode) \
+    fcfs_chmod_ex(&g_fcfs_papi_ctx, path, mode)
+
+#define fcfs_fchmod(fd, mode) \
+    fcfs_fchmod_ex(&g_fcfs_papi_ctx, fd, mode)
+
+#define fcfs_fchmodat(fd, path, mode, flags) \
+    fcfs_fchmodat_ex(&g_fcfs_papi_ctx, fd, path, mode, flags)
+
+#define fcfs_statvfs(path, buf) \
+    fcfs_statvfs_ex(&g_fcfs_papi_ctx, path, buf)
+
+#define fcfs_fstatvfs(fd, buf) \
+    fcfs_fstatvfs_ex(&g_fcfs_papi_ctx, fd, buf)
+
+#define fcfs_setxattr(path, name, value, size, flags) \
+    fcfs_setxattr_ex(&g_fcfs_papi_ctx, path, name, value, size, flags)
+
+#define fcfs_lsetxattr(path, name, value, size, flags) \
+    fcfs_lsetxattr_ex(&g_fcfs_papi_ctx, path, name, value, size, flags)
+
+#define fcfs_fsetxattr(fd, name, value, size, flags) \
+    fcfs_fsetxattr_ex(&g_fcfs_papi_ctx, fd, name, value, size, flags)
+
+#define fcfs_getxattr(path, name, value, size) \
+    fcfs_getxattr_ex(&g_fcfs_papi_ctx, path, name, value, size)
+
+#define fcfs_lgetxattr(path, name, value, size) \
+    fcfs_lgetxattr_ex(&g_fcfs_papi_ctx, path, name, value, size)
+
+#define fcfs_fgetxattr(fd, name, value, size) \
+    fcfs_fgetxattr_ex(&g_fcfs_papi_ctx, fd, name, value, size)
+
+#define fcfs_listxattr(path, list, size) \
+    fcfs_listxattr_ex(&g_fcfs_papi_ctx, path, list, size)
+
+#define fcfs_llistxattr(path, list, size) \
+    fcfs_llistxattr_ex(&g_fcfs_papi_ctx, path, list, size)
+
+#define fcfs_flistxattr(fd, list, size) \
+    fcfs_flistxattr_ex(&g_fcfs_papi_ctx, fd, list, size)
+
+#define fcfs_removexattr(path, name) \
+    fcfs_removexattr_ex(&g_fcfs_papi_ctx, path, name)
+
+#define fcfs_lremovexattr(path, name) \
+    fcfs_lremovexattr_ex(&g_fcfs_papi_ctx, path, name)
+
+#define fcfs_fremovexattr(fd, name) \
+    fcfs_fremovexattr_ex(&g_fcfs_papi_ctx, fd, name)
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -164,12 +237,6 @@ extern "C" {
 
     int fcfs_creat_ex(FCFSPosixAPIContext *ctx,
             const char *path, mode_t mode);
-
-    //TODO
-    int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd);
-
-    //TODO
-    int fcfs_dup2_ex(FCFSPosixAPIContext *ctx, int fd1, int fd2);
 
     int fcfs_close_ex(FCFSPosixAPIContext *ctx, int fd);
 
@@ -288,12 +355,11 @@ extern "C" {
     int fcfs_renameat_ex(FCFSPosixAPIContext *ctx, int fd1,
             const char *path1, int fd2, const char *path2);
 
+    //renameatx_np for FreeBSD
     int fcfs_renameat2_ex(FCFSPosixAPIContext *ctx, int fd1,
             const char *path1, int fd2, const char *path2,
             unsigned int flags);
 
-    //TODO
-    //renameatx_np for FreeBSD
     int fcfs_mkdir_ex(FCFSPosixAPIContext *ctx,
             const char *path, mode_t mode);
 
@@ -312,7 +378,7 @@ extern "C" {
             uid_t owner, gid_t group);
 
     int fcfs_fchownat_ex(FCFSPosixAPIContext *ctx, int fd,
-            const char *path, uid_t owner, gid_t group, int flag);
+            const char *path, uid_t owner, gid_t group, int flags);
 
     int fcfs_chmod_ex(FCFSPosixAPIContext *ctx,
             const char *path, mode_t mode);
@@ -321,23 +387,13 @@ extern "C" {
             int fd, mode_t mode);
 
     int fcfs_fchmodat_ex(FCFSPosixAPIContext *ctx, int fd,
-            const char *path, mode_t mode, int flag);
-
-    int fcfs_chdir_ex(FCFSPosixAPIContext *ctx, const char *path);
-
-    int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd);
-
-    char *fcfs_getcwd_ex(FCFSPosixAPIContext *ctx, char *buf, size_t size);
-
-    char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf);
-
-    int fcfs_chroot_ex(FCFSPosixAPIContext *ctx, const char *path);
+            const char *path, mode_t mode, int flags);
 
     int fcfs_statvfs_ex(FCFSPosixAPIContext *ctx,
             const char *path, struct statvfs *buf);
 
-    int fcfs_fstatvfs_ex(FCFSPosixAPIContext *ctx, int fd,
-            struct statvfs *buf);
+    int fcfs_fstatvfs_ex(FCFSPosixAPIContext *ctx,
+            int fd, struct statvfs *buf);
 
     int fcfs_setxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
             const char *name, const void *value, size_t size, int flags);
@@ -374,6 +430,21 @@ extern "C" {
 
     int fcfs_fremovexattr_ex(FCFSPosixAPIContext *ctx,
             int fd, const char *name);
+
+    //TODO
+    int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    int fcfs_dup2_ex(FCFSPosixAPIContext *ctx, int fd1, int fd2);
+
+    int fcfs_chdir_ex(FCFSPosixAPIContext *ctx, const char *path);
+
+    int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    char *fcfs_getcwd_ex(FCFSPosixAPIContext *ctx, char *buf, size_t size);
+
+    char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf);
+
+    int fcfs_chroot_ex(FCFSPosixAPIContext *ctx, const char *path);
 
     void *fcfs_mmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length,
             int prot, int flags, int fd, off_t offset);

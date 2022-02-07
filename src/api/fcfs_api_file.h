@@ -211,6 +211,9 @@ extern "C" {
     int fcfs_api_mknod_ex(FCFSAPIContext *ctx, const char *path,
             const FDIRClientOwnerModePair *omp, const dev_t dev);
 
+    int fcfs_api_mkdir_ex(FCFSAPIContext *ctx, const char *path,
+            FDIRClientOwnerModePair *omp);
+
     int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
             const int mask, const FDIRClientOwnerModePair *omp,
             const int flags);
