@@ -29,7 +29,7 @@ static FCFSPosixAPIFileInfo *do_open_ex(FCFSPosixAPIContext *ctx,
     FCFSPosixAPIFileInfo *file;
     FCFSAPIFileContext fctx;
     va_list ap;
-    mode_t mode;
+    int mode;
     int result;
 
     if ((file=fcfs_fd_manager_alloc(path)) == NULL) {
@@ -38,7 +38,7 @@ static FCFSPosixAPIFileInfo *do_open_ex(FCFSPosixAPIContext *ctx,
     }
 
     va_start(ap, flags);
-    mode = va_arg(ap, mode_t);
+    mode = va_arg(ap, int);
     va_end(ap);
 
     fcfs_posix_api_set_fctx(&fctx, ctx, mode);
@@ -1957,4 +1957,95 @@ int fcfs_scandirat_ex(FCFSPosixAPIContext *ctx, int fd, const char *path,
     }
 
     return do_scandir(ctx, path, namelist, filter, compar);
+}
+
+static int do_chdir(const string_t *path)
+{
+    string_t *cwd;
+    char *old_cwd;
+
+    if ((cwd=fc_malloc(sizeof(string_t) + path->len + 1)) == NULL) {
+        errno = ENOMEM;
+        return -1;
+    }
+
+    cwd->str = (char *)(cwd + 1);
+    memcpy(cwd->str, path->str, path->len + 1);
+    cwd->len = path->len;
+
+    old_cwd = G_FCFS_PAPI_CWD->str;
+    G_FCFS_PAPI_CWD = cwd;
+
+    if (old_cwd != NULL) {
+        free(old_cwd);
+    }
+    return 0;
+}
+
+int fcfs_chdir_ex(FCFSPosixAPIContext *ctx, const char *path)
+{
+    char full_fname[PATH_MAX];
+    string_t cwd;
+
+    if (papi_resolve_path(ctx, "chdir", &path,
+                full_fname, sizeof(full_fname)) != 0)
+    {
+        return -1;
+    }
+
+    FC_SET_STRING(cwd, (char *)path);
+    return do_chdir(&cwd);
+}
+
+int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd)
+{
+    FCFSPosixAPIFileInfo *file;
+    char full_path[PATH_MAX];
+    string_t cwd;
+    char *p;
+    int len;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    p = strrchr(file->filename.str, '/');
+    if (p == NULL) {
+        errno = EBUSY;
+        return -1;
+    }
+
+    len = (p - file->filename.str) + 1;
+    snprintf(full_path, sizeof(full_path), "%.*s",
+            len, file->filename.str);
+    FC_SET_STRING_EX(cwd, full_path, len);
+    return do_chdir(&cwd);
+}
+
+static inline char *do_getcwd(char *buf, size_t size,
+        const int overflow_errno)
+{
+    if (G_FCFS_PAPI_CWD == NULL) {
+        *buf = '\0';
+        return buf;
+    }
+
+    if (G_FCFS_PAPI_CWD->len >= size) {
+        errno = overflow_errno;
+        return NULL;
+    }
+
+    memcpy(buf, G_FCFS_PAPI_CWD->str, G_FCFS_PAPI_CWD->len + 1);
+    return buf;
+}
+
+char *fcfs_getcwd_ex(FCFSPosixAPIContext *ctx, char *buf, size_t size)
+{
+    return do_getcwd(buf, size, ERANGE);
+}
+
+char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf)
+{
+    return do_getcwd(buf, PATH_MAX, ENAMETOOLONG);
 }

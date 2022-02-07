@@ -21,251 +21,281 @@
 #include <dirent.h>
 #include "api_types.h"
 
+#define G_FCFS_PAPI_CTX  g_fcfs_papi_global_vars.ctx
+#define G_FCFS_PAPI_CWD  g_fcfs_papi_global_vars.cwd
+
 #define fcfs_open(path, flags, ...) \
-    fcfs_open_ex(&g_fcfs_papi_ctx, path, flags, ##__VA_ARGS__)
+    fcfs_open_ex(&G_FCFS_PAPI_CTX, path, flags, ##__VA_ARGS__)
 
 #define fcfs_openat(fd, path, flags, ...) \
-    fcfs_openat_ex(&g_fcfs_papi_ctx, fd, path, flags, ##__VA_ARGS__)
+    fcfs_openat_ex(&G_FCFS_PAPI_CTX, fd, path, flags, ##__VA_ARGS__)
 
 #define fcfs_creat(path, mode) \
-    fcfs_creat_ex(&g_fcfs_papi_ctx, path, mode)
+    fcfs_creat_ex(&G_FCFS_PAPI_CTX, path, mode)
 
 #define fcfs_close(fd) \
-    fcfs_close_ex(&g_fcfs_papi_ctx, fd)
+    fcfs_close_ex(&G_FCFS_PAPI_CTX, fd)
 
 #define fcfs_fsync(fd) \
-    fcfs_fsync_ex(&g_fcfs_papi_ctx, fd)
+    fcfs_fsync_ex(&G_FCFS_PAPI_CTX, fd)
 
 #define fcfs_fdatasync(fd) \
-    fcfs_fdatasync_ex(&g_fcfs_papi_ctx, fd)
+    fcfs_fdatasync_ex(&G_FCFS_PAPI_CTX, fd)
 
 #define fcfs_write(fd, buff, count) \
-    fcfs_write_ex(&g_fcfs_papi_ctx, fd, buff, count)
+    fcfs_write_ex(&G_FCFS_PAPI_CTX, fd, buff, count)
 
 #define fcfs_pwrite(fd, buff, count, offset) \
-    fcfs_pwrite_ex(&g_fcfs_papi_ctx, fd, buff, count, offset)
+    fcfs_pwrite_ex(&G_FCFS_PAPI_CTX, fd, buff, count, offset)
 
 #define fcfs_writev(fd, iov, iovcnt) \
-    fcfs_writev_ex(&g_fcfs_papi_ctx, fd, iov, iovcnt)
+    fcfs_writev_ex(&G_FCFS_PAPI_CTX, fd, iov, iovcnt)
 
 #define fcfs_pwritev(fd, iov, iovcnt, offset) \
-    fcfs_pwritev_ex(&g_fcfs_papi_ctx, fd, iov, iovcnt, offset)
+    fcfs_pwritev_ex(&G_FCFS_PAPI_CTX, fd, iov, iovcnt, offset)
 
 #define fcfs_read(fd, buff, count) \
-    fcfs_read_ex(&g_fcfs_papi_ctx, fd, buff, count)
+    fcfs_read_ex(&G_FCFS_PAPI_CTX, fd, buff, count)
 
 #define fcfs_pread(fd, buff, count, offset) \
-    fcfs_pread_ex(&g_fcfs_papi_ctx, fd, buff, count, offset)
+    fcfs_pread_ex(&G_FCFS_PAPI_CTX, fd, buff, count, offset)
 
 #define fcfs_readv(fd, iov, iovcnt) \
-    fcfs_readv_ex(&g_fcfs_papi_ctx, fd, iov, iovcnt)
+    fcfs_readv_ex(&G_FCFS_PAPI_CTX, fd, iov, iovcnt)
 
 #define fcfs_preadv(fd, iov, iovcnt, offset) \
-    fcfs_preadv_ex(&g_fcfs_papi_ctx, fd, iov, iovcnt, offset)
+    fcfs_preadv_ex(&G_FCFS_PAPI_CTX, fd, iov, iovcnt, offset)
 
 #define fcfs_lseek(fd, offset, whence) \
-    fcfs_lseek_ex(&g_fcfs_papi_ctx, fd, offset, whence)
+    fcfs_lseek_ex(&G_FCFS_PAPI_CTX, fd, offset, whence)
 
 #define fcfs_fallocate(fd, mode, offset, length) \
-    fcfs_fallocate_ex(&g_fcfs_papi_ctx, fd, mode, offset, length)
+    fcfs_fallocate_ex(&G_FCFS_PAPI_CTX, fd, mode, offset, length)
 
 #define fcfs_truncate(path, length) \
-    fcfs_truncate_ex(&g_fcfs_papi_ctx, path, length)
+    fcfs_truncate_ex(&G_FCFS_PAPI_CTX, path, length)
 
 #define fcfs_ftruncate(fd, length) \
-    fcfs_ftruncate_ex(&g_fcfs_papi_ctx, fd, length)
+    fcfs_ftruncate_ex(&G_FCFS_PAPI_CTX, fd, length)
 
 #define fcfs_lstat(path, buf) \
-    fcfs_lstat_ex(&g_fcfs_papi_ctx, path, buf)
+    fcfs_lstat_ex(&G_FCFS_PAPI_CTX, path, buf)
 
 #define fcfs_stat(path, buf) \
-    fcfs_stat_ex(&g_fcfs_papi_ctx, path, buf)
+    fcfs_stat_ex(&G_FCFS_PAPI_CTX, path, buf)
 
 #define fcfs_fstat(fd, buf) \
-    fcfs_fstat_ex(&g_fcfs_papi_ctx, fd, buf)
+    fcfs_fstat_ex(&G_FCFS_PAPI_CTX, fd, buf)
 
 #define fcfs_fstatat(fd, path, buf, flags) \
-    fcfs_fstatat_ex(&g_fcfs_papi_ctx, fd, path, buf, flags)
+    fcfs_fstatat_ex(&G_FCFS_PAPI_CTX, fd, path, buf, flags)
 
 #define fcfs_flock(fd, operation) \
-    fcfs_flock_ex(&g_fcfs_papi_ctx, fd, operation)
+    fcfs_flock_ex(&G_FCFS_PAPI_CTX, fd, operation)
 
 #define fcfs_fcntl(fd, cmd, ...) \
-    fcfs_fcntl_ex(&g_fcfs_papi_ctx, fd, cmd, ##__VA_ARGS__)
+    fcfs_fcntl_ex(&G_FCFS_PAPI_CTX, fd, cmd, ##__VA_ARGS__)
 
 #define fcfs_symlink(link, path) \
-    fcfs_symlink_ex(&g_fcfs_papi_ctx, link, path)
+    fcfs_symlink_ex(&G_FCFS_PAPI_CTX, link, path)
 
 #define fcfs_symlinkat(link, fd, path) \
-    fcfs_symlinkat_ex(&g_fcfs_papi_ctx, link, fd, path)
+    fcfs_symlinkat_ex(&G_FCFS_PAPI_CTX, link, fd, path)
 
 #define fcfs_link(path1, path2) \
-    fcfs_link_ex(&g_fcfs_papi_ctx, path1, path2)
+    fcfs_link_ex(&G_FCFS_PAPI_CTX, path1, path2)
 
 #define fcfs_linkat(fd1, path1, fd2, path2, flags) \
-    fcfs_linkat_ex(&g_fcfs_papi_ctx, fd1, path1, fd2, path2, flags)
+    fcfs_linkat_ex(&G_FCFS_PAPI_CTX, fd1, path1, fd2, path2, flags)
 
 #define fcfs_readlink(path, buff, size) \
-    fcfs_readlink_ex(&g_fcfs_papi_ctx, path, buff, size)
+    fcfs_readlink_ex(&G_FCFS_PAPI_CTX, path, buff, size)
 
 #define fcfs_readlinkat(fd, path, buff, size) \
-    fcfs_readlinkat_ex(&g_fcfs_papi_ctx, fd, path, buff, size)
+    fcfs_readlinkat_ex(&G_FCFS_PAPI_CTX, fd, path, buff, size)
 
 #define fcfs_mknod(path, mode, dev) \
-    fcfs_mknod_ex(&g_fcfs_papi_ctx, path, mode, dev)
+    fcfs_mknod_ex(&G_FCFS_PAPI_CTX, path, mode, dev)
 
 #define fcfs_mknodat(fd, path, mode, dev) \
-    fcfs_mknodat_ex(&g_fcfs_papi_ctx, fd, path, mode, dev)
+    fcfs_mknodat_ex(&G_FCFS_PAPI_CTX, fd, path, mode, dev)
 
 #define fcfs_mkfifo(path, mode) \
-    fcfs_mkfifo_ex(&g_fcfs_papi_ctx, path, mode)
+    fcfs_mkfifo_ex(&G_FCFS_PAPI_CTX, path, mode)
 
 #define fcfs_mkfifoat(fd, path, mode) \
-    fcfs_mkfifoat_ex(&g_fcfs_papi_ctx, fd, path, mode)
+    fcfs_mkfifoat_ex(&G_FCFS_PAPI_CTX, fd, path, mode)
 
 #define fcfs_access(path, mode) \
-    fcfs_access_ex(&g_fcfs_papi_ctx, path, mode)
+    fcfs_access_ex(&G_FCFS_PAPI_CTX, path, mode)
 
 #define fcfs_faccessat(fd, path, mode, flags) \
-    fcfs_faccessat_ex(&g_fcfs_papi_ctx, fd, path, mode, flags)
+    fcfs_faccessat_ex(&G_FCFS_PAPI_CTX, fd, path, mode, flags)
 
 #define fcfs_utime(path, times) \
-    fcfs_utime_ex(&g_fcfs_papi_ctx, path, times)
+    fcfs_utime_ex(&G_FCFS_PAPI_CTX, path, times)
 
 #define fcfs_utimes(path, times) \
-    fcfs_utimes_ex(&g_fcfs_papi_ctx, path, times)
+    fcfs_utimes_ex(&G_FCFS_PAPI_CTX, path, times)
 
 #define fcfs_futimes(fd, times) \
-    fcfs_futimes_ex(&g_fcfs_papi_ctx, fd, times)
+    fcfs_futimes_ex(&G_FCFS_PAPI_CTX, fd, times)
 
 #define fcfs_futimesat(fd, path, times) \
-    fcfs_futimesat_ex(&g_fcfs_papi_ctx, fd, path, times)
+    fcfs_futimesat_ex(&G_FCFS_PAPI_CTX, fd, path, times)
 
 #define fcfs_futimens(fd, times) \
-    fcfs_futimens_ex(&g_fcfs_papi_ctx, fd, times)
+    fcfs_futimens_ex(&G_FCFS_PAPI_CTX, fd, times)
 
 #define fcfs_utimensat(fd, path, times, flags) \
-    fcfs_utimensat_ex(&g_fcfs_papi_ctx, fd, path, times, flags)
+    fcfs_utimensat_ex(&G_FCFS_PAPI_CTX, fd, path, times, flags)
 
 #define fcfs_unlink(path) \
-    fcfs_unlink_ex(&g_fcfs_papi_ctx, path)
+    fcfs_unlink_ex(&G_FCFS_PAPI_CTX, path)
 
 #define fcfs_unlinkat(fd, path, flags) \
-    fcfs_unlinkat_ex(&g_fcfs_papi_ctx, fd, path, flags)
+    fcfs_unlinkat_ex(&G_FCFS_PAPI_CTX, fd, path, flags)
 
 #define fcfs_rename(path1, path2) \
-    fcfs_rename_ex(&g_fcfs_papi_ctx, path1, path2)
+    fcfs_rename_ex(&G_FCFS_PAPI_CTX, path1, path2)
 
 #define fcfs_renameat(fd1, path1, fd2, path2) \
-    fcfs_renameat_ex(&g_fcfs_papi_ctx, fd1, path1, fd2, path2)
+    fcfs_renameat_ex(&G_FCFS_PAPI_CTX, fd1, path1, fd2, path2)
 
 #define fcfs_renameat2(fd1, path1, fd2, path2, flags) \
-    fcfs_renameat2_ex(&g_fcfs_papi_ctx, fd1, path1, fd2, path2, flags)
+    fcfs_renameat2_ex(&G_FCFS_PAPI_CTX, fd1, path1, fd2, path2, flags)
 
 #define fcfs_mkdir(path, mode) \
-    fcfs_mkdir_ex(&g_fcfs_papi_ctx, path, mode)
+    fcfs_mkdir_ex(&G_FCFS_PAPI_CTX, path, mode)
 
 #define fcfs_mkdirat(fd, path, mode) \
-    fcfs_mkdirat_ex(&g_fcfs_papi_ctx, fd, path, mode)
+    fcfs_mkdirat_ex(&G_FCFS_PAPI_CTX, fd, path, mode)
 
 #define fcfs_rmdir(path) \
-    fcfs_rmdir_ex(&g_fcfs_papi_ctx, path)
+    fcfs_rmdir_ex(&G_FCFS_PAPI_CTX, path)
 
 #define fcfs_chown(path, owner, group) \
-    fcfs_chown_ex(&g_fcfs_papi_ctx, path, owner, group)
+    fcfs_chown_ex(&G_FCFS_PAPI_CTX, path, owner, group)
 
 #define fcfs_lchown(path, owner, group) \
-    fcfs_lchown_ex(&g_fcfs_papi_ctx, path, owner, group)
+    fcfs_lchown_ex(&G_FCFS_PAPI_CTX, path, owner, group)
 
 #define fcfs_fchown(fd, owner, group) \
-    fcfs_fchown_ex(&g_fcfs_papi_ctx, fd, owner, group)
+    fcfs_fchown_ex(&G_FCFS_PAPI_CTX, fd, owner, group)
 
 #define fcfs_fchownat(fd, path, owner, group, flags) \
-    fcfs_fchownat_ex(&g_fcfs_papi_ctx, fd, path, owner, group, flags)
+    fcfs_fchownat_ex(&G_FCFS_PAPI_CTX, fd, path, owner, group, flags)
 
 #define fcfs_chmod(path, mode) \
-    fcfs_chmod_ex(&g_fcfs_papi_ctx, path, mode)
+    fcfs_chmod_ex(&G_FCFS_PAPI_CTX, path, mode)
 
 #define fcfs_fchmod(fd, mode) \
-    fcfs_fchmod_ex(&g_fcfs_papi_ctx, fd, mode)
+    fcfs_fchmod_ex(&G_FCFS_PAPI_CTX, fd, mode)
 
 #define fcfs_fchmodat(fd, path, mode, flags) \
-    fcfs_fchmodat_ex(&g_fcfs_papi_ctx, fd, path, mode, flags)
+    fcfs_fchmodat_ex(&G_FCFS_PAPI_CTX, fd, path, mode, flags)
 
 #define fcfs_statvfs(path, buf) \
-    fcfs_statvfs_ex(&g_fcfs_papi_ctx, path, buf)
+    fcfs_statvfs_ex(&G_FCFS_PAPI_CTX, path, buf)
 
 #define fcfs_fstatvfs(fd, buf) \
-    fcfs_fstatvfs_ex(&g_fcfs_papi_ctx, fd, buf)
+    fcfs_fstatvfs_ex(&G_FCFS_PAPI_CTX, fd, buf)
 
 #define fcfs_setxattr(path, name, value, size, flags) \
-    fcfs_setxattr_ex(&g_fcfs_papi_ctx, path, name, value, size, flags)
+    fcfs_setxattr_ex(&G_FCFS_PAPI_CTX, path, name, value, size, flags)
 
 #define fcfs_lsetxattr(path, name, value, size, flags) \
-    fcfs_lsetxattr_ex(&g_fcfs_papi_ctx, path, name, value, size, flags)
+    fcfs_lsetxattr_ex(&G_FCFS_PAPI_CTX, path, name, value, size, flags)
 
 #define fcfs_fsetxattr(fd, name, value, size, flags) \
-    fcfs_fsetxattr_ex(&g_fcfs_papi_ctx, fd, name, value, size, flags)
+    fcfs_fsetxattr_ex(&G_FCFS_PAPI_CTX, fd, name, value, size, flags)
 
 #define fcfs_getxattr(path, name, value, size) \
-    fcfs_getxattr_ex(&g_fcfs_papi_ctx, path, name, value, size)
+    fcfs_getxattr_ex(&G_FCFS_PAPI_CTX, path, name, value, size)
 
 #define fcfs_lgetxattr(path, name, value, size) \
-    fcfs_lgetxattr_ex(&g_fcfs_papi_ctx, path, name, value, size)
+    fcfs_lgetxattr_ex(&G_FCFS_PAPI_CTX, path, name, value, size)
 
 #define fcfs_fgetxattr(fd, name, value, size) \
-    fcfs_fgetxattr_ex(&g_fcfs_papi_ctx, fd, name, value, size)
+    fcfs_fgetxattr_ex(&G_FCFS_PAPI_CTX, fd, name, value, size)
 
 #define fcfs_listxattr(path, list, size) \
-    fcfs_listxattr_ex(&g_fcfs_papi_ctx, path, list, size)
+    fcfs_listxattr_ex(&G_FCFS_PAPI_CTX, path, list, size)
 
 #define fcfs_llistxattr(path, list, size) \
-    fcfs_llistxattr_ex(&g_fcfs_papi_ctx, path, list, size)
+    fcfs_llistxattr_ex(&G_FCFS_PAPI_CTX, path, list, size)
 
 #define fcfs_flistxattr(fd, list, size) \
-    fcfs_flistxattr_ex(&g_fcfs_papi_ctx, fd, list, size)
+    fcfs_flistxattr_ex(&G_FCFS_PAPI_CTX, fd, list, size)
 
 #define fcfs_removexattr(path, name) \
-    fcfs_removexattr_ex(&g_fcfs_papi_ctx, path, name)
+    fcfs_removexattr_ex(&G_FCFS_PAPI_CTX, path, name)
 
 #define fcfs_lremovexattr(path, name) \
-    fcfs_lremovexattr_ex(&g_fcfs_papi_ctx, path, name)
+    fcfs_lremovexattr_ex(&G_FCFS_PAPI_CTX, path, name)
 
 #define fcfs_fremovexattr(fd, name) \
-    fcfs_fremovexattr_ex(&g_fcfs_papi_ctx, fd, name)
+    fcfs_fremovexattr_ex(&G_FCFS_PAPI_CTX, fd, name)
 
 #define fcfs_opendir(path) \
-    fcfs_opendir_ex(&g_fcfs_papi_ctx, path)
+    fcfs_opendir_ex(&G_FCFS_PAPI_CTX, path)
 
 #define fcfs_fdopendir(fd) \
-    fcfs_fdopendir_ex(&g_fcfs_papi_ctx, fd)
+    fcfs_fdopendir_ex(&G_FCFS_PAPI_CTX, fd)
 
 #define fcfs_closedir(dirp) \
-    fcfs_closedir_ex(&g_fcfs_papi_ctx, dirp)
+    fcfs_closedir_ex(&G_FCFS_PAPI_CTX, dirp)
 
 #define fcfs_readdir(dirp) \
-    fcfs_readdir_ex(&g_fcfs_papi_ctx, dirp)
+    fcfs_readdir_ex(&G_FCFS_PAPI_CTX, dirp)
 
 #define fcfs_readdir_r(dirp, entry, result) \
-    fcfs_readdir_r_ex(&g_fcfs_papi_ctx, dirp, entry, result)
+    fcfs_readdir_r_ex(&G_FCFS_PAPI_CTX, dirp, entry, result)
 
 #define fcfs_seekdir(dirp, loc) \
-    fcfs_seekdir_ex(&g_fcfs_papi_ctx, dirp, loc)
+    fcfs_seekdir_ex(&G_FCFS_PAPI_CTX, dirp, loc)
 
 #define fcfs_telldir(dirp) \
-    fcfs_telldir_ex(&g_fcfs_papi_ctx, dirp)
+    fcfs_telldir_ex(&G_FCFS_PAPI_CTX, dirp)
 
 #define fcfs_rewinddir(dirp) \
-    fcfs_rewinddir_ex(&g_fcfs_papi_ctx, dirp)
+    fcfs_rewinddir_ex(&G_FCFS_PAPI_CTX, dirp)
 
 #define fcfs_dirfd(dirp) \
-    fcfs_dirfd_ex(&g_fcfs_papi_ctx, dirp)
+    fcfs_dirfd_ex(&G_FCFS_PAPI_CTX, dirp)
 
 #define fcfs_scandir(path, namelist, filter, compar) \
-    fcfs_scandir_ex(&g_fcfs_papi_ctx, path, namelist, filter, compar)
+    fcfs_scandir_ex(&G_FCFS_PAPI_CTX, path, namelist, filter, compar)
 
 #define fcfs_scandirat(fd, path, namelist, filter, compar) \
-    fcfs_scandirat_ex(&g_fcfs_papi_ctx, fd, path, namelist, filter, compar)
+    fcfs_scandirat_ex(&G_FCFS_PAPI_CTX, fd, path, namelist, filter, compar)
+
+#define fcfs_chdir(path) \
+    fcfs_chdir_ex(&G_FCFS_PAPI_CTX, path)
+
+#define fcfs_fchdir(fd) \
+    fcfs_fchdir_ex(&G_FCFS_PAPI_CTX, fd)
+
+#define fcfs_getcwd(buf, size) \
+    fcfs_getcwd_ex(&G_FCFS_PAPI_CTX, buf, size)
+
+#define fcfs_getwd(buf) \
+    fcfs_getwd_ex(&G_FCFS_PAPI_CTX, buf)
+
+#define fcfs_chroot(path) \
+    fcfs_chroot_ex(&G_FCFS_PAPI_CTX, path)
+
+#define fcfs_dup(fd) \
+    fcfs_dup_ex(&G_FCFS_PAPI_CTX, fd)
+
+#define fcfs_dup2(fd1, fd2) \
+    fcfs_dup2_ex(&G_FCFS_PAPI_CTX, fd1, fd2)
+
+#define fcfs_mmap(addr, length, prot, flags, fd, offset) \
+    fcfs_mmap_ex(&G_FCFS_PAPI_CTX, addr, length, prot, flags, fd, offset)
+
+#define fcfs_munmap(addr, length) \
+    fcfs_munmap_ex(&G_FCFS_PAPI_CTX, addr, length)
 
 #ifdef __cplusplus
 extern "C" {
@@ -506,11 +536,6 @@ extern "C" {
             struct dirent ***namelist, int (*filter)(const struct dirent *),
             int (*compar)(const struct dirent **, const struct dirent **));
 
-    //TODO
-    int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd);
-
-    int fcfs_dup2_ex(FCFSPosixAPIContext *ctx, int fd1, int fd2);
-
     int fcfs_chdir_ex(FCFSPosixAPIContext *ctx, const char *path);
 
     int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd);
@@ -519,12 +544,18 @@ extern "C" {
 
     char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf);
 
+    //TODO
     int fcfs_chroot_ex(FCFSPosixAPIContext *ctx, const char *path);
+
+    int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    int fcfs_dup2_ex(FCFSPosixAPIContext *ctx, int fd1, int fd2);
 
     void *fcfs_mmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length,
             int prot, int flags, int fd, off_t offset);
 
     int fcfs_munmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length);
+
 
 #ifdef __cplusplus
 }

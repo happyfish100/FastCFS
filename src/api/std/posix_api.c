@@ -16,7 +16,7 @@
 #include "fastcommon/logger.h"
 #include "posix_api.h"
 
-FCFSPosixAPIContext g_fcfs_papi_ctx;
+FCFSPosixAPIGlobalVars g_fcfs_papi_global_vars;
 
 __attribute__ ((constructor)) static void posix_api_global_init(void)
 {

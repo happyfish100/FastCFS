@@ -45,6 +45,11 @@ typedef struct fcfs_posix_api_dir {
     int offset;
 } FCFSPosixAPIDIR;
 
+typedef struct fcfs_posix_api_global_vars {
+    FCFSPosixAPIContext ctx;
+    string_t *cwd;
+} FCFSPosixAPIGlobalVars;
+
 #define FCFS_PAPI_IS_MY_FD(fd) \
     (fd > FCFS_POSIX_API_FD_BASE)
 

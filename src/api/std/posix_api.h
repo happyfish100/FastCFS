@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-    extern FCFSPosixAPIContext g_fcfs_papi_ctx;
+    extern FCFSPosixAPIGlobalVars g_fcfs_papi_global_vars;
 
     int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char *ns,
             const char *config_filename, const char *fdir_section_name,
@@ -48,7 +48,7 @@ extern "C" {
     static inline int fcfs_posix_api_init(const char *ns,
             const char *config_filename)
     {
-        return fcfs_posix_api_init_ex(&g_fcfs_papi_ctx,
+        return fcfs_posix_api_init_ex(&g_fcfs_papi_global_vars.ctx,
                 ns, config_filename);
     }
 
@@ -66,17 +66,17 @@ extern "C" {
 
     static inline int fcfs_posix_api_start()
     {
-        return fcfs_posix_api_start_ex(&g_fcfs_papi_ctx);
+        return fcfs_posix_api_start_ex(&g_fcfs_papi_global_vars.ctx);
     }
 
     static inline void fcfs_posix_api_terminate()
     {
-        fcfs_posix_api_terminate_ex(&g_fcfs_papi_ctx);
+        fcfs_posix_api_terminate_ex(&g_fcfs_papi_global_vars.ctx);
     }
 
     static inline void fcfs_posix_api_destroy()
     {
-        fcfs_posix_api_destroy_ex(&g_fcfs_papi_ctx);
+        fcfs_posix_api_destroy_ex(&g_fcfs_papi_global_vars.ctx);
     }
 
     static inline pid_t fcfs_posix_api_gettid()
