@@ -21,7 +21,10 @@
 #include "fd_manager.h"
 #include "papi.h"
 
-static int do_open(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
+#define FCFS_PAPI_MAGIC_NUMBER    1644551636
+
+static FCFSPosixAPIFileInfo *do_open_ex(FCFSPosixAPIContext *ctx,
+        const char *path, int flags, ...)
 {
     FCFSPosixAPIFileInfo *file;
     FCFSAPIFileContext fctx;
@@ -31,7 +34,7 @@ static int do_open(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
 
     if ((file=fcfs_fd_manager_alloc(path)) == NULL) {
         errno = ENOMEM;
-        return -1;
+        return NULL;
     }
 
     va_start(ap, flags);
@@ -44,14 +47,27 @@ static int do_open(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
     {
         fcfs_fd_manager_free(file);
         errno = result;
-        return -1;
+        return NULL;
     }
 
     if (S_ISDIR(file->fi.dentry.stat.mode)) {
         fcfs_fd_manager_normalize_path(file);
     }
 
-    return file->fd;
+    return file;
+}
+
+static inline int do_open(FCFSPosixAPIContext *ctx,
+        const char *path, int flags, ...)
+{
+    FCFSPosixAPIFileInfo *file;
+    va_list ap;
+
+    va_start(ap, flags);
+    file = do_open_ex(ctx, path, flags, ap);
+    va_end(ap);
+
+    return (file != NULL ? file->fd : -1);
 }
 
 static inline int papi_resolve_path(FCFSPosixAPIContext *ctx,
@@ -1581,4 +1597,259 @@ int fcfs_fremovexattr_ex(FCFSPosixAPIContext *ctx,
     } else {
         return 0;
     }
+}
+
+static DIR *do_opendir(FCFSPosixAPIContext *ctx, FCFSPosixAPIFileInfo *file)
+{
+    FCFSPosixAPIDIR *dir;
+    int result;
+
+    dir = (FCFSPosixAPIDIR *)fc_malloc(sizeof(FCFSPosixAPIDIR));
+    if (dir == NULL) {
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    dir->file = file;
+    dir->magic = FCFS_PAPI_MAGIC_NUMBER;
+    dir->offset = 0;
+    fdir_client_compact_dentry_array_init(&dir->darray);
+    if ((result=fcfs_api_list_compact_dentry_by_inode_ex(&ctx->api_ctx,
+                    file->fi.dentry.inode, &dir->darray)) != 0)
+    {
+        free(dir);
+        errno = result;
+        return NULL;
+    }
+
+    return (DIR *)dir;
+}
+
+DIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx, const char *path)
+{
+    const int flags = O_RDONLY;
+    const mode_t mode = 0777 | S_IFDIR;
+    FCFSPosixAPIFileInfo *file;
+    DIR *dirp;
+    char full_fname[PATH_MAX];
+
+    if (papi_resolve_path(ctx, "opendir", &path,
+                full_fname, sizeof(full_fname)) != 0)
+    {
+        return NULL;
+    }
+
+    if ((file=do_open_ex(ctx, path, flags, mode)) == NULL) {
+        return NULL;
+    }
+
+    if ((dirp=do_opendir(ctx, file)) == NULL) {
+        fcfs_api_close(&file->fi);
+        fcfs_fd_manager_free(file);
+    }
+    return dirp;
+}
+
+DIR *fcfs_fdopendir_ex(FCFSPosixAPIContext *ctx, int fd)
+{
+    FCFSPosixAPIFileInfo *file;
+    DIR *dirp;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return NULL;
+    }
+
+    if ((dirp=do_opendir(ctx, file)) == NULL) {
+        fcfs_api_close(&file->fi);
+        fcfs_fd_manager_free(file);
+    }
+    return dirp;
+}
+
+#define FCFS_CONVERT_DIRP_EX(dirp, ...) \
+    FCFSPosixAPIDIR *dir;  \
+    dir = (FCFSPosixAPIDIR *)dirp; \
+    if (dir->magic != FCFS_PAPI_MAGIC_NUMBER) { \
+        errno = EBADF; \
+        return __VA_ARGS__; \
+    }
+
+#define FCFS_CONVERT_DIRP(dirp) \
+    FCFS_CONVERT_DIRP_EX(dirp, -1)
+
+#define FCFS_CONVERT_DIRP_VOID(dirp) \
+    FCFS_CONVERT_DIRP_EX(dirp)
+
+int fcfs_closedir_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
+{
+    FCFS_CONVERT_DIRP(dirp);
+
+    fdir_client_compact_dentry_array_free(&dir->darray);
+    fcfs_api_close(&dir->file->fi);
+    fcfs_fd_manager_free(dir->file);
+    dir->magic = 0;
+    free(dir);
+    return 0;
+}
+
+static inline struct dirent *do_readdir(FCFSPosixAPIDIR *dir)
+{
+    if (dir->offset < 0 || dir->offset >= dir->darray.count) {
+        return NULL;
+    }
+
+    return dir->darray.entries + dir->offset++;
+}
+
+struct dirent *fcfs_readdir_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
+{
+    FCFS_CONVERT_DIRP_EX(dirp, NULL);
+    return do_readdir(dir);
+}
+
+int fcfs_readdir_r_ex(FCFSPosixAPIContext *ctx, DIR *dirp,
+        struct dirent *entry, struct dirent **result)
+{
+    struct dirent *current;
+    FCFS_CONVERT_DIRP(dirp);
+
+    if ((current=do_readdir(dir)) != NULL) {
+        memcpy(entry, current, sizeof(struct dirent));
+        *result = entry;
+    } else {
+        *result = NULL;
+    }
+
+    return 0;
+}
+
+void fcfs_seekdir_ex(FCFSPosixAPIContext *ctx, DIR *dirp, long loc)
+{
+    FCFS_CONVERT_DIRP_VOID(dirp);
+    dir->offset = loc;
+}
+
+long fcfs_telldir_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
+{
+    FCFS_CONVERT_DIRP(dirp);
+    return dir->offset;
+}
+
+void fcfs_rewinddir_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
+{
+    FCFS_CONVERT_DIRP_VOID(dirp);
+    dir->offset = 0;
+}
+
+int fcfs_dirfd_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
+{
+    FCFS_CONVERT_DIRP(dirp);
+
+    if (fcfs_fd_manager_get(dir->file->fd) != dir->file) {
+        errno = EBADF;
+        return -1;
+    }
+
+    return dir->file->fd;
+}
+
+static int do_scandir(FCFSPosixAPIContext *ctx, const char *path,
+        struct dirent ***namelist, int (*filter)(const struct dirent *),
+        int (*compar)(const struct dirent **, const struct dirent **))
+{
+    FCFSPosixAPIDIR dir;
+    struct dirent *ent;
+    struct dirent *end;
+    struct dirent **cur;
+    int result;
+    int count;
+
+    fdir_client_compact_dentry_array_init(&dir.darray);
+    if ((result=fcfs_api_list_compact_dentry_by_path_ex(&ctx->
+                    api_ctx, path, &dir.darray)) != 0)
+    {
+        errno = result;
+        return -1;
+    }
+
+    do {
+        if ((*namelist=fc_malloc(sizeof(struct dirent *) *
+                        dir.darray.count)) == NULL)
+        {
+            errno = ENOMEM;
+            count = -1;
+            break;
+        }
+
+        count = 0;
+        if (dir.darray.count == 0) {
+            break;
+        }
+
+        cur = *namelist;
+        end = dir.darray.entries + dir.darray.count;
+        for (ent=dir.darray.entries; ent<end; ent++) {
+            if (filter != NULL && filter(ent) == 0) {
+                continue;
+            }
+
+            if ((*cur=fc_malloc(sizeof(struct dirent))) == NULL) {
+                errno = ENOMEM;
+                count = -1;
+                break;
+            }
+            memcpy(*cur, ent, sizeof(struct dirent));
+            cur++;
+        }
+
+        if (count < 0) {  //error
+            struct dirent **endp;
+            endp = cur;
+            for (cur=*namelist; cur<endp; cur++) {
+                free(*cur);
+            }
+            free(*namelist);
+            *namelist = NULL;
+        } else {
+            count = cur - (*namelist);
+            if (compar != NULL && count > 1) {
+                qsort(*namelist, count, sizeof(struct dirent *),
+                        (int (*)(const void *, const void *))compar);
+            }
+        }
+    } while (0);
+
+    fdir_client_compact_dentry_array_free(&dir.darray);
+    return count;
+}
+
+int fcfs_scandir_ex(FCFSPosixAPIContext *ctx, const char *path,
+        struct dirent ***namelist, int (*filter)(const struct dirent *),
+        int (*compar)(const struct dirent **, const struct dirent **))
+{
+    char full_fname[PATH_MAX];
+
+    if (papi_resolve_path(ctx, "scandir", &path,
+                full_fname, sizeof(full_fname)) != 0)
+    {
+        return -1;
+    }
+
+    return do_scandir(ctx, path, namelist, filter, compar);
+}
+
+int fcfs_scandirat_ex(FCFSPosixAPIContext *ctx, int fd, const char *path,
+        struct dirent ***namelist, int (*filter)(const struct dirent *),
+        int (*compar)(const struct dirent **, const struct dirent **))
+{
+    char full_fname[PATH_MAX];
+
+    if (papi_resolve_pathat(ctx, "scandirat", fd, &path,
+                full_fname, sizeof(full_fname)) != 0)
+    {
+        return -1;
+    }
+
+    return do_scandir(ctx, path, namelist, filter, compar);
 }

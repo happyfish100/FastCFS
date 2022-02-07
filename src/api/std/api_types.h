@@ -38,6 +38,13 @@ typedef struct fcfs_posix_file_ptr_array {
     int count;
 } FCFSPosixFilePtrArray;
 
+typedef struct fcfs_posix_api_dir {
+    FCFSPosixAPIFileInfo *file;
+    FDIRClientCompactDentryArray darray;
+    int magic;
+    int offset;
+} FCFSPosixAPIDIR;
+
 #define FCFS_PAPI_IS_MY_FD(fd) \
     (fd > FCFS_POSIX_API_FD_BASE)
 

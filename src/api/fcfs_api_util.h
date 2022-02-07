@@ -117,6 +117,12 @@ extern "C" {
 #define fcfs_api_list_dentry_by_inode(inode, array)  \
     fcfs_api_list_dentry_by_inode_ex(&g_fcfs_api_ctx, inode, array)
 
+#define fcfs_api_list_compact_dentry_by_path(path, array)  \
+    fcfs_api_list_compact_dentry_by_path_ex(&g_fcfs_api_ctx, path, array)
+
+#define fcfs_api_list_compact_dentry_by_inode(inode, array)  \
+    fcfs_api_list_compact_dentry_by_inode_ex(&g_fcfs_api_ctx, inode, array)
+
 #define fcfs_api_alloc_opendir_session()  \
     fcfs_api_alloc_opendir_session_ex(&g_fcfs_api_ctx)
 
@@ -580,6 +586,25 @@ static inline int fcfs_api_list_dentry_by_inode_ex(FCFSAPIContext *ctx,
     }
     return fdir_client_list_dentry_by_inode(ctx->contexts.fdir,
             &ctx->ns, inode, array);
+}
+
+static inline int fcfs_api_list_compact_dentry_by_path_ex(
+        FCFSAPIContext *ctx, const char *path,
+        FDIRClientCompactDentryArray *array)
+{
+    FDIRDEntryFullName fullname;
+
+    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
+    return fdir_client_list_compact_dentry_by_path(
+            ctx->contexts.fdir, &fullname, array);
+}
+
+static inline int fcfs_api_list_compact_dentry_by_inode_ex(
+        FCFSAPIContext *ctx, const int64_t inode,
+        FDIRClientCompactDentryArray *array)
+{
+    return fdir_client_list_compact_dentry_by_inode(
+            ctx->contexts.fdir, &ctx->ns, inode, array);
 }
 
 static inline FCFSAPIOpendirSession *fcfs_api_alloc_opendir_session_ex(

@@ -18,6 +18,7 @@
 #define _FCFS_PAPI_H
 
 #include <utime.h>
+#include <dirent.h>
 #include "api_types.h"
 
 #define fcfs_open(path, flags, ...) \
@@ -224,6 +225,38 @@
 #define fcfs_fremovexattr(fd, name) \
     fcfs_fremovexattr_ex(&g_fcfs_papi_ctx, fd, name)
 
+#define fcfs_opendir(path) \
+    fcfs_opendir_ex(&g_fcfs_papi_ctx, path)
+
+#define fcfs_fdopendir(fd) \
+    fcfs_fdopendir_ex(&g_fcfs_papi_ctx, fd)
+
+#define fcfs_closedir(dirp) \
+    fcfs_closedir_ex(&g_fcfs_papi_ctx, dirp)
+
+#define fcfs_readdir(dirp) \
+    fcfs_readdir_ex(&g_fcfs_papi_ctx, dirp)
+
+#define fcfs_readdir_r(dirp, entry, result) \
+    fcfs_readdir_r_ex(&g_fcfs_papi_ctx, dirp, entry, result)
+
+#define fcfs_seekdir(dirp, loc) \
+    fcfs_seekdir_ex(&g_fcfs_papi_ctx, dirp, loc)
+
+#define fcfs_telldir(dirp) \
+    fcfs_telldir_ex(&g_fcfs_papi_ctx, dirp)
+
+#define fcfs_rewinddir(dirp) \
+    fcfs_rewinddir_ex(&g_fcfs_papi_ctx, dirp)
+
+#define fcfs_dirfd(dirp) \
+    fcfs_dirfd_ex(&g_fcfs_papi_ctx, dirp)
+
+#define fcfs_scandir(path, namelist, filter, compar) \
+    fcfs_scandir_ex(&g_fcfs_papi_ctx, path, namelist, filter, compar)
+
+#define fcfs_scandirat(fd, path, namelist, filter, compar) \
+    fcfs_scandirat_ex(&g_fcfs_papi_ctx, fd, path, namelist, filter, compar)
 
 #ifdef __cplusplus
 extern "C" {
@@ -430,6 +463,34 @@ extern "C" {
 
     int fcfs_fremovexattr_ex(FCFSPosixAPIContext *ctx,
             int fd, const char *name);
+
+
+    DIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx, const char *path);
+
+    DIR *fcfs_fdopendir_ex(FCFSPosixAPIContext *ctx, int fd);
+
+    int fcfs_closedir_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
+
+    struct dirent *fcfs_readdir_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
+
+    int fcfs_readdir_r_ex(FCFSPosixAPIContext *ctx, DIR *dirp,
+            struct dirent *entry, struct dirent **result);
+
+    void fcfs_seekdir_ex(FCFSPosixAPIContext *ctx, DIR *dirp, long loc);
+
+    long fcfs_telldir_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
+
+    void fcfs_rewinddir_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
+
+    int fcfs_dirfd_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
+
+    int fcfs_scandir_ex(FCFSPosixAPIContext *ctx, const char *path,
+            struct dirent ***namelist, int (*filter)(const struct dirent *),
+            int (*compar)(const struct dirent **, const struct dirent **));
+
+    int fcfs_scandirat_ex(FCFSPosixAPIContext *ctx, int fd, const char *path,
+            struct dirent ***namelist, int (*filter)(const struct dirent *),
+            int (*compar)(const struct dirent **, const struct dirent **));
 
     //TODO
     int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd);
