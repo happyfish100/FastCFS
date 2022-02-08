@@ -1,0 +1,33 @@
+.SUFFIXES: .c .lo
+
+COMPILE = $(CC) $(CFLAGS)
+INC_PATH = -I../common -Iinclude
+LIB_PATH = $(LIBS) -lfcfsapi -lfsclient -lfsapi -lfdirclient -lfastcommon -lserverframe -lfcfsauthclient
+TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
+
+SHARED_OBJS =  global.lo
+
+ALL_OBJS = $(SHARED_OBJS)
+
+ALL_PRGS = 
+SHARED_LIBS = libfcfspreload.so
+ALL_LIBS = $(SHARED_LIBS)
+
+all: $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
+
+libfcfspreload.so: $(SHARED_OBJS)
+	$(COMPILE) -o $@ -shared $(SHARED_OBJS) $(LIB_PATH)
+
+.c.lo:
+	$(COMPILE) -c -fPIC -o $@ $<  $(INC_PATH)
+
+install:
+	mkdir -p $(TARGET_LIB)
+	mkdir -p $(TARGET_PREFIX)/lib
+
+	install -m 755 $(SHARED_LIBS) $(TARGET_LIB)
+	@BUILDROOT=$$(echo "$(TARGET_PREFIX)" | grep BUILDROOT); \
+	if [ -z "$$BUILDROOT" ] && [ ! -e $(TARGET_PREFIX)/lib/libfcfspreload.so ]; then ln -s $(TARGET_LIB)/libfcfspreload.so $(TARGET_PREFIX)/lib/libfcfspreload.so; fi
+clean:
+	rm -f $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
+

@@ -508,7 +508,6 @@ extern "C" {
     int fcfs_fremovexattr_ex(FCFSPosixAPIContext *ctx,
             int fd, const char *name);
 
-
     DIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx, const char *path);
 
     DIR *fcfs_fdopendir_ex(FCFSPosixAPIContext *ctx, int fd);

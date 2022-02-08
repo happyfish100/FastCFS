@@ -1,6 +1,7 @@
 # Makefile.in
 src/api/Makefile
 src/api/tests/Makefile
+src/preload/Makefile
 src/fuse/Makefile
 src/tools/Makefile
 src/auth/server/Makefile

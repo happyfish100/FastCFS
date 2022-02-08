@@ -190,6 +190,14 @@ if [ -z $module ] || [ "$module" = 'api' ]; then
   fi
 fi
 
+if [ -z $module ] || [ "$module" = 'preload' ]; then
+  if [ "x$exclude" != 'xpreload' ]; then
+    cd $base_path/src/preload
+    replace_makefile
+    make $param1 $param2
+  fi
+fi
+
 if [ -z $module ] || [ "$module" = 'tools' ]; then
   if [ "x$exclude" != 'xtools' ]; then
     cd $base_path/src/tools
