@@ -2049,3 +2049,36 @@ char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf)
 {
     return do_getcwd(buf, PATH_MAX, ENAMETOOLONG);
 }
+
+#define FCFS_API_NOT_IMPLEMENTED(api_name, retval)  \
+    logError("file: "__FILE__", line: %d, " \
+            "function \"%s\" not implemented!", \
+            __LINE__, api_name); \
+    errno = EOPNOTSUPP;  \
+    return retval
+
+int fcfs_chroot_ex(FCFSPosixAPIContext *ctx, const char *path)
+{
+    FCFS_API_NOT_IMPLEMENTED("chroot", -1);
+}
+
+int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd)
+{
+    FCFS_API_NOT_IMPLEMENTED("dup", -1);
+}
+
+int fcfs_dup2_ex(FCFSPosixAPIContext *ctx, int fd1, int fd2)
+{
+    FCFS_API_NOT_IMPLEMENTED("dup2", -1);
+}
+
+void *fcfs_mmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length,
+        int prot, int flags, int fd, off_t offset)
+{
+    FCFS_API_NOT_IMPLEMENTED("mmap", NULL);
+}
+
+int fcfs_munmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length)
+{
+    FCFS_API_NOT_IMPLEMENTED("munmap", -1);
+}

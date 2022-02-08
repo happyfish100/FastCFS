@@ -62,10 +62,11 @@ int dao_granted_create(FDIRClientContext *client_ctx, const string_t *username,
 int dao_granted_remove(FDIRClientContext *client_ctx,
         const string_t *username, const int64_t pool_id)
 {
+    const int flags = 0;
     AuthFullPath pool_path;
 
     AUTH_SET_GRANTED_POOL_PATH(pool_path, username, pool_id);
-    return fdir_client_remove_dentry(client_ctx, &pool_path.fullname);
+    return fdir_client_remove_dentry(client_ctx, &pool_path.fullname, flags);
 }
 
 static int dump_to_granted_array(FDIRClientContext *client_ctx,

@@ -544,7 +544,6 @@ extern "C" {
 
     char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf);
 
-    //TODO
     int fcfs_chroot_ex(FCFSPosixAPIContext *ctx, const char *path);
 
     int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd);

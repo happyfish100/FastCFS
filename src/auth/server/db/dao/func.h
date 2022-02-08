@@ -112,9 +112,11 @@ static inline int dao_get_xattr_string(FDIRClientContext *client_ctx,
         const int64_t inode, const string_t *name, string_t *value,
         const int size)
 {
+    const int flags = 0;
     int result;
-    result = fdir_client_get_xattr_by_inode_ex(client_ctx, &DAO_NAMESPACE,
-            inode, name, LOG_WARNING, value, size);
+    result = fdir_client_get_xattr_by_inode_ex(client_ctx,
+            &DAO_NAMESPACE, inode, name, LOG_WARNING,
+            value, size, flags);
     if (result == ENODATA) {
         value->len = 0;
         return 0;

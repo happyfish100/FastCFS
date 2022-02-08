@@ -220,7 +220,7 @@ static inline int fcfs_api_create_dentry_by_pname_ex(FCFSAPIContext *ctx,
 {
     FDIRDEntryPName pname;
     FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
-    return fdir_client_create_dentry_by_pname(ctx->contexts.fdir,
+    return fdir_client_create_dentry_by_pname_ex(ctx->contexts.fdir,
             &ctx->ns, &pname, omp, rdev, dentry);
 }
 

@@ -42,8 +42,6 @@ static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
 static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
         const FDIRClientOwnerModePair *omp, const int64_t tid, int result)
 {
-    const dev_t rdev = 0;
-
     fi->tid = tid;
     if (!((fi->flags & O_WRONLY) || (fi->flags & O_RDWR))) {
         fi->offset = 0;
@@ -57,7 +55,7 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
             }
         } else if (result == ENOENT) {
             if ((result=fdir_client_create_dentry(fi->ctx->contexts.fdir,
-                            fullname, omp, rdev, &fi->dentry)) != 0)
+                            fullname, omp, &fi->dentry)) != 0)
             {
                 if (result == EEXIST) {
                     if ((fi->flags & O_EXCL)) {
@@ -1432,14 +1430,13 @@ int fcfs_api_mknod_ex(FCFSAPIContext *ctx, const char *path,
     if (!(S_ISCHR(omp->mode) || S_ISBLK(omp->mode))) {
         return EINVAL;
     }
-    return fdir_client_create_dentry(ctx->contexts.fdir,
+    return fdir_client_create_dentry_ex(ctx->contexts.fdir,
             &fullname, omp, dev, &dentry);
 }
 
 static inline int do_make_dentry(FCFSAPIContext *ctx, const char *path,
         FDIRClientOwnerModePair *omp, const int mtype)
 {
-    const dev_t dev = 0;
     FDIRDEntryFullName fullname;
     FDIRDEntryInfo dentry;
 
@@ -1447,7 +1444,7 @@ static inline int do_make_dentry(FCFSAPIContext *ctx, const char *path,
     FC_SET_STRING(fullname.path, (char *)path);
     omp->mode = ((omp->mode & (~S_IFMT)) | mtype);
     return fdir_client_create_dentry(ctx->contexts.fdir,
-            &fullname, omp, dev, &dentry);
+            &fullname, omp, &dentry);
 }
 
 int fcfs_api_mkfifo_ex(FCFSAPIContext *ctx, const char *path,
