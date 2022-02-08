@@ -104,10 +104,18 @@ extern "C" {
         fctx->tid = fcfs_posix_api_gettid();
     }
 
-#define FCFS_API_CHECK_PATH_MOUNTPOINT_EX(file, line, cxt, path, func, retval) \
+#define FCFS_API_IS_MY_MOUNTPOINT_EX(ctx, path) \
+    (strlen(path) > (ctx)->mountpoint.len && \
+     ((ctx)->mountpoint.len == 0 || \
+      memcmp(path, (ctx)->mountpoint.str, \
+          (ctx)->mountpoint.len) == 0))
+
+#define FCFS_API_IS_MY_MOUNTPOINT(path) \
+    FCFS_API_IS_MY_MOUNTPOINT_EX(&g_fcfs_papi_global_vars.ctx, path)
+
+#define FCFS_API_CHECK_PATH_MOUNTPOINT_EX(file, line, ctx, path, func, retval) \
     do { \
-        if (!(strlen(path) >= ctx->mountpoint.len && (ctx->mountpoint.len == 0 || \
-                    memcmp(path, ctx->mountpoint.str, ctx->mountpoint.len) == 0)))\
+        if (!FCFS_API_IS_MY_MOUNTPOINT_EX(ctx, path)) \
         { \
             logError("file: %s, line: %d, "  \
                     "%s path: %s is not the FastCFS mountpoint!", \
@@ -117,8 +125,8 @@ extern "C" {
         } \
     } while (0)
 
-#define FCFS_API_CHECK_PATH_MOUNTPOINT(cxt, path, func) \
-    FCFS_API_CHECK_PATH_MOUNTPOINT_EX(__FILE__, __LINE__, cxt, path, func, -1)
+#define FCFS_API_CHECK_PATH_MOUNTPOINT(ctx, path, func) \
+    FCFS_API_CHECK_PATH_MOUNTPOINT_EX(__FILE__, __LINE__, ctx, path, func, -1)
 
 #ifdef __cplusplus
 }

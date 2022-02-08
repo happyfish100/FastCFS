@@ -27,8 +27,8 @@ __attribute__ ((constructor)) static void posix_api_global_init(void)
 
 __attribute__ ((destructor)) static void posix_api_global_destroy(void)
 {
-    logInfo("file: "__FILE__", line: %d, "
-            "destructor", __LINE__);
+    fprintf(stderr, "file: "__FILE__", line: %d, "
+            "destructor\n", __LINE__);
 }
 
 static int load_posix_api_config(FCFSPosixAPIContext *ctx,
