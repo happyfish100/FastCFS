@@ -61,8 +61,8 @@ static int load_fuse_mountpoint(IniFullContext *ini_ctx, string_t *mountpoint)
     int result;
 
     if (g_fuse_global_vars.mountpoint == NULL) {
-        mountpoint->str = iniGetStrValue(ini_ctx->section_name,
-                "mountpoint", ini_ctx->context);
+        mountpoint->str = iniGetStrValueEx(ini_ctx->section_name,
+                "mountpoint", ini_ctx->context, true);
         if (mountpoint->str == NULL || *mountpoint->str == '\0') {
             logError("file: "__FILE__", line: %d, "
                     "config file: %s, section: %s, item: mountpoint "

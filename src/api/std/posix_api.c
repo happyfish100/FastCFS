@@ -97,11 +97,16 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char *ns,
     } while (0);
 
     iniFreeContext(&iniContext);
-    if (result == 0) {
-        return fcfs_api_client_session_create(&ctx->api_ctx, publish);
-    } else {
+    if (result != 0) {
         return result;
     }
+
+    if ((result=fcfs_api_client_session_create(
+                    &ctx->api_ctx, publish)) != 0)
+    {
+        return result;
+    }
+    return fcfs_fd_manager_init();
 }
 
 void fcfs_posix_api_destroy_ex(FCFSPosixAPIContext *ctx)

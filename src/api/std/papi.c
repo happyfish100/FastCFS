@@ -24,22 +24,16 @@
 #define FCFS_PAPI_MAGIC_NUMBER    1644551636
 
 static FCFSPosixAPIFileInfo *do_open_ex(FCFSPosixAPIContext *ctx,
-        const char *path, int flags, ...)
+        const char *path, const int flags, const int mode)
 {
     FCFSPosixAPIFileInfo *file;
     FCFSAPIFileContext fctx;
-    va_list ap;
-    int mode;
     int result;
 
     if ((file=fcfs_fd_manager_alloc(path)) == NULL) {
         errno = ENOMEM;
         return NULL;
     }
-
-    va_start(ap, flags);
-    mode = va_arg(ap, int);
-    va_end(ap);
 
     fcfs_posix_api_set_fctx(&fctx, ctx, mode);
     if ((result=fcfs_api_open_ex(&ctx->api_ctx, &file->fi,
@@ -57,16 +51,12 @@ static FCFSPosixAPIFileInfo *do_open_ex(FCFSPosixAPIContext *ctx,
     return file;
 }
 
-static inline int do_open(FCFSPosixAPIContext *ctx,
-        const char *path, int flags, ...)
+static inline int do_open(FCFSPosixAPIContext *ctx, const char *path,
+        const int flags, const int mode)
 {
     FCFSPosixAPIFileInfo *file;
-    va_list ap;
 
-    va_start(ap, flags);
-    file = do_open_ex(ctx, path, flags, ap);
-    va_end(ap);
-
+    file = do_open_ex(ctx, path, flags, mode);
     return (file != NULL ? file->fd : -1);
 }
 
@@ -118,6 +108,7 @@ int fcfs_open_ex(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
     char full_fname[PATH_MAX];
     va_list ap;
     int fd;
+    int mode;
     int result;
 
     if ((result=papi_resolve_path(ctx, "open", &path,
@@ -127,7 +118,8 @@ int fcfs_open_ex(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
     }
 
     va_start(ap, flags);
-    fd = do_open(ctx, path, flags, ap);
+    mode = va_arg(ap, int);
+    fd = do_open(ctx, path, flags, mode);
     va_end(ap);
     return fd;
 }
@@ -135,8 +127,9 @@ int fcfs_open_ex(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
 int fcfs_openat_ex(FCFSPosixAPIContext *ctx, int fd,
         const char *path, int flags, ...)
 {
-    va_list ap;
     char full_fname[PATH_MAX];
+    va_list ap;
+    int mode;
     int new_fd;
     int result;
 
@@ -147,7 +140,8 @@ int fcfs_openat_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 
     va_start(ap, flags);
-    new_fd = do_open(ctx, path, flags, ap);
+    mode = va_arg(ap, int);
+    new_fd = do_open(ctx, path, flags, mode);
     va_end(ap);
     return new_fd;
 }
