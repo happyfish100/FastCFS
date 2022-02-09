@@ -2,10 +2,10 @@
 
 COMPILE = $(CC) $(CFLAGS)
 INC_PATH = -I../common -Iinclude
-LIB_PATH = $(LIBS) -lfcfsapi -lfsclient -lfsapi -lfdirclient -lfastcommon -lserverframe -lfcfsauthclient
+LIB_PATH = $(LIBS) -ldl -lfcfsapi -lfsclient -lfsapi -lfdirclient -lfastcommon -lserverframe -lfcfsauthclient
 TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
 
-SHARED_OBJS =  global.lo
+SHARED_OBJS =  global.lo api.lo
 
 ALL_OBJS = $(SHARED_OBJS)
 

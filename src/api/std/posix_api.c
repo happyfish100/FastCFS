@@ -16,20 +16,12 @@
 #include "fastcommon/logger.h"
 #include "posix_api.h"
 
-FCFSPosixAPIGlobalVars g_fcfs_papi_global_vars;
+#define DUMMY_MOUNTPOINT_STR  "/fastcfs/dummy/"
+#define DUMMY_MOUNTPOINT_LEN  (sizeof(DUMMY_MOUNTPOINT_STR) - 1)
 
-__attribute__ ((constructor)) static void posix_api_global_init(void)
-{
-    log_init();
-    logInfo("file: "__FILE__", line: %d, "
-            "constructor", __LINE__);
-}
-
-__attribute__ ((destructor)) static void posix_api_global_destroy(void)
-{
-    fprintf(stderr, "file: "__FILE__", line: %d, "
-            "destructor\n", __LINE__);
-}
+FCFSPosixAPIGlobalVars g_fcfs_papi_global_vars = {
+    {{DUMMY_MOUNTPOINT_STR, DUMMY_MOUNTPOINT_LEN}}
+};
 
 static int load_posix_api_config(FCFSPosixAPIContext *ctx,
         IniFullContext *ini_ctx)

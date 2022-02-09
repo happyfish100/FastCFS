@@ -16,8 +16,11 @@
 #ifndef _FCFS_PRELOAD_TYPES_H
 #define _FCFS_PRELOAD_TYPES_H
 
-#include <dirent.h>
 #include "fastcfs/api/std/posix_api.h"
+
+#ifdef OS_LINUX
+typedef struct __dirstream DIR;
+#endif
 
 typedef enum {
     fcfs_preload_call_system  = 0,
@@ -30,6 +33,7 @@ typedef struct fcfs_preload_dir_wrapper {
 } FCFSPreloadDIRWrapper;
 
 typedef struct fcfs_preload_global_vars {
+    bool inited;
     FCFSPreloadCallType cwd_call_type;
 
     struct {
@@ -197,8 +201,13 @@ typedef struct fcfs_preload_global_vars {
 
         struct dirent *(*readdir)(DIR *dirp);
 
+        struct dirent64 *(*readdir64)(DIR *dirp);
+
         int (*readdir_r)(DIR *dirp, struct dirent *entry,
                 struct dirent **result);
+
+        int (*readdir64_r)(DIR *dirp, struct dirent64 *entry,
+                struct dirent64 **result);
 
         void (*seekdir)(DIR *dirp, long loc);
 
@@ -209,12 +218,16 @@ typedef struct fcfs_preload_global_vars {
         int (*dirfd)(DIR *dirp);
 
         int (*scandir)(const char *path, struct dirent ***namelist,
-                int (*filter)(const struct dirent *), int (*compar)
-                (const struct dirent **, const struct dirent **));
+                fcfs_dir_filter_func filter, fcfs_dir_compare_func compar);
 
         int (*scandirat)(int fd, const char *path, struct dirent ***namelist,
-                int (*filter)(const struct dirent *), int (*compar)
-                (const struct dirent **, const struct dirent **));
+                fcfs_dir_filter_func filter, fcfs_dir_compare_func compar);
+
+        int (*scandir64)(const char *path, struct dirent ***namelist,
+                fcfs_dir_filter_func filter, fcfs_dir_compare_func compar);
+
+        int (*scandirat64)(int fd, const char *path, struct dirent ***namelist,
+                fcfs_dir_filter_func filter, fcfs_dir_compare_func compar);
 
         int (*chdir)(const char *path);
 

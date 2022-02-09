@@ -18,20 +18,6 @@
 
 FCFSPreloadGlobalVars g_fcfs_preload_global_vars;
 
-__attribute__ ((constructor)) static void preload_global_init(void)
-{
-    log_init();
-    fcfs_preload_global_init();
-    logInfo("file: "__FILE__", line: %d, "
-            "constructor", __LINE__);
-}
-
-__attribute__ ((destructor)) static void preload_global_destroy(void)
-{
-    fprintf(stderr, "file: "__FILE__", line: %d, "
-            "destructor\n", __LINE__);
-}
-
 static inline void *dlsym_one(const char *fname, const bool required)
 {
     int log_level;
@@ -144,6 +130,8 @@ static int dlsym_all()
     g_fcfs_preload_global_vars.closedir = dlsym_one("closedir", true);
     g_fcfs_preload_global_vars.readdir = dlsym_one("readdir", true);
     g_fcfs_preload_global_vars.readdir_r = dlsym_one("readdir_r", true);
+    g_fcfs_preload_global_vars.readdir64 = dlsym_one("readdir64", true);
+    g_fcfs_preload_global_vars.readdir64_r = dlsym_one("readdir64_r", true);
     g_fcfs_preload_global_vars.seekdir = dlsym_one("seekdir", true);
     g_fcfs_preload_global_vars.telldir = dlsym_one("telldir", true);
     g_fcfs_preload_global_vars.rewinddir = dlsym_one("rewinddir", true);

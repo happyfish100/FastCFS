@@ -21,6 +21,11 @@
 
 #define FCFS_POSIX_API_FD_BASE  (2 << 28)
 
+struct dirent;
+typedef int (*fcfs_dir_filter_func)(const struct dirent *ent);
+typedef int (*fcfs_dir_compare_func)(const struct dirent **ent1,
+        const struct dirent **ent2);
+
 typedef struct fcfs_posix_api_context {
     string_t mountpoint;
     FCFSAPIOwnerInfo owner;
