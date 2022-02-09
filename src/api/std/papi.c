@@ -1505,6 +1505,9 @@ int fcfs_fsetxattr_ex(FCFSPosixAPIContext *ctx, int fd, const char *name,
     }
 }
 
+#define GET_XATTR_FLAGS_BY_VSIZE(size, flags) \
+    ((size == 0) ? (flags | FDIR_FLAGS_XATTR_GET_SIZE) : flags)
+
 static inline ssize_t do_getxattr(FCFSPosixAPIContext *ctx,
         const char *func, const char *path, const char *name,
         void *value, size_t size, int flags)
@@ -1521,9 +1524,10 @@ static inline ssize_t do_getxattr(FCFSPosixAPIContext *ctx,
     }
 
     FC_SET_STRING(nm, (char *)name);
-    FC_SET_STRING(vl, (char *)value);
-    if ((result=fcfs_api_get_xattr_by_path_ex(&ctx->api_ctx, path,
-                    &nm, LOG_DEBUG, &vl, size, flags)) != 0)
+    FC_SET_STRING_EX(vl, (char *)value, 0);
+    if ((result=fcfs_api_get_xattr_by_path_ex(&ctx->api_ctx,
+                    path, &nm, LOG_DEBUG, &vl, size,
+                    GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
     {
         errno = result;
         return -1;
@@ -1560,11 +1564,12 @@ ssize_t fcfs_fgetxattr_ex(FCFSPosixAPIContext *ctx, int fd,
         return -1;
     }
 
+
     FC_SET_STRING(nm, (char *)name);
-    FC_SET_STRING(vl, (char *)value);
-    if ((result=fcfs_api_get_xattr_by_inode_ex(&ctx->api_ctx,
-                    file->fi.dentry.inode, &nm, LOG_DEBUG,
-                    &vl, size, flags)) != 0)
+    FC_SET_STRING_EX(vl, (char *)value, 0);
+    if ((result=fcfs_api_get_xattr_by_inode_ex(&ctx->api_ctx, file->
+                    fi.dentry.inode, &nm, LOG_DEBUG, &vl, size,
+                    GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
     {
         errno = result;
         return -1;
@@ -1588,8 +1593,8 @@ static inline ssize_t do_listxattr(FCFSPosixAPIContext *ctx,
     }
 
     FC_SET_STRING(ls, list);
-    if ((result=fcfs_api_list_xattr_by_path_ex(&ctx->api_ctx,
-                    path, &ls, size, flags)) != 0)
+    if ((result=fcfs_api_list_xattr_by_path_ex(&ctx->api_ctx, path, &ls,
+                    size, GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
     {
         errno = result;
         return -1;
@@ -1627,7 +1632,8 @@ ssize_t fcfs_flistxattr_ex(FCFSPosixAPIContext *ctx,
 
     FC_SET_STRING(ls, list);
     if ((result=fcfs_api_list_xattr_by_inode_ex(&ctx->api_ctx,
-                    file->fi.dentry.inode, &ls, size, flags)) != 0)
+                    file->fi.dentry.inode, &ls, size,
+                    GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
     {
         errno = result;
         return -1;

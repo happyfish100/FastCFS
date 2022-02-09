@@ -22,39 +22,41 @@
 __attribute__ ((constructor)) static void preload_global_init(void)
 {
     int result;
+    pid_t pid;
     char *ns = "fs";
     char *config_filename = FCFS_FUSE_DEFAULT_CONFIG_FILENAME;
 
-    fprintf(stderr, "file: "__FILE__", line: %d, "
-            "constructor\n", __LINE__);
+    pid = getpid();
+    fprintf(stderr, "pid: %d, file: "__FILE__", line: %d, inited: %d, "
+            "constructor\n", pid, __LINE__, g_fcfs_preload_global_vars.inited);
 
     log_init();
     if ((result=fcfs_preload_global_init()) != 0) {
         return;
     }
 
-    fprintf(stderr, "file: "__FILE__", line: %d, "
-            "constructor\n", __LINE__);
+    fprintf(stderr, "pid: %d, file: "__FILE__", line: %d, "
+            "constructor\n", pid, __LINE__);
 
     if ((result=fcfs_posix_api_init(ns, config_filename)) != 0) {
         return;
     }
 
-    fprintf(stderr, "file: "__FILE__", line: %d, "
-            "constructor\n", __LINE__);
+    fprintf(stderr, "pid: %d, file: "__FILE__", line: %d, "
+            "constructor\n", pid, __LINE__);
     if ((result=fcfs_posix_api_start()) != 0) {
         return;
     }
 
     g_fcfs_preload_global_vars.inited = true;
-    fprintf(stderr, "file: "__FILE__", line: %d, "
-            "constructor\n", __LINE__);
+    fprintf(stderr, "pid: %d, file: "__FILE__", line: %d, "
+            "constructor\n", pid, __LINE__);
 }
 
 __attribute__ ((destructor)) static void preload_global_destroy(void)
 {
-    fprintf(stderr, "file: "__FILE__", line: %d, "
-            "destructor\n", __LINE__);
+    fprintf(stderr, "pid: %d, file: "__FILE__", line: %d, "
+            "destructor\n", getpid(), __LINE__);
 }
 
 int open(const char *path, int flags, ...)
@@ -164,7 +166,7 @@ int access(const char *path, int mode)
         if (g_fcfs_preload_global_vars.access != NULL) {
             return g_fcfs_preload_global_vars.access(path, mode);
         } else {
-            fprintf(stderr, "line: %d, path: %s, mode: %d\n", __LINE__, path, mode);
+            //fprintf(stderr, "line: %d, path: %s, mode: %d\n", __LINE__, path, mode);
             return syscall(SYS_access, path, mode);
         }
     }

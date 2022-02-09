@@ -1091,7 +1091,7 @@ static void fs_do_removexattr(fuse_req_t req, fuse_ino_t ino,
 static void fs_do_getxattr(fuse_req_t req, fuse_ino_t ino,
         const char *name, size_t size)
 {
-    const int flags = 0;
+    int flags;
     int64_t new_inode;
     int value_size;
     int result;
@@ -1110,11 +1110,14 @@ static void fs_do_getxattr(fuse_req_t req, fuse_ino_t ino,
             */
 
     if (size == 0) {
-        value_size = FDIR_XATTR_MAX_VALUE_SIZE;
+        value_size = 0;
+        flags = FDIR_FLAGS_XATTR_GET_SIZE;
     } else if (size <= FDIR_XATTR_MAX_VALUE_SIZE) {
         value_size = size;
+        flags = 0;
     } else {
         value_size = FDIR_XATTR_MAX_VALUE_SIZE;
+        flags = 0;
     }
 
     value.str = v;
@@ -1137,7 +1140,7 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
 {
 #define MAX_LIST_SIZE  (8 * 1024)
 
-    const int flags = 0;
+    int flags;
     int64_t new_inode;
     int list_size;
     int result;
@@ -1150,11 +1153,14 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
     }
 
     if (size == 0) {
-        list_size = MAX_LIST_SIZE;
+        list_size = 0;
+        flags = FDIR_FLAGS_XATTR_GET_SIZE;
     } else if (size <= MAX_LIST_SIZE) {
         list_size = size;
+        flags = 0;
     } else {
         list_size = MAX_LIST_SIZE;
+        flags = 0;
     }
 
     list.str = v;
