@@ -63,6 +63,8 @@ ssize_t pwritev(int fd, const struct iovec *iov, int iovcnt, off_t offset);
 
 ssize_t read(int fd, void *buff, size_t count);
 
+ssize_t __read_chk(int fd, void *buff, size_t count, size_t size);
+
 ssize_t pread(int fd, void *buff, size_t count, off_t offset);
 
 ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
@@ -71,15 +73,23 @@ ssize_t preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset);
 
 off_t lseek(int fd, off_t offset, int whence);
 
+off_t lseek64(int fd, off_t offset, int whence);
+
 int fallocate(int fd, int mode, off_t offset, off_t length);
 
 int ftruncate(int fd, off_t length);
+
+int __fxstat(int ver, int fd, struct stat *buf);
+
+int __fxstat64(int ver, int fd, struct stat *buf);
 
 int fstat(int fd, struct stat *buf);
 
 int flock(int fd, int operation);
 
 int fcntl(int fd, int cmd, ...);
+
+int fcntl64(int fd, int cmd, ...);
 
 int futimes(int fd, const struct timeval times[2]);
 
@@ -115,9 +125,18 @@ int symlinkat(const char *link, int fd, const char *path);
 
 int openat(int fd, const char *path, int flags, ...);
 
+int openat64(int fd, const char *path, int flags, ...);
+
+int __fxstatat(int ver, int fd, const char *path, struct stat *buf, int flags);
+
+int __fxstatat64(int ver, int fd, const char *path,
+        struct stat *buf, int flags);
+
 int fstatat(int fd, const char *path, struct stat *buf, int flags);
 
 ssize_t readlinkat(int fd, const char *path, char *buff, size_t size);
+
+int __xmknodat(int fd, const char *path, mode_t mode, dev_t dev);
 
 int mknodat(int fd, const char *path, mode_t mode, dev_t dev);
 
@@ -157,11 +176,23 @@ char *getwd(char *buf);
 
 int open(const char *path, int flags, ...);
 
+int open64(const char *path, int flags, ...);
+
+int __open(const char *path, int flags, int mode);
+
 int creat(const char *path, mode_t mode);
 
 int truncate(const char *path, off_t length);
 
+int __lxstat(int ver, const char *path, struct stat *buf);
+
+int __lxstat64(int ver, const char *path, struct stat *buf);
+
 int lstat(const char *path, struct stat *buf);
+
+int __xstat(int ver, const char *path, struct stat *buf);
+
+int __xstat64(int ver, const char *path, struct stat *buf);
 
 int stat(const char *path, struct stat *buf);
 
@@ -170,6 +201,8 @@ int link(const char *path1, const char *path2);
 int symlink(const char *link, const char *path);
 
 ssize_t readlink(const char *path, char *buff, size_t size);
+
+int __xmknod(const char *path, mode_t mode, dev_t dev);
 
 int mknod(const char *path, mode_t mode, dev_t dev);
 
@@ -221,6 +254,10 @@ int chdir(const char *path);
 
 int chroot(const char *path);
 
+int unsetenv(const char *name);
+
+int clearenv(void);
+
 DIR *opendir(const char *path);
 
 int scandir(const char *path, struct dirent ***namelist,
@@ -228,6 +265,14 @@ int scandir(const char *path, struct dirent ***namelist,
 
 int scandir64(const char *path, struct dirent ***namelist,
         fcfs_dir_filter_func filter, fcfs_dir_compare_func compar);
+
+FILE *fopen(const char *pathname, const char *mode);
+
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *fp);
+
+size_t fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *fp);
+
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *fp);
 
 #ifdef __cplusplus
 }

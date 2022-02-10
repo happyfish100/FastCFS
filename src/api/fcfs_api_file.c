@@ -1549,6 +1549,7 @@ int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
         return result;
     }
 
+    /*
     if (mask != F_OK) {
         if (omp->uid != 0) {
             if (omp->uid == dentry.stat.uid) {
@@ -1563,6 +1564,7 @@ int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
             }
         }
     }
+    */
 
     return result;
 }

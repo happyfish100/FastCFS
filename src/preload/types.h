@@ -34,9 +34,20 @@ typedef struct fcfs_preload_dir_wrapper {
 
 typedef struct fcfs_preload_global_vars {
     bool inited;
+    bool use_xstat;
     FCFSPreloadCallType cwd_call_type;
 
     struct {
+        int (*unsetenv)(const char *name);
+
+        int (*clearenv)(void);
+
+        FILE *(*fopen)(const char *pathname, const char *mode);
+
+        size_t (*fread)(void *ptr, size_t size, size_t nmemb, FILE *fp);
+
+        size_t (*fwrite)(const void *ptr, size_t size, size_t nmemb, FILE *fp);
+
         int (*open)(const char *path, int flags, ...);
 
         int (*openat)(int fd, const char *path, int flags, ...);
@@ -60,6 +71,8 @@ typedef struct fcfs_preload_global_vars {
 
         ssize_t (*read)(int fd, void *buff, size_t count);
 
+        ssize_t (*__read_chk)(int fd, void *buff, size_t count, size_t size);
+
         ssize_t (*pread)(int fd, void *buff, size_t count, off_t offset);
 
         ssize_t (*readv)(int fd, const struct iovec *iov, int iovcnt);
@@ -75,13 +88,29 @@ typedef struct fcfs_preload_global_vars {
 
         int (*ftruncate)(int fd, off_t length);
 
-        int (*lstat)(const char *path, struct stat *buf);
+        union {
+            struct {
+                int (*stat)(const char *path, struct stat *buf);
 
-        int (*stat)(const char *path, struct stat *buf);
+                int (*lstat)(const char *path, struct stat *buf);
 
-        int (*fstat)(int fd, struct stat *buf);
+                int (*fstat)(int fd, struct stat *buf);
 
-        int (*fstatat)(int fd, const char *path, struct stat *buf, int flags);
+                int (*fstatat)(int fd, const char *path,
+                        struct stat *buf, int flags);
+            };
+
+            struct {
+                int (*__xstat)(int ver, const char *path, struct stat *buf);
+
+                int (*__lxstat)(int ver, const char *path, struct stat *buf);
+
+                int (*__fxstat)(int ver, int fd, struct stat *buf);
+
+                int (*__fxstatat)(int ver, int fd, const char *path,
+                        struct stat *buf, int flags);
+            };
+        };
 
         int (*flock)(int fd, int operation);
 

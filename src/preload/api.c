@@ -91,14 +91,10 @@ static inline void *fcfs_dlsym2(const char *fname1, const char *fname2)
     return func;
 }
 
-int open(const char *path, int flags, ...)
+static inline int do_open(const char *path, int flags, int mode)
 {
-    va_list ap;
-    int mode;
     int result;
 
-    va_start(ap, flags);
-    mode = va_arg(ap, int);
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
         result = fcfs_open(path, flags, mode); 
     } else {
@@ -108,9 +104,40 @@ int open(const char *path, int flags, ...)
             result = syscall(SYS_open, path, flags, mode);
         }
     }
-    va_end(ap);
 
     return result;
+}
+
+int open(const char *path, int flags, ...)
+{
+    va_list ap;
+    int mode;
+
+    va_start(ap, flags);
+    mode = va_arg(ap, int);
+    va_end(ap);
+
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
+    return do_open(path, flags, mode);
+}
+
+int open64(const char *path, int flags, ...)
+{
+    va_list ap;
+    int mode;
+
+    va_start(ap, flags);
+    mode = va_arg(ap, int);
+    va_end(ap);
+
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
+    return do_open(path, flags, mode);
+}
+
+int __open(const char *path, int flags, int mode)
+{
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
+    return do_open(path, flags, mode);
 }
 
 int creat(const char *path, mode_t mode)
@@ -141,6 +168,8 @@ int truncate(const char *path, off_t length)
 
 int lstat(const char *path, struct stat *buf)
 {
+    fprintf(stderr, "func: %s, path: %s\n", __FUNCTION__, path);
+
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
         return fcfs_lstat(path, buf);
     } else {
@@ -152,8 +181,34 @@ int lstat(const char *path, struct stat *buf)
     }
 }
 
+static inline int do_lxstat(int ver, const char *path, struct stat *buf)
+{
+    fprintf(stderr, "func: %s, ver: %d, path: %s\n", __FUNCTION__, ver, path);
+
+    if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
+        return fcfs_lstat(path, buf);
+    } else {
+        if (g_fcfs_preload_global_vars.__lxstat != NULL) {
+            return g_fcfs_preload_global_vars.__lxstat(ver, path, buf);
+        } else {
+            return syscall(SYS_lstat, path, buf);
+        }
+    }
+}
+
+int __lxstat(int ver, const char *path, struct stat *buf)
+{
+    return do_lxstat(ver, path, buf);
+}
+
+int __lxstat64(int ver, const char *path, struct stat *buf)
+{
+    return do_lxstat(ver, path, buf);
+}
+
 int stat(const char *path, struct stat *buf)
 {
+    fprintf(stderr, "func: %s, path: %s\n", __FUNCTION__, path);
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
         return fcfs_stat(path, buf);
     } else {
@@ -165,9 +220,41 @@ int stat(const char *path, struct stat *buf)
     }
 }
 
+static inline int do_xstat(int ver, const char *path, struct stat *buf)
+{
+    fprintf(stderr, "func: %s, ver: %d, path: %s\n", __FUNCTION__, ver, path);
+    if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
+        return fcfs_stat(path, buf);
+    } else {
+        if (g_fcfs_preload_global_vars.__xstat != NULL) {
+            return g_fcfs_preload_global_vars.__xstat(ver, path, buf);
+        } else {
+            return syscall(SYS_stat, path, buf);
+        }
+    }
+}
+
+int __xstat(int ver, const char *path, struct stat *buf)
+{
+    int result;
+    result = do_xstat(ver, path, buf);
+    fprintf(stderr, "func: %s, result: %d\n", __FUNCTION__, result);
+    return result;
+}
+
+int __xstat64(int ver, const char *path, struct stat *buf)
+{
+    int result;
+    result = do_xstat(ver, path, buf);
+    fprintf(stderr, "func: %s, result: %d\n", __FUNCTION__, result);
+    return result;
+}
+
 int link(const char *path1, const char *path2)
 {
-    if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path1) || FCFS_PRELOAD_IS_MY_MOUNTPOINT(path2)) {
+    if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path1) ||
+            FCFS_PRELOAD_IS_MY_MOUNTPOINT(path2))
+    {
         return fcfs_link(path1, path2);
     } else {
         if (g_fcfs_preload_global_vars.link != NULL) {
@@ -204,7 +291,7 @@ ssize_t readlink(const char *path, char *buff, size_t size)
     }
 }
 
-int mknod(const char *path, mode_t mode, dev_t dev)
+static inline int do_mknod(const char *path, mode_t mode, dev_t dev)
 {
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
         return fcfs_mknod(path, mode, dev);
@@ -215,6 +302,16 @@ int mknod(const char *path, mode_t mode, dev_t dev)
             return syscall(SYS_mknod, path, mode, dev);
         }
     }
+}
+
+int mknod(const char *path, mode_t mode, dev_t dev)
+{
+    return do_mknod(path, mode, dev);
+}
+
+int __xmknod(const char *path, mode_t mode, dev_t dev)
+{
+    return do_mknod(path, mode, dev);
 }
 
 int mkfifo(const char *path, mode_t mode)
@@ -231,6 +328,7 @@ int mkfifo(const char *path, mode_t mode)
 
 int access(const char *path, int mode)
 {
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
         return fcfs_access(path, mode);
     } else {
@@ -509,6 +607,8 @@ DIR *opendir(const char *path)
     DIR *dirp;
     FCFSPreloadCallType call_type;
 
+    fprintf(stderr, "func: %s, path: %s\n", __FUNCTION__, path);
+
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
         call_type = fcfs_preload_call_fastcfs;
         dirp = (DIR *)fcfs_opendir(path);
@@ -646,6 +746,7 @@ ssize_t pwritev(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 
 ssize_t read(int fd, void *buff, size_t count)
 {
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_read(fd, buff, count);
     } else {
@@ -657,8 +758,22 @@ ssize_t read(int fd, void *buff, size_t count)
     }
 }
 
+ssize_t __read_chk(int fd, void *buff, size_t count, size_t size)
+{
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
+    if (FCFS_PAPI_IS_MY_FD(fd)) {
+        return fcfs_read(fd, buff, count);
+    } else {
+        if (g_fcfs_preload_global_vars.__read_chk == NULL) {
+            g_fcfs_preload_global_vars.__read_chk = fcfs_dlsym1("__read_chk");
+        }
+        return g_fcfs_preload_global_vars.__read_chk(fd, buff, count, size);
+    }
+}
+
 ssize_t pread(int fd, void *buff, size_t count, off_t offset)
 {
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_pread(fd, buff, count, offset);
     } else {
@@ -671,6 +786,7 @@ ssize_t pread(int fd, void *buff, size_t count, off_t offset)
 
 ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 {
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_readv(fd, iov, iovcnt);
     } else {
@@ -684,6 +800,7 @@ ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 
 ssize_t preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 {
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_preadv(fd, iov, iovcnt, offset);
     } else {
@@ -696,6 +813,21 @@ ssize_t preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 
 off_t lseek(int fd, off_t offset, int whence)
 {
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
+    if (FCFS_PAPI_IS_MY_FD(fd)) {
+        return fcfs_lseek(fd, offset, whence);
+    } else {
+        if (g_fcfs_preload_global_vars.lseek != NULL) {
+            return g_fcfs_preload_global_vars.lseek(fd, offset, whence);
+        } else {
+            return syscall(SYS_lseek, fd, offset, whence);
+        }
+    }
+}
+
+off_t lseek64(int fd, off_t offset, int whence)
+{
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_lseek(fd, offset, whence);
     } else {
@@ -734,6 +866,7 @@ int ftruncate(int fd, off_t length)
 
 int fstat(int fd, struct stat *buf)
 {
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_fstat(fd, buf);
     } else {
@@ -745,8 +878,33 @@ int fstat(int fd, struct stat *buf)
     }
 }
 
+static inline int do_fxstat(int ver, int fd, struct stat *buf)
+{
+    fprintf(stderr, "func: %s, ver: %d, fd: %d\n", __FUNCTION__, ver, fd);
+    if (FCFS_PAPI_IS_MY_FD(fd)) {
+        return fcfs_fstat(fd, buf);
+    } else {
+        if (g_fcfs_preload_global_vars.__fxstat != NULL) {
+            return g_fcfs_preload_global_vars.__fxstat(ver, fd, buf);
+        } else {
+            return syscall(SYS_fstat, fd, buf);
+        }
+    }
+}
+
+int __fxstat(int ver, int fd, struct stat *buf)
+{
+    return do_fxstat(ver, fd, buf);
+}
+
+int __fxstat64(int ver, int fd, struct stat *buf)
+{
+    return do_fxstat(ver, fd, buf);
+}
+
 int flock(int fd, int operation)
 {
+    fprintf(stderr, "func: %s, fd: %d, operation: %d\n", __FUNCTION__, fd, operation);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_flock(fd, operation);
     } else {
@@ -758,9 +916,8 @@ int flock(int fd, int operation)
     }
 }
 
-int fcntl(int fd, int cmd, ...)
+static int do_fcntl(int fd, int cmd, void *arg)
 {
-    va_list ap;
     struct flock *lock;
     int flags;
 
@@ -768,9 +925,7 @@ int fcntl(int fd, int cmd, ...)
         case F_GETLK:
         case F_SETLK:
         case F_SETLKW:
-            va_start(ap, cmd);
-            lock = va_arg(ap, struct flock *);
-            va_end(ap);
+            lock = (struct flock *)arg;
             if (FCFS_PAPI_IS_MY_FD(fd)) {
                 return fcfs_fcntl(fd, cmd, lock); 
             } else {
@@ -781,9 +936,7 @@ int fcntl(int fd, int cmd, ...)
                 }
             }
         default:
-            va_start(ap, cmd);
-            flags = va_arg(ap, int);
-            va_end(ap);
+            flags = (long)arg;
             if (FCFS_PAPI_IS_MY_FD(fd)) {
                 return fcfs_fcntl(fd, cmd, flags); 
             } else {
@@ -794,6 +947,32 @@ int fcntl(int fd, int cmd, ...)
                 }
             }
     }
+}
+
+int fcntl(int fd, int cmd, ...)
+{
+    va_list ap;
+    void *arg;
+
+    fprintf(stderr, "func: %s, fd: %d, cmd: %d\n", __FUNCTION__, fd, cmd);
+    va_start(ap, cmd);
+    arg = va_arg(ap, void *);
+    va_end(ap);
+
+    return do_fcntl(fd, cmd, arg);
+}
+
+int fcntl64(int fd, int cmd, ...)
+{
+    va_list ap;
+    void *arg;
+
+    fprintf(stderr, "func: %s, fd: %d, cmd: %d\n", __FUNCTION__, fd, cmd);
+    va_start(ap, cmd);
+    arg = va_arg(ap, void *);
+    va_end(ap);
+
+    return do_fcntl(fd, cmd, arg);
 }
 
 int futimes(int fd, const struct timeval times[2])
@@ -971,6 +1150,7 @@ DIR *fdopendir(int fd)
     DIR *dirp;
     FCFSPreloadCallType call_type;
 
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         call_type = fcfs_preload_call_fastcfs;
         dirp = (DIR *)fcfs_fdopendir(fd);
@@ -1005,30 +1185,48 @@ int symlinkat(const char *link, int fd, const char *path)
     }
 }
 
+static inline int do_openat(int fd, const char *path, int flags, int mode)
+{
+    if (FCFS_PRELOAD_IS_MY_FD_MOUNTPOINT(fd, path)) {
+        return fcfs_openat(fd, path, flags, mode);
+    } else {
+        if (g_fcfs_preload_global_vars.openat != NULL) {
+            return g_fcfs_preload_global_vars.openat(fd, path, flags, mode);
+        } else {
+            return syscall(SYS_openat, fd, path, flags, mode);
+        }
+    }
+}
+
 int openat(int fd, const char *path, int flags, ...)
 {
     va_list ap;
     int mode;
-    int result;
 
     va_start(ap, flags);
     mode = va_arg(ap, int);
-    if (FCFS_PRELOAD_IS_MY_FD_MOUNTPOINT(fd, path)) {
-        result = fcfs_openat(fd, path, flags, mode);
-    } else {
-        if (g_fcfs_preload_global_vars.openat != NULL) {
-            result = g_fcfs_preload_global_vars.openat(fd, path, flags, mode);
-        } else {
-            result = syscall(SYS_openat, fd, path, flags, mode);
-        }
-    }
     va_end(ap);
 
-    return result;
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
+    return do_openat(fd, path, flags, mode);
+}
+
+int openat64(int fd, const char *path, int flags, ...)
+{
+    va_list ap;
+    int mode;
+
+    va_start(ap, flags);
+    mode = va_arg(ap, int);
+    va_end(ap);
+
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
+    return do_openat(fd, path, flags, mode);
 }
 
 int fstatat(int fd, const char *path, struct stat *buf, int flags)
 {
+    fprintf(stderr, "func: %s, fd: %d, path: %s\n", __FUNCTION__, fd, path);
     if (FCFS_PRELOAD_IS_MY_FD_MOUNTPOINT(fd, path)) {
         return fcfs_fstatat(fd, path, buf, flags);
     } else {
@@ -1037,6 +1235,33 @@ int fstatat(int fd, const char *path, struct stat *buf, int flags)
         }
         return g_fcfs_preload_global_vars.fstatat(fd, path, buf, flags);
     }
+}
+
+static inline int do_fxstatat(int ver, int fd,
+        const char *path, struct stat *buf, int flags)
+{
+    fprintf(stderr, "line: %d, func: %s, fd: %d, path: %s\n", __LINE__, __FUNCTION__, fd, path);
+    if (FCFS_PRELOAD_IS_MY_FD_MOUNTPOINT(fd, path)) {
+        return fcfs_fstatat(fd, path, buf, flags);
+    } else {
+        if (g_fcfs_preload_global_vars.__fxstatat == NULL) {
+            g_fcfs_preload_global_vars.__fxstatat = fcfs_dlsym1("__fxstatat");
+        }
+        int result;
+        result = g_fcfs_preload_global_vars.__fxstatat(ver, fd, path, buf, flags);
+        fprintf(stderr, "result: %d\n", result);
+        return result;
+    }
+}
+
+int __fxstatat(int ver, int fd, const char *path, struct stat *buf, int flags)
+{
+    return do_fxstatat(ver, fd, path, buf, flags);
+}
+
+int __fxstatat64(int ver, int fd, const char *path, struct stat *buf, int flags)
+{
+    return do_fxstatat(ver, fd, path, buf, flags);
 }
 
 ssize_t readlinkat(int fd, const char *path, char *buff, size_t size)
@@ -1052,7 +1277,7 @@ ssize_t readlinkat(int fd, const char *path, char *buff, size_t size)
     }
 }
 
-int mknodat(int fd, const char *path, mode_t mode, dev_t dev)
+static inline int do_mknodat(int fd, const char *path, mode_t mode, dev_t dev)
 {
     if (FCFS_PRELOAD_IS_MY_FD_MOUNTPOINT(fd, path)) {
         return fcfs_mknodat(fd, path, mode, dev);
@@ -1063,6 +1288,16 @@ int mknodat(int fd, const char *path, mode_t mode, dev_t dev)
             return syscall(SYS_mknodat, fd, path, mode, dev);
         }
     }
+}
+
+int mknodat(int fd, const char *path, mode_t mode, dev_t dev)
+{
+    return do_mknodat(fd, path, mode, dev);
+}
+
+int __xmknodat(int fd, const char *path, mode_t mode, dev_t dev)
+{
+    return do_mknodat(fd, path, mode, dev);
 }
 
 int mkfifoat(int fd, const char *path, mode_t mode)
@@ -1079,6 +1314,7 @@ int mkfifoat(int fd, const char *path, mode_t mode)
 
 int faccessat(int fd, const char *path, int mode, int flags)
 {
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
     if (FCFS_PRELOAD_IS_MY_FD_MOUNTPOINT(fd, path)) {
         return fcfs_faccessat(fd, path, mode, flags);
     } else {
@@ -1290,6 +1526,10 @@ static inline struct dirent *do_readdir(DIR *dirp)
     FCFSPreloadDIRWrapper *wapper;
 
     wapper = (FCFSPreloadDIRWrapper *)dirp;
+
+    fprintf(stderr, "func: %s, is_fastcfs: %d\n", __FUNCTION__,
+            wapper->call_type == fcfs_preload_call_fastcfs);
+
     if (wapper->call_type == fcfs_preload_call_fastcfs) {
         return fcfs_readdir((FCFSPosixAPIDIR *)wapper->dirp);
     } else {
@@ -1316,6 +1556,9 @@ static inline int do_readdir_r(DIR *dirp, struct dirent *entry,
     FCFSPreloadDIRWrapper *wapper;
 
     wapper = (FCFSPreloadDIRWrapper *)dirp;
+
+    fprintf(stderr, "func: %s, is_fastcfs: %d\n", __FUNCTION__,
+            wapper->call_type == fcfs_preload_call_fastcfs);
     if (wapper->call_type == fcfs_preload_call_fastcfs) {
         return fcfs_readdir_r((FCFSPosixAPIDIR *)wapper->dirp, entry, result);
     } else {
@@ -1395,4 +1638,81 @@ int dirfd(DIR *dirp)
         }
         return g_fcfs_preload_global_vars.dirfd(wapper->dirp);
     }
+}
+
+int unsetenv(const char *name)
+{
+    fprintf(stderr, "pid: %d, func: %s, line: %d, name: %s\n",
+            getpid(), __FUNCTION__, __LINE__, name);
+
+    if (g_fcfs_preload_global_vars.unsetenv == NULL) {
+        g_fcfs_preload_global_vars.unsetenv = fcfs_dlsym1("unsetenv");
+    }
+    return g_fcfs_preload_global_vars.unsetenv(name);
+}
+
+int clearenv(void)
+{
+    fprintf(stderr, "pid: %d, func: %s, line: %d\n",
+            getpid(), __FUNCTION__, __LINE__);
+
+    if (g_fcfs_preload_global_vars.clearenv == NULL) {
+        g_fcfs_preload_global_vars.clearenv = fcfs_dlsym1("clearenv");
+    }
+    return g_fcfs_preload_global_vars.clearenv();
+}
+
+FILE *fopen(const char *pathname, const char *mode)
+{
+    fprintf(stderr, "pid: %d, func: %s, line: %d, pathname: %s\n",
+            getpid(), __FUNCTION__, __LINE__, pathname);
+
+    if (g_fcfs_preload_global_vars.fopen == NULL) {
+        g_fcfs_preload_global_vars.fopen = fcfs_dlsym1("fopen");
+    }
+    return g_fcfs_preload_global_vars.fopen(pathname, mode);
+}
+
+FILE *fopen64(const char *pathname, const char *mode)
+{
+    fprintf(stderr, "pid: %d, func: %s, line: %d, pathname: %s\n",
+            getpid(), __FUNCTION__, __LINE__, pathname);
+
+    if (g_fcfs_preload_global_vars.fopen == NULL) {
+        g_fcfs_preload_global_vars.fopen = fcfs_dlsym1("fopen");
+    }
+    return g_fcfs_preload_global_vars.fopen(pathname, mode);
+}
+
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *fp)
+{
+    fprintf(stderr, "pid: %d, func: %s, line: %d, size: %d, nmemb: %d, fp: %p\n",
+            getpid(), __FUNCTION__, __LINE__, (int)size, (int)nmemb, fp);
+
+    if (g_fcfs_preload_global_vars.fread == NULL) {
+        g_fcfs_preload_global_vars.fread = fcfs_dlsym1("fread");
+    }
+    return g_fcfs_preload_global_vars.fread(ptr, size, nmemb, fp);
+}
+
+size_t fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *fp)
+{
+    fprintf(stderr, "pid: %d, func: %s, line: %d, size: %d, nmemb: %d, fp: %p\n",
+            getpid(), __FUNCTION__, __LINE__, (int)size, (int)nmemb, fp);
+
+    if (g_fcfs_preload_global_vars.fread == NULL) {
+        g_fcfs_preload_global_vars.fread = fcfs_dlsym1("fread");
+    }
+    return g_fcfs_preload_global_vars.fread(ptr, size, nmemb, fp);
+}
+
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *fp)
+{
+    fprintf(stderr, "pid: %d, func: %s, line: %d, size: %d, nmemb: %d, fp: %p\n",
+            getpid(), __FUNCTION__, __LINE__, (int)size, (int)nmemb, fp);
+
+    if (g_fcfs_preload_global_vars.fwrite == NULL) {
+        g_fcfs_preload_global_vars.fwrite = fcfs_dlsym1("fwrite");
+    }
+    return g_fcfs_preload_global_vars.fwrite(ptr, size, nmemb, fp);
 }

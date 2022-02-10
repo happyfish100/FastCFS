@@ -18,7 +18,6 @@
 #define _FCFS_API_FILE_H
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <fcntl.h>
 #include <utime.h>

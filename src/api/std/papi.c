@@ -15,6 +15,7 @@
 
 #include <stdarg.h>
 #include <sys/uio.h>
+#include <sys/stat.h>
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "posix_api.h"

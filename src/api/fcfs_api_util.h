@@ -466,7 +466,7 @@ static inline int fcfs_api_chmod_by_inode_ex(FCFSAPIContext *ctx,
     options.flags = 0;
     options.mode = 1;
     memset(&stat, 0, sizeof(stat));
-    stat.mode = (mode & ALLPERMS);
+    stat.mode = (mode & 07777);
     return fdir_client_modify_stat_by_inode(ctx->contexts.fdir,
             &ctx->ns, inode, options.flags, &stat, flags, &dentry);
 }
@@ -482,7 +482,7 @@ static inline int fcfs_api_chmod_ex(FCFSAPIContext *ctx,
     options.flags = 0;
     options.mode = 1;
     memset(&stat, 0, sizeof(stat));
-    stat.mode = (mode & ALLPERMS);
+    stat.mode = (mode & 07777);
     FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
     return fdir_client_modify_stat_by_path(ctx->contexts.fdir,
             &fullname, options.flags, &stat, flags, &dentry);

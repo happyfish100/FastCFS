@@ -16,9 +16,9 @@
 #ifndef _FCFS_API_TYPES_H
 #define _FCFS_API_TYPES_H
 
-#include <limits.h>
 #include <sys/types.h>
-#include <sys/stat.h>
+#include <limits.h>
+#include <fcntl.h>
 #include "fastcommon/fast_mblock.h"
 #include "fastcommon/fast_buffer.h"
 #include "fastdir/client/fdir_client.h"

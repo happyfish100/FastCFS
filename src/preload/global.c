@@ -51,8 +51,13 @@ static inline void *dlsym_two(const char *fname1,
 
 static int dlsym_all()
 {
-    g_fcfs_preload_global_vars.open = dlsym_one("open", true);
-    g_fcfs_preload_global_vars.openat = dlsym_one("openat", true);
+    g_fcfs_preload_global_vars.unsetenv = dlsym_one("unsetenv", true);
+    g_fcfs_preload_global_vars.clearenv = dlsym_one("clearenv", true);
+    g_fcfs_preload_global_vars.fopen = dlsym_two("fopen", "fopen64", true);
+    g_fcfs_preload_global_vars.fread = dlsym_one("fread", true);
+    g_fcfs_preload_global_vars.fwrite = dlsym_one("fwrite", true);
+    g_fcfs_preload_global_vars.open = dlsym_two("open", "open64", true);
+    g_fcfs_preload_global_vars.openat = dlsym_two("openat", "openat64", true);
     g_fcfs_preload_global_vars.creat = dlsym_one("creat", true);
     g_fcfs_preload_global_vars.close = dlsym_one("close", true);
     g_fcfs_preload_global_vars.fsync = dlsym_one("fsync", true);
@@ -62,6 +67,7 @@ static int dlsym_all()
     g_fcfs_preload_global_vars.writev = dlsym_one("writev", true);
     g_fcfs_preload_global_vars.pwritev = dlsym_one("pwritev", false);
     g_fcfs_preload_global_vars.read = dlsym_one("read", true);
+    g_fcfs_preload_global_vars.__read_chk = dlsym_one("__read_chk", true);
     g_fcfs_preload_global_vars.pread = dlsym_one("pread", true);
     g_fcfs_preload_global_vars.readv = dlsym_one("readv", true);
     g_fcfs_preload_global_vars.preadv = dlsym_one("preadv", false);
@@ -69,11 +75,21 @@ static int dlsym_all()
     g_fcfs_preload_global_vars.fallocate = dlsym_one("fallocate", false);
     g_fcfs_preload_global_vars.truncate = dlsym_one("truncate", true);
     g_fcfs_preload_global_vars.ftruncate = dlsym_one("ftruncate", true);
-    g_fcfs_preload_global_vars.lstat = dlsym_two("lstat", "__lxstat", true);
-    g_fcfs_preload_global_vars.stat = dlsym_two("stat", "__xstat", true);
-    g_fcfs_preload_global_vars.fstat = dlsym_two("fstat", "__fxstat", true);
-    g_fcfs_preload_global_vars.fstatat = dlsym_two(
-            "fstatat", "__fxstatat", true);
+
+    g_fcfs_preload_global_vars.stat = dlsym_one("stat", false);
+    if (g_fcfs_preload_global_vars.stat != NULL) {
+        g_fcfs_preload_global_vars.lstat = dlsym_one("lstat", true);
+        g_fcfs_preload_global_vars.fstat = dlsym_one("fstat", true);
+        g_fcfs_preload_global_vars.fstatat = dlsym_one("fstatat", true);
+        g_fcfs_preload_global_vars.use_xstat = false;
+    } else {
+        g_fcfs_preload_global_vars.__xstat = dlsym_one("__xstat", true);
+        g_fcfs_preload_global_vars.__lxstat = dlsym_one("__lxstat", true);
+        g_fcfs_preload_global_vars.__fxstat = dlsym_one("__fxstat", true);
+        g_fcfs_preload_global_vars.__fxstatat = dlsym_one("__fxstatat", true);
+        g_fcfs_preload_global_vars.use_xstat = true;
+    }
+
     g_fcfs_preload_global_vars.flock = dlsym_one("flock", true);
     g_fcfs_preload_global_vars.fcntl = dlsym_one("fcntl", true);
     g_fcfs_preload_global_vars.symlink = dlsym_one("symlink", true);
