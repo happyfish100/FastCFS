@@ -58,18 +58,18 @@ sudo apt install fastcfs-auth-server -y
 
 ### 7. 启动
 
-FastDFS后台程序可通过systemd管理。systemd服务名称如下：
+FastCFS后台程序可通过systemd管理。systemd服务名称如下：
 
   * fastdir： 目录服务，对应程序为 fdir_serverd
   * faststore：存储服务，对应程序为 fs_serverd
   * fastcfs： FUSE后台服务，对应程序为 fcfs_fused
-  * fcfs_authd： 认证服务，对应程序为 fcfs_authd
+  * fastauth： 认证服务，对应程序为 fcfs_authd
 
 可以使用标准的systemd命令对上述4个服务进行管理，例如：
 ```shell
 sudo systemctl restart fastdir
 sudo systemctl restart faststore
 sudo systemctl restart fastcfs
-sudo systemctl restart fcfs_authd
+sudo systemctl restart fastauth
 ```
 

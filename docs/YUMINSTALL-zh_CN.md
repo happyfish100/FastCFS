@@ -54,12 +54,12 @@ yum install FastCFS-auth-server -y
 
 安装完成后，需要修改对应的配置文件，服务才可以正常启动。请参阅[配置指南](CONFIGURE-zh_CN.md)
 
-FastDFS后台程序可通过systemd管理。systemd服务名称如下：
+FastCFS后台程序可通过systemd管理。systemd服务名称如下：
 ```
   * fastdir： 目录服务，对应程序为 fdir_serverd
   * faststore：存储服务，对应程序为 fs_serverd
   * fastcfs： FUSE后台服务，对应程序为 fcfs_fused
-  * fcfs_authd： 认证服务，对应程序为 fcfs_authd
+  * fastauth： 认证服务，对应程序为 fcfs_authd
 ```
 
 可以使用标准的systemd命令对上述4个服务进行管理，例如：
@@ -67,7 +67,7 @@ FastDFS后台程序可通过systemd管理。systemd服务名称如下：
 systemctl restart fastdir
 systemctl restart faststore
 systemctl restart fastcfs
-systemctl restart fcfs_authd
+systemctl restart fastauth
 ```
 ### 6. 一个包含5个节点的安装过程的详细文档
 请参与[5节点安装文档](YUMINSTALL-Diy-5nodes-zh_CN.md)

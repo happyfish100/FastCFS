@@ -76,7 +76,7 @@ authd命令直接重启：
 或者系统服务命令启动：
 
 ```
-sudo systemctl restart fcfs_authd
+sudo systemctl restart fastauth
 ```
 
 查看日志：

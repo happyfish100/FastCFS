@@ -22,7 +22,7 @@ ifneq ($(filter pkg.fastcfs.core,$(DEB_BUILD_PROFILES)),)
 	mkdir -p $(FUSE_CONFDIR)
 	cp conf/*.conf $(FUSE_CONFDIR)
 	cp systemd/fastcfs.service debian/fastcfs-fused.fastcfs.service
-	cp systemd/fcfs_authd.service debian/fastcfs-auth-server.fcfs_authd.service
+	cp systemd/fastauth.service debian/fastcfs-auth-server.fastauth.service
 endif
 ifneq ($(filter pkg.auth.client,$(DEB_BUILD_PROFILES)),)
 	./make.sh --module=auth_client install
@@ -35,4 +35,4 @@ endif
 
 override_dh_installsystemd:
 	dh_installsystemd --package=fastcfs-fused --name=fastcfs --no-start --no-restart-on-upgrade
-	dh_installsystemd --package=fastcfs-auth-server --name=fcfs_authd --no-start --no-restart-on-upgrade
+	dh_installsystemd --package=fastcfs-auth-server --name=fastauth --no-start --no-restart-on-upgrade
