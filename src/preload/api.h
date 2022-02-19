@@ -31,11 +31,12 @@ extern "C" {
 
 int closedir(DIR *dirp);
 
-struct dirent *readdir(DIR *dirp);
+struct dirent *_readdir_(DIR *dirp) __asm__ ("" "readdir");
 
 struct dirent64 *readdir64(DIR *dirp);
 
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+int _readdir_r_(DIR *dirp, struct dirent *entry, struct dirent **result)
+     __asm__ ("" "readdir_r");
 
 int readdir64_r(DIR *dirp, struct dirent64 *entry, struct dirent64 **result);
 
@@ -55,31 +56,48 @@ int fdatasync(int fd);
 
 ssize_t write(int fd, const void *buff, size_t count);
 
-ssize_t pwrite(int fd, const void *buff, size_t count, off_t offset);
+ssize_t _pwrite_(int fd, const void *buff, size_t count, off_t offset)
+    __asm__ ("" "pwrite");
+
+ssize_t pwrite64(int fd, const void *buff, size_t count, off_t offset);
 
 ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
 
-ssize_t pwritev(int fd, const struct iovec *iov, int iovcnt, off_t offset);
+ssize_t _pwritev_(int fd, const struct iovec *iov, int iovcnt, off_t offset)
+    __asm__ ("" "pwritev");
+
+ssize_t pwritev64(int fd, const struct iovec *iov, int iovcnt, off_t offset);
 
 ssize_t read(int fd, void *buff, size_t count);
 
 ssize_t __read_chk(int fd, void *buff, size_t count, size_t size);
 
-ssize_t pread(int fd, void *buff, size_t count, off_t offset);
+ssize_t _pread_(int fd, void *buff, size_t count, off_t offset)
+    __asm__ ("" "pread");
+
+ssize_t pread64(int fd, void *buff, size_t count, off_t offset);
 
 ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
 
-ssize_t preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset);
+ssize_t _preadv_(int fd, const struct iovec *iov, int iovcnt, off_t offset)
+    __asm__ ("" "preadv");
 
-off_t lseek(int fd, off_t offset, int whence);
+ssize_t preadv64(int fd, const struct iovec *iov, int iovcnt, off_t offset);
+
+off_t _lseek_(int fd, off_t offset, int whence) __asm__ ("" "lseek");
 
 off_t lseek64(int fd, off_t offset, int whence);
 
-int fallocate(int fd, int mode, off_t offset, off_t length);
+int _fallocate_(int fd, int mode, off_t offset, off_t length)
+    __asm__ ("" "fallocate");
 
-int ftruncate(int fd, off_t length);
+int fallocate64(int fd, int mode, off_t offset, off_t length);
 
-int __fxstat(int ver, int fd, struct stat *buf);
+int _ftruncate_(int fd, off_t length) __asm__ ("" "ftruncate");
+
+int ftruncate64(int fd, off_t length);
+
+int __fxstat_(int ver, int fd, struct stat *buf) __asm__ ("" "__fxstat");
 
 int __fxstat64(int ver, int fd, struct stat *buf);
 
@@ -87,7 +105,7 @@ int fstat(int fd, struct stat *buf);
 
 int flock(int fd, int operation);
 
-int fcntl(int fd, int cmd, ...);
+int _fcntl_(int fd, int cmd, ...)  __asm__ ("" "fcntl");
 
 int fcntl64(int fd, int cmd, ...);
 
@@ -116,18 +134,22 @@ int dup(int fd);
 
 int dup2(int fd1, int fd2);
 
-void *mmap(void *addr, size_t length, int prot,
+void *_mmap_(void *addr, size_t length, int prot, int flags,
+        int fd, off_t offset) __asm__ ("" "mmap");
+
+void *mmap64(void *addr, size_t length, int prot,
         int flags, int fd, off_t offset);
 
 DIR *fdopendir(int fd);
 
 int symlinkat(const char *link, int fd, const char *path);
 
-int openat(int fd, const char *path, int flags, ...);
+int _openat_(int fd, const char *path, int flags, ...) __asm__ ("" "openat");
 
 int openat64(int fd, const char *path, int flags, ...);
 
-int __fxstatat(int ver, int fd, const char *path, struct stat *buf, int flags);
+int __fxstatat_(int ver, int fd, const char *path, struct stat *buf,
+        int flags) __asm__ ("" "__fxstatat");
 
 int __fxstatat64(int ver, int fd, const char *path,
         struct stat *buf, int flags);
@@ -164,33 +186,42 @@ int renameat(int fd1, const char *path1, int fd2, const char *path2);
 int renameat2(int fd1, const char *path1, int fd2,
         const char *path2, unsigned int flags);
 
-int scandirat(int fd, const char *path, struct dirent ***namelist,
-        fcfs_dir_filter_func filter, fcfs_dir_compare_func compar);
+int _scandirat_(int fd, const char *path, struct dirent ***namelist,
+        fcfs_dir_filter_func filter, fcfs_dir_compare_func compar)
+        __asm__ ("" "scandirat");
 
-int scandirat64(int fd, const char *path, struct dirent ***namelist,
-        fcfs_dir_filter_func filter, fcfs_dir_compare_func compar);
+int scandirat64(int fd, const char *path, struct dirent64 ***namelist,
+        int (*filter) (const struct dirent64 *),
+        int (*compar) (const struct dirent64 **,
+            const struct dirent64 **));
 
 char *getcwd(char *buf, size_t size);
 
 char *getwd(char *buf);
 
-int open(const char *path, int flags, ...);
+int _open_(const char *path, int flags, ...) __asm__ ("" "open");
 
 int open64(const char *path, int flags, ...);
 
 int __open(const char *path, int flags, int mode);
 
-int creat(const char *path, mode_t mode);
+int _creat_(const char *path, mode_t mode) __asm__ ("" "creat");
 
-int truncate(const char *path, off_t length);
+int creat64(const char *path, mode_t mode);
 
-int __lxstat(int ver, const char *path, struct stat *buf);
+int _truncate_(const char *path, off_t length) __asm__ ("" "truncate");
+
+int truncate64(const char *path, off_t length);
+
+int __lxstat_(int ver, const char *path, struct stat *buf)
+    __asm__ ("" "__lxstat");
 
 int __lxstat64(int ver, const char *path, struct stat *buf);
 
 int lstat(const char *path, struct stat *buf);
 
-int __xstat(int ver, const char *path, struct stat *buf);
+int __xstat_(int ver, const char *path, struct stat *buf)
+     __asm__ ("" "__xstat");
 
 int __xstat64(int ver, const char *path, struct stat *buf);
 
@@ -260,13 +291,18 @@ int clearenv(void);
 
 DIR *opendir(const char *path);
 
-int scandir(const char *path, struct dirent ***namelist,
-        fcfs_dir_filter_func filter, fcfs_dir_compare_func compar);
+int _scandir_(const char *path, struct dirent ***namelist,
+        fcfs_dir_filter_func filter, fcfs_dir_compare_func compar)
+    __asm__ ("" "scandir");
 
-int scandir64(const char *path, struct dirent ***namelist,
-        fcfs_dir_filter_func filter, fcfs_dir_compare_func compar);
+int scandir64(const char *path, struct dirent64 ***namelist,
+        int (*filter) (const struct dirent64 *),
+        int (*compar) (const struct dirent64 **,
+            const struct dirent64 **));
 
-FILE *fopen(const char *pathname, const char *mode);
+FILE *_fopen_(const char *pathname, const char *mode) __asm__ ("" "fopen");
+
+FILE *fopen64(const char *pathname, const char *mode);
 
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *fp);
 

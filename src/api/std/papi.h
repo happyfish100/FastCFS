@@ -18,6 +18,7 @@
 #define _FCFS_PAPI_H
 
 #include <utime.h>
+#include <dirent.h>
 #include "api_types.h"
 
 #define G_FCFS_PAPI_CTX  g_fcfs_papi_global_vars.ctx
@@ -242,32 +243,47 @@
 #define fcfs_fdopendir(fd) \
     fcfs_fdopendir_ex(&G_FCFS_PAPI_CTX, fd)
 
-#define fcfs_closedir(dir) \
-    fcfs_closedir_ex(&G_FCFS_PAPI_CTX, dir)
+#define fcfs_closedir(dirp) \
+    fcfs_closedir_ex(&G_FCFS_PAPI_CTX, dirp)
 
-#define fcfs_readdir(dir) \
-    fcfs_readdir_ex(&G_FCFS_PAPI_CTX, dir)
+#define fcfs_readdir(dirp) \
+    fcfs_readdir_ex(&G_FCFS_PAPI_CTX, dirp)
 
-#define fcfs_readdir_r(dir, entry, result) \
-    fcfs_readdir_r_ex(&G_FCFS_PAPI_CTX, dir, entry, result)
+#define fcfs_readdir_r(dirp, entry, result) \
+    fcfs_readdir_r_ex(&G_FCFS_PAPI_CTX, dirp, entry, result)
 
-#define fcfs_seekdir(dir, loc) \
-    fcfs_seekdir_ex(&G_FCFS_PAPI_CTX, dir, loc)
+#define fcfs_seekdir(dirp, loc) \
+    fcfs_seekdir_ex(&G_FCFS_PAPI_CTX, dirp, loc)
 
-#define fcfs_telldir(dir) \
-    fcfs_telldir_ex(&G_FCFS_PAPI_CTX, dir)
+#define fcfs_telldir(dirp) \
+    fcfs_telldir_ex(&G_FCFS_PAPI_CTX, dirp)
 
-#define fcfs_rewinddir(dir) \
-    fcfs_rewinddir_ex(&G_FCFS_PAPI_CTX, dir)
+#define fcfs_rewinddir(dirp) \
+    fcfs_rewinddir_ex(&G_FCFS_PAPI_CTX, dirp)
 
-#define fcfs_dirfd(dir) \
-    fcfs_dirfd_ex(&G_FCFS_PAPI_CTX, dir)
+#define fcfs_dirfd(dirp) \
+    fcfs_dirfd_ex(&G_FCFS_PAPI_CTX, dirp)
 
 #define fcfs_scandir(path, namelist, filter, compar) \
     fcfs_scandir_ex(&G_FCFS_PAPI_CTX, path, namelist, filter, compar)
 
 #define fcfs_scandirat(fd, path, namelist, filter, compar) \
     fcfs_scandirat_ex(&G_FCFS_PAPI_CTX, fd, path, namelist, filter, compar)
+
+#define fcfs_lockf(fd, cmd, len) \
+    fcfs_lockf_ex(&G_FCFS_PAPI_CTX, fd, cmd, len)
+
+#define fcfs_posix_fallocate(fd, offset, len) \
+    fcfs_posix_fallocate_ex(&G_FCFS_PAPI_CTX, fd, offset, len)
+
+#define fcfs_posix_fadvise(fd, offset, len, advice) \
+    fcfs_posix_fadvise_ex(&G_FCFS_PAPI_CTX, fd, offset, len, advice)
+
+#define fcfs_dprintf(fd, format, ...) \
+    fcfs_dprintf_ex(&G_FCFS_PAPI_CTX, fd, format, ##__VA_ARGS__)
+
+#define fcfs_vdprintf(fd, format, ap) \
+    fcfs_vdprintf_ex(&G_FCFS_PAPI_CTX, fd, format, ap)
 
 #define fcfs_chdir(path) \
     fcfs_chdir_ex(&G_FCFS_PAPI_CTX, path)
@@ -507,27 +523,24 @@ extern "C" {
     int fcfs_fremovexattr_ex(FCFSPosixAPIContext *ctx,
             int fd, const char *name);
 
-    FCFSPosixAPIDIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx,
-            const char *path);
+    DIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx, const char *path);
 
-    FCFSPosixAPIDIR *fcfs_fdopendir_ex(FCFSPosixAPIContext *ctx, int fd);
+    DIR *fcfs_fdopendir_ex(FCFSPosixAPIContext *ctx, int fd);
 
-    int fcfs_closedir_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir);
+    int fcfs_closedir_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
 
-    struct dirent *fcfs_readdir_ex(FCFSPosixAPIContext *ctx,
-            FCFSPosixAPIDIR *dir);
+    struct dirent *fcfs_readdir_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
 
-    int fcfs_readdir_r_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir,
+    int fcfs_readdir_r_ex(FCFSPosixAPIContext *ctx, DIR *dirp,
             struct dirent *entry, struct dirent **result);
 
-    void fcfs_seekdir_ex(FCFSPosixAPIContext *ctx,
-            FCFSPosixAPIDIR *dir, long loc);
+    void fcfs_seekdir_ex(FCFSPosixAPIContext *ctx, DIR *dirp, long loc);
 
-    long fcfs_telldir_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir);
+    long fcfs_telldir_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
 
-    void fcfs_rewinddir_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir);
+    void fcfs_rewinddir_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
 
-    int fcfs_dirfd_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir);
+    int fcfs_dirfd_ex(FCFSPosixAPIContext *ctx, DIR *dirp);
 
     int fcfs_scandir_ex(FCFSPosixAPIContext *ctx, const char *path,
             struct dirent ***namelist, int (*filter)(const struct dirent *),
@@ -536,6 +549,20 @@ extern "C" {
     int fcfs_scandirat_ex(FCFSPosixAPIContext *ctx, int fd, const char *path,
             struct dirent ***namelist, int (*filter)(const struct dirent *),
             int (*compar)(const struct dirent **, const struct dirent **));
+
+    int fcfs_lockf_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, off_t len);
+
+    int fcfs_posix_fallocate_ex(FCFSPosixAPIContext *ctx,
+            int fd, off_t offset, off_t len);
+
+    int fcfs_posix_fadvise_ex(FCFSPosixAPIContext *ctx, int fd,
+            off_t offset, off_t len, int advice);
+
+    int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx,
+            int fd, const char *format, ...);
+
+    int fcfs_vdprintf_ex(FCFSPosixAPIContext *ctx,
+            int fd, const char *format, va_list ap);
 
     int fcfs_chdir_ex(FCFSPosixAPIContext *ctx, const char *path);
 

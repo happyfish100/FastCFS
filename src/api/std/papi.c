@@ -191,17 +191,11 @@ int fcfs_fdatasync_ex(FCFSPosixAPIContext *ctx, int fd)
     return 0;
 }
 
-ssize_t fcfs_write_ex(FCFSPosixAPIContext *ctx,
-        int fd, const void *buff, size_t count)
+static inline ssize_t do_write(FCFSPosixAPIFileInfo *file,
+        const void *buff, size_t count)
 {
     int result;
     int write_bytes;
-    FCFSPosixAPIFileInfo *file;
-
-    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
-        errno = EBADF;
-        return -1;
-    }
 
     if ((result=fcfs_api_write_ex(&file->fi, buff, count, &write_bytes,
                     fcfs_posix_api_gettid())) != 0)
@@ -211,6 +205,19 @@ ssize_t fcfs_write_ex(FCFSPosixAPIContext *ctx,
     } else {
         return write_bytes;
     }
+}
+
+ssize_t fcfs_write_ex(FCFSPosixAPIContext *ctx,
+        int fd, const void *buff, size_t count)
+{
+    FCFSPosixAPIFileInfo *file;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    return do_write(file, buff, count);
 }
 
 ssize_t fcfs_pwrite_ex(FCFSPosixAPIContext *ctx, int fd,
@@ -551,19 +558,13 @@ int fcfs_flock_ex(FCFSPosixAPIContext *ctx, int fd, int operation)
     }
 }
 
-int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...)
+static int do_fcntl(FCFSPosixAPIFileInfo *file, int cmd, void *arg)
 {
-    FCFSPosixAPIFileInfo *file;
-    va_list ap;
     int64_t owner_id;
     struct flock *lock;
     int flags;
     int result;
 
-    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
-        errno = EBADF;
-        return -1;
-    }
 
     switch (cmd) {
         /*
@@ -577,18 +578,13 @@ int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...)
         case F_GETFL:
             return file->fi.flags;
         case F_SETFL:
-            va_start(ap, cmd);
-            flags = va_arg(ap, int);
-            va_end(ap);
+            flags = (long)arg;
             result = fcfs_api_set_file_flags(&file->fi, flags);
             break;
         case F_GETLK:
         case F_SETLK:
         case F_SETLKW:
-            va_start(ap, cmd);
-            lock = va_arg(ap, struct flock *);
-            va_end(ap);
-
+            lock = (struct flock *)arg;
             if (cmd == F_GETLK) {
                 result = fcfs_api_getlk_ex(&file->fi, lock, &owner_id);
             } else {
@@ -610,6 +606,23 @@ int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...)
     } else {
         return 0;
     }
+}
+
+int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...)
+{
+    FCFSPosixAPIFileInfo *file;
+    va_list ap;
+    void *arg;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    va_start(ap, cmd);
+    arg = va_arg(ap, void *);
+    va_end(ap);
+    return do_fcntl(file, cmd, arg);
 }
 
 int fcfs_symlink_ex(FCFSPosixAPIContext *ctx,
@@ -1732,7 +1745,7 @@ static FCFSPosixAPIDIR *do_opendir(FCFSPosixAPIContext *ctx,
     return dir;
 }
 
-FCFSPosixAPIDIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx, const char *path)
+DIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx, const char *path)
 {
     const int flags = O_RDONLY;
     const mode_t mode = 0777 | S_IFDIR;
@@ -1754,10 +1767,10 @@ FCFSPosixAPIDIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx, const char *path)
         fcfs_api_close(&file->fi);
         fcfs_fd_manager_free(file);
     }
-    return dir;
+    return (DIR *)dir;
 }
 
-FCFSPosixAPIDIR *fcfs_fdopendir_ex(FCFSPosixAPIContext *ctx, int fd)
+DIR *fcfs_fdopendir_ex(FCFSPosixAPIContext *ctx, int fd)
 {
     FCFSPosixAPIFileInfo *file;
     FCFSPosixAPIDIR *dir;
@@ -1771,24 +1784,26 @@ FCFSPosixAPIDIR *fcfs_fdopendir_ex(FCFSPosixAPIContext *ctx, int fd)
         fcfs_api_close(&file->fi);
         fcfs_fd_manager_free(file);
     }
-    return dir;
+    return (DIR *)dir;
 }
 
-#define FCFS_CONVERT_DIRP_EX(dir, ...) \
+#define FCFS_CONVERT_DIRP_EX(dirp, ...) \
+    FCFSPosixAPIDIR *dir; \
+    dir = (FCFSPosixAPIDIR *)dirp; \
     if (dir->magic != FCFS_PAPI_MAGIC_NUMBER) { \
         errno = EBADF; \
         return __VA_ARGS__; \
     }
 
-#define FCFS_CONVERT_DIRP(dir) \
-    FCFS_CONVERT_DIRP_EX(dir, -1)
+#define FCFS_CONVERT_DIRP(dirp) \
+    FCFS_CONVERT_DIRP_EX(dirp, -1)
 
-#define FCFS_CONVERT_DIRP_VOID(dir) \
-    FCFS_CONVERT_DIRP_EX(dir)
+#define FCFS_CONVERT_DIRP_VOID(dirp) \
+    FCFS_CONVERT_DIRP_EX(dirp)
 
-int fcfs_closedir_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir)
+int fcfs_closedir_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
 {
-    FCFS_CONVERT_DIRP(dir);
+    FCFS_CONVERT_DIRP(dirp);
 
     fdir_client_compact_dentry_array_free(&dir->darray);
     fcfs_api_close(&dir->file->fi);
@@ -1804,20 +1819,20 @@ static inline struct dirent *do_readdir(FCFSPosixAPIDIR *dir)
         return NULL;
     }
 
-    return (struct dirent *)(dir->darray.entries + dir->offset++);
+    return dir->darray.entries + dir->offset++;
 }
 
-struct dirent *fcfs_readdir_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir)
+struct dirent *fcfs_readdir_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
 {
-    FCFS_CONVERT_DIRP_EX(dir, NULL);
+    FCFS_CONVERT_DIRP_EX(dirp, NULL);
     return do_readdir(dir);
 }
 
-int fcfs_readdir_r_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir,
+int fcfs_readdir_r_ex(FCFSPosixAPIContext *ctx, DIR *dirp,
         struct dirent *entry, struct dirent **result)
 {
     struct dirent *current;
-    FCFS_CONVERT_DIRP(dir);
+    FCFS_CONVERT_DIRP(dirp);
 
     if ((current=do_readdir(dir)) != NULL) {
         memcpy(entry, current, sizeof(FDIRDirent));
@@ -1829,27 +1844,27 @@ int fcfs_readdir_r_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir,
     return 0;
 }
 
-void fcfs_seekdir_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir, long loc)
+void fcfs_seekdir_ex(FCFSPosixAPIContext *ctx, DIR *dirp, long loc)
 {
-    FCFS_CONVERT_DIRP_VOID(dir);
+    FCFS_CONVERT_DIRP_VOID(dirp);
     dir->offset = loc;
 }
 
-long fcfs_telldir_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir)
+long fcfs_telldir_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
 {
-    FCFS_CONVERT_DIRP(dir);
+    FCFS_CONVERT_DIRP(dirp);
     return dir->offset;
 }
 
-void fcfs_rewinddir_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir)
+void fcfs_rewinddir_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
 {
-    FCFS_CONVERT_DIRP_VOID(dir);
+    FCFS_CONVERT_DIRP_VOID(dirp);
     dir->offset = 0;
 }
 
-int fcfs_dirfd_ex(FCFSPosixAPIContext *ctx, FCFSPosixAPIDIR *dir)
+int fcfs_dirfd_ex(FCFSPosixAPIContext *ctx, DIR *dirp)
 {
-    FCFS_CONVERT_DIRP(dir);
+    FCFS_CONVERT_DIRP(dirp);
 
     if (fcfs_fd_manager_get(dir->file->fd) != dir->file) {
         errno = EBADF;
@@ -2083,4 +2098,139 @@ void *fcfs_mmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length,
 int fcfs_munmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length)
 {
     FCFS_API_NOT_IMPLEMENTED("munmap", -1);
+}
+
+int fcfs_lockf_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, off_t len)
+{
+    FCFSPosixAPIFileInfo *file;
+    struct flock lock;
+    int fcntl_cmd;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    switch (cmd) {
+        case F_LOCK:
+            fcntl_cmd = F_SETLKW;
+            lock.l_type = F_WRLCK;
+            break;
+        case F_TLOCK:
+            fcntl_cmd = F_SETLK;
+            lock.l_type = F_WRLCK;
+            break;
+        case F_ULOCK:
+            fcntl_cmd = F_SETLK;
+            lock.l_type = F_UNLCK;
+            break;
+        case F_TEST:
+            fcntl_cmd = F_GETLK;
+            lock.l_type = F_UNLCK;
+            break;
+        default:
+            errno = EOPNOTSUPP;
+            return -1;
+    }
+
+    lock.l_whence = SEEK_SET;
+    lock.l_start = file->fi.offset;
+    lock.l_len = len;
+    lock.l_pid = fcfs_posix_api_getpid();
+    return do_fcntl(file, fcntl_cmd, &lock);
+}
+
+int fcfs_posix_fallocate_ex(FCFSPosixAPIContext *ctx,
+        int fd, off_t offset, off_t len)
+{
+    const int mode = 0;
+    int result;
+    FCFSPosixAPIFileInfo *file;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((result=fcfs_api_fallocate_ex(&file->fi, mode, offset,
+                    len, fcfs_posix_api_gettid())) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int fcfs_posix_fadvise_ex(FCFSPosixAPIContext *ctx, int fd,
+            off_t offset, off_t len, int advice)
+{
+    FCFSPosixAPIFileInfo *file;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    return 0;
+}
+
+static int do_vdprintf(FCFSPosixAPIFileInfo *file,
+        const char *format, va_list ap)
+{
+#define FIXED_BUFFUER_SIZE (4 * 1024)
+    char fixed[FIXED_BUFFUER_SIZE];
+    char *buff;
+    int length;
+    int result;
+    va_list new_ap;
+
+    va_copy(new_ap, ap);
+    buff = fixed;
+    length = vsnprintf(buff, FIXED_BUFFUER_SIZE, format, ap);
+    if (length >= FIXED_BUFFUER_SIZE - 1) {
+        buff = (char *)fc_malloc(length + 1);
+        if (buff == NULL) {
+            errno = ENOMEM;
+            return -1;
+        }
+        length = vsnprintf(buff, length + 1, format, new_ap);
+    }
+
+    result = do_write(file, buff, length);
+    if (buff != fixed) {
+        free(buff);
+    }
+    return result;
+}
+
+int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx,
+        int fd, const char *format, ...)
+{
+    FCFSPosixAPIFileInfo *file;
+    va_list ap;
+    int result;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    va_start(ap, format);
+    result = do_vdprintf(file, format, ap);
+    va_end(ap);
+    return result;
+}
+
+int fcfs_vdprintf_ex(FCFSPosixAPIContext *ctx,
+        int fd, const char *format, va_list ap)
+{
+    FCFSPosixAPIFileInfo *file;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    return do_vdprintf(file, format, ap);
 }

@@ -79,6 +79,11 @@ extern "C" {
         fcfs_posix_api_destroy_ex(&g_fcfs_papi_global_vars.ctx);
     }
 
+    static inline pid_t fcfs_posix_api_getpid()
+    {
+        return getpid();
+    }
+
     static inline pid_t fcfs_posix_api_gettid()
     {
         return fc_gettid();
