@@ -132,6 +132,12 @@
 #define fcfs_faccessat(fd, path, mode, flags) \
     fcfs_faccessat_ex(&G_FCFS_PAPI_CTX, fd, path, mode, flags)
 
+#define fcfs_euidaccess(path, mode) \
+    fcfs_euidaccess_ex(&G_FCFS_PAPI_CTX, path, mode)
+
+#define fcfs_eaccess(path, mode) \
+    fcfs_eaccess_ex(&G_FCFS_PAPI_CTX, path, mode)
+
 #define fcfs_utime(path, times) \
     fcfs_utime_ex(&G_FCFS_PAPI_CTX, path, times)
 
@@ -417,6 +423,15 @@ extern "C" {
 
     int fcfs_faccessat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, int mode, int flags);
+
+    int fcfs_euidaccess_ex(FCFSPosixAPIContext *ctx,
+            const char *path, int mode);
+
+    static inline int fcfs_eaccess_ex(FCFSPosixAPIContext *ctx,
+            const char *path, int mode)
+    {
+        return fcfs_euidaccess_ex(ctx, path, mode);
+    }
 
     int fcfs_utime_ex(FCFSPosixAPIContext *ctx, const char *path,
             const struct utimbuf *times);

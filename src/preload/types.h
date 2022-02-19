@@ -34,7 +34,6 @@ typedef struct fcfs_preload_dir_wrapper {
 
 typedef struct fcfs_preload_global_vars {
     bool inited;
-    bool use_xstat;
     FCFSPreloadCallType cwd_call_type;
 
     struct {
@@ -142,6 +141,10 @@ typedef struct fcfs_preload_global_vars {
 
         int (*faccessat)(int fd, const char *path, int mode, int flags);
 
+        int (*euidaccess)(const char *path, int mode);
+
+        int (*eaccess)(const char *path, int mode);
+
         int (*utime)(const char *path, const struct utimbuf *times);
 
         int (*utimes)(const char *path, const struct timeval times[2]);
@@ -222,6 +225,16 @@ typedef struct fcfs_preload_global_vars {
 
         int (*fremovexattr)(int fd, const char *name);
 
+        int (*lockf)(int fd, int cmd, off_t len);
+
+        int (*posix_fallocate)(int fd, off_t offset, off_t len);
+
+        int (*posix_fadvise)(int fd, off_t offset, off_t len, int advice);
+
+        int (*dprintf)(int fd, const char *format, ...);
+
+        int (*vdprintf)(int fd, const char *format, va_list ap);
+
         DIR *(*opendir)(const char *path);
 
         DIR *(*fdopendir)(int fd);
@@ -230,13 +243,8 @@ typedef struct fcfs_preload_global_vars {
 
         struct dirent *(*readdir)(DIR *dirp);
 
-        struct dirent64 *(*readdir64)(DIR *dirp);
-
         int (*readdir_r)(DIR *dirp, struct dirent *entry,
                 struct dirent **result);
-
-        int (*readdir64_r)(DIR *dirp, struct dirent64 *entry,
-                struct dirent64 **result);
 
         void (*seekdir)(DIR *dirp, long loc);
 

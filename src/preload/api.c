@@ -360,6 +360,19 @@ int access(const char *path, int mode)
     }
 }
 
+int eaccess(const char *path, int mode)
+{
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
+    if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
+        return fcfs_eaccess(path, mode);
+    } else {
+        if (g_fcfs_preload_global_vars.eaccess == NULL) {
+            g_fcfs_preload_global_vars.eaccess = fcfs_dlsym1("eaccess");
+        }
+        return g_fcfs_preload_global_vars.eaccess(path, mode);
+    }
+}
+
 int utime(const char *path, const struct utimbuf *times)
 {
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
@@ -475,16 +488,27 @@ int chmod(const char *path, mode_t mode)
     }
 }
 
-int statvfs(const char *path, struct statvfs *buf)
+static inline int do_statvfs(const char *path, struct statvfs *buf)
 {
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
         return fcfs_statvfs(path, buf);
     } else {
         if (g_fcfs_preload_global_vars.statvfs == NULL) {
-            g_fcfs_preload_global_vars.statvfs = fcfs_dlsym1("statvfs");
+            g_fcfs_preload_global_vars.statvfs = fcfs_dlsym2(
+                    "statvfs", "statvfs64");
         }
         return g_fcfs_preload_global_vars.statvfs(path, buf);
     }
+}
+
+int _statvfs_(const char *path, struct statvfs *buf)
+{
+    return do_statvfs(path, buf);
+}
+
+int statvfs64(const char *path, struct statvfs64 *buf)
+{
+    return do_statvfs(path, (struct statvfs *)buf);
 }
 
 int setxattr(const char *path, const char *name,
@@ -1178,16 +1202,27 @@ int fchdir(int fd)
     }
 }
 
-int fstatvfs(int fd, struct statvfs *buf)
+static inline int do_fstatvfs(int fd, struct statvfs *buf)
 {
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_fstatvfs(fd, buf);
     } else {
         if (g_fcfs_preload_global_vars.fstatvfs == NULL) {
-            g_fcfs_preload_global_vars.fstatvfs = fcfs_dlsym1("fstatvfs");
+            g_fcfs_preload_global_vars.fstatvfs = fcfs_dlsym2(
+                    "fstatvfs", "fstatvfs64");
         }
         return g_fcfs_preload_global_vars.fstatvfs(fd, buf);
     }
+}
+
+int _fstatvfs_(int fd, struct statvfs *buf)
+{
+    return do_fstatvfs(fd, buf);
+}
+
+int fstatvfs64(int fd, struct statvfs64 *buf)
+{
+    return do_fstatvfs(fd, (struct statvfs *)buf);
 }
 
 int dup(int fd)

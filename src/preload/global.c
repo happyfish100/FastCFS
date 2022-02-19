@@ -58,40 +58,46 @@ static int dlsym_all()
     g_fcfs_preload_global_vars.fwrite = dlsym_one("fwrite", true);
     g_fcfs_preload_global_vars.open = dlsym_two("open", "open64", true);
     g_fcfs_preload_global_vars.openat = dlsym_two("openat", "openat64", true);
-    g_fcfs_preload_global_vars.creat = dlsym_one("creat", true);
+    g_fcfs_preload_global_vars.creat = dlsym_two("creat", "creat64", true);
     g_fcfs_preload_global_vars.close = dlsym_one("close", true);
     g_fcfs_preload_global_vars.fsync = dlsym_one("fsync", true);
     g_fcfs_preload_global_vars.fdatasync = dlsym_one("fdatasync", true);
     g_fcfs_preload_global_vars.write = dlsym_one("write", true);
-    g_fcfs_preload_global_vars.pwrite = dlsym_one("pwrite", true);
+    g_fcfs_preload_global_vars.pwrite = dlsym_two("pwrite", "pwrite64", true);
     g_fcfs_preload_global_vars.writev = dlsym_one("writev", true);
-    g_fcfs_preload_global_vars.pwritev = dlsym_one("pwritev", false);
+    g_fcfs_preload_global_vars.pwritev = dlsym_two(
+            "pwritev", "pwritev64", false);
     g_fcfs_preload_global_vars.read = dlsym_one("read", true);
     g_fcfs_preload_global_vars.__read_chk = dlsym_one("__read_chk", true);
-    g_fcfs_preload_global_vars.pread = dlsym_one("pread", true);
+    g_fcfs_preload_global_vars.pread = dlsym_two("pread", "pread64", true);
     g_fcfs_preload_global_vars.readv = dlsym_one("readv", true);
-    g_fcfs_preload_global_vars.preadv = dlsym_one("preadv", false);
-    g_fcfs_preload_global_vars.lseek = dlsym_one("lseek", true);
-    g_fcfs_preload_global_vars.fallocate = dlsym_one("fallocate", false);
-    g_fcfs_preload_global_vars.truncate = dlsym_one("truncate", true);
-    g_fcfs_preload_global_vars.ftruncate = dlsym_one("ftruncate", true);
+    g_fcfs_preload_global_vars.preadv = dlsym_two("preadv", "preadv64", false);
+    g_fcfs_preload_global_vars.lseek = dlsym_two("lseek", "lseek64", true);
+    g_fcfs_preload_global_vars.fallocate = dlsym_two(
+            "fallocate", "fallocate64", false);
+    g_fcfs_preload_global_vars.truncate = dlsym_two(
+            "truncate", "truncate64", true);
+    g_fcfs_preload_global_vars.ftruncate = dlsym_two(
+            "ftruncate", "ftruncate64", true);
 
     g_fcfs_preload_global_vars.stat = dlsym_one("stat", false);
     if (g_fcfs_preload_global_vars.stat != NULL) {
         g_fcfs_preload_global_vars.lstat = dlsym_one("lstat", true);
         g_fcfs_preload_global_vars.fstat = dlsym_one("fstat", true);
         g_fcfs_preload_global_vars.fstatat = dlsym_one("fstatat", true);
-        g_fcfs_preload_global_vars.use_xstat = false;
     } else {
-        g_fcfs_preload_global_vars.__xstat = dlsym_one("__xstat", true);
-        g_fcfs_preload_global_vars.__lxstat = dlsym_one("__lxstat", true);
-        g_fcfs_preload_global_vars.__fxstat = dlsym_one("__fxstat", true);
-        g_fcfs_preload_global_vars.__fxstatat = dlsym_one("__fxstatat", true);
-        g_fcfs_preload_global_vars.use_xstat = true;
+        g_fcfs_preload_global_vars.__xstat = dlsym_two(
+                "__xstat", "__xstat64", true);
+        g_fcfs_preload_global_vars.__lxstat = dlsym_two(
+                "__lxstat", "__lxstat64", true);
+        g_fcfs_preload_global_vars.__fxstat = dlsym_two(
+                "__fxstat", "__fxstat64", true);
+        g_fcfs_preload_global_vars.__fxstatat = dlsym_two(
+                "__fxstatat", "__fxstatat64", true);
     }
 
-    g_fcfs_preload_global_vars.flock = dlsym_one("flock", true);
-    g_fcfs_preload_global_vars.fcntl = dlsym_one("fcntl", true);
+    g_fcfs_preload_global_vars.flock = dlsym_two("flock", "flock64", true);
+    g_fcfs_preload_global_vars.fcntl = dlsym_two("fcntl", "fcntl64", true);
     g_fcfs_preload_global_vars.symlink = dlsym_one("symlink", true);
     g_fcfs_preload_global_vars.symlinkat = dlsym_one("symlinkat", true);
     g_fcfs_preload_global_vars.link = dlsym_one("link", true);
@@ -105,6 +111,8 @@ static int dlsym_all()
     g_fcfs_preload_global_vars.mkfifoat = dlsym_one("mkfifoat", false);
     g_fcfs_preload_global_vars.access = dlsym_one("access", true);
     g_fcfs_preload_global_vars.faccessat = dlsym_one("faccessat", true);
+    g_fcfs_preload_global_vars.euidaccess = dlsym_one("euidaccess", false);
+    g_fcfs_preload_global_vars.eaccess = dlsym_one("eaccess", false);
     g_fcfs_preload_global_vars.utime = dlsym_one("utime", true);
     g_fcfs_preload_global_vars.utimes = dlsym_one("utimes", true);
     g_fcfs_preload_global_vars.futimes = dlsym_one("futimes", true);
@@ -127,8 +135,10 @@ static int dlsym_all()
     g_fcfs_preload_global_vars.chmod = dlsym_one("chmod", true);
     g_fcfs_preload_global_vars.fchmod = dlsym_one("fchmod", true);
     g_fcfs_preload_global_vars.fchmodat = dlsym_one("fchmodat", true);
-    g_fcfs_preload_global_vars.statvfs = dlsym_one("statvfs", true);
-    g_fcfs_preload_global_vars.fstatvfs = dlsym_one("fstatvfs", true);
+    g_fcfs_preload_global_vars.statvfs = dlsym_two(
+            "statvfs", "statvfs64", true);
+    g_fcfs_preload_global_vars.fstatvfs = dlsym_two(
+            "fstatvfs", "fstatvfs64", true);
     g_fcfs_preload_global_vars.setxattr = dlsym_one("setxattr", true);
     g_fcfs_preload_global_vars.lsetxattr = dlsym_one("lsetxattr", false);
     g_fcfs_preload_global_vars.fsetxattr = dlsym_one("fsetxattr", true);
@@ -141,13 +151,22 @@ static int dlsym_all()
     g_fcfs_preload_global_vars.removexattr = dlsym_one("removexattr", true);
     g_fcfs_preload_global_vars.lremovexattr = dlsym_one("lremovexattr", false);
     g_fcfs_preload_global_vars.fremovexattr = dlsym_one("fremovexattr", true);
+
+    g_fcfs_preload_global_vars.lockf = dlsym_two("lockf", "lockf64", true);
+    g_fcfs_preload_global_vars.posix_fallocate = dlsym_two(
+            "posix_fallocate", "posix_fallocate64", true);
+    g_fcfs_preload_global_vars.posix_fadvise = dlsym_two(
+            "posix_fadvise", "posix_fadvise64", true);
+    g_fcfs_preload_global_vars.dprintf = dlsym_one("dprintf", true);
+    g_fcfs_preload_global_vars.vdprintf = dlsym_one("vdprintf", true);
+
     g_fcfs_preload_global_vars.opendir = dlsym_one("opendir", true);
     g_fcfs_preload_global_vars.fdopendir = dlsym_one("fdopendir", true);
     g_fcfs_preload_global_vars.closedir = dlsym_one("closedir", true);
-    g_fcfs_preload_global_vars.readdir = dlsym_one("readdir", true);
-    g_fcfs_preload_global_vars.readdir_r = dlsym_one("readdir_r", true);
-    g_fcfs_preload_global_vars.readdir64 = dlsym_one("readdir64", true);
-    g_fcfs_preload_global_vars.readdir64_r = dlsym_one("readdir64_r", true);
+    g_fcfs_preload_global_vars.readdir = dlsym_two(
+            "readdir", "readdir64", true);
+    g_fcfs_preload_global_vars.readdir_r = dlsym_two(
+            "readdir_r", "readdir64_r", true);
     g_fcfs_preload_global_vars.seekdir = dlsym_one("seekdir", true);
     g_fcfs_preload_global_vars.telldir = dlsym_one("telldir", true);
     g_fcfs_preload_global_vars.rewinddir = dlsym_one("rewinddir", true);

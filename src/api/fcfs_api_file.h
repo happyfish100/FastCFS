@@ -246,6 +246,17 @@ extern "C" {
             const int mask, const FDIRClientOwnerModePair *omp,
             const int flags);
 
+    int fcfs_api_euidaccess_ex(FCFSAPIContext *ctx, const char *path,
+            const int mask, const FDIRClientOwnerModePair *omp,
+            const int flags);
+
+    static inline int fcfs_api_eaccess_ex(FCFSAPIContext *ctx, const char *path,
+            const int mask, const FDIRClientOwnerModePair *omp,
+            const int flags)
+    {
+        return fcfs_api_euidaccess_ex(ctx, path, mask, omp, flags);
+    }
+
     int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
             struct statvfs *stbuf);
 

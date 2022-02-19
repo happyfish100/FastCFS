@@ -928,6 +928,31 @@ int fcfs_faccessat_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 }
 
+int fcfs_euidaccess_ex(FCFSPosixAPIContext *ctx,
+        const char *path, int mode)
+{
+    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
+    FDIRClientOwnerModePair omp;
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "euidaccess", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
+    if ((result=fcfs_api_euidaccess_ex(&ctx->api_ctx,
+                    path, mode, &omp, flags)) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
 int fcfs_utime_ex(FCFSPosixAPIContext *ctx, const char *path,
         const struct utimbuf *times)
 {
@@ -1990,9 +2015,8 @@ static int do_chdir(const string_t *path)
     memcpy(cwd->str, path->str, path->len + 1);
     cwd->len = path->len;
 
-    old_cwd = G_FCFS_PAPI_CWD->str;
+    old_cwd = (G_FCFS_PAPI_CWD != NULL ? G_FCFS_PAPI_CWD->str : NULL);
     G_FCFS_PAPI_CWD = cwd;
-
     if (old_cwd != NULL) {
         free(old_cwd);
     }
@@ -2040,31 +2064,37 @@ int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd)
     return do_chdir(&cwd);
 }
 
-static inline char *do_getcwd(char *buf, size_t size,
-        const int overflow_errno)
+static inline char *do_getcwd(FCFSPosixAPIContext *ctx,
+        char *buf, size_t size, const int overflow_errno)
 {
     if (G_FCFS_PAPI_CWD == NULL) {
-        *buf = '\0';
+        if (ctx->mountpoint.len >= size) {
+            errno = overflow_errno;
+            return NULL;
+        }
+
+        sprintf(buf, "%.*s", ctx->mountpoint.len, ctx->mountpoint.str);
         return buf;
     }
 
-    if (G_FCFS_PAPI_CWD->len >= size) {
+    if (ctx->mountpoint.len + G_FCFS_PAPI_CWD->len >= size) {
         errno = overflow_errno;
         return NULL;
     }
 
-    memcpy(buf, G_FCFS_PAPI_CWD->str, G_FCFS_PAPI_CWD->len + 1);
+    sprintf(buf, "%.*s%.*s", ctx->mountpoint.len, ctx->mountpoint.str,
+            G_FCFS_PAPI_CWD->len, G_FCFS_PAPI_CWD->str);
     return buf;
 }
 
 char *fcfs_getcwd_ex(FCFSPosixAPIContext *ctx, char *buf, size_t size)
 {
-    return do_getcwd(buf, size, ERANGE);
+    return do_getcwd(ctx, buf, size, ERANGE);
 }
 
 char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf)
 {
-    return do_getcwd(buf, PATH_MAX, ENAMETOOLONG);
+    return do_getcwd(ctx, buf, PATH_MAX, ENAMETOOLONG);
 }
 
 #define FCFS_API_NOT_IMPLEMENTED(api_name, retval)  \
@@ -2188,7 +2218,7 @@ static int do_vdprintf(FCFSPosixAPIFileInfo *file,
     va_copy(new_ap, ap);
     buff = fixed;
     length = vsnprintf(buff, FIXED_BUFFUER_SIZE, format, ap);
-    if (length >= FIXED_BUFFUER_SIZE - 1) {
+    if (length > FIXED_BUFFUER_SIZE - 1) {  //overflow
         buff = (char *)fc_malloc(length + 1);
         if (buff == NULL) {
             errno = ENOMEM;
@@ -2196,6 +2226,7 @@ static int do_vdprintf(FCFSPosixAPIFileInfo *file,
         }
         length = vsnprintf(buff, length + 1, format, new_ap);
     }
+    va_end(new_ap);
 
     result = do_write(file, buff, length);
     if (buff != fixed) {

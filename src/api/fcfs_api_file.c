@@ -1532,14 +1532,14 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
     return 0;
 }
 
-int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
-        const int mask, const FDIRClientOwnerModePair *omp,
-        const int flags)
-{
 #define USER_PERM_MASK(mask)  ((mask << 6) & 0700)
 #define GROUP_PERM_MASK(mask) ((mask << 3) & 0070)
 #define OTHER_PERM_MASK(mask) (mask & 0007)
 
+int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
+        const int mask, const FDIRClientOwnerModePair *omp,
+        const int flags)
+{
     int result;
     FDIRDEntryInfo dentry;
 
@@ -1565,6 +1565,22 @@ int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
         }
     }
     */
+
+    return result;
+}
+
+int fcfs_api_euidaccess_ex(FCFSAPIContext *ctx, const char *path,
+        const int mask, const FDIRClientOwnerModePair *omp,
+        const int flags)
+{
+    int result;
+    FDIRDEntryInfo dentry;
+
+    if ((result=fcfs_api_stat_dentry_by_path_ex(ctx, path,
+                    flags, LOG_DEBUG, &dentry)) != 0)
+    {
+        return result;
+    }
 
     return result;
 }

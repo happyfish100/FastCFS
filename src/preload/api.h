@@ -128,7 +128,9 @@ int fremovexattr(int fd, const char *name);
 
 int fchdir(int fd);
 
-int fstatvfs(int fd, struct statvfs *buf);
+int _fstatvfs_(int fd, struct statvfs *buf) __asm__ ("" "fstatvfs");
+
+int fstatvfs64(int fd, struct statvfs64 *buf);
 
 int dup(int fd);
 
@@ -241,6 +243,8 @@ int mkfifo(const char *path, mode_t mode);
 
 int access(const char *path, int mode);
 
+int eaccess(const char *path, int mode);
+
 int utime(const char *path, const struct utimbuf *times);
 
 int utimes(const char *path, const struct timeval times[2]);
@@ -259,7 +263,9 @@ int lchown(const char *path, uid_t owner, gid_t group);
 
 int chmod(const char *path, mode_t mode);
 
-int statvfs(const char *path, struct statvfs *buf);
+int _statvfs_(const char *path, struct statvfs *buf) __asm__ ("" "statvfs");
+
+int statvfs64(const char *path, struct statvfs64 *buf);
 
 int setxattr(const char *path, const char *name,
         const void *value, size_t size, int flags);
