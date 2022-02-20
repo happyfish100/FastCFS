@@ -2224,7 +2224,7 @@ static int do_vdprintf(FCFSPosixAPIFileInfo *file,
             errno = ENOMEM;
             return -1;
         }
-        length = vsnprintf(buff, length + 1, format, new_ap);
+        length = vsprintf(buff, format, new_ap);
     }
     va_end(new_ap);
 
@@ -2232,7 +2232,12 @@ static int do_vdprintf(FCFSPosixAPIFileInfo *file,
     if (buff != fixed) {
         free(buff);
     }
-    return result;
+    if (result != 0) {
+        errno = result;
+        return -1;
+    } else {
+        return length;
+    }
 }
 
 int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx,
@@ -2240,7 +2245,7 @@ int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx,
 {
     FCFSPosixAPIFileInfo *file;
     va_list ap;
-    int result;
+    int bytes;
 
     if ((file=fcfs_fd_manager_get(fd)) == NULL) {
         errno = EBADF;
@@ -2248,9 +2253,9 @@ int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx,
     }
 
     va_start(ap, format);
-    result = do_vdprintf(file, format, ap);
+    bytes = do_vdprintf(file, format, ap);
     va_end(ap);
-    return result;
+    return bytes;
 }
 
 int fcfs_vdprintf_ex(FCFSPosixAPIContext *ctx,

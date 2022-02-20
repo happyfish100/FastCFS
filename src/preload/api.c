@@ -266,7 +266,8 @@ int __xstat64(int ver, const char *path, struct stat *buf)
 {
     int result;
     result = do_xstat(ver, path, buf);
-    fprintf(stderr, "func: %s, result: %d\n", __FUNCTION__, result);
+    fprintf(stderr, "func: %s, result: %d, mode: %04o\n",
+            __FUNCTION__, result, result == 0 ? buf->st_mode : 0);
     return result;
 }
 
@@ -348,7 +349,8 @@ int mkfifo(const char *path, mode_t mode)
 
 int access(const char *path, int mode)
 {
-    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n",
+            __FUNCTION__, path, mode);
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
         return fcfs_access(path, mode);
     } else {
@@ -370,6 +372,19 @@ int eaccess(const char *path, int mode)
             g_fcfs_preload_global_vars.eaccess = fcfs_dlsym1("eaccess");
         }
         return g_fcfs_preload_global_vars.eaccess(path, mode);
+    }
+}
+
+int euidaccess(const char *path, int mode)
+{
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
+    if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
+        return fcfs_euidaccess(path, mode);
+    } else {
+        if (g_fcfs_preload_global_vars.euidaccess == NULL) {
+            g_fcfs_preload_global_vars.euidaccess = fcfs_dlsym1("euidaccess");
+        }
+        return g_fcfs_preload_global_vars.euidaccess(path, mode);
     }
 }
 
@@ -1047,6 +1062,10 @@ static int do_fcntl(int fd, int cmd, void *arg)
             }
         default:
             flags = (long)arg;
+
+            fprintf(stderr, "func: %s, fd: %d, cmd: %d, flags: %d\n",
+                    __FUNCTION__, fd, cmd, flags);
+
             if (FCFS_PAPI_IS_MY_FD(fd)) {
                 return fcfs_fcntl(fd, cmd, flags); 
             } else {
@@ -1320,6 +1339,7 @@ int symlinkat(const char *link, int fd, const char *path)
 
 static inline int do_openat(int fd, const char *path, int flags, int mode)
 {
+    fprintf(stderr, "func: %s, path: %s, mode: %o\n", __FUNCTION__, path, mode);
     if (FCFS_PRELOAD_IS_MY_FD_MOUNTPOINT(fd, path)) {
         return fcfs_openat(fd, path, flags, mode);
     } else {
@@ -1775,6 +1795,103 @@ int dirfd(DIR *dirp)
     }
 }
 
+static inline int do_vdprintf(int fd, const char *format, va_list ap)
+{
+    if (FCFS_PAPI_IS_MY_FD(fd)) {
+        return fcfs_vdprintf(fd, format, ap);
+    } else {
+        if (g_fcfs_preload_global_vars.vdprintf == NULL) {
+            g_fcfs_preload_global_vars.vdprintf = fcfs_dlsym1("vdprintf");
+        }
+        return g_fcfs_preload_global_vars.vdprintf(fd, format, ap);
+    }
+}
+
+int dprintf(int fd, const char *format, ...)
+{
+    va_list ap;
+    int bytes;
+
+    va_start(ap, format);
+    bytes = do_vdprintf(fd, format, ap);
+    va_end(ap);
+    return bytes;
+}
+
+int vdprintf(int fd, const char *format, va_list ap)
+{
+    return do_vdprintf(fd, format, ap);
+}
+
+static inline int do_lockf(int fd, int cmd, off_t len)
+{
+    if (FCFS_PAPI_IS_MY_FD(fd)) {
+        return fcfs_lockf(fd, cmd, len);
+    } else {
+        if (g_fcfs_preload_global_vars.lockf == NULL) {
+            g_fcfs_preload_global_vars.lockf = fcfs_dlsym2(
+                    "lockf", "lockf64");
+        }
+        return g_fcfs_preload_global_vars.lockf(fd, cmd, len);
+    }
+}
+
+int _lockf_(int fd, int cmd, off_t len)
+{
+    return do_lockf(fd, cmd, len);
+}
+
+int lockf64(int fd, int cmd, off_t len)
+{
+    return do_lockf(fd, cmd, len);
+}
+
+static inline int do_posix_fallocate(int fd, off_t offset, off_t len)
+{
+    if (FCFS_PAPI_IS_MY_FD(fd)) {
+        return fcfs_posix_fallocate(fd, offset, len);
+    } else {
+        if (g_fcfs_preload_global_vars.posix_fallocate == NULL) {
+            g_fcfs_preload_global_vars.posix_fallocate = fcfs_dlsym2(
+                    "posix_fallocate", "posix_fallocate64");
+        }
+        return g_fcfs_preload_global_vars.posix_fallocate(fd, offset, len);
+    }
+}
+
+int _posix_fallocate_(int fd, off_t offset, off_t len)
+{
+    return do_posix_fallocate(fd, offset, len);
+}
+
+int posix_fallocate64(int fd, off_t offset, off_t len)
+{
+    return do_posix_fallocate(fd, offset, len);
+}
+
+static inline int do_posix_fadvise(int fd, off_t offset, off_t len, int advice)
+{
+    if (FCFS_PAPI_IS_MY_FD(fd)) {
+        return fcfs_posix_fadvise(fd, offset, len, advice);
+    } else {
+        if (g_fcfs_preload_global_vars.posix_fadvise == NULL) {
+            g_fcfs_preload_global_vars.posix_fadvise = fcfs_dlsym2(
+                    "posix_fadvise", "posix_fadvise64");
+        }
+        return g_fcfs_preload_global_vars.posix_fadvise(fd, offset, len, advice);
+    }
+}
+
+int _posix_fadvise_(int fd, off_t offset, off_t len, int advice)
+{
+    return do_posix_fadvise(fd, offset, len, advice);
+}
+
+int posix_fadvise64(int fd, off_t offset, off_t len, int advice)
+{
+    return do_posix_fadvise(fd, offset, len, advice);
+}
+
 int unsetenv(const char *name)
 {
     fprintf(stderr, "pid: %d, func: %s, line: %d, name: %s\n",
@@ -1807,15 +1924,15 @@ static inline FILE *do_fopen(const char *pathname, const char *mode)
 
 FILE *_fopen_(const char *pathname, const char *mode)
 {
-    fprintf(stderr, "pid: %d, func: %s, line: %d, pathname: %s\n",
-            getpid(), __FUNCTION__, __LINE__, pathname);
+    fprintf(stderr, "pid: %d, func: %s, line: %d, pathname: %s, mode: %s\n",
+            getpid(), __FUNCTION__, __LINE__, pathname, mode);
     return do_fopen(pathname, mode);
 }
 
 FILE *fopen64(const char *pathname, const char *mode)
 {
-    fprintf(stderr, "pid: %d, func: %s, line: %d, pathname: %s\n",
-            getpid(), __FUNCTION__, __LINE__, pathname);
+    fprintf(stderr, "pid: %d, func: %s, line: %d, pathname: %s, mode: %s\n",
+            getpid(), __FUNCTION__, __LINE__, pathname, mode);
     return do_fopen(pathname, mode);
 }
 
@@ -1850,4 +1967,35 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *fp)
         g_fcfs_preload_global_vars.fwrite = fcfs_dlsym1("fwrite");
     }
     return g_fcfs_preload_global_vars.fwrite(ptr, size, nmemb, fp);
+}
+
+long syscall(long number, ...)
+{
+    static long (*syscall_func)(long number, ...) = NULL;
+    va_list ap;
+    long arg1;
+    long arg2;
+    long arg3;
+    long arg4;
+    long arg5;
+    long arg6;
+
+    va_start(ap, number);
+    arg1 = va_arg(ap, long);
+    arg2 = va_arg(ap, long);
+    arg3 = va_arg(ap, long);
+    arg4 = va_arg(ap, long);
+    arg5 = va_arg(ap, long);
+    arg6 = va_arg(ap, long);
+    va_end(ap);
+
+    fprintf(stderr, "func: %s, line: %d, number: %ld, "
+            "arg1: %ld, arg2: %ld, arg3: %ld, arg4: %ld, arg5: %ld, arg6: %ld\n",
+            __FUNCTION__, __LINE__, number, arg1, arg2, arg3, arg4, arg5, arg6);
+
+    if (syscall_func == NULL) {
+       syscall_func = fcfs_dlsym1("syscall");
+    }
+
+    return syscall_func(number, arg1, arg2, arg3, arg4, arg5, arg6);
 }

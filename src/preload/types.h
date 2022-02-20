@@ -231,8 +231,6 @@ typedef struct fcfs_preload_global_vars {
 
         int (*posix_fadvise)(int fd, off_t offset, off_t len, int advice);
 
-        int (*dprintf)(int fd, const char *format, ...);
-
         int (*vdprintf)(int fd, const char *format, va_list ap);
 
         DIR *(*opendir)(const char *path);

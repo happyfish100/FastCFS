@@ -46,6 +46,7 @@ static inline void *dlsym_two(const char *fname1,
         log_it_ex(&g_log_context, log_level, "file: "__FILE__", line: %d, "
                 "function %s | %s not exist!", __LINE__, fname1, fname2);
     }
+
     return func;
 }
 
@@ -157,7 +158,6 @@ static int dlsym_all()
             "posix_fallocate", "posix_fallocate64", true);
     g_fcfs_preload_global_vars.posix_fadvise = dlsym_two(
             "posix_fadvise", "posix_fadvise64", true);
-    g_fcfs_preload_global_vars.dprintf = dlsym_one("dprintf", true);
     g_fcfs_preload_global_vars.vdprintf = dlsym_one("vdprintf", true);
 
     g_fcfs_preload_global_vars.opendir = dlsym_one("opendir", true);

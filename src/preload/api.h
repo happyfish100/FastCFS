@@ -243,6 +243,8 @@ int mkfifo(const char *path, mode_t mode);
 
 int access(const char *path, int mode);
 
+int euidaccess(const char *path, int mode);
+
 int eaccess(const char *path, int mode);
 
 int utime(const char *path, const struct utimbuf *times);
@@ -306,6 +308,24 @@ int scandir64(const char *path, struct dirent64 ***namelist,
         int (*compar) (const struct dirent64 **,
             const struct dirent64 **));
 
+int dprintf(int fd, const char *format, ...);
+
+int vdprintf(int fd, const char *format, va_list ap);
+
+int _lockf_(int fd, int cmd, off_t len) __asm__ ("" "lockf");
+
+int lockf64(int fd, int cmd, off_t len);
+
+int _posix_fallocate_(int fd, off_t offset, off_t len)
+    __asm__ ("" "posix_fallocate");
+
+int posix_fallocate64(int fd, off_t offset, off_t len);
+
+int _posix_fadvise_(int fd, off_t offset, off_t len, int advice)
+    __asm__ ("" "posix_fadvise");
+
+int posix_fadvise64(int fd, off_t offset, off_t len, int advice);
+
 FILE *_fopen_(const char *pathname, const char *mode) __asm__ ("" "fopen");
 
 FILE *fopen64(const char *pathname, const char *mode);
@@ -315,6 +335,8 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *fp);
 size_t fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *fp);
 
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *fp);
+
+long syscall(long number, ...);
 
 #ifdef __cplusplus
 }

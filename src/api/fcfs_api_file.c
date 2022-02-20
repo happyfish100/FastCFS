@@ -1587,6 +1587,14 @@ int fcfs_api_euidaccess_ex(FCFSAPIContext *ctx, const char *path,
 
 int fcfs_api_set_file_flags(FCFSAPIFileInfo *fi, const int flags)
 {
+    /*
+    if (flags & (O_ASYNC | O_DIRECT | O_NOATIME | O_NONBLOCK)) {
+        logInfo("set flags: %d, is O_DIRECT: %d, is O_NOATIME: %d, "
+                "is O_NONBLOCK: %d", flags, (flags & O_DIRECT),
+                (flags & O_NOATIME), (flags & O_NONBLOCK));
+    }
+    */
+
     if ((flags & O_APPEND) == 0) {
         return 0;
     }
