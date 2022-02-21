@@ -19,7 +19,6 @@
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "posix_api.h"
-#include "fd_manager.h"
 #include "papi.h"
 
 #define FCFS_PAPI_MAGIC_NUMBER    1644551636
@@ -152,7 +151,7 @@ int fcfs_creat_ex(FCFSPosixAPIContext *ctx, const char *path, mode_t mode)
     return fcfs_open_ex(ctx, path, O_CREAT | O_TRUNC | O_WRONLY, mode);
 }
 
-int fcfs_close_ex(FCFSPosixAPIContext *ctx, int fd)
+int fcfs_close(int fd)
 {
     FCFSPosixAPIFileInfo *file;
 
@@ -166,7 +165,7 @@ int fcfs_close_ex(FCFSPosixAPIContext *ctx, int fd)
     return 0;
 }
 
-int fcfs_fsync_ex(FCFSPosixAPIContext *ctx, int fd)
+int fcfs_fsync(int fd)
 {
     FCFSPosixAPIFileInfo *file;
 
@@ -179,7 +178,7 @@ int fcfs_fsync_ex(FCFSPosixAPIContext *ctx, int fd)
     return 0;
 }
 
-int fcfs_fdatasync_ex(FCFSPosixAPIContext *ctx, int fd)
+int fcfs_fdatasync(int fd)
 {
     FCFSPosixAPIFileInfo *file;
 
@@ -207,8 +206,7 @@ static inline ssize_t do_write(FCFSPosixAPIFileInfo *file,
     }
 }
 
-ssize_t fcfs_write_ex(FCFSPosixAPIContext *ctx,
-        int fd, const void *buff, size_t count)
+ssize_t fcfs_write(int fd, const void *buff, size_t count)
 {
     FCFSPosixAPIFileInfo *file;
 
@@ -220,8 +218,7 @@ ssize_t fcfs_write_ex(FCFSPosixAPIContext *ctx,
     return do_write(file, buff, count);
 }
 
-ssize_t fcfs_pwrite_ex(FCFSPosixAPIContext *ctx, int fd,
-        const void *buff, size_t count, off_t offset)
+ssize_t fcfs_pwrite(int fd, const void *buff, size_t count, off_t offset)
 {
     int result;
     int write_bytes;
@@ -242,8 +239,7 @@ ssize_t fcfs_pwrite_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 }
 
-ssize_t fcfs_writev_ex(FCFSPosixAPIContext *ctx, int fd,
-        const struct iovec *iov, int iovcnt)
+ssize_t fcfs_writev(int fd, const struct iovec *iov, int iovcnt)
 {
     int result;
     int write_bytes;
@@ -264,8 +260,8 @@ ssize_t fcfs_writev_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 }
 
-ssize_t fcfs_pwritev_ex(FCFSPosixAPIContext *ctx, int fd,
-        const struct iovec *iov, int iovcnt, off_t offset)
+ssize_t fcfs_pwritev(int fd, const struct iovec *iov,
+        int iovcnt, off_t offset)
 {
     int result;
     int write_bytes;
@@ -286,8 +282,7 @@ ssize_t fcfs_pwritev_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 }
 
-ssize_t fcfs_read_ex(FCFSPosixAPIContext *ctx,
-        int fd, void *buff, size_t count)
+ssize_t fcfs_read(int fd, void *buff, size_t count)
 {
     int result;
     int read_bytes;
@@ -308,8 +303,7 @@ ssize_t fcfs_read_ex(FCFSPosixAPIContext *ctx,
     }
 }
 
-ssize_t fcfs_pread_ex(FCFSPosixAPIContext *ctx, int fd,
-        void *buff, size_t count, off_t offset)
+ssize_t fcfs_pread(int fd, void *buff, size_t count, off_t offset)
 {
     int result;
     int read_bytes;
@@ -330,8 +324,7 @@ ssize_t fcfs_pread_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 }
 
-ssize_t fcfs_readv_ex(FCFSPosixAPIContext *ctx, int fd,
-        const struct iovec *iov, int iovcnt)
+ssize_t fcfs_readv(int fd, const struct iovec *iov, int iovcnt)
 {
     int result;
     int read_bytes;
@@ -352,8 +345,8 @@ ssize_t fcfs_readv_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 }
 
-ssize_t fcfs_preadv_ex(FCFSPosixAPIContext *ctx, int fd,
-        const struct iovec *iov, int iovcnt, off_t offset)
+ssize_t fcfs_preadv(int fd, const struct iovec *iov,
+        int iovcnt, off_t offset)
 {
     int result;
     int read_bytes;
@@ -374,8 +367,7 @@ ssize_t fcfs_preadv_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 }
 
-off_t fcfs_lseek_ex(FCFSPosixAPIContext *ctx,
-        int fd, off_t offset, int whence)
+off_t fcfs_lseek(int fd, off_t offset, int whence)
 {
     int result;
     FCFSPosixAPIFileInfo *file;
@@ -393,8 +385,7 @@ off_t fcfs_lseek_ex(FCFSPosixAPIContext *ctx,
     }
 }
 
-int fcfs_fallocate_ex(FCFSPosixAPIContext *ctx, int fd,
-        int mode, off_t offset, off_t length)
+int fcfs_fallocate(int fd, int mode, off_t offset, off_t length)
 {
     int result;
     FCFSPosixAPIFileInfo *file;
@@ -438,7 +429,7 @@ int fcfs_truncate_ex(FCFSPosixAPIContext *ctx,
     }
 }
 
-int fcfs_ftruncate_ex(FCFSPosixAPIContext *ctx, int fd, off_t length)
+int fcfs_ftruncate(int fd, off_t length)
 {
     int result;
     FCFSPosixAPIFileInfo *file;
@@ -499,7 +490,7 @@ int fcfs_stat_ex(FCFSPosixAPIContext *ctx,
     }
 }
 
-int fcfs_fstat_ex(FCFSPosixAPIContext *ctx, int fd, struct stat *buf)
+int fcfs_fstat(int fd, struct stat *buf)
 {
     int result;
     FCFSPosixAPIFileInfo *file;
@@ -540,7 +531,7 @@ int fcfs_fstatat_ex(FCFSPosixAPIContext *ctx, int fd,
     }
 }
 
-int fcfs_flock_ex(FCFSPosixAPIContext *ctx, int fd, int operation)
+int fcfs_flock(int fd, int operation)
 {
     FCFSPosixAPIFileInfo *file;
     int result;
@@ -608,7 +599,7 @@ static int do_fcntl(FCFSPosixAPIFileInfo *file, int cmd, void *arg)
     }
 }
 
-int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...)
+int fcfs_fcntl(int fd, int cmd, ...)
 {
     FCFSPosixAPIFileInfo *file;
     va_list ap;

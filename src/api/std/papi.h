@@ -20,6 +20,7 @@
 #include <utime.h>
 #include <dirent.h>
 #include "api_types.h"
+#include "fd_manager.h"
 
 #define G_FCFS_PAPI_CTX  g_fcfs_papi_global_vars.ctx
 #define G_FCFS_PAPI_CWD  g_fcfs_papi_global_vars.cwd
@@ -33,50 +34,8 @@
 #define fcfs_creat(path, mode) \
     fcfs_creat_ex(&G_FCFS_PAPI_CTX, path, mode)
 
-#define fcfs_close(fd) \
-    fcfs_close_ex(&G_FCFS_PAPI_CTX, fd)
-
-#define fcfs_fsync(fd) \
-    fcfs_fsync_ex(&G_FCFS_PAPI_CTX, fd)
-
-#define fcfs_fdatasync(fd) \
-    fcfs_fdatasync_ex(&G_FCFS_PAPI_CTX, fd)
-
-#define fcfs_write(fd, buff, count) \
-    fcfs_write_ex(&G_FCFS_PAPI_CTX, fd, buff, count)
-
-#define fcfs_pwrite(fd, buff, count, offset) \
-    fcfs_pwrite_ex(&G_FCFS_PAPI_CTX, fd, buff, count, offset)
-
-#define fcfs_writev(fd, iov, iovcnt) \
-    fcfs_writev_ex(&G_FCFS_PAPI_CTX, fd, iov, iovcnt)
-
-#define fcfs_pwritev(fd, iov, iovcnt, offset) \
-    fcfs_pwritev_ex(&G_FCFS_PAPI_CTX, fd, iov, iovcnt, offset)
-
-#define fcfs_read(fd, buff, count) \
-    fcfs_read_ex(&G_FCFS_PAPI_CTX, fd, buff, count)
-
-#define fcfs_pread(fd, buff, count, offset) \
-    fcfs_pread_ex(&G_FCFS_PAPI_CTX, fd, buff, count, offset)
-
-#define fcfs_readv(fd, iov, iovcnt) \
-    fcfs_readv_ex(&G_FCFS_PAPI_CTX, fd, iov, iovcnt)
-
-#define fcfs_preadv(fd, iov, iovcnt, offset) \
-    fcfs_preadv_ex(&G_FCFS_PAPI_CTX, fd, iov, iovcnt, offset)
-
-#define fcfs_lseek(fd, offset, whence) \
-    fcfs_lseek_ex(&G_FCFS_PAPI_CTX, fd, offset, whence)
-
-#define fcfs_fallocate(fd, mode, offset, length) \
-    fcfs_fallocate_ex(&G_FCFS_PAPI_CTX, fd, mode, offset, length)
-
 #define fcfs_truncate(path, length) \
     fcfs_truncate_ex(&G_FCFS_PAPI_CTX, path, length)
-
-#define fcfs_ftruncate(fd, length) \
-    fcfs_ftruncate_ex(&G_FCFS_PAPI_CTX, fd, length)
 
 #define fcfs_lstat(path, buf) \
     fcfs_lstat_ex(&G_FCFS_PAPI_CTX, path, buf)
@@ -84,17 +43,8 @@
 #define fcfs_stat(path, buf) \
     fcfs_stat_ex(&G_FCFS_PAPI_CTX, path, buf)
 
-#define fcfs_fstat(fd, buf) \
-    fcfs_fstat_ex(&G_FCFS_PAPI_CTX, fd, buf)
-
 #define fcfs_fstatat(fd, path, buf, flags) \
     fcfs_fstatat_ex(&G_FCFS_PAPI_CTX, fd, path, buf, flags)
-
-#define fcfs_flock(fd, operation) \
-    fcfs_flock_ex(&G_FCFS_PAPI_CTX, fd, operation)
-
-#define fcfs_fcntl(fd, cmd, ...) \
-    fcfs_fcntl_ex(&G_FCFS_PAPI_CTX, fd, cmd, ##__VA_ARGS__)
 
 #define fcfs_symlink(link, path) \
     fcfs_symlink_ex(&G_FCFS_PAPI_CTX, link, path)
@@ -331,46 +281,39 @@ extern "C" {
     int fcfs_creat_ex(FCFSPosixAPIContext *ctx,
             const char *path, mode_t mode);
 
-    int fcfs_close_ex(FCFSPosixAPIContext *ctx, int fd);
+    int fcfs_close(int fd);
 
-    int fcfs_fsync_ex(FCFSPosixAPIContext *ctx, int fd);
+    int fcfs_fsync(int fd);
 
-    int fcfs_fdatasync_ex(FCFSPosixAPIContext *ctx, int fd);
+    int fcfs_fdatasync(int fd);
 
-    ssize_t fcfs_write_ex(FCFSPosixAPIContext *ctx,
-            int fd, const void *buff, size_t count);
+    ssize_t fcfs_write(int fd, const void *buff, size_t count);
 
-    ssize_t fcfs_pwrite_ex(FCFSPosixAPIContext *ctx, int fd,
-            const void *buff, size_t count, off_t offset);
+    ssize_t fcfs_pwrite(int fd, const void *buff,
+            size_t count, off_t offset);
 
-    ssize_t fcfs_writev_ex(FCFSPosixAPIContext *ctx, int fd,
-            const struct iovec *iov, int iovcnt);
+    ssize_t fcfs_writev(int fd, const struct iovec *iov, int iovcnt);
 
-    ssize_t fcfs_pwritev_ex(FCFSPosixAPIContext *ctx, int fd,
-            const struct iovec *iov, int iovcnt, off_t offset);
+    ssize_t fcfs_pwritev(int fd, const struct iovec *iov,
+            int iovcnt, off_t offset);
 
-    ssize_t fcfs_read_ex(FCFSPosixAPIContext *ctx,
-            int fd, void *buff, size_t count);
+    ssize_t fcfs_read(int fd, void *buff, size_t count);
 
-    ssize_t fcfs_pread_ex(FCFSPosixAPIContext *ctx, int fd,
-            void *buff, size_t count, off_t offset);
+    ssize_t fcfs_pread(int fd, void *buff, size_t count, off_t offset);
 
-    ssize_t fcfs_readv_ex(FCFSPosixAPIContext *ctx, int fd,
-            const struct iovec *iov, int iovcnt);
+    ssize_t fcfs_readv(int fd, const struct iovec *iov, int iovcnt);
 
-    ssize_t fcfs_preadv_ex(FCFSPosixAPIContext *ctx, int fd,
-            const struct iovec *iov, int iovcnt, off_t offset);
+    ssize_t fcfs_preadv(int fd, const struct iovec *iov,
+            int iovcnt, off_t offset);
 
-    off_t fcfs_lseek_ex(FCFSPosixAPIContext *ctx,
-            int fd, off_t offset, int whence);
+    off_t fcfs_lseek(int fd, off_t offset, int whence);
 
-    int fcfs_fallocate_ex(FCFSPosixAPIContext *ctx, int fd,
-            int mode, off_t offset, off_t length);
+    int fcfs_fallocate(int fd, int mode, off_t offset, off_t length);
 
     int fcfs_truncate_ex(FCFSPosixAPIContext *ctx,
             const char *path, off_t length);
 
-    int fcfs_ftruncate_ex(FCFSPosixAPIContext *ctx, int fd, off_t length);
+    int fcfs_ftruncate(int fd, off_t length);
 
     int fcfs_lstat_ex(FCFSPosixAPIContext *ctx,
             const char *path, struct stat *buf);
@@ -378,14 +321,14 @@ extern "C" {
     int fcfs_stat_ex(FCFSPosixAPIContext *ctx,
             const char *path, struct stat *buf);
 
-    int fcfs_fstat_ex(FCFSPosixAPIContext *ctx, int fd, struct stat *buf);
+    int fcfs_fstat(int fd, struct stat *buf);
 
     int fcfs_fstatat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, struct stat *buf, int flags);
 
-    int fcfs_flock_ex(FCFSPosixAPIContext *ctx, int fd, int operation);
+    int fcfs_flock(int fd, int operation);
 
-    int fcfs_fcntl_ex(FCFSPosixAPIContext *ctx, int fd, int cmd, ...);
+    int fcfs_fcntl(int fd, int cmd, ...);
 
     int fcfs_symlink_ex(FCFSPosixAPIContext *ctx,
             const char *link, const char *path);
@@ -598,6 +541,11 @@ extern "C" {
 
     int fcfs_munmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length);
 
+    //for internal use only
+    static inline FCFSPosixAPIFileInfo *fcfs_get_file_handle(int fd)
+    {
+        return fcfs_fd_manager_get(fd);
+    }
 
 #ifdef __cplusplus
 }
