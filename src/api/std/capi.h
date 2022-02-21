@@ -62,10 +62,19 @@ extern "C" {
 
     int fcfs_fsetpos(FILE *fp, const fpos_t *pos);
 
-    /* unlocked */
-    int fcfs_getc_unlocked(FILE *fp);
+    int fcfs_fgetc_unlocked(FILE *fp);
 
-    int fcfs_putc_unlocked(int c, FILE *fp);
+    int fcfs_fputc_unlocked(int c, FILE *fp);
+
+    static inline int fcfs_getc_unlocked(FILE *fp)
+    {
+        return fcfs_fgetc_unlocked(fp);
+    }
+
+    static inline int fcfs_putc_unlocked(int c, FILE *fp)
+    {
+        return fcfs_fputc_unlocked(c, fp);
+    }
 
     void fcfs_clearerr_unlocked(FILE *fp);
 
@@ -77,20 +86,15 @@ extern "C" {
 
     int fcfs_fflush_unlocked(FILE *fp);
 
-    int fcfs_fgetc_unlocked(FILE *fp);
-
-    int fcfs_fputc_unlocked(int c, FILE *fp);
-
-    size_t fcfs_fread_unlocked(void *ptr, size_t size, size_t n, FILE *fp);
-
-    size_t fcfs_fwrite_unlocked(const void *ptr,
+    size_t fcfs_fread_unlocked(void *buff,
             size_t size, size_t n, FILE *fp);
 
-    char *fcfs_fgets_unlocked(char *s, int n, FILE *fp);
+    size_t fcfs_fwrite_unlocked(const void *buff,
+            size_t size, size_t n, FILE *fp);
+
+    char *fcfs_fgets_unlocked(char *s, int size, FILE *fp);
 
     int fcfs_fputs_unlocked(const char *s, FILE *fp);
-
-
 
     void fcfs_clearerr(FILE *fp);
 
@@ -114,13 +118,18 @@ extern "C" {
 
     int fcfs_putc(int c, FILE *fp);
 
-    size_t fcfs_fread(void *ptr, size_t size, size_t nmemb, FILE *fp);
+    size_t fcfs_fread(void *buff, size_t size, size_t nmemb, FILE *fp);
 
-    size_t fcfs_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *fp);
+    size_t fcfs_fwrite(const void *buff, size_t size, size_t nmemb, FILE *fp);
 
+    //TODO
     ssize_t fcfs_getline(char **lineptr, size_t *n, FILE *fp);
 
     ssize_t fcfs_getdelim(char **lineptr, size_t *n, int delim, FILE *fp);
+
+    int fcfs_fprintf(FILE *fp, const char *format, ...);
+
+    int fcfs_vfprintf(FILE *fp, const char *format, va_list ap);
 
     int fcfs_fscanf(FILE *fp, const char *format, ...);
 

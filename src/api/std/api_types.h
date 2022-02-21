@@ -33,9 +33,15 @@ typedef struct fcfs_posix_api_context {
     FCFSAPIContext api_ctx;
 } FCFSPosixAPIContext;
 
+typedef enum {
+    fcfs_papi_tpid_type_tid,
+    fcfs_papi_tpid_type_pid
+} FCFSPosixAPITPIDType;
+
 typedef struct fcfs_posix_api_file_info {
     string_t filename;
     int fd;
+    FCFSPosixAPITPIDType tpid_type;  //use pid or tid
     FCFSAPIFileInfo fi;
 } FCFSPosixAPIFileInfo;
 
@@ -72,8 +78,9 @@ typedef struct fcfs_posix_capi_file {
     int magic;
     int fd;
     int error_no;
+    int eof;
     FCFSPosixFileBuffer buffer;
-    pthread_lock_cond_pair_t lcp; //for lock and notify
+    pthread_mutex_t lock;
 } FCFSPosixCAPIFILE;
 
 typedef struct fcfs_posix_api_global_vars {

@@ -24,7 +24,8 @@
 #define FCFS_PAPI_MAGIC_NUMBER    1644551636
 
 static FCFSPosixAPIFileInfo *do_open_ex(FCFSPosixAPIContext *ctx,
-        const char *path, const int flags, const int mode)
+        const char *path, const int flags, const int mode,
+        const FCFSPosixAPITPIDType tpid_type)
 {
     FCFSPosixAPIFileInfo *file;
     FCFSAPIFileContext fctx;
@@ -35,7 +36,7 @@ static FCFSPosixAPIFileInfo *do_open_ex(FCFSPosixAPIContext *ctx,
         return NULL;
     }
 
-    fcfs_posix_api_set_fctx(&fctx, ctx, mode);
+    fcfs_posix_api_set_fctx(&fctx, ctx, mode, tpid_type);
     if ((result=fcfs_api_open_ex(&ctx->api_ctx, &file->fi,
                     path, flags, &fctx)) != 0)
     {
@@ -52,12 +53,17 @@ static FCFSPosixAPIFileInfo *do_open_ex(FCFSPosixAPIContext *ctx,
 }
 
 static inline int do_open(FCFSPosixAPIContext *ctx, const char *path,
-        const int flags, const int mode)
+        const int flags, const int mode, const FCFSPosixAPITPIDType tpid_type)
 {
     FCFSPosixAPIFileInfo *file;
 
-    file = do_open_ex(ctx, path, flags, mode);
-    return (file != NULL ? file->fd : -1);
+    file = do_open_ex(ctx, path, flags, mode, tpid_type);
+    if (file != NULL) {
+        file->tpid_type = tpid_type;
+        return file->fd;
+    } else {
+        return -1;
+    }
 }
 
 static inline int papi_resolve_path(FCFSPosixAPIContext *ctx,
@@ -119,9 +125,24 @@ int fcfs_open_ex(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
 
     va_start(ap, flags);
     mode = va_arg(ap, int);
-    fd = do_open(ctx, path, flags, mode);
+    fd = do_open(ctx, path, flags, mode, fcfs_papi_tpid_type_tid);
     va_end(ap);
     return fd;
+}
+
+int fcfs_open2(FCFSPosixAPIContext *ctx, const char *path, const int flags,
+        const int mode, const FCFSPosixAPITPIDType tpid_type)
+{
+    char full_fname[PATH_MAX];
+    int result;
+
+    if ((result=papi_resolve_path(ctx, "open", &path,
+                    full_fname, sizeof(full_fname))) != 0)
+    {
+        return result;
+    }
+
+    return do_open(ctx, path, flags, mode, tpid_type);
 }
 
 int fcfs_openat_ex(FCFSPosixAPIContext *ctx, int fd,
@@ -141,7 +162,7 @@ int fcfs_openat_ex(FCFSPosixAPIContext *ctx, int fd,
 
     va_start(ap, flags);
     mode = va_arg(ap, int);
-    new_fd = do_open(ctx, path, flags, mode);
+    new_fd = do_open(ctx, path, flags, mode, fcfs_papi_tpid_type_tid);
     va_end(ap);
     return new_fd;
 }
@@ -197,7 +218,7 @@ static inline ssize_t do_write(FCFSPosixAPIFileInfo *file,
     int write_bytes;
 
     if ((result=fcfs_api_write_ex(&file->fi, buff, count, &write_bytes,
-                    fcfs_posix_api_gettid())) != 0)
+                    fcfs_posix_api_gettid(file->tpid_type))) != 0)
     {
         errno = result;
         return -1;
@@ -218,6 +239,34 @@ ssize_t fcfs_write(int fd, const void *buff, size_t count)
     return do_write(file, buff, count);
 }
 
+ssize_t fcfs_write2(int fd, const void *buff, size_t size, size_t n)
+{
+    FCFSPosixAPIFileInfo *file;
+    size_t expect;
+    size_t bytes;
+    size_t count;
+    size_t remain;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    expect = size * n;
+    bytes = do_write(file, buff, expect);
+    if (bytes == expect) {
+        count = n;
+    } else if (bytes > 0) {
+        count = bytes / size;
+        remain = bytes - (size * count);
+        fcfs_api_lseek(&file->fi, -1 * remain, SEEK_CUR);
+    } else {
+        count = 0;
+    }
+
+    return count;
+}
+
 ssize_t fcfs_pwrite(int fd, const void *buff, size_t count, off_t offset)
 {
     int result;
@@ -230,7 +279,8 @@ ssize_t fcfs_pwrite(int fd, const void *buff, size_t count, off_t offset)
     }
 
     if ((result=fcfs_api_pwrite_ex(&file->fi, buff, count, offset,
-                    &write_bytes, fcfs_posix_api_gettid())) != 0)
+                    &write_bytes, fcfs_posix_api_gettid(
+                        file->tpid_type))) != 0)
     {
         errno = result;
         return -1;
@@ -250,8 +300,8 @@ ssize_t fcfs_writev(int fd, const struct iovec *iov, int iovcnt)
         return -1;
     }
 
-    if ((result=fcfs_api_writev_ex(&file->fi, iov, iovcnt,
-                    &write_bytes, fcfs_posix_api_gettid())) != 0)
+    if ((result=fcfs_api_writev_ex(&file->fi, iov, iovcnt, &write_bytes,
+                    fcfs_posix_api_gettid(file->tpid_type))) != 0)
     {
         errno = result;
         return -1;
@@ -273,7 +323,8 @@ ssize_t fcfs_pwritev(int fd, const struct iovec *iov,
     }
 
     if ((result=fcfs_api_pwritev_ex(&file->fi, iov, iovcnt, offset,
-                    &write_bytes, fcfs_posix_api_gettid())) != 0)
+                    &write_bytes, fcfs_posix_api_gettid(
+                        file->tpid_type))) != 0)
     {
         errno = result;
         return -1;
@@ -282,10 +333,24 @@ ssize_t fcfs_pwritev(int fd, const struct iovec *iov,
     }
 }
 
-ssize_t fcfs_read(int fd, void *buff, size_t count)
+static inline ssize_t do_read(FCFSPosixAPIFileInfo *file,
+        void *buff, size_t count)
 {
     int result;
     int read_bytes;
+
+    if ((result=fcfs_api_read_ex(&file->fi, buff, count, &read_bytes,
+                    fcfs_posix_api_gettid(file->tpid_type))) != 0)
+    {
+        errno = result;
+        return -1;
+    } else {
+        return read_bytes;
+    }
+}
+
+ssize_t fcfs_read(int fd, void *buff, size_t count)
+{
     FCFSPosixAPIFileInfo *file;
 
     if ((file=fcfs_fd_manager_get(fd)) == NULL) {
@@ -293,14 +358,94 @@ ssize_t fcfs_read(int fd, void *buff, size_t count)
         return -1;
     }
 
-    if ((result=fcfs_api_read_ex(&file->fi, buff, count, &read_bytes,
-                    fcfs_posix_api_gettid())) != 0)
-    {
-        errno = result;
+    return do_read(file, buff, count);
+}
+
+ssize_t fcfs_read2(int fd, void *buff, size_t size, size_t n)
+{
+    FCFSPosixAPIFileInfo *file;
+    size_t expect;
+    size_t bytes;
+    size_t count;
+    size_t remain;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
         return -1;
-    } else {
-        return read_bytes;
     }
+
+    expect = size * n;
+    bytes = do_read(file, buff, expect);
+    if (bytes == expect) {
+        count = n;
+    } else if (bytes > 0) {
+        count = bytes / size;
+        remain = bytes - (size * count);
+        fcfs_api_lseek(&file->fi, -1 * remain, SEEK_CUR);
+    } else {
+        count = 0;
+    }
+
+    return count;
+}
+
+ssize_t fcfs_gets(int fd, char *s, size_t size)
+{
+    FCFSPosixAPIFileInfo *file;
+    char *p;
+    char *end;
+    char *ch;
+    int read_bytes_once;
+    int bytes;
+    int remain;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if (size <= 1) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    read_bytes_once = 64;
+    remain = size - 1;
+    p = s;
+    while (1) {
+        bytes = do_read(file, p, FC_MIN(remain, read_bytes_once));
+        if (bytes < 0) {
+            return -1;
+        } else if (bytes == 0) {
+            break;
+        }
+
+        end = p + bytes;
+        ch = p;
+        while (ch < end && *ch != '\n') {
+            ++ch;
+        }
+
+        if (ch < end) {  //found
+            p = ++ch; //skip the new line
+            remain = end - p;
+            if (remain > 0) {
+                fcfs_api_lseek(&file->fi, -1 * remain, SEEK_CUR);
+            }
+            break;
+        }
+
+        p = end;
+        remain -= bytes;
+        if (remain == 0) {
+            break;
+        }
+
+        read_bytes_once *= 2;
+    }
+
+    *p = '\0';
+    return (p - s);
 }
 
 ssize_t fcfs_pread(int fd, void *buff, size_t count, off_t offset)
@@ -315,7 +460,8 @@ ssize_t fcfs_pread(int fd, void *buff, size_t count, off_t offset)
     }
 
     if ((result=fcfs_api_pread_ex(&file->fi, buff, count, offset,
-                    &read_bytes, fcfs_posix_api_gettid())) != 0)
+                    &read_bytes, fcfs_posix_api_gettid(
+                        file->tpid_type))) != 0)
     {
         errno = result;
         return -1;
@@ -335,8 +481,8 @@ ssize_t fcfs_readv(int fd, const struct iovec *iov, int iovcnt)
         return -1;
     }
 
-    if ((result=fcfs_api_readv_ex(&file->fi, iov, iovcnt,
-                    &read_bytes, fcfs_posix_api_gettid())) != 0)
+    if ((result=fcfs_api_readv_ex(&file->fi, iov, iovcnt, &read_bytes,
+                    fcfs_posix_api_gettid(file->tpid_type))) != 0)
     {
         errno = result;
         return -1;
@@ -358,7 +504,8 @@ ssize_t fcfs_preadv(int fd, const struct iovec *iov,
     }
 
     if ((result=fcfs_api_preadv_ex(&file->fi, iov, iovcnt, offset,
-                    &read_bytes, fcfs_posix_api_gettid())) != 0)
+                    &read_bytes, fcfs_posix_api_gettid(
+                        file->tpid_type))) != 0)
     {
         errno = result;
         return -1;
@@ -385,6 +532,18 @@ off_t fcfs_lseek(int fd, off_t offset, int whence)
     }
 }
 
+off_t fcfs_ltell(int fd)
+{
+    FCFSPosixAPIFileInfo *file;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    return file->fi.offset;
+}
+
 int fcfs_fallocate(int fd, int mode, off_t offset, off_t length)
 {
     int result;
@@ -395,8 +554,8 @@ int fcfs_fallocate(int fd, int mode, off_t offset, off_t length)
         return -1;
     }
 
-    if ((result=fcfs_api_fallocate_ex(&file->fi, mode, offset,
-                    length, fcfs_posix_api_gettid())) != 0)
+    if ((result=fcfs_api_fallocate_ex(&file->fi, mode, offset, length,
+                    fcfs_posix_api_gettid(file->tpid_type))) != 0)
     {
         errno = result;
         return -1;
@@ -418,7 +577,8 @@ int fcfs_truncate_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_fctx(&fctx, ctx, ACCESSPERMS);
+    fcfs_posix_api_set_fctx(&fctx, ctx, ACCESSPERMS,
+            fcfs_papi_tpid_type_tid);
     if ((result=fcfs_api_truncate_ex(&ctx->api_ctx,
                     path, length, &fctx)) != 0)
     {
@@ -440,7 +600,7 @@ int fcfs_ftruncate(int fd, off_t length)
     }
 
     if ((result=fcfs_api_ftruncate_ex(&file->fi, length,
-                    fcfs_posix_api_gettid())) != 0)
+                    fcfs_posix_api_gettid(file->tpid_type))) != 0)
     {
         errno = result;
         return -1;
@@ -1089,7 +1249,7 @@ int fcfs_unlink_ex(FCFSPosixAPIContext *ctx, const char *path)
     }
 
     if ((result=fcfs_api_unlink_ex(&ctx->api_ctx, path,
-                    fcfs_posix_api_gettid())) != 0)
+                    fcfs_posix_api_gettid(fcfs_papi_tpid_type_tid))) != 0)
     {
         errno = result;
         return -1;
@@ -1112,8 +1272,8 @@ int fcfs_unlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
 
     if ((result=fcfs_api_remove_dentry_ex(&ctx->api_ctx, path,
                     ((flags & AT_REMOVEDIR) ? FDIR_UNLINK_FLAGS_MATCH_DIR :
-                     FDIR_UNLINK_FLAGS_MATCH_FILE),
-                    fcfs_posix_api_gettid())) != 0)
+                     FDIR_UNLINK_FLAGS_MATCH_FILE), fcfs_posix_api_gettid(
+                         fcfs_papi_tpid_type_tid))) != 0)
     {
         errno = result;
         return -1;
@@ -1143,7 +1303,8 @@ int fcfs_rename_ex(FCFSPosixAPIContext *ctx,
     }
 
     if ((result=fcfs_api_rename_dentry_ex(&ctx->api_ctx, path1,
-                    path2, flags, fcfs_posix_api_gettid())) != 0)
+                    path2, flags, fcfs_posix_api_gettid(
+                        fcfs_papi_tpid_type_tid))) != 0)
     {
         errno = result;
         return -1;
@@ -1173,7 +1334,8 @@ static inline int do_renameat(FCFSPosixAPIContext *ctx,
     }
 
     if ((result=fcfs_api_rename_dentry_ex(&ctx->api_ctx, path1,
-                    path2, flags, fcfs_posix_api_gettid())) != 0)
+                    path2, flags, fcfs_posix_api_gettid(
+                        fcfs_papi_tpid_type_tid))) != 0)
     {
         errno = result;
         return -1;
@@ -1262,8 +1424,8 @@ int fcfs_rmdir_ex(FCFSPosixAPIContext *ctx, const char *path)
         return result;
     }
 
-    if ((result=fcfs_api_remove_dentry_ex(&ctx->api_ctx, path,
-                    flags, fcfs_posix_api_gettid())) != 0)
+    if ((result=fcfs_api_remove_dentry_ex(&ctx->api_ctx, path, flags,
+                    fcfs_posix_api_gettid(fcfs_papi_tpid_type_tid))) != 0)
     {
         errno = result;
         return -1;
@@ -1775,7 +1937,9 @@ DIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx, const char *path)
         return NULL;
     }
 
-    if ((file=do_open_ex(ctx, path, flags, mode)) == NULL) {
+    if ((file=do_open_ex(ctx, path, flags, mode,
+                    fcfs_papi_tpid_type_tid)) == NULL)
+    {
         return NULL;
     }
 
@@ -2173,8 +2337,8 @@ int fcfs_posix_fallocate_ex(FCFSPosixAPIContext *ctx,
         return -1;
     }
 
-    if ((result=fcfs_api_fallocate_ex(&file->fi, mode, offset,
-                    len, fcfs_posix_api_gettid())) != 0)
+    if ((result=fcfs_api_fallocate_ex(&file->fi, mode, offset, len,
+                    fcfs_posix_api_gettid(file->tpid_type))) != 0)
     {
         errno = result;
         return -1;

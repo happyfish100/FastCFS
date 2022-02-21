@@ -308,6 +308,8 @@ extern "C" {
 
     off_t fcfs_lseek(int fd, off_t offset, int whence);
 
+    off_t fcfs_ltell(int fd);
+
     int fcfs_fallocate(int fd, int mode, off_t offset, off_t length);
 
     int fcfs_truncate_ex(FCFSPosixAPIContext *ctx,
@@ -516,8 +518,9 @@ extern "C" {
     int fcfs_posix_fadvise_ex(FCFSPosixAPIContext *ctx, int fd,
             off_t offset, off_t len, int advice);
 
-    int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx,
-            int fd, const char *format, ...);
+    int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx, int fd,
+            const char *format, ...) __gcc_attribute__
+        ((format (printf, 3, 4)));
 
     int fcfs_vdprintf_ex(FCFSPosixAPIContext *ctx,
             int fd, const char *format, va_list ap);
@@ -541,11 +544,23 @@ extern "C" {
 
     int fcfs_munmap_ex(FCFSPosixAPIContext *ctx, void *addr, size_t length);
 
-    //for internal use only
+    /* following functions for internal use only */
     static inline FCFSPosixAPIFileInfo *fcfs_get_file_handle(int fd)
     {
         return fcfs_fd_manager_get(fd);
     }
+
+    int fcfs_open2(FCFSPosixAPIContext *ctx, const char *path, const int flags,
+            const int mode, const FCFSPosixAPITPIDType tpid_type);
+
+    //for fread
+    ssize_t fcfs_read2(int fd, void *buff, size_t size, size_t n);
+
+    //for fwrite
+    ssize_t fcfs_write2(int fd, const void *buff, size_t size, size_t n);
+
+    //for fgets
+    ssize_t fcfs_gets(int fd, char *s, size_t size);
 
 #ifdef __cplusplus
 }

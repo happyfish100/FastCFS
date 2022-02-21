@@ -83,7 +83,7 @@ static FILE *alloc_file_handle(int fd)
         return NULL;
     }
 
-    if ((result=init_pthread_lock_cond_pair(&file->lcp)) != 0) {
+    if ((result=init_pthread_lock(&file->lock)) != 0) {
         free(file);
         errno = result;
         return NULL;
@@ -92,6 +92,7 @@ static FILE *alloc_file_handle(int fd)
     file->fd = fd;
     file->magic = FCFS_CAPI_MAGIC_NUMBER;
     file->error_no = 0;
+    file->eof = 0;
     file->buffer.base = NULL;
     file->buffer.size = 0;
     file->buffer.need_free = false;
@@ -108,7 +109,7 @@ static int free_file_handle(FCFSPosixCAPIFILE *file)
     //free_file_buffer(file);
     result = fcfs_close(file->fd);
     file->magic = 0;
-    destroy_pthread_lock_cond_pair(&file->lcp);
+    pthread_mutex_destroy(&file->lock);
     free(file);
 
     return result;
@@ -244,7 +245,30 @@ static inline int do_fdopen(FCFSPosixAPIContext *ctx,
         return -1;
     }
 
-    return fcfs_open_ex(ctx, path, flags, 0666);
+    return fcfs_open2(ctx, path, flags, 0666, fcfs_papi_tpid_type_pid);
+}
+
+void fcfs_flockfile(FILE *fp)
+{
+    FCFS_CAPI_CONVERT_FP_VOID(fp);
+    PTHREAD_MUTEX_LOCK(&file->lock);
+}
+
+int fcfs_ftrylockfile(FILE *fp)
+{
+    int result;
+    FCFS_CAPI_CONVERT_FP_EX(fp, -1);
+    if ((result=pthread_mutex_trylock(&file->lock)) != 0) {
+        errno = result;
+        return -1;
+    }
+    return 0;
+}
+
+void fcfs_funlockfile(FILE *fp)
+{
+    FCFS_CAPI_CONVERT_FP_VOID(fp);
+    PTHREAD_MUTEX_UNLOCK(&file->lock);
 }
 
 FILE *fcfs_fopen_ex(FCFSPosixAPIContext *ctx,
@@ -303,6 +327,7 @@ FILE *fcfs_freopen_ex(FCFSPosixAPIContext *ctx,
         return NULL;
     }
 
+    //TODO
     fcfs_close(file->fd);
     file->fd = fd;
     file->error_no = 0;
@@ -332,8 +357,426 @@ int fcfs_setvbuf(FILE *fp, char *buf, int mode, size_t size)
     return 0;
 }
 
-int fcfs_fflush(FILE *fp)
+int fcfs_fseek(FILE *fp, long offset, int whence)
+{
+    FCFS_CAPI_CONVERT_FP(fp);
+    return fcfs_lseek(file->fd, offset, whence) >= 0 ? 0 : -1;
+}
+
+int fcfs_fseeko(FILE *fp, off_t offset, int whence)
+{
+    FCFS_CAPI_CONVERT_FP(fp);
+    return fcfs_lseek(file->fd, offset, whence) >= 0 ? 0 : -1;
+}
+
+long fcfs_ftell(FILE *fp)
+{
+    FCFS_CAPI_CONVERT_FP(fp);
+    return fcfs_ltell(file->fd);
+}
+
+off_t fcfs_ftello(FILE *fp)
+{
+    FCFS_CAPI_CONVERT_FP(fp);
+    return fcfs_ltell(file->fd);
+}
+
+void fcfs_rewind(FILE *fp)
+{
+    FCFS_CAPI_CONVERT_FP_VOID(fp);
+    fcfs_lseek(file->fd, 0L, SEEK_SET);
+}
+
+int fcfs_fgetpos(FILE *fp, fpos_t *pos)
+{
+    FCFS_CAPI_CONVERT_FP(fp);
+    pos->__pos = fcfs_ltell(file->fd);
+    return pos->__pos >= 0 ? 0 : -1;
+}
+
+int fcfs_fsetpos(FILE *fp, const fpos_t *pos)
+{
+    FCFS_CAPI_CONVERT_FP(fp);
+    return fcfs_lseek(file->fd, pos->__pos, SEEK_SET) >= 0 ? 0 : -1;
+}
+
+#define SET_FILE_ERROR(file, bytes) \
+    do { \
+        if (bytes < 0) { \
+            file->error_no = (errno != 0 ? errno : EIO); \
+        } else { \
+            file->eof = 1; \
+        } \
+    } while (0)
+
+static inline int do_fgetc(FILE *fp, const bool need_lock)
+{
+    int bytes;
+    int c;
+    unsigned char buff[8];
+
+    FCFS_CAPI_CONVERT_FP_EX(fp, EOF);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+
+    bytes = fcfs_read(file->fd, buff, 1);
+    if (bytes > 0) {
+        c = *buff;
+    } else {
+        SET_FILE_ERROR(file, bytes);
+        c = EOF;
+    }
+
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+    return c;
+}
+
+static inline int do_fputc(int c, FILE *fp, const bool need_lock)
+{
+    int bytes;
+    char ch;
+
+    FCFS_CAPI_CONVERT_FP_EX(fp, EOF);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+
+    ch = c;
+    bytes = fcfs_write(file->fd, &ch, 1);
+    if (bytes <= 0) {
+        file->error_no = (errno != 0 ? errno : EIO);
+        ch = EOF;
+    }
+
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+    return ch;
+}
+
+static inline void do_clearerr(FILE *fp, const bool need_lock)
+{
+    FCFS_CAPI_CONVERT_FP_VOID(fp);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+
+    file->error_no = 0;
+    file->eof = 0;
+
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+}
+
+static inline int do_feof(FILE *fp, const bool need_lock)
+{
+    int eof;
+
+    FCFS_CAPI_CONVERT_FP(fp);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+    eof = file->eof;
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+
+    return eof;
+}
+
+static inline int do_ferror(FILE *fp, const bool need_lock)
+{
+    int error_no;
+
+    FCFS_CAPI_CONVERT_FP(fp);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+    error_no = file->error_no;
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+
+    return error_no;
+}
+
+static inline int do_fileno(FILE *fp, const bool need_lock)
+{
+    int fd;
+
+    FCFS_CAPI_CONVERT_FP(fp);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+    fd = file->fd;
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+
+    return fd;
+}
+
+static inline int do_fflush(FILE *fp, const bool need_lock)
 {
     FCFS_CAPI_CONVERT_FP_EX(fp, EOF);
     return 0;
+}
+
+static inline size_t do_fread(void *buff, size_t size,
+        size_t n, FILE *fp, const bool need_lock)
+{
+    size_t count;
+
+    FCFS_CAPI_CONVERT_FP_EX(fp, EOF);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+
+    count = fcfs_read2(file->fd, buff, size, n);
+    if (count != n) {
+        if (count < 0) {
+            file->error_no = (errno != 0 ? errno : EIO);
+            count = 0;
+        } else if (count == 0) {
+            file->eof = 1;
+        }
+    }
+
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+    return count;
+}
+
+static inline size_t do_fwrite(const void *buff, size_t size,
+        size_t n, FILE *fp, const bool need_lock)
+{
+    size_t count;
+
+    FCFS_CAPI_CONVERT_FP_EX(fp, EOF);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+
+    count = fcfs_write2(file->fd, buff, size, n);
+    if (count != n) {
+        if (count < 0) {
+            file->error_no = (errno != 0 ? errno : EIO);
+            count = 0;
+        } else if (count == 0) {
+            file->error_no = (errno != 0 ? errno : EIO);
+        }
+    }
+
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+    return count;
+}
+
+static inline int do_fputs(const char *s, FILE *fp, const bool need_lock)
+{
+    int len;
+    int bytes;
+
+    FCFS_CAPI_CONVERT_FP_EX(fp, EOF);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+
+    len = strlen(s);
+    if (len == 0) {
+        bytes = 0;
+    } else {
+        bytes = fcfs_write(file->fd, s, len);
+        if (bytes <= 0) {
+            file->error_no = (errno != 0 ? errno : EIO);
+            bytes = EOF;
+        }
+    }
+
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+    return bytes;
+}
+
+static inline char *do_fgets(char *s, int size,
+        FILE *fp, const bool need_lock)
+{
+    int bytes;
+
+    FCFS_CAPI_CONVERT_FP_EX(fp, NULL);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+    bytes = fcfs_gets(file->fd, s, size);
+    if (bytes < 0) {
+        file->error_no = (errno != 0 ? errno : EIO);
+    } else if (bytes == 0) {
+        file->eof = 1;
+    }
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+
+    return (bytes > 0 ? s : NULL);
+}
+
+int fcfs_fgetc_unlocked(FILE *fp)
+{
+    const bool need_lock = false;
+    return do_fgetc(fp, need_lock);
+}
+
+int fcfs_fputc_unlocked(int c, FILE *fp)
+{
+    const bool need_lock = false;
+    return do_fputc(c, fp, need_lock);
+}
+
+void fcfs_clearerr_unlocked(FILE *fp)
+{
+    const bool need_lock = false;
+    return do_clearerr(fp, need_lock);
+}
+
+int fcfs_feof_unlocked(FILE *fp)
+{
+    const bool need_lock = false;
+    return do_feof(fp, need_lock);
+}
+
+int fcfs_ferror_unlocked(FILE *fp)
+{
+    const bool need_lock = false;
+    return do_ferror(fp, need_lock);
+}
+
+int fcfs_fileno_unlocked(FILE *fp)
+{
+    const bool need_lock = false;
+    return do_fileno(fp, need_lock);
+}
+
+int fcfs_fflush_unlocked(FILE *fp)
+{
+    const bool need_lock = false;
+    return do_fflush(fp, need_lock);
+}
+
+size_t fcfs_fread_unlocked(void *buff,
+        size_t size, size_t n, FILE *fp)
+{
+    const bool need_lock = false;
+    return do_fread(buff, size, n, fp, need_lock);
+}
+
+size_t fcfs_fwrite_unlocked(const void *buff,
+        size_t size, size_t n, FILE *fp)
+{
+    const bool need_lock = false;
+    return do_fwrite(buff, size, n, fp, need_lock);
+}
+
+int fcfs_fputs_unlocked(const char *s, FILE *fp)
+{
+    const bool need_lock = false;
+    return do_fputs(s, fp, need_lock);
+}
+
+char *fcfs_fgets_unlocked(char *s, int size, FILE *fp)
+{
+    const bool need_lock = false;
+    return do_fgets(s, size, fp, need_lock);
+}
+
+int fcfs_fgetc(FILE *fp)
+{
+    const bool need_lock = true;
+    return do_fgetc(fp, need_lock);
+}
+
+int fcfs_fputc(int c, FILE *fp)
+{
+    const bool need_lock = true;
+    return do_fputc(c, fp, need_lock);
+}
+
+void fcfs_clearerr(FILE *fp)
+{
+    const bool need_lock = true;
+    return do_clearerr(fp, need_lock);
+}
+
+int fcfs_feof(FILE *fp)
+{
+    const bool need_lock = true;
+    return do_feof(fp, need_lock);
+}
+
+int fcfs_ferror(FILE *fp)
+{
+    const bool need_lock = true;
+    return do_ferror(fp, need_lock);
+}
+
+int fcfs_fileno(FILE *fp)
+{
+    const bool need_lock = true;
+    return do_fileno(fp, need_lock);
+}
+
+int fcfs_fflush(FILE *fp)
+{
+    const bool need_lock = true;
+    return do_fflush(fp, need_lock);
+}
+
+size_t fcfs_fread(void *buff,
+        size_t size, size_t n, FILE *fp)
+{
+    const bool need_lock = true;
+    return do_fread(buff, size, n, fp, need_lock);
+}
+
+size_t fcfs_fwrite(const void *buff,
+        size_t size, size_t n, FILE *fp)
+{
+    const bool need_lock = true;
+    return do_fwrite(buff, size, n, fp, need_lock);
+}
+
+int fcfs_fputs(const char *s, FILE *fp)
+{
+    const bool need_lock = true;
+    return do_fputs(s, fp, need_lock);
+}
+
+char *fcfs_fgets(char *s, int size, FILE *fp)
+{
+    const bool need_lock = true;
+    return do_fgets(s, size, fp, need_lock);
+}
+
+int fcfs_ungetc(int c, FILE *fp)
+{
+    FCFS_CAPI_CONVERT_FP_EX(fp, EOF);
+
+    PTHREAD_MUTEX_LOCK(&file->lock);
+    if (c == EOF) {
+        file->error_no = EINVAL;
+    } else {
+        if (fcfs_lseek(file->fd, -1, SEEK_CUR) < 0) {
+            file->error_no = (errno != 0 ? errno : EIO);
+            c = EOF;
+        }
+    }
+    PTHREAD_MUTEX_UNLOCK(&file->lock);
+
+    return c;
 }

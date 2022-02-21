@@ -84,9 +84,14 @@ extern "C" {
         return getpid();
     }
 
-    static inline pid_t fcfs_posix_api_gettid()
+    static inline pid_t fcfs_posix_api_gettid(
+            const FCFSPosixAPITPIDType tpid_type)
     {
-        return fc_gettid();
+        if (tpid_type == fcfs_papi_tpid_type_pid) {
+            return getpid();
+        } else {
+            return fc_gettid();
+        }
     }
 
     static inline void fcfs_posix_api_set_omp(FDIRClientOwnerModePair *omp,
@@ -103,10 +108,11 @@ extern "C" {
     }
 
     static inline void fcfs_posix_api_set_fctx(FCFSAPIFileContext *fctx,
-            const FCFSPosixAPIContext *pctx, const mode_t mode)
+            const FCFSPosixAPIContext *pctx, const mode_t mode,
+            const FCFSPosixAPITPIDType tpid_type)
     {
         fcfs_posix_api_set_omp(&fctx->omp, pctx, mode);
-        fctx->tid = fcfs_posix_api_gettid();
+        fctx->tid = fcfs_posix_api_gettid(tpid_type);
     }
 
 #define FCFS_API_IS_MY_MOUNTPOINT_EX(ctx, path) \
