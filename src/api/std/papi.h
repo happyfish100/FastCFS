@@ -235,12 +235,6 @@
 #define fcfs_posix_fadvise(fd, offset, len, advice) \
     fcfs_posix_fadvise_ex(&G_FCFS_PAPI_CTX, fd, offset, len, advice)
 
-#define fcfs_dprintf(fd, format, ...) \
-    fcfs_dprintf_ex(&G_FCFS_PAPI_CTX, fd, format, ##__VA_ARGS__)
-
-#define fcfs_vdprintf(fd, format, ap) \
-    fcfs_vdprintf_ex(&G_FCFS_PAPI_CTX, fd, format, ap)
-
 #define fcfs_chdir(path) \
     fcfs_chdir_ex(&G_FCFS_PAPI_CTX, path)
 
@@ -518,12 +512,10 @@ extern "C" {
     int fcfs_posix_fadvise_ex(FCFSPosixAPIContext *ctx, int fd,
             off_t offset, off_t len, int advice);
 
-    int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx, int fd,
-            const char *format, ...) __gcc_attribute__
-        ((format (printf, 3, 4)));
+    int fcfs_dprintf(int fd, const char *format, ...)
+        __gcc_attribute__ ((format (printf, 2, 3)));
 
-    int fcfs_vdprintf_ex(FCFSPosixAPIContext *ctx,
-            int fd, const char *format, va_list ap);
+    int fcfs_vdprintf(int fd, const char *format, va_list ap);
 
     int fcfs_chdir_ex(FCFSPosixAPIContext *ctx, const char *path);
 
@@ -550,17 +542,21 @@ extern "C" {
         return fcfs_fd_manager_get(fd);
     }
 
-    int fcfs_open2(FCFSPosixAPIContext *ctx, const char *path, const int flags,
-            const int mode, const FCFSPosixAPITPIDType tpid_type);
+    int fcfs_file_open(FCFSPosixAPIContext *ctx, const char *path,
+            const int flags, const int mode, const
+            FCFSPosixAPITPIDType tpid_type);
 
     //for fread
-    ssize_t fcfs_read2(int fd, void *buff, size_t size, size_t n);
+    ssize_t fcfs_file_read(int fd, void *buff, size_t size, size_t n);
 
     //for fwrite
-    ssize_t fcfs_write2(int fd, const void *buff, size_t size, size_t n);
+    ssize_t fcfs_file_write(int fd, const void *buff, size_t size, size_t n);
 
     //for fgets
-    ssize_t fcfs_gets(int fd, char *s, size_t size);
+    ssize_t fcfs_file_gets(int fd, char *s, size_t size);
+
+    //for getdelim
+    ssize_t fcfs_file_getdelim(int fd, char **line, size_t *size, int delim);
 
 #ifdef __cplusplus
 }

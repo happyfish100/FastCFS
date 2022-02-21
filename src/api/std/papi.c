@@ -130,8 +130,9 @@ int fcfs_open_ex(FCFSPosixAPIContext *ctx, const char *path, int flags, ...)
     return fd;
 }
 
-int fcfs_open2(FCFSPosixAPIContext *ctx, const char *path, const int flags,
-        const int mode, const FCFSPosixAPITPIDType tpid_type)
+int fcfs_file_open(FCFSPosixAPIContext *ctx, const char *path,
+        const int flags, const int mode, const
+        FCFSPosixAPITPIDType tpid_type)
 {
     char full_fname[PATH_MAX];
     int result;
@@ -239,7 +240,7 @@ ssize_t fcfs_write(int fd, const void *buff, size_t count)
     return do_write(file, buff, count);
 }
 
-ssize_t fcfs_write2(int fd, const void *buff, size_t size, size_t n)
+ssize_t fcfs_file_write(int fd, const void *buff, size_t size, size_t n)
 {
     FCFSPosixAPIFileInfo *file;
     size_t expect;
@@ -361,7 +362,7 @@ ssize_t fcfs_read(int fd, void *buff, size_t count)
     return do_read(file, buff, count);
 }
 
-ssize_t fcfs_read2(int fd, void *buff, size_t size, size_t n)
+ssize_t fcfs_file_read(int fd, void *buff, size_t size, size_t n)
 {
     FCFSPosixAPIFileInfo *file;
     size_t expect;
@@ -389,23 +390,24 @@ ssize_t fcfs_read2(int fd, void *buff, size_t size, size_t n)
     return count;
 }
 
-ssize_t fcfs_gets(int fd, char *s, size_t size)
+ssize_t fcfs_file_gets(int fd, char *s, size_t size)
 {
     FCFSPosixAPIFileInfo *file;
     char *p;
     char *end;
     char *ch;
     int read_bytes_once;
+    int current;
     int bytes;
     int remain;
 
-    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
-        errno = EBADF;
+    if (size <= 1) {
+        errno = EINVAL;
         return -1;
     }
 
-    if (size <= 1) {
-        errno = EINVAL;
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
         return -1;
     }
 
@@ -413,7 +415,8 @@ ssize_t fcfs_gets(int fd, char *s, size_t size)
     remain = size - 1;
     p = s;
     while (1) {
-        bytes = do_read(file, p, FC_MIN(remain, read_bytes_once));
+        current = FC_MIN(remain, read_bytes_once);
+        bytes = do_read(file, p, current);
         if (bytes < 0) {
             return -1;
         } else if (bytes == 0) {
@@ -436,6 +439,10 @@ ssize_t fcfs_gets(int fd, char *s, size_t size)
         }
 
         p = end;
+        if (bytes < current) {  //end of file
+            break;
+        }
+
         remain -= bytes;
         if (remain == 0) {
             break;
@@ -446,6 +453,93 @@ ssize_t fcfs_gets(int fd, char *s, size_t size)
 
     *p = '\0';
     return (p - s);
+}
+
+ssize_t fcfs_file_getdelim(int fd, char **line, size_t *size, int delim)
+{
+    FCFSPosixAPIFileInfo *file;
+    char *buff;
+    char *p;
+    char *end;
+    char *ch;
+    ssize_t alloc;
+    ssize_t bytes;
+    ssize_t len;
+    ssize_t remain;
+
+    if (*line != NULL && *size < 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if (*size < 128) {
+        *size = 128;
+        buff = fc_malloc(*size);
+        if (buff == NULL) {
+            errno = ENOMEM;
+            return -1;
+        }
+        if (*line != NULL) {
+            free(*line);
+        }
+        *line = buff;
+    } else {
+        buff = *line;
+    }
+
+    remain = *size - 1;
+    p = buff;
+    while (1) {
+        bytes = do_read(file, p, remain);
+        if (bytes < 0) {
+            return -1;
+        } else if (bytes == 0) {
+            break;
+        }
+
+        end = p + bytes;
+        ch = p;
+        while (ch < end && *ch != delim) {
+            ++ch;
+        }
+
+        if (ch < end) {  //found
+            p = ++ch; //skip the new line
+            remain = end - p;
+            if (remain > 0) {
+                fcfs_api_lseek(&file->fi, -1 * remain, SEEK_CUR);
+            }
+            break;
+        }
+
+        if (bytes < remain) {  //end of file
+            p = end;
+            break;
+        }
+
+        len = end - buff;
+        alloc = (*size) * 2;
+        buff = fc_malloc(alloc);
+        if (buff == NULL) {
+            errno = ENOMEM;
+            return -1;
+        }
+        memcpy(buff, *line, len);
+        free(*line);
+
+        *line = buff;
+        *size = alloc;
+        p = buff + len;
+        remain = (*size) - len;
+    }
+
+    *p = '\0';
+    return (p - buff);
 }
 
 ssize_t fcfs_pread(int fd, void *buff, size_t count, off_t offset)
@@ -2395,8 +2489,7 @@ static int do_vdprintf(FCFSPosixAPIFileInfo *file,
     }
 }
 
-int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx,
-        int fd, const char *format, ...)
+int fcfs_dprintf(int fd, const char *format, ...)
 {
     FCFSPosixAPIFileInfo *file;
     va_list ap;
@@ -2413,8 +2506,7 @@ int fcfs_dprintf_ex(FCFSPosixAPIContext *ctx,
     return bytes;
 }
 
-int fcfs_vdprintf_ex(FCFSPosixAPIContext *ctx,
-        int fd, const char *format, va_list ap)
+int fcfs_vdprintf(int fd, const char *format, va_list ap)
 {
     FCFSPosixAPIFileInfo *file;
 

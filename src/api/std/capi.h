@@ -122,16 +122,21 @@ extern "C" {
 
     size_t fcfs_fwrite(const void *buff, size_t size, size_t nmemb, FILE *fp);
 
-    //TODO
-    ssize_t fcfs_getline(char **lineptr, size_t *n, FILE *fp);
-
-    ssize_t fcfs_getdelim(char **lineptr, size_t *n, int delim, FILE *fp);
-
-    int fcfs_fprintf(FILE *fp, const char *format, ...);
+    int fcfs_fprintf(FILE *fp, const char *format, ...)
+        __gcc_attribute__ ((format (printf, 2, 3)));
 
     int fcfs_vfprintf(FILE *fp, const char *format, va_list ap);
 
-    int fcfs_fscanf(FILE *fp, const char *format, ...);
+    ssize_t fcfs_getdelim(char **line, size_t *size, int delim, FILE *fp);
+
+    static inline ssize_t fcfs_getline(char **line, size_t *size, FILE *fp)
+    {
+        return fcfs_getdelim(line, size, '\n', fp);
+    }
+
+    //TODO
+    int fcfs_fscanf(FILE *fp, const char *format, ...)
+        __gcc_attribute__ ((format (scanf, 2, 3)));
 
     int fcfs_vfscanf(FILE *fp, const char *format, va_list ap);
 

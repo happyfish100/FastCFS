@@ -13,6 +13,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <stdarg.h>
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "papi.h"
@@ -245,7 +246,7 @@ static inline int do_fdopen(FCFSPosixAPIContext *ctx,
         return -1;
     }
 
-    return fcfs_open2(ctx, path, flags, 0666, fcfs_papi_tpid_type_pid);
+    return fcfs_file_open(ctx, path, flags, 0666, fcfs_papi_tpid_type_pid);
 }
 
 void fcfs_flockfile(FILE *fp)
@@ -536,7 +537,7 @@ static inline size_t do_fread(void *buff, size_t size,
         PTHREAD_MUTEX_LOCK(&file->lock);
     }
 
-    count = fcfs_read2(file->fd, buff, size, n);
+    count = fcfs_file_read(file->fd, buff, size, n);
     if (count != n) {
         if (count < 0) {
             file->error_no = (errno != 0 ? errno : EIO);
@@ -562,7 +563,7 @@ static inline size_t do_fwrite(const void *buff, size_t size,
         PTHREAD_MUTEX_LOCK(&file->lock);
     }
 
-    count = fcfs_write2(file->fd, buff, size, n);
+    count = fcfs_file_write(file->fd, buff, size, n);
     if (count != n) {
         if (count < 0) {
             file->error_no = (errno != 0 ? errno : EIO);
@@ -614,7 +615,7 @@ static inline char *do_fgets(char *s, int size,
     if (need_lock) {
         PTHREAD_MUTEX_LOCK(&file->lock);
     }
-    bytes = fcfs_gets(file->fd, s, size);
+    bytes = fcfs_file_gets(file->fd, s, size);
     if (bytes < 0) {
         file->error_no = (errno != 0 ? errno : EIO);
     } else if (bytes == 0) {
@@ -779,4 +780,29 @@ int fcfs_ungetc(int c, FILE *fp)
     PTHREAD_MUTEX_UNLOCK(&file->lock);
 
     return c;
+}
+
+int fcfs_fprintf(FILE *fp, const char *format, ...)
+{
+    va_list ap;
+    int bytes;
+
+    FCFS_CAPI_CONVERT_FP(fp);
+
+    va_start(ap, format);
+    bytes = fcfs_vdprintf(file->fd, format, ap);
+    va_end(ap);
+    return bytes;
+}
+
+int fcfs_vfprintf(FILE *fp, const char *format, va_list ap)
+{
+    FCFS_CAPI_CONVERT_FP(fp);
+    return fcfs_vdprintf(file->fd, format, ap);
+}
+
+ssize_t fcfs_getdelim(char **line, size_t *size, int delim, FILE *fp)
+{
+    FCFS_CAPI_CONVERT_FP(fp);
+    return fcfs_file_getdelim(file->fd, line, size, delim);
 }
