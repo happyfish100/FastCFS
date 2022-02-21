@@ -42,6 +42,90 @@ extern "C" {
 
     int fcfs_fclose(FILE *fp);
 
+    void fcfs_flockfile(FILE *fp);
+
+    int fcfs_ftrylockfile(FILE *fp);
+
+    void fcfs_funlockfile(FILE *fp);
+
+    int fcfs_fseek(FILE *fp, long offset, int whence);
+
+    int fcfs_fseeko(FILE *fp, off_t offset, int whence);
+
+    long fcfs_ftell(FILE *fp);
+
+    off_t fcfs_ftello(FILE *fp);
+
+    void fcfs_rewind(FILE *fp);
+
+    int fcfs_fgetpos(FILE *fp, fpos_t *pos);
+
+    int fcfs_fsetpos(FILE *fp, const fpos_t *pos);
+
+    /* unlocked */
+    int fcfs_getc_unlocked(FILE *fp);
+
+    int fcfs_putc_unlocked(int c, FILE *fp);
+
+    void fcfs_clearerr_unlocked(FILE *fp);
+
+    int fcfs_feof_unlocked(FILE *fp);
+
+    int fcfs_ferror_unlocked(FILE *fp);
+
+    int fcfs_fileno_unlocked(FILE *fp);
+
+    int fcfs_fflush_unlocked(FILE *fp);
+
+    int fcfs_fgetc_unlocked(FILE *fp);
+
+    int fcfs_fputc_unlocked(int c, FILE *fp);
+
+    size_t fcfs_fread_unlocked(void *ptr, size_t size, size_t n, FILE *fp);
+
+    size_t fcfs_fwrite_unlocked(const void *ptr,
+            size_t size, size_t n, FILE *fp);
+
+    char *fcfs_fgets_unlocked(char *s, int n, FILE *fp);
+
+    int fcfs_fputs_unlocked(const char *s, FILE *fp);
+
+
+
+    void fcfs_clearerr(FILE *fp);
+
+    int fcfs_feof(FILE *fp);
+
+    int fcfs_ferror(FILE *fp);
+
+    int fcfs_fileno(FILE *fp);
+
+    int fcfs_fgetc(FILE *fp);
+
+    char *fcfs_fgets(char *s, int size, FILE *fp);
+
+    int fcfs_getc(FILE *fp);
+
+    int fcfs_ungetc(int c, FILE *fp);
+
+    int fcfs_fputc(int c, FILE *fp);
+
+    int fcfs_fputs(const char *s, FILE *fp);
+
+    int fcfs_putc(int c, FILE *fp);
+
+    size_t fcfs_fread(void *ptr, size_t size, size_t nmemb, FILE *fp);
+
+    size_t fcfs_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *fp);
+
+    ssize_t fcfs_getline(char **lineptr, size_t *n, FILE *fp);
+
+    ssize_t fcfs_getdelim(char **lineptr, size_t *n, int delim, FILE *fp);
+
+    int fcfs_fscanf(FILE *fp, const char *format, ...);
+
+    int fcfs_vfscanf(FILE *fp, const char *format, va_list ap);
+
     int fcfs_setvbuf(FILE *fp, char *buf, int mode, size_t size);
 
     static inline void fcfs_setbuf(FILE *fp, char *buf)

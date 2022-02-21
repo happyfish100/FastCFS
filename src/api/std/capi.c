@@ -91,6 +91,7 @@ static FILE *alloc_file_handle(int fd)
 
     file->fd = fd;
     file->magic = FCFS_CAPI_MAGIC_NUMBER;
+    file->error_no = 0;
     file->buffer.base = NULL;
     file->buffer.size = 0;
     file->buffer.need_free = false;
@@ -100,12 +101,17 @@ static FILE *alloc_file_handle(int fd)
     return (FILE *)file;
 }
 
-static void free_file_handle(FCFSPosixCAPIFILE *file)
+static int free_file_handle(FCFSPosixCAPIFILE *file)
 {
+    int result;
+
     //free_file_buffer(file);
+    result = fcfs_close(file->fd);
     file->magic = 0;
     destroy_pthread_lock_cond_pair(&file->lcp);
     free(file);
+
+    return result;
 }
 
 static int mode_to_flags(const char *mode, int *flags)
@@ -151,10 +157,15 @@ static int mode_to_flags(const char *mode, int *flags)
 
     end = mode + len;
     while (p < end) {
-        if (*p == 'e') {
-            *flags |= O_CLOEXEC;
-        } else if (*p == 'x') {
-            *flags |= EEXIST;
+        switch (*p) {
+            case 'e':
+                *flags |= O_CLOEXEC;
+                break;
+            case'x':
+                *flags |= O_EXCL;
+                break;
+            default:
+                break;
         }
         ++p;
     }
@@ -162,30 +173,146 @@ static int mode_to_flags(const char *mode, int *flags)
     return 0;
 }
 
-FILE *fcfs_fopen_ex(FCFSPosixAPIContext *ctx,
+static int check_flags(const char *mode, const int flags, int *adding_flags)
+{
+    const char *p;
+    const char *end;
+    int rwflags;
+    int len;
+
+    len = strlen(mode);
+    if (len == 0) {
+        return EINVAL;
+    }
+
+    *adding_flags = 0;
+    p = mode;
+    switch (*p++) {
+        case 'r':
+            if (*p == '+') {
+                rwflags = O_RDWR;
+                p++;
+            } else {
+                rwflags = O_RDONLY;
+            }
+            break;
+        case 'a':
+            *adding_flags = O_APPEND;
+        case 'w':
+            if (*p == '+') {
+                rwflags = O_RDWR;
+                p++;
+            } else {
+                rwflags = O_WRONLY;
+            }
+
+            break;
+        default:
+            return EINVAL;
+    }
+
+    if ((flags & rwflags) != rwflags) {
+        return EINVAL;
+    }
+
+    end = mode + len;
+    while (p < end) {
+        switch (*p) {
+            case 'e':
+                *adding_flags |= O_CLOEXEC;
+                break;
+            case'x':
+                //just ignore
+                break;
+            default:
+                break;
+        }
+        ++p;
+    }
+
+    return 0;
+}
+
+static inline int do_fdopen(FCFSPosixAPIContext *ctx,
         const char *path, const char *mode)
 {
     int flags;
-    int fd;
     int result;
 
     if ((result=mode_to_flags(mode, &flags)) != 0) {
         errno = result;
-        return NULL;
+        return -1;
     }
 
-    if ((fd=fcfs_open_ex(ctx, path, flags, 0666)) < 0) {
+    return fcfs_open_ex(ctx, path, flags, 0666);
+}
+
+FILE *fcfs_fopen_ex(FCFSPosixAPIContext *ctx,
+        const char *path, const char *mode)
+{
+    int fd;
+
+    if ((fd=do_fdopen(ctx, path, mode)) < 0) {
         return NULL;
     }
 
     return alloc_file_handle(fd);
 }
 
+FILE *fcfs_fdopen_ex(FCFSPosixAPIContext *ctx, int fd, const char *mode)
+{
+    int flags;
+    int adding_flags;
+    int result;
+
+    if ((flags=fcfs_fcntl(fd, F_GETFL)) < 0) {
+        return NULL;
+    }
+
+    if ((result=check_flags(mode, flags, &adding_flags)) != 0) {
+        errno = result;
+        return NULL;
+    }
+
+    if (adding_flags != 0 && (flags & adding_flags) != adding_flags) {
+        if (fcfs_fcntl(fd, F_SETFL, (flags | adding_flags)) != 0) {
+            return NULL;
+        }
+    }
+
+    return alloc_file_handle(fd);
+}
+
+FILE *fcfs_freopen_ex(FCFSPosixAPIContext *ctx,
+        const char *path, const char *mode, FILE *fp)
+{
+    int fd;
+    FCFSPosixAPIFileInfo *finfo;
+
+    FCFS_CAPI_CONVERT_FP_EX(fp, NULL);
+    if (path == NULL) {
+        if ((finfo=fcfs_get_file_handle(file->fd)) == NULL) {
+            errno = EBADF;
+            return NULL;
+        }
+
+        path = finfo->filename.str;
+    }
+
+    if ((fd=do_fdopen(ctx, path, mode)) < 0) {
+        return NULL;
+    }
+
+    fcfs_close(file->fd);
+    file->fd = fd;
+    file->error_no = 0;
+    return (FILE *)file;
+}
+
 int fcfs_fclose(FILE *fp)
 {
     FCFS_CAPI_CONVERT_FP_EX(fp, EOF);
-    free_file_handle(file);
-    return 0;
+    return free_file_handle(file);
 }
 
 int fcfs_setvbuf(FILE *fp, char *buf, int mode, size_t size)
