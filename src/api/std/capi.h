@@ -92,6 +92,7 @@ extern "C" {
     size_t fcfs_fwrite_unlocked(const void *buff,
             size_t size, size_t n, FILE *fp);
 
+    //with terminating null byte ('\0')
     char *fcfs_fgets_unlocked(char *s, int size, FILE *fp);
 
     int fcfs_fputs_unlocked(const char *s, FILE *fp);
@@ -106,6 +107,7 @@ extern "C" {
 
     int fcfs_fgetc(FILE *fp);
 
+    //with terminating null byte ('\0')
     char *fcfs_fgets(char *s, int size, FILE *fp);
 
     int fcfs_getc(FILE *fp);
@@ -134,11 +136,19 @@ extern "C" {
         return fcfs_getdelim(line, size, '\n', fp);
     }
 
+    //without terminating null byte ('\0')
+    ssize_t fcfs_readline(FILE *fp, char *buff, size_t size);
+
+    //without terminating null byte ('\0')
+    ssize_t fcfs_readline_unlocked(FILE *fp, char *buff, size_t size);
+
     //TODO
+    /*
     int fcfs_fscanf(FILE *fp, const char *format, ...)
         __gcc_attribute__ ((format (scanf, 2, 3)));
 
     int fcfs_vfscanf(FILE *fp, const char *format, va_list ap);
+    */
 
     int fcfs_setvbuf(FILE *fp, char *buf, int mode, size_t size);
 
@@ -152,7 +162,7 @@ extern "C" {
         fcfs_setvbuf(fp, buf, (buf != NULL ? _IOFBF : _IONBF), size);
     }
 
-    static inline void fcfs_setlinebuf_ex(FILE *fp)
+    static inline void fcfs_setlinebuf(FILE *fp)
     {
         fcfs_setvbuf(fp, NULL, _IOLBF, 0);
     }

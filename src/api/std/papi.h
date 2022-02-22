@@ -552,6 +552,8 @@ extern "C" {
     //for fwrite
     ssize_t fcfs_file_write(int fd, const void *buff, size_t size, size_t n);
 
+    ssize_t fcfs_file_readline(int fd, char *s, size_t size);
+
     //for fgets
     ssize_t fcfs_file_gets(int fd, char *s, size_t size);
 

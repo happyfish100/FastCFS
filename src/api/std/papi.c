@@ -390,7 +390,7 @@ ssize_t fcfs_file_read(int fd, void *buff, size_t size, size_t n)
     return count;
 }
 
-ssize_t fcfs_file_gets(int fd, char *s, size_t size)
+ssize_t fcfs_file_readline(int fd, char *s, size_t size)
 {
     FCFSPosixAPIFileInfo *file;
     char *p;
@@ -401,7 +401,7 @@ ssize_t fcfs_file_gets(int fd, char *s, size_t size)
     int bytes;
     int remain;
 
-    if (size <= 1) {
+    if (size <= 0) {
         errno = EINVAL;
         return -1;
     }
@@ -412,7 +412,7 @@ ssize_t fcfs_file_gets(int fd, char *s, size_t size)
     }
 
     read_bytes_once = 64;
-    remain = size - 1;
+    remain = size;
     p = s;
     while (1) {
         current = FC_MIN(remain, read_bytes_once);
@@ -451,8 +451,17 @@ ssize_t fcfs_file_gets(int fd, char *s, size_t size)
         read_bytes_once *= 2;
     }
 
-    *p = '\0';
     return (p - s);
+}
+
+ssize_t fcfs_file_gets(int fd, char *s, size_t size)
+{
+    ssize_t bytes;
+
+    if ((bytes=fcfs_file_readline(fd, s, size - 1)) >= 0) {
+        *(s + bytes) = '\0';
+    }
+    return bytes;
 }
 
 ssize_t fcfs_file_getdelim(int fd, char **line, size_t *size, int delim)

@@ -609,7 +609,7 @@ static inline int do_fputs(const char *s, FILE *fp, const bool need_lock)
 static inline char *do_fgets(char *s, int size,
         FILE *fp, const bool need_lock)
 {
-    int bytes;
+    size_t bytes;
 
     FCFS_CAPI_CONVERT_FP_EX(fp, NULL);
     if (need_lock) {
@@ -805,4 +805,38 @@ ssize_t fcfs_getdelim(char **line, size_t *size, int delim, FILE *fp)
 {
     FCFS_CAPI_CONVERT_FP(fp);
     return fcfs_file_getdelim(file->fd, line, size, delim);
+}
+
+static inline ssize_t do_readline(FILE *fp, char *buff,
+        size_t size, const bool need_lock)
+{
+    size_t bytes;
+
+    FCFS_CAPI_CONVERT_FP(fp);
+    if (need_lock) {
+        PTHREAD_MUTEX_LOCK(&file->lock);
+    }
+    bytes = fcfs_file_readline(file->fd, buff, size);
+    if (bytes < 0) {
+        file->error_no = (errno != 0 ? errno : EIO);
+    } else if (bytes == 0) {
+        file->eof = 1;
+    }
+    if (need_lock) {
+        PTHREAD_MUTEX_UNLOCK(&file->lock);
+    }
+
+    return bytes;
+}
+
+ssize_t fcfs_readline(FILE *fp, char *buff, size_t size)
+{
+    const bool need_lock = true;
+    return do_readline(fp, buff, size, need_lock);
+}
+
+ssize_t fcfs_readline_unlocked(FILE *fp, char *buff, size_t size)
+{
+    const bool need_lock = false;
+    return do_readline(fp, buff, size, need_lock);
 }
