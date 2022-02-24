@@ -22,30 +22,27 @@
 typedef struct __dirstream DIR;
 #endif
 
-typedef enum {
-    fcfs_preload_call_system  = 0,
-    fcfs_preload_call_fastcfs = 1
-} FCFSPreloadCallType;
+#define FCFS_PRELOAD_CALL_SYSTEM   1645611685
+#define FCFS_PRELOAD_CALL_FASTCFS  1645611708
 
 typedef struct fcfs_preload_dir_wrapper {
-    FCFSPreloadCallType call_type;
+    int call_type;
     DIR *dirp;
 } FCFSPreloadDIRWrapper;
 
+typedef struct fcfs_preload_file_wrapper {
+    int call_type;
+    FILE *fp;
+} FCFSPreloadFILEWrapper;
+
 typedef struct fcfs_preload_global_vars {
     bool inited;
-    FCFSPreloadCallType cwd_call_type;
+    int cwd_call_type;
 
     struct {
         int (*unsetenv)(const char *name);
 
         int (*clearenv)(void);
-
-        FILE *(*fopen)(const char *pathname, const char *mode);
-
-        size_t (*fread)(void *ptr, size_t size, size_t nmemb, FILE *fp);
-
-        size_t (*fwrite)(const void *ptr, size_t size, size_t nmemb, FILE *fp);
 
         int (*open)(const char *path, int flags, ...);
 
@@ -70,14 +67,14 @@ typedef struct fcfs_preload_global_vars {
 
         ssize_t (*read)(int fd, void *buff, size_t count);
 
-        ssize_t (*__read_chk)(int fd, void *buff, size_t count, size_t size);
-
         ssize_t (*pread)(int fd, void *buff, size_t count, off_t offset);
 
         ssize_t (*readv)(int fd, const struct iovec *iov, int iovcnt);
 
         ssize_t (*preadv)(int fd, const struct iovec *iov,
                 int iovcnt, off_t offset);
+
+        ssize_t (*readahead)(int fd, off64_t offset, size_t count);
 
         off_t (*lseek)(int fd, off_t offset, int whence);
 
@@ -87,7 +84,7 @@ typedef struct fcfs_preload_global_vars {
 
         int (*ftruncate)(int fd, off_t length);
 
-        union {
+        struct {
             struct {
                 int (*stat)(const char *path, struct stat *buf);
 
@@ -282,7 +279,118 @@ typedef struct fcfs_preload_global_vars {
                 int flags, int fd, off_t offset);
 
         int (*munmap)(void *addr, size_t length);
+
+        int (*__uflow)(FILE *fp);
+        int (*__overflow)(FILE *fp, int ch);
     };
+
+    struct {
+        FILE * (*fopen)(const char *path, const char *mode);
+
+        FILE * (*fdopen)(int fd, const char *mode);
+
+        FILE * (*freopen)(const char *path, const char *mode, FILE *fp);
+
+        int (*fclose)(FILE *fp);
+
+        void (*flockfile)(FILE *fp);
+
+        int (*ftrylockfile)(FILE *fp);
+
+        void (*funlockfile)(FILE *fp);
+
+        int (*fseek)(FILE *fp, long offset, int whence);
+
+        int (*fseeko)(FILE *fp, off_t offset, int whence);
+
+        long (*ftell)(FILE *fp);
+
+        off_t (*ftello)(FILE *fp);
+
+        void (*rewind)(FILE *fp);
+
+        int (*fgetpos)(FILE *fp, fpos_t *pos);
+
+        int (*fsetpos)(FILE *fp, const fpos_t *pos);
+
+        int (*fgetc_unlocked)(FILE *fp);
+
+        int (*fputc_unlocked)(int c, FILE *fp);
+
+        int (*getc_unlocked)(FILE *fp);
+
+        int (*putc_unlocked)(int c, FILE *fp);
+
+        void (*clearerr_unlocked)(FILE *fp);
+
+        int (*feof_unlocked)(FILE *fp);
+
+        int (*ferror_unlocked)(FILE *fp);
+
+        int (*fileno_unlocked)(FILE *fp);
+
+        int (*fflush_unlocked)(FILE *fp);
+
+        size_t (*fread_unlocked)(void *buff, size_t size, size_t n, FILE *fp);
+
+        size_t (*fwrite_unlocked)(const void *buff, size_t size, size_t n, FILE *fp);
+
+        char * (*fgets_unlocked)(char *s, int size, FILE *fp);
+
+        int (*fputs_unlocked)(const char *s, FILE *fp);
+
+        void (*clearerr)(FILE *fp);
+
+        int (*feof)(FILE *fp);
+
+        int (*ferror)(FILE *fp);
+
+        int (*fileno)(FILE *fp);
+
+        int (*fgetc)(FILE *fp);
+
+        char * (*fgets)(char *s, int size, FILE *fp);
+
+        int (*getc)(FILE *fp);
+
+        int (*ungetc)(int c, FILE *fp);
+
+        int (*fputc)(int c, FILE *fp);
+
+        int (*fputs)(const char *s, FILE *fp);
+
+        int (*putc)(int c, FILE *fp);
+
+        size_t (*fread)(void *buff, size_t size, size_t nmemb, FILE *fp);
+
+        size_t (*fwrite)(const void *buff, size_t size, size_t nmemb, FILE *fp);
+
+        int (*fprintf)(FILE *fp, const char *format, ...);
+
+        int (*vfprintf)(FILE *fp, const char *format, va_list ap);
+
+        ssize_t (*getdelim)(char **line, size_t *size, int delim, FILE *fp);
+
+        ssize_t (*getline)(char **line, size_t *size, FILE *fp);
+
+        int (*fscanf)(FILE *fp, const char *format, ...);
+
+        int (*vfscanf)(FILE *fp, const char *format, va_list ap);
+
+        int (*setvbuf)(FILE *fp, char *buf, int mode, size_t size);
+
+        void (*setbuf)(FILE *fp, char *buf);
+
+        void (*setbuffer)(FILE *fp, char *buf, size_t size);
+
+        void (*setlinebuf)(FILE *fp);
+
+        int (*fflush)(FILE *fp);
+
+        ssize_t (*__libc_readline_unlocked)(FILE *fp,
+                char *buffer, size_t size);
+    };
+
 } FCFSPreloadGlobalVars;
 
 #endif

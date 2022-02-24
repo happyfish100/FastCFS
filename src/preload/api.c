@@ -91,6 +91,39 @@ static inline void *fcfs_dlsym2(const char *fname1, const char *fname2)
     return func;
 }
 
+/*
+long syscall(long number, ...)
+{
+    static long (*syscall_func)(long number, ...) = NULL;
+    va_list ap;
+    long arg1;
+    long arg2;
+    long arg3;
+    long arg4;
+    long arg5;
+    long arg6;
+
+    va_start(ap, number);
+    arg1 = va_arg(ap, long);
+    arg2 = va_arg(ap, long);
+    arg3 = va_arg(ap, long);
+    arg4 = va_arg(ap, long);
+    arg5 = va_arg(ap, long);
+    arg6 = va_arg(ap, long);
+    va_end(ap);
+
+    fprintf(stderr, "func: %s, line: %d, number: %ld, "
+            "arg1: %ld, arg2: %ld, arg3: %ld, arg4: %ld, arg5: %ld, arg6: %ld\n",
+            __FUNCTION__, __LINE__, number, arg1, arg2, arg3, arg4, arg5, arg6);
+
+    if (syscall_func == NULL) {
+       syscall_func = fcfs_dlsym1("syscall");
+    }
+
+    return syscall_func(number, arg1, arg2, arg3, arg4, arg5, arg6);
+}
+*/
+
 static inline int do_open(const char *path, int flags, int mode)
 {
     int result;
@@ -664,15 +697,15 @@ DIR *opendir(const char *path)
 {
     FCFSPreloadDIRWrapper *wapper;
     DIR *dirp;
-    FCFSPreloadCallType call_type;
+    int call_type;
 
     fprintf(stderr, "func: %s, path: %s\n", __FUNCTION__, path);
 
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
-        call_type = fcfs_preload_call_fastcfs;
+        call_type = FCFS_PRELOAD_CALL_FASTCFS;
         dirp = (DIR *)fcfs_opendir(path);
     } else {
-        call_type = fcfs_preload_call_system;
+        call_type = FCFS_PRELOAD_CALL_SYSTEM;
         if (g_fcfs_preload_global_vars.opendir == NULL) {
             g_fcfs_preload_global_vars.opendir = fcfs_dlsym1("opendir");
         }
@@ -843,16 +876,16 @@ ssize_t read(int fd, void *buff, size_t count)
     }
 }
 
-ssize_t __read_chk(int fd, void *buff, size_t count, size_t size)
+ssize_t readahead(int fd, off64_t offset, size_t count)
 {
     fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
-        return fcfs_read(fd, buff, count);
+        return fcfs_readahead(fd, offset, count);
     } else {
-        if (g_fcfs_preload_global_vars.__read_chk == NULL) {
-            g_fcfs_preload_global_vars.__read_chk = fcfs_dlsym1("__read_chk");
+        if (g_fcfs_preload_global_vars.readahead == NULL) {
+            g_fcfs_preload_global_vars.readahead = fcfs_dlsym1("readahead");
         }
-        return g_fcfs_preload_global_vars.__read_chk(fd, buff, count, size);
+        return g_fcfs_preload_global_vars.readahead(fd, offset, count);
     }
 }
 
@@ -932,6 +965,12 @@ static inline off_t do_lseek(int fd, off_t offset, int whence)
 }
 
 off_t _lseek_(int fd, off_t offset, int whence)
+{
+    fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
+    return do_lseek(fd, offset, whence);
+}
+
+off_t __lseek(int fd, off_t offset, int whence)
 {
     fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     return do_lseek(fd, offset, whence);
@@ -1300,14 +1339,14 @@ DIR *fdopendir(int fd)
 {
     FCFSPreloadDIRWrapper *wapper;
     DIR *dirp;
-    FCFSPreloadCallType call_type;
+    int call_type;
 
     fprintf(stderr, "func: %s, fd: %d\n", __FUNCTION__, fd);
     if (FCFS_PAPI_IS_MY_FD(fd)) {
-        call_type = fcfs_preload_call_fastcfs;
+        call_type = FCFS_PRELOAD_CALL_FASTCFS;
         dirp = (DIR *)fcfs_fdopendir(fd);
     } else {
-        call_type = fcfs_preload_call_system;
+        call_type = FCFS_PRELOAD_CALL_SYSTEM;
         if (g_fcfs_preload_global_vars.fdopendir == NULL) {
             g_fcfs_preload_global_vars.fdopendir = fcfs_dlsym1("fdopendir");
         }
@@ -1640,7 +1679,7 @@ int scandirat64(int fd, const char *path, struct dirent64 ***namelist,
 char *getcwd(char *buf, size_t size)
 {
     if (g_fcfs_preload_global_vars.cwd_call_type ==
-            fcfs_preload_call_fastcfs)
+            FCFS_PRELOAD_CALL_FASTCFS)
     {
         return fcfs_getcwd(buf, size);
     } else {
@@ -1651,7 +1690,7 @@ char *getcwd(char *buf, size_t size)
 char *getwd(char *buf)
 {
     if (g_fcfs_preload_global_vars.cwd_call_type ==
-            fcfs_preload_call_fastcfs)
+            FCFS_PRELOAD_CALL_FASTCFS)
     {
         return fcfs_getwd(buf);
     } else {
@@ -1665,13 +1704,16 @@ int closedir(DIR *dirp)
     int result;
 
     wapper = (FCFSPreloadDIRWrapper *)dirp;
-    if (wapper->call_type == fcfs_preload_call_fastcfs) {
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
         result = fcfs_closedir(wapper->dirp);
-    } else {
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
         if (g_fcfs_preload_global_vars.closedir == NULL) {
             g_fcfs_preload_global_vars.closedir = fcfs_dlsym1("closedir");
         }
         result = g_fcfs_preload_global_vars.closedir(wapper->dirp);
+    } else {
+        errno = EBADF;
+        return -1;
     }
 
     free(wapper);
@@ -1683,13 +1725,16 @@ static inline struct dirent *do_readdir(DIR *dirp)
     FCFSPreloadDIRWrapper *wapper;
 
     wapper = (FCFSPreloadDIRWrapper *)dirp;
-    if (wapper->call_type == fcfs_preload_call_fastcfs) {
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
         return fcfs_readdir(wapper->dirp);
-    } else {
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
         if (g_fcfs_preload_global_vars.readdir == NULL) {
             g_fcfs_preload_global_vars.readdir = fcfs_dlsym1("readdir");
         }
         return g_fcfs_preload_global_vars.readdir(wapper->dirp);
+    } else {
+        errno = EBADF;
+        return NULL;
     }
 }
 
@@ -1712,14 +1757,16 @@ static inline int do_readdir_r(DIR *dirp, struct dirent *entry,
 
     wapper = (FCFSPreloadDIRWrapper *)dirp;
 
-    if (wapper->call_type == fcfs_preload_call_fastcfs) {
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
         return fcfs_readdir_r(wapper->dirp, entry, result);
-    } else {
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
         if (g_fcfs_preload_global_vars.readdir_r == NULL) {
             g_fcfs_preload_global_vars.readdir_r = fcfs_dlsym1("readdir_r");
         }
         return g_fcfs_preload_global_vars.readdir_r(
                 wapper->dirp, entry, result);
+    } else {
+        return EBADF;
     }
 }
 
@@ -1740,9 +1787,9 @@ void seekdir(DIR *dirp, long loc)
     FCFSPreloadDIRWrapper *wapper;
 
     wapper = (FCFSPreloadDIRWrapper *)dirp;
-    if (wapper->call_type == fcfs_preload_call_fastcfs) {
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
         return fcfs_seekdir(wapper->dirp, loc);
-    } else {
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
         if (g_fcfs_preload_global_vars.seekdir == NULL) {
             g_fcfs_preload_global_vars.seekdir = fcfs_dlsym1("seekdir");
         }
@@ -1755,13 +1802,16 @@ long telldir(DIR *dirp)
     FCFSPreloadDIRWrapper *wapper;
 
     wapper = (FCFSPreloadDIRWrapper *)dirp;
-    if (wapper->call_type == fcfs_preload_call_fastcfs) {
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
         return fcfs_telldir(wapper->dirp);
-    } else {
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
         if (g_fcfs_preload_global_vars.telldir == NULL) {
             g_fcfs_preload_global_vars.telldir = fcfs_dlsym1("telldir");
         }
         return g_fcfs_preload_global_vars.telldir(wapper->dirp);
+    } else {
+        errno = EBADF;
+        return -1;
     }
 }
 
@@ -1770,9 +1820,9 @@ void rewinddir(DIR *dirp)
     FCFSPreloadDIRWrapper *wapper;
 
     wapper = (FCFSPreloadDIRWrapper *)dirp;
-    if (wapper->call_type == fcfs_preload_call_fastcfs) {
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
         return fcfs_rewinddir(wapper->dirp);
-    } else {
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
         if (g_fcfs_preload_global_vars.rewinddir == NULL) {
             g_fcfs_preload_global_vars.rewinddir = fcfs_dlsym1("rewinddir");
         }
@@ -1785,17 +1835,20 @@ int dirfd(DIR *dirp)
     FCFSPreloadDIRWrapper *wapper;
 
     wapper = (FCFSPreloadDIRWrapper *)dirp;
-    if (wapper->call_type == fcfs_preload_call_fastcfs) {
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
         return fcfs_dirfd(wapper->dirp);
-    } else {
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
         if (g_fcfs_preload_global_vars.dirfd == NULL) {
             g_fcfs_preload_global_vars.dirfd = fcfs_dlsym1("dirfd");
         }
         return g_fcfs_preload_global_vars.dirfd(wapper->dirp);
+    } else {
+        errno = EBADF;
+        return -1;
     }
 }
 
-static inline int do_vdprintf(int fd, const char *format, va_list ap)
+int vdprintf(int fd, const char *format, va_list ap)
 {
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_vdprintf(fd, format, ap);
@@ -1813,14 +1866,9 @@ int dprintf(int fd, const char *format, ...)
     int bytes;
 
     va_start(ap, format);
-    bytes = do_vdprintf(fd, format, ap);
+    bytes = vdprintf(fd, format, ap);
     va_end(ap);
     return bytes;
-}
-
-int vdprintf(int fd, const char *format, va_list ap)
-{
-    return do_vdprintf(fd, format, ap);
 }
 
 static inline int do_lockf(int fd, int cmd, off_t len)
@@ -1869,7 +1917,7 @@ int posix_fallocate64(int fd, off_t offset, off_t len)
     return do_posix_fallocate(fd, offset, len);
 }
 
-static inline int do_posix_fadvise(int fd, off_t offset, off_t len, int advice)
+int _posix_fadvise_(int fd, off_t offset, off_t len, int advice)
 {
     if (FCFS_PAPI_IS_MY_FD(fd)) {
         return fcfs_posix_fadvise(fd, offset, len, advice);
@@ -1878,18 +1926,14 @@ static inline int do_posix_fadvise(int fd, off_t offset, off_t len, int advice)
             g_fcfs_preload_global_vars.posix_fadvise = fcfs_dlsym2(
                     "posix_fadvise", "posix_fadvise64");
         }
-        return g_fcfs_preload_global_vars.posix_fadvise(fd, offset, len, advice);
+        return g_fcfs_preload_global_vars.posix_fadvise(
+                fd, offset, len, advice);
     }
-}
-
-int _posix_fadvise_(int fd, off_t offset, off_t len, int advice)
-{
-    return do_posix_fadvise(fd, offset, len, advice);
 }
 
 int posix_fadvise64(int fd, off_t offset, off_t len, int advice)
 {
-    return do_posix_fadvise(fd, offset, len, advice);
+    return _posix_fadvise_(fd, offset, len, advice);
 }
 
 int unsetenv(const char *name)
@@ -1914,88 +1958,1262 @@ int clearenv(void)
     return g_fcfs_preload_global_vars.clearenv();
 }
 
-static inline FILE *do_fopen(const char *pathname, const char *mode)
+static inline FILE *do_fopen(const char *path, const char *mode)
 {
-    if (g_fcfs_preload_global_vars.fopen == NULL) {
-        g_fcfs_preload_global_vars.fopen = fcfs_dlsym1("fopen");
+    FCFSPreloadFILEWrapper *wapper;
+    FILE *fp;
+    int call_type;
+
+    if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
+        call_type = FCFS_PRELOAD_CALL_FASTCFS;
+        fp = fcfs_fopen(path, mode);
+    } else {
+        call_type = FCFS_PRELOAD_CALL_SYSTEM;
+        if (g_fcfs_preload_global_vars.fopen == NULL) {
+            g_fcfs_preload_global_vars.fopen = fcfs_dlsym2("fopen", "fopen64");
+        }
+        fp = g_fcfs_preload_global_vars.fopen(path, mode);
+
+        fprintf(stderr, "func: %s, line: %d, fp ========== %p\n",  __FUNCTION__, __LINE__, fp);
+        /*
+        if (!g_fcfs_preload_global_vars.inited) {
+            return fp;
+        }
+        */
     }
-    return g_fcfs_preload_global_vars.fopen(pathname, mode);
-}
 
-FILE *_fopen_(const char *pathname, const char *mode)
-{
-    fprintf(stderr, "pid: %d, func: %s, line: %d, pathname: %s, mode: %s\n",
-            getpid(), __FUNCTION__, __LINE__, pathname, mode);
-    return do_fopen(pathname, mode);
-}
+    fprintf(stderr, "func: %s, line: %d, fp: %p\n",  __FUNCTION__, __LINE__, fp);
 
-FILE *fopen64(const char *pathname, const char *mode)
-{
-    fprintf(stderr, "pid: %d, func: %s, line: %d, pathname: %s, mode: %s\n",
-            getpid(), __FUNCTION__, __LINE__, pathname, mode);
-    return do_fopen(pathname, mode);
-}
-
-size_t fread(void *ptr, size_t size, size_t nmemb, FILE *fp)
-{
-    fprintf(stderr, "pid: %d, func: %s, line: %d, size: %d, nmemb: %d, fp: %p\n",
-            getpid(), __FUNCTION__, __LINE__, (int)size, (int)nmemb, fp);
-
-    if (g_fcfs_preload_global_vars.fread == NULL) {
-        g_fcfs_preload_global_vars.fread = fcfs_dlsym1("fread");
+    if (fp != NULL) {
+        wapper = fc_malloc(sizeof(FCFSPreloadFILEWrapper));
+        wapper->call_type = call_type;
+        wapper->fp = fp;
+        return (FILE *)wapper;
+    } else {
+        return NULL;
     }
-    return g_fcfs_preload_global_vars.fread(ptr, size, nmemb, fp);
 }
 
-size_t fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *fp)
+FILE *_fopen_(const char *path, const char *mode)
 {
-    fprintf(stderr, "pid: %d, func: %s, line: %d, size: %d, nmemb: %d, fp: %p\n",
-            getpid(), __FUNCTION__, __LINE__, (int)size, (int)nmemb, fp);
+    fprintf(stderr, "pid: %d, func: %s, line: %d, path: %s, mode: %s, inited: %d\n",
+            getpid(), __FUNCTION__, __LINE__, path, mode, g_fcfs_preload_global_vars.inited);
 
-    if (g_fcfs_preload_global_vars.fread == NULL) {
-        g_fcfs_preload_global_vars.fread = fcfs_dlsym1("fread");
+    return do_fopen(path, mode);
+}
+
+FILE *fopen64(const char *path, const char *mode)
+{
+    fprintf(stderr, "pid: %d, func: %s, line: %d, path: %s, mode: %s\n",
+            getpid(), __FUNCTION__, __LINE__, path, mode);
+    return do_fopen(path, mode);
+}
+
+FILE *_IO_fdopen(int fd, const char *mode)
+{
+    FCFSPreloadFILEWrapper *wapper;
+    FILE *fp;
+    int call_type;
+
+    fprintf(stderr, "====== func: %s, line: %d, fd: %d, mode: %s\n",
+            __FUNCTION__, __LINE__, fd, mode);
+
+    if (FCFS_PAPI_IS_MY_FD(fd)) {
+        call_type = FCFS_PRELOAD_CALL_FASTCFS;
+        fp = fcfs_fdopen(fd, mode);
+    } else {
+        call_type = FCFS_PRELOAD_CALL_SYSTEM;
+        if (g_fcfs_preload_global_vars.fdopen == NULL) {
+            g_fcfs_preload_global_vars.fdopen = fcfs_dlsym1("fdopen");
+        }
+        fp = g_fcfs_preload_global_vars.fdopen(fd, mode);
+        /*
+        if (!g_fcfs_preload_global_vars.inited) {
+            return fp;
+        }
+        */
     }
-    return g_fcfs_preload_global_vars.fread(ptr, size, nmemb, fp);
-}
 
-size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *fp)
-{
-    fprintf(stderr, "pid: %d, func: %s, line: %d, size: %d, nmemb: %d, fp: %p\n",
-            getpid(), __FUNCTION__, __LINE__, (int)size, (int)nmemb, fp);
-
-    if (g_fcfs_preload_global_vars.fwrite == NULL) {
-        g_fcfs_preload_global_vars.fwrite = fcfs_dlsym1("fwrite");
+    if (fp != NULL) {
+        wapper = fc_malloc(sizeof(FCFSPreloadFILEWrapper));
+        wapper->call_type = call_type;
+        wapper->fp = fp;
+        return (FILE *)wapper;
+    } else {
+        return NULL;
     }
-    return g_fcfs_preload_global_vars.fwrite(ptr, size, nmemb, fp);
 }
 
-long syscall(long number, ...)
+FILE *fdopen(int fd, const char *mode)
 {
-    static long (*syscall_func)(long number, ...) = NULL;
+    return _IO_fdopen(fd, mode);
+}
+
+FILE *_freopen_(const char *path, const char *mode, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "====== func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        fp = fcfs_freopen(path, mode, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.freopen == NULL) {
+            g_fcfs_preload_global_vars.freopen = fcfs_dlsym1("freopen");
+        }
+        fp = g_fcfs_preload_global_vars.freopen(path, mode, wapper->fp);
+    } else {
+        errno = EBADF;
+        return NULL;
+    }
+
+    if (fp != NULL) {
+        wapper->fp = fp;
+        return (FILE *)wapper;
+    } else {
+        return NULL;
+    }
+}
+
+FILE *freopen64(const char *path, const char *mode, FILE *fp)
+{
+    return _freopen_(path, mode, fp);
+}
+
+#define CHECK_DEAL_STD_STREAM(funcname, ...) \
+    if (fp == stdin || fp == stderr || fp == stdout) {  \
+        if (g_fcfs_preload_global_vars.funcname == NULL) { \
+            g_fcfs_preload_global_vars.funcname = fcfs_dlsym1(#funcname); \
+        } \
+        return g_fcfs_preload_global_vars.funcname(__VA_ARGS__); \
+    }
+
+#define CHECK_DEAL_STDIO_VOID(funcname, ...) \
+    if (fp == stdin || fp == stderr || fp == stdout) {  \
+        if (g_fcfs_preload_global_vars.funcname == NULL) { \
+            g_fcfs_preload_global_vars.funcname = fcfs_dlsym1(#funcname); \
+        } \
+        g_fcfs_preload_global_vars.funcname(__VA_ARGS__); \
+    }
+
+int fclose(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fclose, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fclose(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fclose == NULL) {
+            g_fcfs_preload_global_vars.fclose = fcfs_dlsym1("fclose");
+        }
+        return g_fcfs_preload_global_vars.fclose(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+void flockfile(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STDIO_VOID(flockfile, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        fcfs_flockfile(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.flockfile == NULL) {
+            g_fcfs_preload_global_vars.flockfile = fcfs_dlsym1("flockfile");
+        }
+        g_fcfs_preload_global_vars.flockfile(wapper->fp);
+    }
+}
+
+int ftrylockfile(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(ftrylockfile, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_ftrylockfile(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.ftrylockfile == NULL) {
+            g_fcfs_preload_global_vars.ftrylockfile = fcfs_dlsym1("ftrylockfile");
+        }
+        return g_fcfs_preload_global_vars.ftrylockfile(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+void funlockfile(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STDIO_VOID(funlockfile, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        fcfs_funlockfile(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.funlockfile == NULL) {
+            g_fcfs_preload_global_vars.funlockfile = fcfs_dlsym1("funlockfile");
+        }
+        g_fcfs_preload_global_vars.funlockfile(wapper->fp);
+    }
+}
+
+int fseek(FILE *fp, long offset, int whence)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fseek, fp, offset, whence);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fseek(wapper->fp, offset, whence);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fseek == NULL) {
+            g_fcfs_preload_global_vars.fseek = fcfs_dlsym1("fseek");
+        }
+        return g_fcfs_preload_global_vars.fseek(wapper->fp, offset, whence);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int _fseeko_(FILE *fp, off_t offset, int whence)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fseeko, fp, offset, whence);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fseeko(wapper->fp, offset, whence);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fseeko == NULL) {
+            g_fcfs_preload_global_vars.fseeko = fcfs_dlsym1("fseeko");
+        }
+        return g_fcfs_preload_global_vars.fseeko(wapper->fp, offset, whence);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fseeko64(FILE *fp, off_t offset, int whence)
+{
+    fprintf(stderr, "func: %s, line: %d\n", __FUNCTION__, __LINE__);
+    return _fseeko_(fp, offset, whence);
+}
+
+int __fseeko64(FILE *fp, off_t offset, int whence)
+{
+    fprintf(stderr, "func: %s, line: %d\n", __FUNCTION__, __LINE__);
+    return _fseeko_(fp, offset, whence);
+}
+
+long ftell(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(ftell, fp);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_ftell(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.ftell == NULL) {
+            g_fcfs_preload_global_vars.ftell = fcfs_dlsym1("ftell");
+        }
+        return g_fcfs_preload_global_vars.ftell(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+long _IO_ftell(FILE *fp)
+{
+    return ftell(fp);
+}
+
+static inline off_t do_ftello(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(ftello, fp);
+    fprintf(stderr, "func: %s, line: %d\n", __FUNCTION__, __LINE__);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_ftello(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.ftello == NULL) {
+            g_fcfs_preload_global_vars.ftello = fcfs_dlsym1("ftello");
+        }
+        return g_fcfs_preload_global_vars.ftello(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+off_t _ftello_(FILE *fp)
+{
+    fprintf(stderr, "func: %s, line: %d\n", __FUNCTION__, __LINE__);
+    return do_ftello(fp);
+}
+
+off_t ftello64(FILE *fp)
+{
+    fprintf(stderr, "func: %s, line: %d\n", __FUNCTION__, __LINE__);
+    return do_ftello(fp);
+}
+
+off_t __ftello64(FILE *fp)
+{
+    fprintf(stderr, "func: %s, line: %d\n", __FUNCTION__, __LINE__);
+    return do_ftello(fp);
+}
+
+void rewind(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STDIO_VOID(rewind, fp);
+
+    fprintf(stderr, "func: %s, line: %d\n", __FUNCTION__, __LINE__);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        fcfs_rewind(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.rewind == NULL) {
+            g_fcfs_preload_global_vars.rewind = fcfs_dlsym1("rewind");
+        }
+        g_fcfs_preload_global_vars.rewind(wapper->fp);
+    }
+}
+
+int _fgetpos_(FILE *fp, fpos_t *pos)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fgetpos, fp, pos);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fgetpos(wapper->fp, pos);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fgetpos == NULL) {
+            g_fcfs_preload_global_vars.fgetpos = fcfs_dlsym1("fgetpos");
+        }
+        return g_fcfs_preload_global_vars.fgetpos(wapper->fp, pos);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fgetpos64(FILE *fp, fpos_t *pos)
+{
+    return _fgetpos_(fp, pos);
+}
+
+int _IO_fgetpos(FILE *fp, fpos_t *pos)
+{
+    return _fgetpos_(fp, pos);
+}
+
+int _IO_fgetpos64(FILE *fp, fpos_t *pos)
+{
+    return _fgetpos_(fp, pos);
+}
+
+int _fsetpos_(FILE *fp, const fpos_t *pos)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fsetpos, fp, pos);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fsetpos(wapper->fp, pos);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fsetpos == NULL) {
+            g_fcfs_preload_global_vars.fsetpos = fcfs_dlsym1("fsetpos");
+        }
+        return g_fcfs_preload_global_vars.fsetpos(wapper->fp, pos);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fsetpos64(FILE *fp, const fpos_t *pos)
+{
+    return _fsetpos_(fp, pos);
+}
+
+int _IO_fsetpos(FILE *fp, const fpos_t *pos)
+{
+    return _fsetpos_(fp, pos);
+}
+
+int _IO_fsetpos64(FILE *fp, const fpos_t *pos)
+{
+    return _fsetpos_(fp, pos);
+}
+
+int fgetc_unlocked(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fgetc_unlocked, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fgetc_unlocked(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fgetc_unlocked == NULL) {
+            g_fcfs_preload_global_vars.fgetc_unlocked = fcfs_dlsym1("fgetc_unlocked");
+        }
+        return g_fcfs_preload_global_vars.fgetc_unlocked(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fputc_unlocked(int c, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fputc_unlocked, c, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fputc_unlocked(c, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fputc_unlocked == NULL) {
+            g_fcfs_preload_global_vars.fputc_unlocked = fcfs_dlsym1("fputc_unlocked");
+        }
+        return g_fcfs_preload_global_vars.fputc_unlocked(c, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int getc_unlocked(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(getc_unlocked, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_getc_unlocked(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.getc_unlocked == NULL) {
+            g_fcfs_preload_global_vars.getc_unlocked = fcfs_dlsym1("getc_unlocked");
+        }
+        return g_fcfs_preload_global_vars.getc_unlocked(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int putc_unlocked(int c, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(putc_unlocked, c, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_putc_unlocked(c, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.putc_unlocked == NULL) {
+            g_fcfs_preload_global_vars.putc_unlocked = fcfs_dlsym1("putc_unlocked");
+        }
+        return g_fcfs_preload_global_vars.putc_unlocked(c, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+void clearerr_unlocked(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STDIO_VOID(clearerr_unlocked, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        fcfs_clearerr_unlocked(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.clearerr_unlocked == NULL) {
+            g_fcfs_preload_global_vars.clearerr_unlocked = fcfs_dlsym1("clearerr_unlocked");
+        }
+        g_fcfs_preload_global_vars.clearerr_unlocked(wapper->fp);
+    }
+}
+
+int feof_unlocked(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(feof_unlocked, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d", __FUNCTION__, __LINE__);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_feof_unlocked(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.feof_unlocked == NULL) {
+            g_fcfs_preload_global_vars.feof_unlocked = fcfs_dlsym1("feof_unlocked");
+        }
+        return g_fcfs_preload_global_vars.feof_unlocked(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int _IO_feof_unlocked(FILE *fp)
+{
+    return feof_unlocked(fp);
+}
+
+int ferror_unlocked(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(ferror_unlocked, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d", __FUNCTION__, __LINE__);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_ferror_unlocked(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.ferror_unlocked == NULL) {
+            g_fcfs_preload_global_vars.ferror_unlocked = fcfs_dlsym1("ferror_unlocked");
+        }
+        return g_fcfs_preload_global_vars.ferror_unlocked(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int _IO_ferror_unlocked(FILE *fp)
+{
+    return ferror_unlocked(fp);
+}
+
+int fileno_unlocked(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fileno_unlocked, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d", __FUNCTION__, __LINE__);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fileno_unlocked(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fileno_unlocked == NULL) {
+            g_fcfs_preload_global_vars.fileno_unlocked =
+                fcfs_dlsym1("fileno_unlocked");
+        }
+        return g_fcfs_preload_global_vars.fileno_unlocked(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fflush_unlocked(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    if (fp == NULL)  {
+        return g_fcfs_preload_global_vars.fflush_unlocked(fp);
+    }
+
+    CHECK_DEAL_STD_STREAM(fflush_unlocked, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fflush_unlocked(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fflush_unlocked == NULL) {
+            g_fcfs_preload_global_vars.fflush_unlocked = fcfs_dlsym1("fflush_unlocked");
+        }
+        return g_fcfs_preload_global_vars.fflush_unlocked(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+size_t fread_unlocked(void *buff, size_t size, size_t n, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fread_unlocked, buff, size, n, fp);
+
+    fprintf(stderr, "func: %s, line: %d, size: %d, nmemb: %d\n", __FUNCTION__,
+            __LINE__, (int)size, (int)n);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fread_unlocked(buff, size, n, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fread_unlocked == NULL) {
+            g_fcfs_preload_global_vars.fread_unlocked = fcfs_dlsym1("fread_unlocked");
+        }
+        //return g_fcfs_preload_global_vars.fread_unlocked(buff, size, n, wapper->fp);
+        int bytes = g_fcfs_preload_global_vars.fread_unlocked(buff, size, n, wapper->fp);
+
+        fprintf(stderr, "func: %s, line: %d, size: %d, nmemb: %d, bytes: %d\n",
+                __FUNCTION__, __LINE__, (int)size, (int)n, bytes);
+        return bytes;
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+size_t fwrite_unlocked(const void *buff, size_t size, size_t n, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fwrite_unlocked, buff, size, n, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fwrite_unlocked(buff, size, n, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fwrite_unlocked == NULL) {
+            g_fcfs_preload_global_vars.fwrite_unlocked = fcfs_dlsym1("fwrite_unlocked");
+        }
+        return g_fcfs_preload_global_vars.fwrite_unlocked(buff, size, n, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+char *fgets_unlocked(char *s, int size, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fgets_unlocked, s, size, fp);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fgets_unlocked(s, size, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fgets_unlocked == NULL) {
+            g_fcfs_preload_global_vars.fgets_unlocked = fcfs_dlsym1("fgets_unlocked");
+        }
+        return g_fcfs_preload_global_vars.fgets_unlocked(s, size, wapper->fp);
+    } else {
+        errno = EBADF;
+        return NULL;
+    }
+}
+
+ssize_t __libc_readline_unlocked (FILE *fp, char *buff, size_t size)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(__libc_readline_unlocked, fp, buff, size);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_readline_unlocked(wapper->fp, buff, size);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.__libc_readline_unlocked == NULL) {
+            g_fcfs_preload_global_vars.__libc_readline_unlocked =
+                fcfs_dlsym1("__libc_readline_unlocked");
+        }
+        return g_fcfs_preload_global_vars.__libc_readline_unlocked(
+                wapper->fp, buff, size);
+    } else {
+        errno = EBADF;
+        return -1;
+    }
+}
+
+int fputs_unlocked(const char *s, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fputs_unlocked, s, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fputs_unlocked(s, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fputs_unlocked == NULL) {
+            g_fcfs_preload_global_vars.fputs_unlocked = fcfs_dlsym1("fputs_unlocked");
+        }
+        return g_fcfs_preload_global_vars.fputs_unlocked(s, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+void clearerr(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STDIO_VOID(clearerr, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        fcfs_clearerr(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.clearerr == NULL) {
+            g_fcfs_preload_global_vars.clearerr = fcfs_dlsym1("clearerr");
+        }
+        g_fcfs_preload_global_vars.clearerr(wapper->fp);
+    }
+}
+
+int _IO_feof(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(feof, fp);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_feof(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.feof == NULL) {
+            g_fcfs_preload_global_vars.feof = fcfs_dlsym1("feof");
+        }
+        return g_fcfs_preload_global_vars.feof(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int _feof_(FILE *fp)
+{
+    return _IO_feof(fp);
+}
+
+int _ferror_(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(feof, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_ferror(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.ferror == NULL) {
+            g_fcfs_preload_global_vars.ferror = fcfs_dlsym1("ferror");
+        }
+        return g_fcfs_preload_global_vars.ferror(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int _IO_ferror(FILE *fp)
+{
+    return _ferror_(fp);
+}
+
+int fileno(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fileno, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fileno(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fileno == NULL) {
+            g_fcfs_preload_global_vars.fileno = fcfs_dlsym1("fileno");
+        }
+        return g_fcfs_preload_global_vars.fileno(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fgetc(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fgetc, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fgetc(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fgetc == NULL) {
+            g_fcfs_preload_global_vars.fgetc = fcfs_dlsym1("fgetc");
+        }
+        return g_fcfs_preload_global_vars.fgetc(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+char *fgets(char *s, int size, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fgets, s, size, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fgets(s, size, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fgets == NULL) {
+            g_fcfs_preload_global_vars.fgets = fcfs_dlsym1("fgets");
+        }
+        return g_fcfs_preload_global_vars.fgets(s, size, wapper->fp);
+    } else {
+        errno = EBADF;
+        return NULL;
+    }
+}
+
+int getc(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(getc, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_getc(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.getc == NULL) {
+            g_fcfs_preload_global_vars.getc = fcfs_dlsym1("getc");
+        }
+        return g_fcfs_preload_global_vars.getc(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int ungetc(int c, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(ungetc, c, fp);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_ungetc(c, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.ungetc == NULL) {
+            g_fcfs_preload_global_vars.ungetc = fcfs_dlsym1("ungetc");
+        }
+        return g_fcfs_preload_global_vars.ungetc(c, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fputc(int c, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fputc, c, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fputc(c, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fputc == NULL) {
+            g_fcfs_preload_global_vars.fputc = fcfs_dlsym1("fputc");
+        }
+        return g_fcfs_preload_global_vars.fputc(c, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fputs(const char *s, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fputs, s, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fputs(s, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fputs == NULL) {
+            g_fcfs_preload_global_vars.fputs = fcfs_dlsym1("fputs");
+        }
+        return g_fcfs_preload_global_vars.fputs(s, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int putc(int c, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(putc, c, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_putc(c, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.putc == NULL) {
+            g_fcfs_preload_global_vars.putc = fcfs_dlsym1("putc");
+        }
+        return g_fcfs_preload_global_vars.putc(c, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+size_t fread(void *buff, size_t size, size_t nmemb, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fread, buff, size, nmemb, fp);
+
+    fprintf(stderr, "func: %s, line: %d, size: %d, nmemb: %d\n", __FUNCTION__,
+            __LINE__, (int)size, (int)nmemb);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fread(buff, size, nmemb, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fread == NULL) {
+            g_fcfs_preload_global_vars.fread = fcfs_dlsym1("fread");
+        }
+        return g_fcfs_preload_global_vars.fread(buff, size, nmemb, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+size_t fwrite(const void *buff, size_t size, size_t nmemb, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(fwrite, buff, size, nmemb, fp);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fwrite(buff, size, nmemb, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fwrite == NULL) {
+            g_fcfs_preload_global_vars.fwrite = fcfs_dlsym1("fwrite");
+        }
+        return g_fcfs_preload_global_vars.fwrite(buff, size, nmemb, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int vfprintf(FILE *fp, const char *format, va_list ap)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(vfprintf, fp, format, ap);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_vfprintf(wapper->fp, format, ap);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.vfprintf == NULL) {
+            g_fcfs_preload_global_vars.vfprintf = fcfs_dlsym1("vfprintf");
+        }
+        return g_fcfs_preload_global_vars.vfprintf(wapper->fp, format, ap);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fprintf(FILE *fp, const char *format, ...)
+{
     va_list ap;
-    long arg1;
-    long arg2;
-    long arg3;
-    long arg4;
-    long arg5;
-    long arg6;
+    int result;
 
-    va_start(ap, number);
-    arg1 = va_arg(ap, long);
-    arg2 = va_arg(ap, long);
-    arg3 = va_arg(ap, long);
-    arg4 = va_arg(ap, long);
-    arg5 = va_arg(ap, long);
-    arg6 = va_arg(ap, long);
+    va_start(ap, format);
+    result = vfprintf(fp, format, ap);
     va_end(ap);
 
-    fprintf(stderr, "func: %s, line: %d, number: %ld, "
-            "arg1: %ld, arg2: %ld, arg3: %ld, arg4: %ld, arg5: %ld, arg6: %ld\n",
-            __FUNCTION__, __LINE__, number, arg1, arg2, arg3, arg4, arg5, arg6);
+    return result;
+}
 
-    if (syscall_func == NULL) {
-       syscall_func = fcfs_dlsym1("syscall");
+ssize_t getdelim(char **line, size_t *size, int delim, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(getdelim, line, size, delim, fp);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_getdelim(line, size, delim, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.getdelim == NULL) {
+            g_fcfs_preload_global_vars.getdelim = fcfs_dlsym1("getdelim");
+        }
+        return g_fcfs_preload_global_vars.getdelim(line, size, delim, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+ssize_t __getdelim(char **line, size_t *size, int delim, FILE *fp)
+{
+    fprintf(stderr, "func: %s, line: %d\n", __FUNCTION__, __LINE__);
+    return getdelim(line, size, delim, fp);
+}
+
+ssize_t getline(char **line, size_t *size, FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    fprintf(stderr, "func: %s, line: %d, wapper: %p, fp: %p\n",
+            __FUNCTION__, __LINE__, wapper, wapper->fp);
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_getline(line, size, wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.getline == NULL) {
+            g_fcfs_preload_global_vars.getline = fcfs_dlsym1("getline");
+        }
+        return g_fcfs_preload_global_vars.getline(line, size, wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+ssize_t _IO_getline(char **line, size_t *size, FILE *fp)
+{
+    return getline(line, size, fp);
+}
+
+int vfscanf(FILE *fp, const char *format, va_list ap)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(vfscanf, fp, format, ap);
+
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        //TODO
+        errno = EOPNOTSUPP;
+        return EOF;
+        //return fcfs_vfscanf(wapper->fp, format, ap);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.vfscanf == NULL) {
+            g_fcfs_preload_global_vars.vfscanf = fcfs_dlsym1("vfscanf");
+        }
+        return g_fcfs_preload_global_vars.vfscanf(wapper->fp, format, ap);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int fscanf(FILE *fp, const char *format, ...)
+{
+    va_list ap;
+    int count;
+
+    va_start(ap, format);
+    count = vfscanf(fp, format, ap);
+    va_end(ap);
+
+    return count;
+}
+
+int setvbuf(FILE *fp, char *buf, int mode, size_t size)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(setvbuf, fp, buf, mode, size);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_setvbuf(wapper->fp, buf, mode, size);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.setvbuf == NULL) {
+            g_fcfs_preload_global_vars.setvbuf = fcfs_dlsym1("setvbuf");
+        }
+        return g_fcfs_preload_global_vars.setvbuf(wapper->fp, buf, mode, size);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+
+int _IO_setvbuf(FILE *fp, char *buf, int mode, size_t size)
+{
+    return setvbuf(fp, buf, mode, size);
+}
+
+void setbuf(FILE *fp, char *buf)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(setbuf, fp, buf);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        fcfs_setbuf(wapper->fp, buf);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.setbuf == NULL) {
+            g_fcfs_preload_global_vars.setbuf = fcfs_dlsym1("setbuf");
+        }
+        g_fcfs_preload_global_vars.setbuf(wapper->fp, buf);
+    }
+}
+
+void setbuffer(FILE *fp, char *buf, size_t size)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(setbuffer, fp, buf, size);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        fcfs_setbuffer(wapper->fp, buf, size);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.setbuffer == NULL) {
+            g_fcfs_preload_global_vars.setbuffer = fcfs_dlsym1("setbuffer");
+        }
+        g_fcfs_preload_global_vars.setbuffer(wapper->fp, buf, size);
+    }
+}
+
+void _IO_setbuffer(FILE *fp, char *buf, size_t size)
+{
+    setbuffer(fp, buf, size);
+}
+
+void setlinebuf(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(setlinebuf, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        fcfs_setlinebuf(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.setlinebuf == NULL) {
+            g_fcfs_preload_global_vars.setlinebuf = fcfs_dlsym1("setlinebuf");
+        }
+        g_fcfs_preload_global_vars.setlinebuf(wapper->fp);
+    }
+}
+
+int fflush(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    if (fp == NULL)  {
+        return g_fcfs_preload_global_vars.fflush(fp);
     }
 
-    return syscall_func(number, arg1, arg2, arg3, arg4, arg5, arg6);
+    CHECK_DEAL_STD_STREAM(fflush, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_fflush(wapper->fp);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.fflush == NULL) {
+            g_fcfs_preload_global_vars.fflush = fcfs_dlsym1("fflush");
+        }
+        return g_fcfs_preload_global_vars.fflush(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int _IO_fflush(FILE *fp)
+{
+    return fflush(fp);
+}
+
+int __uflow(FILE *fp)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(__uflow, fp);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return 0;
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.__uflow == NULL) {
+            g_fcfs_preload_global_vars.__uflow = fcfs_dlsym1("__uflow");
+        }
+        return g_fcfs_preload_global_vars.__uflow(wapper->fp);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int __overflow(FILE *fp, int ch)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(__overflow, fp, ch);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return 0;
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.__overflow == NULL) {
+            g_fcfs_preload_global_vars.__overflow = fcfs_dlsym1("__overflow");
+        }
+        return g_fcfs_preload_global_vars.__overflow(wapper->fp, ch);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
 }

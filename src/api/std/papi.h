@@ -300,6 +300,8 @@ extern "C" {
     ssize_t fcfs_preadv(int fd, const struct iovec *iov,
             int iovcnt, off_t offset);
 
+    ssize_t fcfs_readahead(int fd, off64_t offset, size_t count);
+
     off_t fcfs_lseek(int fd, off_t offset, int whence);
 
     off_t fcfs_ltell(int fd);

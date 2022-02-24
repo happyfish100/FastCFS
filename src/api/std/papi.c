@@ -362,6 +362,18 @@ ssize_t fcfs_read(int fd, void *buff, size_t count)
     return do_read(file, buff, count);
 }
 
+ssize_t fcfs_readahead(int fd, off64_t offset, size_t count)
+{
+    FCFSPosixAPIFileInfo *file;
+
+    if ((file=fcfs_fd_manager_get(fd)) == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    return 0;
+}
+
 ssize_t fcfs_file_read(int fd, void *buff, size_t size, size_t n)
 {
     FCFSPosixAPIFileInfo *file;

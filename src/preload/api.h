@@ -70,8 +70,6 @@ ssize_t pwritev64(int fd, const struct iovec *iov, int iovcnt, off_t offset);
 
 ssize_t read(int fd, void *buff, size_t count);
 
-ssize_t __read_chk(int fd, void *buff, size_t count, size_t size);
-
 ssize_t _pread_(int fd, void *buff, size_t count, off_t offset)
     __asm__ ("" "pread");
 
@@ -84,7 +82,11 @@ ssize_t _preadv_(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 
 ssize_t preadv64(int fd, const struct iovec *iov, int iovcnt, off_t offset);
 
+ssize_t readahead(int fd, off64_t offset, size_t count);
+
 off_t _lseek_(int fd, off_t offset, int whence) __asm__ ("" "lseek");
+
+off_t __lseek(int fd, off_t offset, int whence);
 
 off_t lseek64(int fd, off_t offset, int whence);
 
@@ -326,17 +328,123 @@ int _posix_fadvise_(int fd, off_t offset, off_t len, int advice)
 
 int posix_fadvise64(int fd, off_t offset, off_t len, int advice);
 
-FILE *_fopen_(const char *pathname, const char *mode) __asm__ ("" "fopen");
+FILE *_fopen_(const char *path, const char *mode) __asm__ ("" "fopen");
 
-FILE *fopen64(const char *pathname, const char *mode);
+FILE *fopen64(const char *path, const char *mode);
 
-size_t fread(void *ptr, size_t size, size_t nmemb, FILE *fp);
+FILE *fdopen(int fd, const char *mode);
 
-size_t fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *fp);
+FILE *_freopen_(const char *path, const char *mode, FILE *fp)
+    __asm__ ("" "freopen");
 
-size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *fp);
+FILE *freopen64(const char *path, const char *mode, FILE *fp);
+
+int fclose(FILE *fp);
+
+void flockfile(FILE *fp);
+
+int ftrylockfile(FILE *fp);
+
+void funlockfile(FILE *fp);
+
+int fseek(FILE *fp, long offset, int whence);
+
+int _fseeko_(FILE *fp, off_t offset, int whence) __asm__ ("" "fseeko");
+
+int fseeko64(FILE *fp, off_t offset, int whence);
+
+long ftell(FILE *fp);
+
+off_t _ftello_(FILE *fp) __asm__ ("" "ftello");
+
+off_t ftello64(FILE *fp);
+
+void rewind(FILE *fp);
+
+int _fgetpos_(FILE *fp, fpos_t *pos) __asm__ ("" "fgetpos");
+
+int fgetpos64(FILE *fp, fpos_t *pos);
+
+int _fsetpos_(FILE *fp, const fpos_t *pos) __asm__ ("" "fsetpos");
+
+int fsetpos64(FILE *fp, const fpos_t *pos);
+
+int fgetc_unlocked(FILE *fp);
+
+int fputc_unlocked(int c, FILE *fp);
+
+int getc_unlocked(FILE *fp);
+
+int putc_unlocked(int c, FILE *fp);
+
+void clearerr_unlocked(FILE *fp);
+
+int feof_unlocked(FILE *fp);
+
+int ferror_unlocked(FILE *fp);
+
+int fileno_unlocked(FILE *fp);
+
+int fflush_unlocked(FILE *fp);
+
+size_t fread_unlocked(void *buff, size_t size, size_t n, FILE *fp);
+
+size_t fwrite_unlocked(const void *buff, size_t size, size_t n, FILE *fp);
+
+char *fgets_unlocked(char *s, int size, FILE *fp);
+
+int fputs_unlocked(const char *s, FILE *fp);
+
+void clearerr(FILE *fp);
+
+int _feof_(FILE *fp) __asm__ ("" "feof");
+
+int _ferror_(FILE *fp) __asm__ ("" "ferror");
+
+int fileno(FILE *fp);
+
+int fgetc(FILE *fp);
+
+char *fgets(char *s, int size, FILE *fp);
+
+int getc(FILE *fp);
+
+int ungetc(int c, FILE *fp);
+
+int fputc(int c, FILE *fp);
+
+int fputs(const char *s, FILE *fp);
+
+int putc(int c, FILE *fp);
+
+size_t fread(void *buff, size_t size, size_t nmemb, FILE *fp);
+
+size_t fwrite(const void *buff, size_t size, size_t nmemb, FILE *fp);
+
+int fprintf(FILE *fp, const char *format, ...);
+
+int vfprintf(FILE *fp, const char *format, va_list ap);
+
+ssize_t getdelim(char **line, size_t *size, int delim, FILE *fp);
+
+ssize_t getline(char **line, size_t *size, FILE *fp);
+
+int fscanf(FILE *fp, const char *format, ...);
+
+int vfscanf(FILE *fp, const char *format, va_list ap);
+
+int setvbuf(FILE *fp, char *buf, int mode, size_t size);
+
+void setbuf(FILE *fp, char *buf);
+
+void setbuffer(FILE *fp, char *buf, size_t size);
+
+void setlinebuf(FILE *fp);
+
+int fflush(FILE *fp);
 
 long syscall(long number, ...);
+
 
 #ifdef __cplusplus
 }
