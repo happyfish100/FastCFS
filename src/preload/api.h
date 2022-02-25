@@ -425,6 +425,10 @@ int fprintf(FILE *fp, const char *format, ...);
 
 int vfprintf(FILE *fp, const char *format, va_list ap);
 
+int __fprintf_chk (FILE *fp, int flag, const char *format, ...);
+
+int __vfprintf_chk (FILE *fp, int flag, const char *format, va_list ap);
+
 ssize_t getdelim(char **line, size_t *size, int delim, FILE *fp);
 
 ssize_t getline(char **line, size_t *size, FILE *fp);

@@ -233,6 +233,10 @@ static int dlsym_capi()
     g_fcfs_preload_global_vars.fwrite = dlsym_one("fwrite", true);
     g_fcfs_preload_global_vars.fprintf = dlsym_one("fprintf", true);
     g_fcfs_preload_global_vars.vfprintf = dlsym_one("vfprintf", true);
+    g_fcfs_preload_global_vars.__fprintf_chk =
+        dlsym_one("__fprintf_chk", false);
+    g_fcfs_preload_global_vars.__vfprintf_chk =
+        dlsym_one("__vfprintf_chk", false);
     g_fcfs_preload_global_vars.getdelim = dlsym_one("getdelim", true);
     g_fcfs_preload_global_vars.getline = dlsym_one("getline", true);
     g_fcfs_preload_global_vars.fscanf = dlsym_one("fscanf", true);

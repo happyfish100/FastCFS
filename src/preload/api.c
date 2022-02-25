@@ -2987,6 +2987,39 @@ int fprintf(FILE *fp, const char *format, ...)
     return result;
 }
 
+int __vfprintf_chk(FILE *fp, int flag, const char *format, va_list ap)
+{
+    FCFSPreloadFILEWrapper *wapper;
+
+    CHECK_DEAL_STD_STREAM(__vfprintf_chk, fp, flag, format, ap);
+    wapper = (FCFSPreloadFILEWrapper *)fp;
+    if (wapper->call_type == FCFS_PRELOAD_CALL_FASTCFS) {
+        return fcfs_vfprintf(wapper->fp, format, ap);
+    } else if (wapper->call_type == FCFS_PRELOAD_CALL_SYSTEM) {
+        if (g_fcfs_preload_global_vars.__vfprintf_chk == NULL) {
+            g_fcfs_preload_global_vars.__vfprintf_chk =
+                fcfs_dlsym1("__vfprintf_chk");
+        }
+        return g_fcfs_preload_global_vars.__vfprintf_chk(
+                wapper->fp, flag, format, ap);
+    } else {
+        errno = EBADF;
+        return EOF;
+    }
+}
+
+int __fprintf_chk(FILE *fp, int flag, const char *format, ...)
+{
+    va_list ap;
+    int result;
+
+    va_start(ap, format);
+    result = __vfprintf_chk(fp, flag, format, ap);
+    va_end(ap);
+
+    return result;
+}
+
 ssize_t getdelim(char **line, size_t *size, int delim, FILE *fp)
 {
     FCFSPreloadFILEWrapper *wapper;
