@@ -52,6 +52,8 @@ static inline void *dlsym_two(const char *fname1,
 
 static int dlsym_papi()
 {
+    bool required;
+
     g_fcfs_preload_global_vars.unsetenv = dlsym_one("unsetenv", true);
     g_fcfs_preload_global_vars.clearenv = dlsym_one("clearenv", true);
     g_fcfs_preload_global_vars.open = dlsym_two("open", "open64", true);
@@ -79,20 +81,18 @@ static int dlsym_papi()
             "ftruncate", "ftruncate64", true);
 
     g_fcfs_preload_global_vars.stat = dlsym_one("stat", false);
-    if (g_fcfs_preload_global_vars.stat != NULL) {
-        g_fcfs_preload_global_vars.lstat = dlsym_one("lstat", true);
-        g_fcfs_preload_global_vars.fstat = dlsym_one("fstat", true);
-        g_fcfs_preload_global_vars.fstatat = dlsym_one("fstatat", true);
-    } else {
-        g_fcfs_preload_global_vars.__xstat = dlsym_two(
-                "__xstat", "__xstat64", true);
-        g_fcfs_preload_global_vars.__lxstat = dlsym_two(
-                "__lxstat", "__lxstat64", true);
-        g_fcfs_preload_global_vars.__fxstat = dlsym_two(
-                "__fxstat", "__fxstat64", true);
-        g_fcfs_preload_global_vars.__fxstatat = dlsym_two(
-                "__fxstatat", "__fxstatat64", true);
-    }
+    required = (g_fcfs_preload_global_vars.stat != NULL);
+    g_fcfs_preload_global_vars.lstat = dlsym_one("lstat", required);
+    g_fcfs_preload_global_vars.fstat = dlsym_one("fstat", required);
+    g_fcfs_preload_global_vars.fstatat = dlsym_one("fstatat", required);
+    g_fcfs_preload_global_vars.__xstat = dlsym_two(
+            "__xstat", "__xstat64", !required);
+    g_fcfs_preload_global_vars.__lxstat = dlsym_two(
+            "__lxstat", "__lxstat64", !required);
+    g_fcfs_preload_global_vars.__fxstat = dlsym_two(
+            "__fxstat", "__fxstat64", !required);
+    g_fcfs_preload_global_vars.__fxstatat = dlsym_two(
+            "__fxstatat", "__fxstatat64", !required);
 
     g_fcfs_preload_global_vars.flock = dlsym_two("flock", "flock64", true);
     g_fcfs_preload_global_vars.fcntl = dlsym_two("fcntl", "fcntl64", true);
@@ -102,9 +102,15 @@ static int dlsym_papi()
     g_fcfs_preload_global_vars.linkat = dlsym_one("linkat", true);
     g_fcfs_preload_global_vars.readlink = dlsym_one("readlink", true);
     g_fcfs_preload_global_vars.readlinkat = dlsym_one("readlinkat", true);
-    g_fcfs_preload_global_vars.mknod = dlsym_two("mknod", "__xmknod", true);
-    g_fcfs_preload_global_vars.mknodat = dlsym_two(
-            "mknodat", "__xmknodat", false);
+
+    g_fcfs_preload_global_vars.mknod = dlsym_one("mknod", false);
+    required = (g_fcfs_preload_global_vars.mknod != NULL);
+    g_fcfs_preload_global_vars.__xmknod = dlsym_one("__xmknod", !required);
+
+    g_fcfs_preload_global_vars.mknodat = dlsym_one("mknodat", false);
+    required = (g_fcfs_preload_global_vars.mknodat != NULL);
+    g_fcfs_preload_global_vars.__xmknodat = dlsym_one("__xmknodat", !required);
+
     g_fcfs_preload_global_vars.mkfifo = dlsym_one("mkfifo", true);
     g_fcfs_preload_global_vars.mkfifoat = dlsym_one("mkfifoat", false);
     g_fcfs_preload_global_vars.access = dlsym_one("access", true);

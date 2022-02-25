@@ -101,7 +101,7 @@ int ftruncate64(int fd, off_t length);
 
 int __fxstat_(int ver, int fd, struct stat *buf) __asm__ ("" "__fxstat");
 
-int __fxstat64(int ver, int fd, struct stat *buf);
+int __fxstat64(int ver, int fd, struct stat64 *buf);
 
 int fstat(int fd, struct stat *buf);
 
@@ -156,13 +156,13 @@ int __fxstatat_(int ver, int fd, const char *path, struct stat *buf,
         int flags) __asm__ ("" "__fxstatat");
 
 int __fxstatat64(int ver, int fd, const char *path,
-        struct stat *buf, int flags);
+        struct stat64 *buf, int flags);
 
 int fstatat(int fd, const char *path, struct stat *buf, int flags);
 
 ssize_t readlinkat(int fd, const char *path, char *buff, size_t size);
 
-int __xmknodat(int fd, const char *path, mode_t mode, dev_t dev);
+int __xmknodat(int ver, int fd, const char *path, mode_t mode, dev_t *dev);
 
 int mknodat(int fd, const char *path, mode_t mode, dev_t dev);
 
@@ -220,14 +220,14 @@ int truncate64(const char *path, off_t length);
 int __lxstat_(int ver, const char *path, struct stat *buf)
     __asm__ ("" "__lxstat");
 
-int __lxstat64(int ver, const char *path, struct stat *buf);
+int __lxstat64(int ver, const char *path, struct stat64 *buf);
 
 int lstat(const char *path, struct stat *buf);
 
 int __xstat_(int ver, const char *path, struct stat *buf)
      __asm__ ("" "__xstat");
 
-int __xstat64(int ver, const char *path, struct stat *buf);
+int __xstat64(int ver, const char *path, struct stat64 *buf);
 
 int stat(const char *path, struct stat *buf);
 
@@ -237,7 +237,7 @@ int symlink(const char *link, const char *path);
 
 ssize_t readlink(const char *path, char *buff, size_t size);
 
-int __xmknod(const char *path, mode_t mode, dev_t dev);
+int __xmknod(int ver, const char *path, mode_t mode, dev_t *dev);
 
 int mknod(const char *path, mode_t mode, dev_t dev);
 

@@ -126,9 +126,17 @@ typedef struct fcfs_preload_global_vars {
         ssize_t (*readlinkat)(int fd, const char *path,
                 char *buff, size_t size);
 
-        int (*mknod)(const char *path, mode_t mode, dev_t dev);
+        struct {
+            int (*mknod)(const char *path, mode_t mode, dev_t dev);
+            int (*__xmknod)(int ver, const char *path,
+                    mode_t mode, dev_t *dev);
+        };
 
-        int (*mknodat)(int fd, const char *path, mode_t mode, dev_t dev);
+        struct {
+            int (*mknodat)(int fd, const char *path, mode_t mode, dev_t dev);
+            int (*__xmknodat)(int ver, int fd, const char *path,
+                    mode_t mode, dev_t *dev);
+        };
 
         int (*mkfifo)(const char *path, mode_t mode);
 

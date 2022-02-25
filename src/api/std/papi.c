@@ -2381,11 +2381,15 @@ int fcfs_chroot_ex(FCFSPosixAPIContext *ctx, const char *path)
 
 int fcfs_dup_ex(FCFSPosixAPIContext *ctx, int fd)
 {
+    logInfo("file: "__FILE__", line: %d, func: %s, "
+            "fd: %d", __LINE__, __FUNCTION__, fd);
     FCFS_API_NOT_IMPLEMENTED("dup", -1);
 }
 
 int fcfs_dup2_ex(FCFSPosixAPIContext *ctx, int fd1, int fd2)
 {
+    logInfo("file: "__FILE__", line: %d, func: %s, "
+            "fd1: %d, fd2: %d", __LINE__, __FUNCTION__, fd1, fd2);
     FCFS_API_NOT_IMPLEMENTED("dup2", -1);
 }
 
