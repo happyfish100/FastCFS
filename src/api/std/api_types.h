@@ -20,6 +20,10 @@
 #include "fastcommon/pthread_func.h"
 #include "../fcfs_api.h"
 
+#ifndef OS_LINUX
+typedef off_t off64_t;
+#endif
+
 #define FCFS_POSIX_API_FD_BASE  (2 << 28)
 
 struct dirent;

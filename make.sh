@@ -190,12 +190,14 @@ if [ -z $module ] || [ "$module" = 'api' ]; then
   fi
 fi
 
+if [ "$uname" = "Linux" ]; then
 if [ -z $module ] || [ "$module" = 'preload' ]; then
   if [ "x$exclude" != 'xpreload' ]; then
     cd $base_path/src/preload
     replace_makefile
     make $param1 $param2
   fi
+fi
 fi
 
 if [ -z $module ] || [ "$module" = 'tools' ]; then
@@ -206,10 +208,12 @@ if [ -z $module ] || [ "$module" = 'tools' ]; then
   fi
 fi
 
+if [ "$uname" = "Linux" ]; then
 if [ -z $module ] || [ "$module" = 'fuse' ]; then
   if [ "x$exclude" != 'xfuse' ]; then
     cd $base_path/src/fuse
     replace_makefile
     make $param1 $param2
   fi
+fi
 fi

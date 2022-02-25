@@ -21,6 +21,12 @@
 
 #define FCFS_CAPI_MAGIC_NUMBER 1645431088
 
+#ifdef OS_LINUX
+#define FCFS_POS_OFFSET(pos) (pos)->__pos
+#else
+#define FCFS_POS_OFFSET(pos) *(pos)
+#endif
+
 /*
 typedef struct fcfs_posix_file_buffer {
     FCFSFileBufferType type;
@@ -391,14 +397,14 @@ void fcfs_rewind(FILE *fp)
 int fcfs_fgetpos(FILE *fp, fpos_t *pos)
 {
     FCFS_CAPI_CONVERT_FP(fp);
-    pos->__pos = fcfs_ltell(file->fd);
-    return pos->__pos >= 0 ? 0 : -1;
+    FCFS_POS_OFFSET(pos) = fcfs_ltell(file->fd);
+    return FCFS_POS_OFFSET(pos) >= 0 ? 0 : -1;
 }
 
 int fcfs_fsetpos(FILE *fp, const fpos_t *pos)
 {
     FCFS_CAPI_CONVERT_FP(fp);
-    return fcfs_lseek(file->fd, pos->__pos, SEEK_SET) >= 0 ? 0 : -1;
+    return fcfs_lseek(file->fd, FCFS_POS_OFFSET(pos), SEEK_SET) >= 0 ? 0 : -1;
 }
 
 #define SET_FILE_ERROR(file, bytes) \
