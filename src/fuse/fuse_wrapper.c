@@ -815,12 +815,28 @@ static void fs_do_flush(fuse_req_t req, fuse_ino_t ino,
 static void fs_do_fsync(fuse_req_t req, fuse_ino_t ino,
         int datasync, struct fuse_file_info *fi)
 {
+    FCFSAPIFileInfo *fh;
+    const struct fuse_ctx *fctx;
+    int result;
+
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
             "ino: %"PRId64", fh: %"PRId64", datasync: %d",
             __LINE__, __FUNCTION__, ino, fi->fh, datasync);
             */
-    fuse_reply_err(req, 0);
+
+    fh = (FCFSAPIFileInfo *)fi->fh;
+    if (fh != NULL) {
+        fctx = fuse_req_ctx(req);
+        if (datasync) {
+            result = fcfs_api_fdatasync(fh, fctx->pid);
+        } else {
+            result = fcfs_api_fsync(fh, fctx->pid);
+        }
+    } else {
+        result = EBADF;
+    }
+    fuse_reply_err(req, result);
 }
 
 static void fs_do_release(fuse_req_t req, fuse_ino_t ino,

@@ -17,6 +17,7 @@
 #ifndef _FCFS_POSIX_API_TYPES_H
 #define _FCFS_POSIX_API_TYPES_H
 
+#include "fastcommon/fc_list.h"
 #include "fastcommon/pthread_func.h"
 #include "../fcfs_api.h"
 
@@ -61,30 +62,13 @@ typedef struct fcfs_posix_api_dir {
     int offset;
 } FCFSPosixAPIDIR;
 
-typedef enum {
-    fcfs_file_buffer_mode_none = 0,
-    fcfs_file_buffer_mode_read = 'r',
-    fcfs_file_buffer_mode_write = 'w'
-} FCFSFileBufferMode;
-
-typedef struct fcfs_posix_file_buffer {
-    uint8_t out_type;  //buffer type for output
-    FCFSFileBufferMode rw;
-    bool need_free;
-    int size;
-    char *base;
-    char *current;
-    char *buff_end;   //base + size
-    char *data_end;   //base + data_length, for read
-} FCFSPosixFileBuffer;
-
 typedef struct fcfs_posix_capi_file {
     int magic;
     int fd;
     int error_no;
     int eof;
-    FCFSPosixFileBuffer buffer;
     pthread_mutex_t lock;
+    struct fc_list_head dlink;  //for opened files chain
 } FCFSPosixCAPIFILE;
 
 typedef struct fcfs_posix_api_global_vars {

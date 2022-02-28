@@ -82,8 +82,8 @@ int inode_htable_init(const int sharding_count,
         const int64_t min_ttl_sec, const int64_t max_ttl_sec)
 {
     return sf_sharding_htable_init(&inode_sharding_ctx,
-            sf_sharding_htable_key_ids_one,
-            inode_htable_insert_callback, inode_htable_find_callback,
+            sf_sharding_htable_key_ids_one, inode_htable_insert_callback,
+            inode_htable_find_callback, NULL,
             inode_htable_accept_reclaim_callback, sharding_count,
             htable_capacity, allocator_count, sizeof(FCFSAPIInodeHEntry),
             element_limit, min_ttl_sec, max_ttl_sec);

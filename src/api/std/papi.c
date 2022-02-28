@@ -196,8 +196,9 @@ int fcfs_fsync(int fd)
         return -1;
     }
 
-    //TODO
-    return 0;
+    return fcfs_api_fsync(&file->fi,
+            fcfs_posix_api_gettid(
+                file->tpid_type));
 }
 
 int fcfs_fdatasync(int fd)
@@ -209,7 +210,9 @@ int fcfs_fdatasync(int fd)
         return -1;
     }
 
-    return 0;
+    return fcfs_api_fdatasync(&file->fi,
+            fcfs_posix_api_gettid(
+                file->tpid_type));
 }
 
 static inline ssize_t do_write(FCFSPosixAPIFileInfo *file,

@@ -32,6 +32,10 @@
 extern "C" {
 #endif
 
+    int fcfs_capi_init();
+
+    void fcfs_capi_destroy();
+
     FILE *fcfs_fopen_ex(FCFSPosixAPIContext *ctx,
             const char *path, const char *mode);
 
@@ -41,6 +45,8 @@ extern "C" {
             const char *path, const char *mode, FILE *fp);
 
     int fcfs_fclose(FILE *fp);
+
+    int fcfs_fcloseall();
 
     void fcfs_flockfile(FILE *fp);
 

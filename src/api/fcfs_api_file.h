@@ -262,6 +262,22 @@ extern "C" {
 
     int fcfs_api_set_file_flags(FCFSAPIFileInfo *fi, const int flags);
 
+    static inline int fcfs_api_fdatasync(FCFSAPIFileInfo *fi,
+            const int64_t tid)
+    {
+        fs_api_datasync(fi->ctx->contexts.fsapi, fi->dentry.inode, tid);
+        return 0;
+    }
+
+    static inline int fcfs_api_fsync(FCFSAPIFileInfo *fi, const int64_t tid)
+    {
+        fs_api_datasync(fi->ctx->contexts.fsapi, fi->dentry.inode, tid);
+        if (fi->ctx->async_report.enabled) {
+            inode_htable_check_conflict_and_wait(fi->dentry.inode);
+        }
+        return 0;
+    }
+
 #ifdef __cplusplus
 }
 #endif

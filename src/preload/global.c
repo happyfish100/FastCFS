@@ -195,6 +195,7 @@ static int dlsym_capi()
     g_fcfs_preload_global_vars.fdopen = dlsym_one("fdopen", true);
     g_fcfs_preload_global_vars.freopen = dlsym_two("freopen", "freopen64", true);
     g_fcfs_preload_global_vars.fclose = dlsym_one("fclose", true);
+    g_fcfs_preload_global_vars.fcloseall = dlsym_one("fcloseall", true);
     g_fcfs_preload_global_vars.flockfile = dlsym_one("flockfile", true);
     g_fcfs_preload_global_vars.ftrylockfile = dlsym_one("ftrylockfile", true);
     g_fcfs_preload_global_vars.funlockfile = dlsym_one("funlockfile", true);

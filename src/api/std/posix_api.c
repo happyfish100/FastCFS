@@ -28,6 +28,11 @@ static int load_posix_api_config(FCFSPosixAPIContext *ctx,
 {
     char *mountpoint;
     int len;
+    int result;
+
+    if ((result=sf_load_global_base_path(ini_ctx)) != 0) {
+        return result;
+    }
 
     mountpoint = iniGetStrValue(ini_ctx->section_name,
             "mountpoint", ini_ctx->context);
@@ -57,6 +62,7 @@ static int load_posix_api_config(FCFSPosixAPIContext *ctx,
     *(ctx->mountpoint.str + len) = '\0';
     ctx->mountpoint.len = len;
 
+    load_log_level(ini_ctx->context);
     return fcfs_api_load_owner_config(ini_ctx, &ctx->owner);
 }
 

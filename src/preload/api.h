@@ -25,6 +25,14 @@
 #define FCFS_PRELOAD_IS_MY_FD_MOUNTPOINT(fd, path) \
     (FCFS_PAPI_IS_MY_FD(fd) || FCFS_PRELOAD_IS_MY_MOUNTPOINT(path))
 
+#ifdef fread_unlocked
+#undef fread_unlocked
+#endif
+
+#ifdef fwrite_unlocked
+#undef fwrite_unlocked
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -70,10 +78,18 @@ ssize_t pwritev64(int fd, const struct iovec *iov, int iovcnt, off_t offset);
 
 ssize_t read(int fd, void *buff, size_t count);
 
+ssize_t __read_chk(int fd, void *buff, size_t count, size_t size);
+
 ssize_t _pread_(int fd, void *buff, size_t count, off_t offset)
     __asm__ ("" "pread");
 
 ssize_t pread64(int fd, void *buff, size_t count, off_t offset);
+
+ssize_t __pread_chk(int fd, void *buff, size_t count,
+        off_t offset, size_t size);
+
+ssize_t __pread64_chk(int fd, void *buff, size_t count,
+        off_t offset, size_t size);
 
 ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
 
@@ -152,6 +168,10 @@ int _openat_(int fd, const char *path, int flags, ...) __asm__ ("" "openat");
 
 int openat64(int fd, const char *path, int flags, ...);
 
+int __openat_2_(int fd, const char *path, int flags) __asm__ ("" "__openat_2");
+
+int __openat64_2(int fd, const char *path, int flags);
+
 int __fxstatat_(int ver, int fd, const char *path, struct stat *buf,
         int flags) __asm__ ("" "__fxstatat");
 
@@ -208,6 +228,10 @@ int _open_(const char *path, int flags, ...) __asm__ ("" "open");
 int open64(const char *path, int flags, ...);
 
 int __open(const char *path, int flags, int mode);
+
+int __open_2_(const char *path, int flags) __asm__ ("" "__open_2");
+
+int __open64_2_(const char *path, int flags);
 
 int _creat_(const char *path, mode_t mode) __asm__ ("" "creat");
 
@@ -340,6 +364,8 @@ FILE *_freopen_(const char *path, const char *mode, FILE *fp)
 FILE *freopen64(const char *path, const char *mode, FILE *fp);
 
 int fclose(FILE *fp);
+
+int fcloseall();
 
 void flockfile(FILE *fp);
 

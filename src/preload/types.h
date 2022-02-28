@@ -301,6 +301,8 @@ typedef struct fcfs_preload_global_vars {
 
         int (*fclose)(FILE *fp);
 
+        int (*fcloseall)();
+
         void (*flockfile)(FILE *fp);
 
         int (*ftrylockfile)(FILE *fp);

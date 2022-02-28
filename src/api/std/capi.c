@@ -16,8 +16,11 @@
 #include <stdarg.h>
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
+#include "fastcommon/locked_list.h"
 #include "papi.h"
 #include "capi.h"
+
+static FCLockedList capi_opend_files;
 
 #define FCFS_CAPI_MAGIC_NUMBER 1645431088
 
@@ -26,19 +29,6 @@
 #else
 #define FCFS_POS_OFFSET(pos) *(pos)
 #endif
-
-/*
-typedef struct fcfs_posix_file_buffer {
-    FCFSFileBufferType type;
-    bool need_free;
-    int size;
-    char *base;
-    char *current;
-    char *buff_end;   //base + size
-    char *data_end;   //base + data_length, for read
-} FCFSPosixFileBuffer;
-
-*/
 
 #define FCFS_CAPI_CONVERT_FP_EX(fp, ...) \
     FCFSPosixCAPIFILE *file; \
@@ -54,31 +44,16 @@ typedef struct fcfs_posix_file_buffer {
 #define FCFS_CAPI_CONVERT_FP_VOID(fp) \
     FCFS_CAPI_CONVERT_FP_EX(fp)
 
-/*
-static inline void free_file_buffer(FCFSPosixCAPIFILE *file)
+int fcfs_capi_init()
 {
-    if (file->buffer.base != NULL && file->buffer.need_free) {
-        free(file->buffer.base);
-        file->buffer.base = NULL;
-        file->buffer.need_free = false;
-    }
+    return locked_list_init(&capi_opend_files);
 }
 
-static int alloc_file_buffer(FCFSPosixCAPIFILE *file, const int size)
+void fcfs_capi_destroy()
 {
-    free_file_buffer(file);
-    if ((file->buffer.base=fc_malloc(size)) == NULL) {
-        return ENOMEM;
-    }
-
-    file->buffer.buff_end = file->buffer.base + size;
-    file->buffer.current = file->buffer.base;
-    file->buffer.size = size;
-    file->buffer.need_free = true;
-    file->buffer.rw = fcfs_file_buffer_mode_none;
-    return 0;
+    fcfs_fcloseall();
+    locked_list_destroy(&capi_opend_files);
 }
-*/
 
 static FILE *alloc_file_handle(int fd)
 {
@@ -100,23 +75,22 @@ static FILE *alloc_file_handle(int fd)
     file->magic = FCFS_CAPI_MAGIC_NUMBER;
     file->error_no = 0;
     file->eof = 0;
-    file->buffer.base = NULL;
-    file->buffer.size = 0;
-    file->buffer.need_free = false;
-    file->buffer.out_type = _IOFBF;
-    file->buffer.rw = fcfs_file_buffer_mode_none;
+    locked_list_add_tail(&file->dlink, &capi_opend_files);
 
     return (FILE *)file;
 }
 
-static int free_file_handle(FCFSPosixCAPIFILE *file)
+static inline int free_file_handle(FCFSPosixCAPIFILE *file)
 {
     int result;
 
-    //free_file_buffer(file);
-    result = fcfs_close(file->fd);
+    locked_list_del(&file->dlink, &capi_opend_files);
+    if (fcfs_close(file->fd) == 0) {
+        result = 0;
+    } else {
+        result = EOF;
+    }
     file->magic = 0;
-    pthread_mutex_destroy(&file->lock);
     free(file);
 
     return result;
@@ -334,9 +308,9 @@ FILE *fcfs_freopen_ex(FCFSPosixAPIContext *ctx,
         return NULL;
     }
 
-    //TODO
     fcfs_close(file->fd);
     file->fd = fd;
+    file->eof = 0;
     file->error_no = 0;
     return (FILE *)file;
 }
@@ -345,6 +319,28 @@ int fcfs_fclose(FILE *fp)
 {
     FCFS_CAPI_CONVERT_FP_EX(fp, EOF);
     return free_file_handle(file);
+}
+
+int fcfs_fcloseall()
+{
+    int result;
+    int r;
+    FCFSPosixCAPIFILE *file;
+
+    result = 0;
+    while (1) {
+        locked_list_first_entry(&capi_opend_files,
+                FCFSPosixCAPIFILE, dlink, file);
+        if (file == NULL) {
+            break;
+        }
+
+        if ((r=free_file_handle(file)) != 0) {
+            result = r;
+        }
+    }
+
+    return result;
 }
 
 int fcfs_setvbuf(FILE *fp, char *buf, int mode, size_t size)

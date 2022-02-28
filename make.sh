@@ -27,7 +27,8 @@ else
   param2=$3
 fi
 
-DEBUG_FLAG=1
+DEBUG_FLAG=0
+PRELOAD_WITH_CAPI=1
 
 export CC=gcc
 CFLAGS='-Wall'
@@ -35,7 +36,11 @@ GCC_VERSION=$(gcc -dM -E -  < /dev/null | grep -w __GNUC__ | awk '{print $NF;}')
 if [ -n "$GCC_VERSION" ] && [ $GCC_VERSION -ge 7 ]; then
   CFLAGS="$CFLAGS -Wformat-truncation=0 -Wformat-overflow=0"
 fi
+
 CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE"
+if [ "$PRELOAD_WITH_CAPI" = "1" ]; then
+  CFLAGS="$CFLAGS -DFCFS_PRELOAD_WITH_CAPI"
+fi
 if [ "$DEBUG_FLAG" = "1" ]; then
   CFLAGS="$CFLAGS -g -DDEBUG_FLAG"
 else
