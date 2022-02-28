@@ -1902,7 +1902,7 @@ static inline ssize_t do_listxattr(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    FC_SET_STRING(ls, list);
+    ls.str = list;
     if ((result=fcfs_api_list_xattr_by_path_ex(&ctx->api_ctx, path, &ls,
                     size, GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
     {
@@ -1924,7 +1924,7 @@ ssize_t fcfs_llistxattr_ex(FCFSPosixAPIContext *ctx,
         const char *path, char *list, size_t size)
 {
     const int flags = 0;
-    return do_listxattr(ctx, "listattr", path, list, size, flags);
+    return do_listxattr(ctx, "llistattr", path, list, size, flags);
 }
 
 ssize_t fcfs_flistxattr_ex(FCFSPosixAPIContext *ctx,
@@ -1940,7 +1940,7 @@ ssize_t fcfs_flistxattr_ex(FCFSPosixAPIContext *ctx,
         return -1;
     }
 
-    FC_SET_STRING(ls, list);
+    ls.str = list;
     if ((result=fcfs_api_list_xattr_by_inode_ex(&ctx->api_ctx,
                     file->fi.dentry.inode, &ls, size,
                     GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
@@ -2044,7 +2044,7 @@ static FCFSPosixAPIDIR *do_opendir(FCFSPosixAPIContext *ctx,
 DIR *fcfs_opendir_ex(FCFSPosixAPIContext *ctx, const char *path)
 {
     const int flags = O_RDONLY;
-    const mode_t mode = 0777 | S_IFDIR;
+    const mode_t mode = ACCESSPERMS | S_IFDIR;
     FCFSPosixAPIFileInfo *file;
     FCFSPosixAPIDIR *dir;
     char full_fname[PATH_MAX];
