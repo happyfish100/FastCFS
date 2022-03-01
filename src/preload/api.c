@@ -23,9 +23,10 @@
 static int counter = 0;
 #define FCFS_LOG_DEBUG(format, ...) \
     if (g_fcfs_preload_global_vars.inited && g_log_context. \
-            log_level >= LOG_DEBUG) fprintf(stderr, format, ##__VA_ARGS__)
+            log_level >= LOG_DEBUG) logDebug(format, ##__VA_ARGS__)
 
-//            log_level >= LOG_DEBUG) logDebug(format, ##__VA_ARGS__)
+//            log_level >= LOG_DEBUG) fprintf(stderr, format, ##__VA_ARGS__)
+
 
 __attribute__ ((constructor)) static void preload_global_init(void)
 {

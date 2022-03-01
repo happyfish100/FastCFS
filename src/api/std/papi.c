@@ -66,13 +66,38 @@ static inline int do_open(FCFSPosixAPIContext *ctx, const char *path,
     }
 }
 
+static inline char *do_getcwd(FCFSPosixAPIContext *ctx,
+        char *buf, size_t size, const int overflow_errno)
+{
+    if (G_FCFS_PAPI_CWD == NULL) {
+        if (ctx->mountpoint.len >= size) {
+            errno = overflow_errno;
+            return NULL;
+        }
+
+        sprintf(buf, "%.*s", ctx->mountpoint.len, ctx->mountpoint.str);
+        return buf;
+    }
+
+    if (ctx->mountpoint.len + G_FCFS_PAPI_CWD->len >= size) {
+        errno = overflow_errno;
+        return NULL;
+    }
+
+    sprintf(buf, "%.*s%.*s", ctx->mountpoint.len, ctx->mountpoint.str,
+            G_FCFS_PAPI_CWD->len, G_FCFS_PAPI_CWD->str);
+    return buf;
+}
+
 static inline int papi_resolve_path(FCFSPosixAPIContext *ctx,
         const char *func, const char **path,
         char *full_filename, const int size)
 {
+    char cwd[PATH_MAX];
+
     if (**path != '/') {
-        normalize_path(NULL, *path, full_filename,
-                sizeof(full_filename));
+        normalize_path(do_getcwd(ctx, cwd, sizeof(cwd), EOVERFLOW),
+                *path, full_filename, sizeof(full_filename));
         *path = full_filename;
     }
 
@@ -85,9 +110,11 @@ static int papi_resolve_pathat(FCFSPosixAPIContext *ctx, const char *func,
         int fd, const char **path, char *full_filename, const int size)
 {
     FCFSPosixAPIFileInfo *file;
+    char cwd[PATH_MAX];
 
     if (fd == AT_FDCWD) {
-        normalize_path(NULL, *path, full_filename, size);
+        normalize_path(do_getcwd(ctx, cwd, sizeof(cwd), EOVERFLOW),
+                *path, full_filename, size);
         FCFS_API_CHECK_PATH_MOUNTPOINT(ctx, full_filename, func);
         *path = full_filename + ctx->mountpoint.len;
         return 0;
@@ -2335,29 +2362,6 @@ int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd)
             len, file->filename.str);
     FC_SET_STRING_EX(cwd, full_path, len);
     return do_chdir(&cwd);
-}
-
-static inline char *do_getcwd(FCFSPosixAPIContext *ctx,
-        char *buf, size_t size, const int overflow_errno)
-{
-    if (G_FCFS_PAPI_CWD == NULL) {
-        if (ctx->mountpoint.len >= size) {
-            errno = overflow_errno;
-            return NULL;
-        }
-
-        sprintf(buf, "%.*s", ctx->mountpoint.len, ctx->mountpoint.str);
-        return buf;
-    }
-
-    if (ctx->mountpoint.len + G_FCFS_PAPI_CWD->len >= size) {
-        errno = overflow_errno;
-        return NULL;
-    }
-
-    sprintf(buf, "%.*s%.*s", ctx->mountpoint.len, ctx->mountpoint.str,
-            G_FCFS_PAPI_CWD->len, G_FCFS_PAPI_CWD->str);
-    return buf;
 }
 
 char *fcfs_getcwd_ex(FCFSPosixAPIContext *ctx, char *buf, size_t size)

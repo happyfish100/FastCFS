@@ -88,6 +88,7 @@ static int copy_file()
     int read_bytes;
     int write_bytes;
     int current_write;
+    int count;
 
     if ((result=fcfs_posix_api_init(ns, config_filename)) != 0) {
         return result;
@@ -179,6 +180,7 @@ static int copy_file()
         }
     }
 
+    count = 0;
     write_bytes = 0;
     while (1) {
         if (is_fcfs_input) {
@@ -253,13 +255,20 @@ static int copy_file()
             return result;
         }
 
+        if (++count % 10 == 0) {
+            fcfs_fsync(dst_fd);
+        }
+
         write_bytes += current_write;
     }
+
     if (is_fcfs_input) {
         fcfs_close(src_fd);
     } else {
         close(src_fd);
     }
+
+    fcfs_fsync(dst_fd);
     fcfs_close(dst_fd);
 
     fcfs_posix_api_terminate();
