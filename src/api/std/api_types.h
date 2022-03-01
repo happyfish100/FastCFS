@@ -33,6 +33,7 @@ typedef int (*fcfs_dir_compare_func)(const struct dirent **ent1,
         const struct dirent **ent2);
 
 typedef struct fcfs_posix_api_context {
+    FCFSAPINSMountpointHolder nsmp;
     string_t mountpoint;
     FCFSAPIOwnerInfo owner;
     FCFSAPIContext api_ctx;

@@ -14,61 +14,38 @@
  */
 
 #include "fastcommon/logger.h"
+#include "sf/idempotency/client/client_channel.h"
 #include "posix_api.h"
 
 #define DUMMY_MOUNTPOINT_STR  "/fastcfs/dummy/"
 #define DUMMY_MOUNTPOINT_LEN  (sizeof(DUMMY_MOUNTPOINT_STR) - 1)
 
 FCFSPosixAPIGlobalVars g_fcfs_papi_global_vars = {
-    {{DUMMY_MOUNTPOINT_STR, DUMMY_MOUNTPOINT_LEN}}
+    {{NULL, NULL}, {DUMMY_MOUNTPOINT_STR, DUMMY_MOUNTPOINT_LEN}}
 };
 
 static int load_posix_api_config(FCFSPosixAPIContext *ctx,
-        IniFullContext *ini_ctx)
+        const char *ns, IniFullContext *ini_ctx,
+        const char *fdir_section_name)
 {
-    char *mountpoint;
-    int len;
     int result;
 
-    if ((result=sf_load_global_base_path(ini_ctx)) != 0) {
+    ctx->nsmp.ns = (char *)ns;
+    FC_SET_STRING_NULL(ctx->mountpoint);
+    if ((result=fcfs_api_load_ns_mountpoint(ini_ctx,
+                    fdir_section_name, &ctx->nsmp,
+                    &ctx->mountpoint, false)) != 0)
+    {
         return result;
     }
 
-    mountpoint = iniGetStrValue(ini_ctx->section_name,
-            "mountpoint", ini_ctx->context);
-    if (mountpoint == NULL || *mountpoint == '\0') {
-        logError("file: "__FILE__", line: %d, "
-                "config file: %s, item: mountpoint not exist "
-                "or is empty", __LINE__, ini_ctx->filename);
-        return ENOENT;
-    }
-
-    if (*mountpoint != '/') {
-        logError("file: "__FILE__", line: %d, "
-                "config file: %s, mountpoint: %s must start with \"/\"",
-                __LINE__, ini_ctx->filename, mountpoint);
-        return ENOENT;
-    }
-
-    len = strlen(mountpoint);
-    while (len > 0 && mountpoint[len - 1] == '/') {
-        len--;
-    }
-    ctx->mountpoint.str = fc_malloc(len + 1);
-    if (ctx->mountpoint.str == NULL) {
-        return ENOMEM;
-    }
-    memcpy(ctx->mountpoint.str, mountpoint, len);
-    *(ctx->mountpoint.str + len) = '\0';
-    ctx->mountpoint.len = len;
-
-    load_log_level(ini_ctx->context);
     return fcfs_api_load_owner_config(ini_ctx, &ctx->owner);
 }
 
-int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char *ns,
-        const char *config_filename, const char *fdir_section_name,
-        const char *fs_section_name, const bool publish)
+int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
+        *log_prefix_name, const char *ns, const char *config_filename,
+        const char *fdir_section_name, const char *fs_section_name,
+        const bool publish)
 {
     int result;
     IniContext iniContext;
@@ -81,14 +58,30 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char *ns,
         return result;
     }
 
+    FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename,
+            NULL, &iniContext);
     do {
-        FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename, NULL, &iniContext);
-        if ((result=load_posix_api_config(ctx, &ini_ctx)) != 0) {
+        if ((result=load_posix_api_config(ctx, ns, &ini_ctx,
+                        fdir_section_name)) != 0)
+        {
             break;
         }
 
-        if ((result=fcfs_api_pooled_init_ex1(&ctx->api_ctx, ns, &ini_ctx,
-                        fdir_section_name, fs_section_name)) != 0)
+        if ((result=fcfs_api_load_idempotency_config(
+                        log_prefix_name, &ini_ctx)) != 0)
+        {
+            break;
+        }
+
+        if ((result=fcfs_api_check_mountpoint(config_filename,
+                        &ctx->mountpoint)) != 0)
+        {
+            break;
+        }
+
+        if ((result=fcfs_api_pooled_init_ex1(&ctx->api_ctx,
+                        ns, &ini_ctx, fdir_section_name,
+                        fs_section_name)) != 0)
         {
             break;
         }

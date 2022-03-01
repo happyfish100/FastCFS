@@ -37,6 +37,11 @@ typedef struct fcfs_api_owner_info {
     gid_t gid;
 } FCFSAPIOwnerInfo;
 
+typedef struct fcfs_api_ns_mountpoint_holder {
+    char *ns;
+    char *mountpoint;
+} FCFSAPINSMountpointHolder;
+
 typedef struct fcfs_api_opendir_session {
     FDIRClientDentryArray array;
     int btype;   //buffer type
@@ -134,9 +139,9 @@ typedef struct fcfs_api_async_report_event_ptr_array {
 #define FCFS_API_SET_OMP(omp, owner, m, euid, egid) \
     do {  \
         omp.mode = m;  \
-        if (owner.type == fcfs_api_owner_type_fixed) { \
-            omp.uid = owner.uid; \
-            omp.gid = owner.gid; \
+        if ((owner).type == fcfs_api_owner_type_fixed) { \
+            omp.uid = (owner).uid; \
+            omp.gid = (owner).gid; \
         } else {  \
             omp.uid = euid; \
             omp.gid = egid; \

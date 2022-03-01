@@ -30,8 +30,7 @@ typedef enum {
 } FUSEAllowOthersMode;
 
 typedef struct {
-    char *ns;
-    char *mountpoint;
+    FCFSAPINSMountpointHolder nsmp;
     bool singlethread;
     bool clone_fd;
     bool auto_unmount;

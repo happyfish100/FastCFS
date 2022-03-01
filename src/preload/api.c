@@ -53,7 +53,10 @@ __attribute__ ((constructor)) static void preload_global_init(void)
     FCFS_LOG_DEBUG("pid: %d, file: "__FILE__", line: %d, "
             "constructor\n", pid, __LINE__);
 
-    if ((result=fcfs_posix_api_init(ns, config_filename)) != 0) {
+    log_set_fd_flags(&g_log_context, O_CLOEXEC);
+    if ((result=fcfs_posix_api_init("fcfs_preload",
+                    ns, config_filename)) != 0)
+    {
         return;
     }
 
@@ -66,8 +69,6 @@ __attribute__ ((constructor)) static void preload_global_init(void)
     g_fcfs_preload_global_vars.cwd_call_type =
         FCFS_PRELOAD_CALL_SYSTEM;
     g_fcfs_preload_global_vars.inited = true;
-    log_set_fd_flags(&g_log_context, O_CLOEXEC);
-    log_set_prefix(SF_G_BASE_PATH_STR, "fcfs_preload");
 
     FCFS_LOG_DEBUG("pid: %d, file: "__FILE__", line: %d, inited: %d, "
             "log_fd: %d\n", pid, __LINE__, g_fcfs_preload_global_vars.inited,

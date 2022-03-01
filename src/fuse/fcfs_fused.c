@@ -69,10 +69,10 @@ static int parse_cmd_options(int argc, char *argv[])
                         auth_cfg.secret_key_filename, optarg);
                 break;
             case 'n':
-                g_fuse_global_vars.ns = optarg;
+                g_fuse_global_vars.nsmp.ns = optarg;
                 break;
             case 'm':
-                g_fuse_global_vars.mountpoint = optarg;
+                g_fuse_global_vars.nsmp.mountpoint = optarg;
                 break;
             case 'b':
                 sf_set_global_base_path(optarg);
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
         sf_set_sig_quit_handler(fuse_exit_handler);
 
         if ((result=fuse_session_mount(se, g_fuse_global_vars.
-                        mountpoint)) != 0)
+                        nsmp.mountpoint)) != 0)
         {
             break;
         }
@@ -260,29 +260,6 @@ int main(int argc, char *argv[])
 	return result < 0 ? 1 : result;
 }
 
-static int check_create_root_path()
-{
-    int result;
-    int64_t inode;
-    FDIRClientOwnerModePair omp;
-
-    if ((result=fcfs_api_lookup_inode_by_path("/", &inode)) != 0) {
-        if (result == ENOENT) {
-            FDIRDEntryFullName fullname;
-            FDIRDEntryInfo dentry;
-
-            FC_SET_STRING(fullname.ns, g_fuse_global_vars.ns);
-            FC_SET_STRING(fullname.path, "/");
-
-            FCFS_FUSE_SET_OMP(omp, (0777 | S_IFDIR), geteuid(), getegid());
-            result = fdir_client_create_dentry(g_fcfs_api_ctx.
-                    contexts.fdir, &fullname, &omp, &dentry);
-        }
-    }
-
-    return result;
-}
-
 static int setup_server_env(const char *config_filename)
 {
     int result;
@@ -312,19 +289,8 @@ static int setup_server_env(const char *config_filename)
     }
     log_set_cache(true);
 
-    if (g_fdir_client_vars.client_ctx.idempotency_enabled ||
-            g_fs_client_vars.client_ctx.idempotency_enabled)
-    {
-        if ((result=receipt_handler_init()) != 0) {
-            return result;
-        }
-    }
-
-    if ((result=check_create_root_path()) != 0) {
-        return result;
-    }
-
-    return fcfs_api_start();
+    return fcfs_api_start_ex(&g_fcfs_api_ctx,
+            &g_fuse_global_vars.owner);
 }
 
 static struct fuse_session *create_fuse_session(char *argv0,

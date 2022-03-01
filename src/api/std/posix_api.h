@@ -31,30 +31,31 @@ extern "C" {
 
     extern FCFSPosixAPIGlobalVars g_fcfs_papi_global_vars;
 
-    int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char *ns,
+    int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx,
+            const char *log_prefix_name, const char *ns,
             const char *config_filename, const char *fdir_section_name,
             const char *fs_section_name, const bool publish);
 
     static inline int fcfs_posix_api_init_ex(FCFSPosixAPIContext *ctx,
-            const char *ns, const char *config_filename)
-    {
-        const bool publish = true;
-        return fcfs_posix_api_init_ex1(ctx, ns, config_filename,
-                FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
-                FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
-                publish);
-    }
-
-    static inline int fcfs_posix_api_init(const char *ns,
+            const char *log_prefix_name, const char *ns,
             const char *config_filename)
     {
+        const bool publish = true;
+        return fcfs_posix_api_init_ex1(ctx, log_prefix_name, ns,
+                config_filename, FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
+                FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME, publish);
+    }
+
+    static inline int fcfs_posix_api_init(const char *log_prefix_name,
+            const char *ns, const char *config_filename)
+    {
         return fcfs_posix_api_init_ex(&g_fcfs_papi_global_vars.ctx,
-                ns, config_filename);
+                log_prefix_name, ns, config_filename);
     }
 
     static inline int fcfs_posix_api_start_ex(FCFSPosixAPIContext *ctx)
     {
-        return fcfs_api_start_ex(&ctx->api_ctx);
+        return fcfs_api_start_ex(&ctx->api_ctx, &ctx->owner);
     }
 
     static inline void fcfs_posix_api_terminate_ex(FCFSPosixAPIContext *ctx)

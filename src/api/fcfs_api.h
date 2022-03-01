@@ -47,7 +47,7 @@
 
 #define fcfs_api_destroy()  fcfs_api_destroy_ex(&g_fcfs_api_ctx)
 
-#define fcfs_api_start() fcfs_api_start_ex(&g_fcfs_api_ctx)
+#define fcfs_api_start() fcfs_api_start_ex(&g_fcfs_api_ctx, NULL)
 #define fcfs_api_terminate() fcfs_api_terminate_ex(&g_fcfs_api_ctx)
 
 #define fcfs_api_async_report_config_to_string(output, size) \
@@ -110,7 +110,7 @@ extern "C" {
 
     void fcfs_api_destroy_ex(FCFSAPIContext *ctx);
 
-    int fcfs_api_start_ex(FCFSAPIContext *ctx);
+    int fcfs_api_start_ex(FCFSAPIContext *ctx, const FCFSAPIOwnerInfo *owner);
 
     void fcfs_api_terminate_ex(FCFSAPIContext *ctx);
 
@@ -148,6 +148,16 @@ extern "C" {
 
         return fcfs_api_client_session_create(&g_fcfs_api_ctx, publish);
     }
+
+    int fcfs_api_load_idempotency_config(const char *log_prefix_name,
+            IniFullContext *ini_ctx);
+
+    int fcfs_api_load_ns_mountpoint(IniFullContext *ini_ctx,
+            const char *fdir_section_name, FCFSAPINSMountpointHolder *nsmp,
+            string_t *mountpoint, const bool fuse_check);
+
+    int fcfs_api_check_mountpoint(const char *config_filename,
+            const string_t *mountpoint);
 
     void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
             char *output, const int size);

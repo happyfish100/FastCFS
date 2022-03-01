@@ -13,12 +13,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sys/param.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <limits.h>
 #include <grp.h>
 #include <pwd.h>
+#include "fastcommon/common_define.h"
+
+#ifdef OS_LINUX
+#include <sys/vfs.h>
+#include <sys/statfs.h>
+#include <linux/magic.h>
+#endif
+
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
+#include "sf/idempotency/client/client_channel.h"
+#include "sf/idempotency/client/receipt_handler.h"
 #include "async_reporter.h"
 #include "fcfs_api.h"
 
@@ -33,6 +45,13 @@
 #define FCFS_API_MIN_HASHTABLE_TOTAL_CAPACITY          10949
 #define FCFS_API_MAX_HASHTABLE_TOTAL_CAPACITY      100000000
 #define FCFS_API_DEFAULT_HASHTABLE_TOTAL_CAPACITY    1403641
+
+#define FCFS_API_INI_IDEMPOTENCY_SECTION_NAME      "idempotency"
+#define FCFS_API_IDEMPOTENCY_DEFAULT_WORK_THREADS  1
+
+#ifndef FUSE_SUPER_MAGIC
+#define FUSE_SUPER_MAGIC 0x65735546
+#endif
 
 FCFSAPIContext g_fcfs_api_ctx;
 
@@ -271,7 +290,33 @@ void fcfs_api_destroy_ex(FCFSAPIContext *ctx)
     }
 }
 
-int fcfs_api_start_ex(FCFSAPIContext *ctx)
+static int check_create_root_path(FCFSAPIContext *ctx,
+        const FCFSAPIOwnerInfo *owner)
+{
+    int result;
+    int64_t inode;
+    FDIRClientOwnerModePair omp;
+
+    if ((result=fcfs_api_lookup_inode_by_path_ex(ctx,
+                    "/", LOG_DEBUG, &inode)) != 0)
+    {
+        if (result == ENOENT) {
+            FDIRDEntryFullName fullname;
+            FDIRDEntryInfo dentry;
+
+            fullname.ns = ctx->ns;
+            FC_SET_STRING(fullname.path, "/");
+            FCFS_API_SET_OMP(omp, *owner, (ACCESSPERMS | S_IFDIR),
+                    geteuid(), getegid());
+            result = fdir_client_create_dentry(ctx->contexts.fdir,
+                    &fullname, &omp, &dentry);
+        }
+    }
+
+    return result;
+}
+
+int fcfs_api_start_ex(FCFSAPIContext *ctx, const FCFSAPIOwnerInfo *owner)
 {
     int result;
 
@@ -289,6 +334,20 @@ int fcfs_api_start_ex(FCFSAPIContext *ctx)
                     contexts.fsapi->fs->cm)) != 0)
     {
         return result;
+    }
+
+    if (ctx->contexts.fdir->idempotency_enabled ||
+            ctx->contexts.fsapi->fs->idempotency_enabled)
+    {
+        if ((result=receipt_handler_init()) != 0) {
+            return result;
+        }
+    }
+
+    if (owner != NULL) {
+        if ((result=check_create_root_path(ctx, owner)) != 0) {
+            return result;
+        }
     }
 
     if (ctx->async_report.enabled) {
@@ -393,5 +452,187 @@ int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
         owner_info->gid = group->gr_gid;
     }
 
+    return 0;
+}
+
+int fcfs_api_load_idempotency_config(const char *log_prefix_name,
+        IniFullContext *ini_ctx)
+{
+#define MIN_THREAD_STACK_SIZE  (320 * 1024)
+    int result;
+    SFContextIniConfig config;
+
+    ini_ctx->section_name = FCFS_API_INI_IDEMPOTENCY_SECTION_NAME;
+    if ((result=client_channel_init(ini_ctx)) != 0) {
+        return result;
+    }
+
+    SF_SET_CONTEXT_INI_CONFIG(config, ini_ctx->filename,
+            ini_ctx->context, FCFS_API_INI_IDEMPOTENCY_SECTION_NAME,
+            0, 0, FCFS_API_IDEMPOTENCY_DEFAULT_WORK_THREADS);
+    if ((result=sf_load_config_ex(log_prefix_name, &config, 0)) != 0) {
+        return result;
+    }
+    if (SF_G_THREAD_STACK_SIZE < MIN_THREAD_STACK_SIZE) {
+        logWarning("file: "__FILE__", line: %d, "
+                "config file: %s, thread_stack_size: %d is too small, "
+                "set to %d", __LINE__, ini_ctx->filename,
+                SF_G_THREAD_STACK_SIZE, MIN_THREAD_STACK_SIZE);
+        SF_G_THREAD_STACK_SIZE = MIN_THREAD_STACK_SIZE;
+    }
+
+    g_fdir_client_vars.client_ctx.idempotency_enabled =
+        iniGetBoolValue(FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
+                "idempotency_enabled", ini_ctx->context,
+                g_idempotency_client_cfg.enabled);
+    g_fs_client_vars.client_ctx.idempotency_enabled =
+        iniGetBoolValue(FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
+                "idempotency_enabled", ini_ctx->context,
+                g_idempotency_client_cfg.enabled);
+    return 0;
+}
+
+static int load_mountpoint(IniFullContext *ini_ctx,
+        string_t *mountpoint, const bool fuse_check)
+{
+    struct statfs buf;
+    int result;
+
+    if (mountpoint->str == NULL) {
+        mountpoint->str = iniGetStrValueEx(ini_ctx->section_name,
+                "mountpoint", ini_ctx->context, true);
+        if (mountpoint->str == NULL || *mountpoint->str == '\0') {
+            logError("file: "__FILE__", line: %d, "
+                    "config file: %s, section: %s, item: mountpoint "
+                    "not exist or is empty", __LINE__, ini_ctx->filename,
+                    ini_ctx->section_name);
+            return ENOENT;
+        }
+        mountpoint->len = strlen(mountpoint->str);
+    }
+
+    if (*mountpoint->str != '/') {
+        logError("file: "__FILE__", line: %d, "
+                "config file: %s, mountpoint: %s must start with \"/\"",
+                __LINE__, ini_ctx->filename, mountpoint->str);
+        return ENOENT;
+    }
+
+    while (mountpoint->len > 0 && mountpoint->
+            str[mountpoint->len - 1] == '/')
+    {
+        mountpoint->len--;
+    }
+
+    if (fuse_check && !fileExists(mountpoint->str)) {
+        result = errno != 0 ? errno : ENOENT;
+        if (result == ENOTCONN) {
+#ifdef OS_LINUX
+            result = umount2(mountpoint->str, MNT_FORCE);
+#else
+            result = unmount(mountpoint->str, 0);
+#endif
+            if (result != 0 && errno == EPERM) {
+                logError("file: "__FILE__", line: %d, "
+                        "unmount %s fail, you should run "
+                        "\"sudo umount %s\" manually", __LINE__,
+                        mountpoint->str, mountpoint->str);
+            }
+        }
+
+        if (result != 0) {
+            logError("file: "__FILE__", line: %d, "
+                    "mountpoint: %s can't be accessed, "
+                    "errno: %d, error info: %s",
+                    __LINE__, mountpoint->str,
+                    result, STRERROR(result));
+            return result;
+        }
+    }
+
+    if (!isDir(mountpoint->str)) {
+        logError("file: "__FILE__", line: %d, "
+                "mountpoint: %s is not a directory!",
+                __LINE__, mountpoint->str);
+        return ENOTDIR;
+    }
+
+    if (fuse_check) {
+        if (statfs(mountpoint->str, &buf) != 0) {
+            logError("file: "__FILE__", line: %d, "
+                    "statfs mountpoint: %s fail, error info: %s",
+                    __LINE__, mountpoint->str, STRERROR(errno));
+            return errno != 0 ? errno : ENOENT;
+        }
+
+        if ((buf.f_type & FUSE_SUPER_MAGIC) == FUSE_SUPER_MAGIC) {
+            logError("file: "__FILE__", line: %d, "
+                    "mountpoint: %s already mounted by FUSE",
+                    __LINE__, mountpoint->str);
+            return EEXIST;
+        }
+    }
+
+    return 0;
+}
+
+int fcfs_api_check_mountpoint(const char *config_filename,
+        const string_t *mountpoint)
+{
+    int result;
+    string_t base_path;
+
+    FC_SET_STRING(base_path, SF_G_BASE_PATH_STR);
+    if (fc_path_contains(&base_path, mountpoint, &result)) {
+        logError("file: "__FILE__", line: %d, "
+                "config file: %s, base path: %s contains mountpoint: %.*s, "
+                "this case is not allowed", __LINE__, config_filename,
+                SF_G_BASE_PATH_STR, mountpoint->len, mountpoint->str);
+        return EINVAL;
+    } else if (result != 0) {
+        logError("file: "__FILE__", line: %d, "
+                "config file: %s, base path: %s or mountpoint: %.*s "
+                "is invalid", __LINE__, config_filename,
+                SF_G_BASE_PATH_STR, mountpoint->len, mountpoint->str);
+    }
+
+    return result;
+}
+
+int fcfs_api_load_ns_mountpoint(IniFullContext *ini_ctx,
+        const char *fdir_section_name, FCFSAPINSMountpointHolder *nsmp,
+        string_t *mountpoint, const bool fuse_check)
+{
+    string_t ns;
+    int result;
+
+    if ((result=load_mountpoint(ini_ctx, mountpoint, fuse_check)) != 0) {
+        return result;
+    }
+
+    if (nsmp->ns == NULL) {
+        ns.str = iniGetStrValue(fdir_section_name,
+                "namespace", ini_ctx->context);
+        if (ns.str == NULL || *ns.str == '\0') {
+            logError("file: "__FILE__", line: %d, "
+                    "config file: %s, section: %s, item: namespace "
+                    "not exist or is empty", __LINE__, ini_ctx->
+                    filename, fdir_section_name);
+            return ENOENT;
+        }
+    } else {
+        ns.str = nsmp->ns;
+    }
+
+    ns.len = strlen(ns.str);
+    nsmp->ns = fc_malloc(ns.len + mountpoint->len + 2);
+    if (nsmp->ns == NULL) {
+        return ENOMEM;
+    }
+    memcpy(nsmp->ns, ns.str, ns.len + 1);
+    nsmp->mountpoint = nsmp->ns + ns.len + 1;
+    memcpy(nsmp->mountpoint, mountpoint->str, mountpoint->len);
+    *(nsmp->mountpoint + mountpoint->len) = '\0';
+    mountpoint->str = nsmp->mountpoint;
     return 0;
 }
