@@ -149,21 +149,45 @@ extern "C" {
         return fcfs_api_client_session_create(&g_fcfs_api_ctx, publish);
     }
 
-    int fcfs_api_load_idempotency_config(const char *log_prefix_name,
-            IniFullContext *ini_ctx);
+    int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
+            IniFullContext *ini_ctx, const char *fdir_section_name,
+            const char *fs_section_name);
+
+    static inline int fcfs_api_load_idempotency_config(const char
+            *log_prefix_name, IniFullContext *ini_ctx)
+    {
+        return fcfs_api_load_idempotency_config_ex(log_prefix_name,
+                ini_ctx, FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
+                FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME);
+    }
 
     int fcfs_api_load_ns_mountpoint(IniFullContext *ini_ctx,
             const char *fdir_section_name, FCFSAPINSMountpointHolder *nsmp,
             string_t *mountpoint, const bool fuse_check);
 
+    void fcfs_api_free_ns_mountpoint(FCFSAPINSMountpointHolder *nsmp);
+
     int fcfs_api_check_mountpoint(const char *config_filename,
             const string_t *mountpoint);
+
+    static inline int fcfs_api_check_mountpoint1(const char
+            *config_filename, const char *mpoint)
+    {
+        string_t mountpoint;
+        FC_SET_STRING(mountpoint, (char *)mpoint);
+        return fcfs_api_check_mountpoint(config_filename, &mountpoint);
+    }
 
     void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
             char *output, const int size);
 
     int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
             FCFSAPIOwnerInfo *owner_info);
+
+    void fcfs_api_log_client_common_configs(FCFSAPIContext *ctx,
+            const FCFSAPIOwnerInfo *owner, const char *fdir_section_name,
+            const char *fs_section_name, char *sf_idempotency_config,
+            char *owner_config);
 
     static inline const char *fcfs_api_get_owner_type_caption(
             const FCFSAPIOwnerType owner_type)

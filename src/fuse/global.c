@@ -117,14 +117,10 @@ int fcfs_fuse_global_init(const char *config_filename)
 {
     const bool publish = true;
     int result;
-    string_t mountpoint;
+    char sf_idempotency_config[256];
+    char owner_config[2 * NAME_MAX + 64];
     IniContext iniContext;
     IniFullContext ini_ctx;
-    char sf_idempotency_config[256];
-    char auth_config[512];
-    char fsapi_config[1024];
-    char async_report_config[512];
-    char owner_config[256];
 
     if ((result=iniLoadFromFile(config_filename, &iniContext)) != 0) {
         logError("file: "__FILE__", line: %d, "
@@ -140,19 +136,6 @@ int fcfs_fuse_global_init(const char *config_filename)
             break;
         }
 
-        if ((result=fcfs_api_load_idempotency_config(
-                        "fcfs_fused", &ini_ctx)) != 0)
-        {
-            break;
-        }
-
-        FC_SET_STRING(mountpoint, g_fuse_global_vars.nsmp.mountpoint);
-        if ((result=fcfs_api_check_mountpoint(config_filename,
-                        &mountpoint)) != 0)
-        {
-            break;
-        }
-
         if ((result=fcfs_api_pooled_init1_with_auth(
                         g_fuse_global_vars.nsmp.ns,
                         &ini_ctx, publish)) != 0)
@@ -160,6 +143,17 @@ int fcfs_fuse_global_init(const char *config_filename)
             break;
         }
 
+        if ((result=fcfs_api_load_idempotency_config(
+                        "fcfs_fused", &ini_ctx)) != 0)
+        {
+            break;
+        }
+
+        if ((result=fcfs_api_check_mountpoint1(config_filename,
+                        g_fuse_global_vars.nsmp.mountpoint)) != 0)
+        {
+            break;
+        }
     } while (0);
 
     iniFreeContext(&iniContext);
@@ -167,58 +161,11 @@ int fcfs_fuse_global_init(const char *config_filename)
         return result;
     }
 
-    if (g_fdir_client_vars.client_ctx.idempotency_enabled ||
-            g_fs_client_vars.client_ctx.idempotency_enabled)
-    {
-        int len;
-
-        len = sprintf(sf_idempotency_config,
-                "%s idempotency_enabled=%d, "
-                "%s idempotency_enabled=%d, ",
-                FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
-                g_fdir_client_vars.client_ctx.idempotency_enabled,
-                FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
-                g_fs_client_vars.client_ctx.idempotency_enabled);
-        idempotency_client_channel_config_to_string_ex(
-                sf_idempotency_config + len,
-                sizeof(sf_idempotency_config) - len, true);
-
-        sf_log_config();
-    } else {
-        *sf_idempotency_config = '\0';
-    }
-
-    if (g_fuse_global_vars.owner.type == fcfs_api_owner_type_fixed) {
-        struct passwd *user;
-        struct group *group;
-
-        user = getpwuid(g_fuse_global_vars.owner.uid);
-        group = getgrgid(g_fuse_global_vars.owner.gid);
-        snprintf(owner_config, sizeof(owner_config),
-                ", owner_user: %s, owner_group: %s",
-                user->pw_name, group->gr_name);
-    } else {
-        *owner_config = '\0';
-    }
-
-    fcfs_api_async_report_config_to_string_ex(&g_fcfs_api_ctx,
-            async_report_config, sizeof(async_report_config));
-    fcfs_auth_config_to_string(&g_fcfs_api_ctx.contexts.
-            fdir->auth, auth_config, sizeof(auth_config));
-    snprintf(async_report_config + strlen(async_report_config),
-            sizeof(async_report_config) - strlen(async_report_config),
-            ", %s", auth_config);
-    fdir_client_log_config_ex(g_fcfs_api_ctx.contexts.fdir,
-            async_report_config, false);
-
-    fs_api_config_to_string(fsapi_config, sizeof(fsapi_config));
-    fcfs_auth_config_to_string(&g_fcfs_api_ctx.contexts.fsapi->
-            fs->auth, auth_config, sizeof(auth_config));
-    snprintf(fsapi_config + strlen(fsapi_config),
-            sizeof(fsapi_config) - strlen(fsapi_config),
-            ", %s", auth_config);
-    fs_client_log_config_ex(g_fcfs_api_ctx.contexts.fsapi->fs,
-            fsapi_config, false);
+    fcfs_api_log_client_common_configs(&g_fcfs_api_ctx,
+            &g_fuse_global_vars.owner,
+            FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
+            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
+            sf_idempotency_config, owner_config);
 
     logInfo("FastCFS V%d.%d.%d, FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "

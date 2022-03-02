@@ -455,8 +455,9 @@ int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
     return 0;
 }
 
-int fcfs_api_load_idempotency_config(const char *log_prefix_name,
-        IniFullContext *ini_ctx)
+int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
+        IniFullContext *ini_ctx, const char *fdir_section_name,
+        const char *fs_section_name)
 {
 #define MIN_THREAD_STACK_SIZE  (320 * 1024)
     int result;
@@ -482,13 +483,12 @@ int fcfs_api_load_idempotency_config(const char *log_prefix_name,
     }
 
     g_fdir_client_vars.client_ctx.idempotency_enabled =
-        iniGetBoolValue(FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
-                "idempotency_enabled", ini_ctx->context,
-                g_idempotency_client_cfg.enabled);
+        iniGetBoolValue(fdir_section_name, "idempotency_enabled",
+                ini_ctx->context, g_idempotency_client_cfg.enabled);
     g_fs_client_vars.client_ctx.idempotency_enabled =
-        iniGetBoolValue(FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
-                "idempotency_enabled", ini_ctx->context,
-                g_idempotency_client_cfg.enabled);
+        iniGetBoolValue(fs_section_name, "idempotency_enabled",
+                ini_ctx->context, g_idempotency_client_cfg.enabled);
+
     return 0;
 }
 
@@ -635,4 +635,74 @@ int fcfs_api_load_ns_mountpoint(IniFullContext *ini_ctx,
     *(nsmp->mountpoint + mountpoint->len) = '\0';
     mountpoint->str = nsmp->mountpoint;
     return 0;
+}
+
+void fcfs_api_free_ns_mountpoint(FCFSAPINSMountpointHolder *nsmp)
+{
+    if (nsmp->ns != NULL) {
+        free(nsmp->ns);
+        nsmp->ns = NULL;
+    }
+}
+
+void fcfs_api_log_client_common_configs(FCFSAPIContext *ctx,
+        const FCFSAPIOwnerInfo *owner, const char *fdir_section_name,
+        const char *fs_section_name, char *sf_idempotency_config,
+        char *owner_config)
+{
+    char auth_config[512];
+    char fsapi_config[1024];
+    char async_report_config[512];
+
+    if (ctx->contexts.fdir->idempotency_enabled ||
+            ctx->contexts.fsapi->fs->idempotency_enabled)
+    {
+        int len;
+
+        len = sprintf(sf_idempotency_config,
+                "%s idempotency_enabled=%d, "
+                "%s idempotency_enabled=%d, ",
+                fdir_section_name, ctx->contexts.
+                fdir->idempotency_enabled,
+                fs_section_name, ctx->contexts.
+                fsapi->fs->idempotency_enabled);
+
+        idempotency_client_channel_config_to_string_ex(
+                sf_idempotency_config + len,
+                sizeof(sf_idempotency_config) - len, true);
+        sf_log_config();
+    } else {
+        *sf_idempotency_config = '\0';
+    }
+
+    if (owner->type == fcfs_api_owner_type_fixed) {
+        struct passwd *user;
+        struct group *group;
+
+        user = getpwuid(owner->uid);
+        group = getgrgid(owner->gid);
+        sprintf(owner_config, ", owner_user: %s, owner_group: %s",
+                user->pw_name, group->gr_name);
+    } else {
+        *owner_config = '\0';
+    }
+
+    fcfs_api_async_report_config_to_string_ex(ctx, async_report_config,
+            sizeof(async_report_config));
+    fcfs_auth_config_to_string(&ctx->contexts.fdir->auth,
+            auth_config, sizeof(auth_config));
+    snprintf(async_report_config + strlen(async_report_config),
+            sizeof(async_report_config) - strlen(async_report_config),
+            ", %s", auth_config);
+    fdir_client_log_config_ex(ctx->contexts.fdir,
+            async_report_config, false);
+
+    fs_api_config_to_string(fsapi_config, sizeof(fsapi_config));
+    fcfs_auth_config_to_string(&ctx->contexts.fsapi->fs->auth,
+            auth_config, sizeof(auth_config));
+    snprintf(fsapi_config + strlen(fsapi_config),
+            sizeof(fsapi_config) - strlen(fsapi_config),
+            ", %s", auth_config);
+    fs_client_log_config_ex(ctx->contexts.fsapi->fs,
+            fsapi_config, false);
 }

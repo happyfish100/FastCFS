@@ -67,21 +67,21 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
             break;
         }
 
-        if ((result=fcfs_api_load_idempotency_config(
-                        log_prefix_name, &ini_ctx)) != 0)
+        if ((result=fcfs_api_pooled_init_ex1(&ctx->api_ctx,
+                        ns, &ini_ctx, fdir_section_name,
+                        fs_section_name)) != 0)
+        {
+            break;
+        }
+
+        if ((result=fcfs_api_load_idempotency_config_ex(log_prefix_name,
+                        &ini_ctx, fdir_section_name, fs_section_name)) != 0)
         {
             break;
         }
 
         if ((result=fcfs_api_check_mountpoint(config_filename,
                         &ctx->mountpoint)) != 0)
-        {
-            break;
-        }
-
-        if ((result=fcfs_api_pooled_init_ex1(&ctx->api_ctx,
-                        ns, &ini_ctx, fdir_section_name,
-                        fs_section_name)) != 0)
         {
             break;
         }
@@ -100,12 +100,28 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
     return fcfs_fd_manager_init();
 }
 
+void fcfs_posix_api_log_configs_ex(FCFSPosixAPIContext *ctx,
+        const char *fdir_section_name, const char *fs_section_name)
+{
+    char sf_idempotency_config[256];
+    char owner_config[2 * NAME_MAX + 64];
+
+    fcfs_api_log_client_common_configs(&ctx->api_ctx,
+            &ctx->owner, fdir_section_name, fs_section_name,
+            sf_idempotency_config, owner_config);
+
+    logInfo("FastDIR namespace: %s, %smountpoint: %s, "
+            "owner_type: %s%s", ctx->nsmp.ns,
+            sf_idempotency_config, ctx->nsmp.mountpoint,
+            fcfs_api_get_owner_type_caption(ctx->owner.type),
+            owner_config);
+}
+
 void fcfs_posix_api_destroy_ex(FCFSPosixAPIContext *ctx)
 {
     if (ctx->mountpoint.str != NULL) {
-        free(ctx->mountpoint.str);
+        fcfs_api_free_ns_mountpoint(&ctx->nsmp);
         ctx->mountpoint.str = NULL;
-
         fcfs_api_destroy_ex(&ctx->api_ctx);
     }
 }

@@ -53,6 +53,16 @@ extern "C" {
                 log_prefix_name, ns, config_filename);
     }
 
+    void fcfs_posix_api_log_configs_ex(FCFSPosixAPIContext *ctx,
+            const char *fdir_section_name, const char *fs_section_name);
+
+    static inline void fcfs_posix_api_log_configs()
+    {
+        fcfs_posix_api_log_configs_ex(&g_fcfs_papi_global_vars.ctx,
+                FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
+                FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME);
+    }
+
     static inline int fcfs_posix_api_start_ex(FCFSPosixAPIContext *ctx)
     {
         return fcfs_api_start_ex(&ctx->api_ctx, &ctx->owner);

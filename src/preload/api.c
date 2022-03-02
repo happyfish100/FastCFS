@@ -317,19 +317,12 @@ static inline int do_xstat(int ver, const char *path, struct stat *buf)
 
 int __xstat_(int ver, const char *path, struct stat *buf)
 {
-    int result;
-    result = do_xstat(ver, path, buf);
-    FCFS_LOG_DEBUG("%d. func: %s, result: %d\n", ++counter, __FUNCTION__, result);
-    return result;
+    return do_xstat(ver, path, buf);
 }
 
 int __xstat64(int ver, const char *path, struct stat64 *buf)
 {
-    int result;
-    result = do_xstat(ver, path, (struct stat *)buf);
-    FCFS_LOG_DEBUG("func: %s, result: %d, mode: %04o\n",
-            __FUNCTION__, result, result == 0 ? buf->st_mode : 0);
-    return result;
+    return do_xstat(ver, path, (struct stat *)buf);
 }
 
 int link(const char *path1, const char *path2)

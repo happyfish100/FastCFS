@@ -72,6 +72,7 @@ static int alloc_iovec_array(iovec_array_t *array, char *buff)
 static int copy_file()
 {
 #define FIXED_BUFFEER_SIZE  (128 * 1024)
+    const char *log_prefix_name = NULL;
 	int result;
     int src_fd;
     int dst_fd;
@@ -79,8 +80,6 @@ static int copy_file()
     char fixed_buff[FIXED_BUFFEER_SIZE];
     iovec_array_t src_buffers;
     iovec_array_t dst_buffers;
-    char async_report_config[256];
-    char write_combine_config[512];
     char *buff;
     char new_filename[PATH_MAX];
     char new_fs_filename[PATH_MAX];
@@ -90,24 +89,16 @@ static int copy_file()
     int current_write;
     int count;
 
-    if ((result=fcfs_posix_api_init(ns, config_filename)) != 0) {
+    if ((result=fcfs_posix_api_init(log_prefix_name,
+                    ns, config_filename)) != 0)
+    {
         return result;
     }
     if ((result=fcfs_posix_api_start()) != 0) {
         return result;
     }
 
-
-    fcfs_api_async_report_config_to_string_ex(&g_fcfs_papi_global_vars.
-            ctx.api_ctx, async_report_config, sizeof(async_report_config));
-    fdir_client_log_config_ex(g_fcfs_papi_global_vars.ctx.
-            api_ctx.contexts.fdir, async_report_config, true);
-
-    fs_api_config_to_string(write_combine_config,
-            sizeof(write_combine_config));
-    fs_client_log_config_ex(g_fcfs_papi_global_vars.ctx.
-            api_ctx.contexts.fsapi->fs, write_combine_config, true);
-
+    fcfs_posix_api_log_configs();
 
     is_fcfs_input = FCFS_API_IS_MY_MOUNTPOINT(input_filename);
     if (is_fcfs_input) {
