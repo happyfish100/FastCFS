@@ -35,7 +35,7 @@ V3.1.0
 * [faststore](https://gitee.com/fastdfs100/faststore) (tag: V3.1.0)
 * [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V3.1.0)
 
-## 5. 安装
+## 5. 部署
 
 FastCFS包含 libfastcommon、libserverframe、libdiskallocator、fastDIR、faststore和FastCFS 六个安装包。
 
