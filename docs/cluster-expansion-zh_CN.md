@@ -54,13 +54,13 @@ DGC一旦确定就不可更改，除非建立新集群。因此在初始化集�
 
 * 友情提示：建议生产环境DGC至少配置为256。
 
-fstore在线扩容分为两个步骤：
-1. 保持集群现有配置不变，增加扩容的SG 和迁移过去的DG映射；
-2. 新增的SG自动同步完成后，修改cluster.conf，将原有SG迁移出去的DG映射删除。
+fstore在线扩容分为两个步骤修改cluster.conf：
+1. 保持原有SG配置不变，增加扩容的SG 和迁移过去的DG映射；
+2. 新增的SG自动同步完成后，将原有SG迁移出去的DG映射删除。
 
-上述两个步骤将cluster.conf修改完成后，都需要将cluster.conf分发到fstore集群和fuseclient，然后重启fstore集群和fuseclient。
+上述两个步骤将cluster.conf修改完成后，都需要将cluster.conf分发到fstore集群和fuseclient，然后重启fstore集群和fuseclient（先重启fstore器群，然后重启所有fuseclient）。
 
-将上述配置示例的1个SG扩容为2个SG（均采用3副本），我们如何调整cluster.conf的配置：
+将上述配置示例的1个SG扩容为2个SG（均采用3副本），我们如何调整cluster.conf：
 
 ### 步骤1
 修改后的cluster.conf内容片段如下：
@@ -82,17 +82,22 @@ server_ids = [4-6]
 data_group_ids = [129, 256]
 ```
 
-将cluster.conf分发到fdir集群所有服务器以及所有fuseclient后，重启fstore集群和fuseclient。
+将cluster.conf分发到fstore集群所有服务器以及所有fuseclient后，重启fstore集群和fuseclient。
 
 等待新增的SG同步完成，然后进入步骤2。
 
-* 友情提示：可以使用工具 fs_cluster_stat 查看fstore集群状态，比如：
+* 友情提示：
+   * 数据同步过程中fstore集群正常提供服务；
+   * 可以使用工具 fs_cluster_stat 查看fstore集群状态，比如：
 ```
-# 查看ACTIVE列表：
+# 查看ACTIVE列表，确保所有服务器状态为ACTIVE，确认一下最后一行输出的总数
 fs_cluster_stat -A
 
-# 查看非ACTIVE列表：
+# 查看非ACTIVE列表，确保输出为空
 fs_cluster_stat -N
+
+# 抽查某个数据分组（如ID为256）的ACTIVE状态，确保全部为ACTIVE
+fs_cluster_stat -A -g 256
 
 # 查看帮助
 fs_cluster_stat -h
@@ -119,6 +124,6 @@ server_ids = [4-6]
 data_group_ids = [129, 256]
 ```
 
-将cluster.conf分发到fdir集群所有服务器以及所有fuseclient后，重启fstore集群和fuseclient
+将cluster.conf分发到fstore集群所有服务器以及所有fuseclient后，重启fstore集群和fuseclient
 
-* 友情提示：步骤1和2中重启集群和fuseclient的过程，会导致服务不可用，建议在业务低峰期进行。
+* 友情提示：步骤1和2重启fstore集群和fuseclient的过程，会导致服务不可用，建议在业务低峰期进行。
