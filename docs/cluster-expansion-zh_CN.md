@@ -50,7 +50,9 @@ fstore集群扩容，可以一次增加一个SG。当集群规模较小（比如
 
 DGC一旦确定就不可更改，除非建立新集群。因此在初始化集群时，需要确定好数据分组总数（DGC），可以根据业务发展规划，充分预估出DGC。
 
-友情提示：建议生产环境DGC至少配置为256。
+比如根据存储量预估5年后需要的服务器分组数（SGC）为20，为了充分发挥多核性能，每台服务器上跑32个数据分组（DG），DGC为20 * 32 = 640，按2次幂向上对齐，最终配置为1024。
+
+* 友情提示：建议生产环境DGC至少配置为256。
 
 fstore在线扩容分为两个步骤：
 1. 保持集群现有配置不变，增加扩容的SG 和迁移过去的DG映射；
@@ -58,9 +60,11 @@ fstore在线扩容分为两个步骤：
 
 上述两个步骤将cluster.conf修改完成后，都需要将cluster.conf分发到fstore集群和fuseclient，然后重启fstore集群和fuseclient。
 
-将上述配置示例的1个SG扩容为2个SG，我们如何调整cluster.conf的配置：
+将上述配置示例的1个SG扩容为2个SG（均采用3副本），我们如何调整cluster.conf的配置：
 
 ### 步骤1
+修改后的cluster.conf内容片段如下：
+
 ```
 # SGC，由1扩容为2
 server_group_count = 2
@@ -82,7 +86,7 @@ data_group_ids = [129, 256]
 
 等待新增的SG同步完成，然后进入步骤2。
 
-** 友情提示：可以使用工具 fs_cluster_stat 查看fstore集群状态，比如：
+* 友情提示：可以使用工具 fs_cluster_stat 查看fstore集群状态，比如：
 ```
 # 查看ACTIVE列表：
 fs_cluster_stat -A
@@ -95,6 +99,7 @@ fs_cluster_stat -h
 ```
 
 ### 步骤2
+修改后的cluster.conf内容片段如下：
 
 ```
 # SGC
@@ -116,4 +121,4 @@ data_group_ids = [129, 256]
 
 将cluster.conf分发到fdir集群所有服务器以及所有fuseclient后，重启fstore集群和fuseclient
 
-** 友情提示：步骤1和2中重启集群和fuseclient的过程，会导致服务不可用，建议在业务低峰期进行。
+* 友情提示：步骤1和2中重启集群和fuseclient的过程，会导致服务不可用，建议在业务低峰期进行。
