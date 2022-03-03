@@ -1,1 +1,1 @@
-usr/lib/systemd/system/fcfs_authd.service
+usr/lib/systemd/system/fastauth.service
