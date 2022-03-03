@@ -58,7 +58,12 @@ fstore在线扩容分为两个步骤修改cluster.conf：
 1. 保持原有SG配置不变，增加扩容的SG 和迁移过去的DG映射；
 2. 新增的SG自动同步完成后，将原有SG迁移出去的DG映射删除。
 
-上述两个步骤将cluster.conf修改完成后，都需要将cluster.conf分发到fstore集群和fuseclient，然后重启fstore集群和fuseclient（先重启fstore器群，然后重启所有fuseclient）。
+上述两个步骤将cluster.conf修改完成后，都需要将cluster.conf分发到fstore集群和fuseclient，然后重启fstore集群和fuseclient。推荐重启步骤如下：
+```
+ 1. 停止fuseclient
+ 2. 重启fstore集群
+ 3. 启动fuseclient
+```
 
 将上述配置示例的1个SG扩容为2个SG（均采用3副本），我们如何调整cluster.conf：
 
@@ -126,4 +131,6 @@ data_group_ids = [129, 256]
 
 将cluster.conf分发到fstore集群所有服务器以及所有fuseclient后，重启fstore集群和fuseclient
 
-* 友情提示：步骤1和2重启fstore集群和fuseclient的过程，会导致服务不可用，建议在业务低峰期进行。
+* 友情提示：
+   * 配置文件分发和程序启停可以使用fcfs.sh，使用说明参见[FastCFS集群运维工具](fcfs-ops-tool-zh_CN.md)
+   * 步骤1和2重启fstore集群和fuseclient的过程，会导致服务不可用，建议在业务低峰期进行
