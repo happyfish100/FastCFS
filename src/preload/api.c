@@ -2345,6 +2345,10 @@ int feof_unlocked(FILE *fp)
     }
 }
 
+#ifdef _IO_feof_unlocked
+#undef _IO_feof_unlocked
+#endif
+
 int _IO_feof_unlocked(FILE *fp)
 {
     return feof_unlocked(fp);
@@ -2369,6 +2373,10 @@ int ferror_unlocked(FILE *fp)
         return EOF;
     }
 }
+
+#ifdef _IO_ferror_unlocked
+#undef _IO_ferror_unlocked
+#endif
 
 int _IO_ferror_unlocked(FILE *fp)
 {
@@ -2664,6 +2672,10 @@ char *fgets(char *s, int size, FILE *fp)
     }
 }
 
+#ifdef getc
+#undef getc
+#endif
+
 int getc(FILE *fp)
 {
     FCFSPreloadFILEWrapper *wapper;
@@ -2742,6 +2754,10 @@ int fputs(const char *s, FILE *fp)
         return EOF;
     }
 }
+
+#ifdef putc
+#undef putc
+#endif
 
 int putc(int c, FILE *fp)
 {

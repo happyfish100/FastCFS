@@ -617,7 +617,7 @@ static int cluster_deal_queue(AuthServerContext *server_context,
         return 0;
     }
 
-    entry = NULL;
+    previous = NULL;
     entry = (ServerSessionSubscribeEntry *)qinfo.head;
     proto_header = (FCFSAuthProtoHeader *)task->data;
     body_header = (FCFSAuthProtoSessionPushRespBodyHeader *)
