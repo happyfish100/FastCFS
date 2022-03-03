@@ -33,12 +33,18 @@ __attribute__ ((constructor)) static void preload_global_init(void)
     int result;
     pid_t pid;
     char *ns = "fs";
-    char *config_filename = FCFS_FUSE_DEFAULT_CONFIG_FILENAME;
+    char *config_filename;
+
+    config_filename = getenv("FCFS_PRELOAD_CONFIG_FILENAME");
+    if (config_filename == NULL) {
+        config_filename = FCFS_FUSE_DEFAULT_CONFIG_FILENAME;
+    }
 
     log_init();
     pid = getpid();
     fprintf(stderr, "pid: %d, file: "__FILE__", line: %d, inited: %d, "
-            "constructor\n", pid, __LINE__, g_fcfs_preload_global_vars.inited);
+            "constructor, config_filename: %s\n", pid, __LINE__,
+            g_fcfs_preload_global_vars.inited, config_filename);
 
     if ((result=fcfs_preload_global_init()) != 0) {
         return;
@@ -50,8 +56,8 @@ __attribute__ ((constructor)) static void preload_global_init(void)
     }
 #endif
 
-    FCFS_LOG_DEBUG("pid: %d, file: "__FILE__", line: %d, "
-            "constructor\n", pid, __LINE__);
+    FCFS_LOG_DEBUG("file: "__FILE__", line: %d, pid: %d, "
+            "constructor\n", __LINE__, pid);
 
     log_set_fd_flags(&g_log_context, O_CLOEXEC);
     if ((result=fcfs_posix_api_init("fcfs_preload",
@@ -84,7 +90,9 @@ __attribute__ ((destructor)) static void preload_global_destroy(void)
 {
     FCFS_LOG_DEBUG("pid: %d, file: "__FILE__", line: %d, "
             "destructor\n", getpid(), __LINE__);
-    fcfs_posix_api_terminate();
+    if (g_fcfs_preload_global_vars.inited) {
+        fcfs_posix_api_terminate();
+    }
 }
 
 static inline void *fcfs_dlsym1(const char *fname)
