@@ -21,7 +21,7 @@
 #include "api.h"
 
 static int counter = 0;
-#define FCFS_LOG_DEBUG(format, ...) \
+#define FCFS_LOG_DEBUG(format, ...)  \
     if (g_fcfs_preload_global_vars.inited && g_log_context. \
             log_level >= LOG_DEBUG) logDebug(format, ##__VA_ARGS__)
 
@@ -84,8 +84,8 @@ __attribute__ ((destructor)) static void preload_global_destroy(void)
 {
     FCFS_LOG_DEBUG("pid: %d, file: "__FILE__", line: %d, "
             "destructor\n", getpid(), __LINE__);
+    fcfs_posix_api_terminate();
 }
-
 
 static inline void *fcfs_dlsym1(const char *fname)
 {
@@ -552,10 +552,6 @@ int lsetxattr(const char *path, const char *name,
 
 ssize_t getxattr(const char *path, const char *name, void *value, size_t size)
 {
-    fprintf(stderr, "%d. func: %s, line: %d, "
-            "path: %s, name: %s, size: %d\n",
-            ++counter, __FUNCTION__, __LINE__, path, name, (int)size);
-
     if (FCFS_PRELOAD_IS_MY_MOUNTPOINT(path)) {
         return fcfs_getxattr(path, name, value, size);
     } else {
