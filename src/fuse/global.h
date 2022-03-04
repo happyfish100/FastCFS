@@ -34,6 +34,7 @@ typedef struct {
     bool singlethread;
     bool clone_fd;
     bool auto_unmount;
+    bool xattr_enabled;
     int max_idle_threads;
     double attribute_timeout;
     double entry_timeout;

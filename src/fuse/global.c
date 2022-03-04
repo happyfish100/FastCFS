@@ -97,6 +97,9 @@ static int load_fuse_config(IniFullContext *ini_ctx)
             section_name, "entry_timeout", ini_ctx->context,
             FCFS_FUSE_DEFAULT_ENTRY_TIMEOUT);
 
+    g_fuse_global_vars.xattr_enabled = iniGetBoolValue(ini_ctx->
+            section_name, "xattr_enabled", ini_ctx->context, false);
+
     return fcfs_api_load_owner_config(ini_ctx, &g_fuse_global_vars.owner);
 }
 
@@ -171,7 +174,8 @@ int fcfs_fuse_global_init(const char *config_filename)
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "owner_type: %s%s, singlethread: %d, clone_fd: %d, "
             "max_idle_threads: %d, allow_others: %s, auto_unmount: %d, "
-            "attribute_timeout: %.1fs, entry_timeout: %.1fs",
+            "attribute_timeout: %.1fs, entry_timeout: %.1fs, "
+            "xattr_enabled: %d",
             g_fcfs_global_vars.version.major,
             g_fcfs_global_vars.version.minor,
             g_fcfs_global_vars.version.patch,
@@ -183,7 +187,8 @@ int fcfs_fuse_global_init(const char *config_filename)
             get_allow_others_caption(g_fuse_global_vars.allow_others),
             g_fuse_global_vars.auto_unmount,
             g_fuse_global_vars.attribute_timeout,
-            g_fuse_global_vars.entry_timeout);
+            g_fuse_global_vars.entry_timeout,
+            g_fuse_global_vars.xattr_enabled);
 
     return 0;
 }

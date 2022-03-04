@@ -1075,6 +1075,11 @@ static void fs_do_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
     int result;
     key_value_pair_t xattr;
 
+    if (!g_fuse_global_vars.xattr_enabled) {
+        fuse_reply_err(req, ENOSYS);
+        return;
+    }
+
     if (fs_convert_inode(ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
@@ -1093,6 +1098,11 @@ static void fs_do_removexattr(fuse_req_t req, fuse_ino_t ino,
     int64_t new_inode;
     int result;
     string_t nm;
+
+    if (!g_fuse_global_vars.xattr_enabled) {
+        fuse_reply_err(req, ENOSYS);
+        return;
+    }
 
     if (fs_convert_inode(ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
@@ -1114,6 +1124,11 @@ static void fs_do_getxattr(fuse_req_t req, fuse_ino_t ino,
     char v[FDIR_XATTR_MAX_VALUE_SIZE];
     string_t nm;
     string_t value;
+
+    if (!g_fuse_global_vars.xattr_enabled) {
+        fuse_reply_err(req, ENOSYS);
+        return;
+    }
 
     if (fs_convert_inode(ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
@@ -1162,6 +1177,11 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
     int result;
     char v[MAX_LIST_SIZE];
     string_t list;
+
+    if (!g_fuse_global_vars.xattr_enabled) {
+        fuse_reply_err(req, ENOSYS);
+        return;
+    }
 
     if (fs_convert_inode(ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
