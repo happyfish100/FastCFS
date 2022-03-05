@@ -127,7 +127,6 @@ mkdir -p /opt/fastcfs/fuse
 %files -n %{FastCFSAPIDevel}
 %defattr(-,root,root,-)
 /usr/include/fastcfs/api/*
-/usr/include/fastcfs/api/std/*
 
 %post -n %{FastCFSAuthServer}
 mkdir -p /opt/fastcfs/auth

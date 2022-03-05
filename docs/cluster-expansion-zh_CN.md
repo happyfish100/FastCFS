@@ -40,6 +40,7 @@ server_group_count = 1
 # DGC
 data_group_count = 256
 
+# 配置SG1
 [server-group-1]
 server_ids = [1-3]
 data_group_ids = [1, 256]
@@ -55,7 +56,7 @@ DGC一旦确定就不可更改，除非建立新集群。因此在初始化集�
 * 友情提示：建议生产环境DGC至少配置为256。
 
 fstore在线扩容分为两个步骤修改cluster.conf：
-1. 保持原有SG配置不变，增加扩容的SG 和迁移过去的DG映射；
+1. 增加扩容的SG 和迁移过去的DG映射；
 2. 新增的SG自动同步完成后，将原有SG迁移出去的DG映射删除。
 
 上述两个步骤将cluster.conf修改完成后，都需要将cluster.conf分发到fstore集群和fuseclient，然后重启fstore集群和fuseclient。推荐重启步骤如下：
@@ -77,13 +78,15 @@ server_group_count = 2
 # DGC
 data_group_count = 256
 
+# 修改DG映射，将 [129, 256]迁移至SG2
 [server-group-1]
 server_ids = [1-3]
-data_group_ids = [1, 256]
+data_group_ids = [1, 128]
 
-# 只需要配置扩容的SG及DG映射
+# 配置SG2
+# 必须加上server [1-3]用于同步已有数据
 [server-group-2]
-server_ids = [4-6]
+server_ids = [1-6]
 data_group_ids = [129, 256]
 ```
 
@@ -102,7 +105,7 @@ fs_cluster_stat -A
 fs_cluster_stat -N
 
 # 抽查某个数据分组（如ID为256）的ACTIVE状态，确保全部为ACTIVE
-fs_cluster_stat -A -g 256
+fs_cluster_stat -g 256
 
 # 查看帮助
 fs_cluster_stat -h
@@ -118,12 +121,11 @@ server_group_count = 2
 # DGC
 data_group_count = 256
 
-# 调整迁出了DG的SG的DG映射
-# 因后面的一半DG迁移到SG2，将 [1, 256] 调整为 [1, 128]，
 [server-group-1]
 server_ids = [1-3]
 data_group_ids = [1, 128]
 
+# 去掉server [1-3]
 [server-group-2]
 server_ids = [4-6]
 data_group_ids = [129, 256]
