@@ -1,0 +1,1088 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="FastCFS Documents,Version: v3.2.0">
+      
+      
+      
+      <link rel="icon" href="../img/logo.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.5">
+    
+    
+      
+        <title>FastCFS ops tools introduction - FastCFS Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2d9f7617.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fastcfs-ops-tools-introduction" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="FastCFS Docs" class="md-header__button md-logo" aria-label="FastCFS Docs" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            FastCFS Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              FastCFS ops tools introduction
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+          
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6zm0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4zM7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            </label>
+          
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+          
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3z"/></svg>
+            </label>
+          
+        
+      </form>
+    
+    
+      <div class="md-header__option">
+        <div class="md-select">
+          
+          <button class="md-header__button md-icon" aria-label="Select language">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7 1.62-4.33L19.12 17h-3.24z"/></svg>
+          </button>
+          <div class="md-select__inner">
+            <ul class="md-select__list">
+              
+                <li class="md-select__item">
+                  <a href="/" hreflang="en" class="md-select__link">
+                    English
+                  </a>
+                </li>
+                
+                <li class="md-select__item">
+                  <a href="/zh/" hreflang="zh" class="md-select__link">
+                    中文
+                  </a>
+                </li>
+                
+            </ul>
+          </div>
+        </div>
+      </div>
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/happyfish100/FastCFS/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="FastCFS Docs" class="md-nav__button md-logo" aria-label="FastCFS Docs" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    FastCFS Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/happyfish100/FastCFS/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          Introduction
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Introduction" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Introduction
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        FastCFS Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ReleaseNotes/" class="md-nav__link">
+        Release Notes
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmark/" class="md-nav__link">
+        Benchmarks
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Concepts
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Concepts" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Concepts
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Architecture
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Architecture" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Architecture
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fastDir.md" class="md-nav__link">
+        FastDir
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fast-store.md" class="md-nav__link">
+        FastStore
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fastDir.md" class="md-nav__link">
+        FastAuth
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          UserGuide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="UserGuide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          UserGuide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Easy-install-detail-zh_CN/" class="md-nav__link">
+        Quickstart
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INSTALL/" class="md-nav__link">
+        Install
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-fcfssh-introduction" class="md-nav__link">
+    1. fcfs.sh introduction
+  </a>
+  
+    <nav class="md-nav" aria-label="1. fcfs.sh introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-what-this-tool-can-do" class="md-nav__link">
+    1.1. What this tool can do?
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-what-this-tool-cannot-do" class="md-nav__link">
+    1.2. What this tool cannot do?
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-fetch-fcfssh" class="md-nav__link">
+    1.3. Fetch fcfs.sh
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-use-preconditions" class="md-nav__link">
+    1.4. Use preconditions
+  </a>
+  
+    <nav class="md-nav" aria-label="1.4. Use preconditions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#141-fcfssettings" class="md-nav__link">
+    1.4.1. fcfs.settings
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#142-conf" class="md-nav__link">
+    1.4.2. conf
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-ssh-password-free-login" class="md-nav__link">
+    1.5. SSH password-free login
+  </a>
+  
+    <nav class="md-nav" aria-label="1.5. SSH password-free login">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#151-deploy-private-key" class="md-nav__link">
+    1.5.1. Deploy private key
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#152-deploy-public-key" class="md-nav__link">
+    1.5.2. Deploy public key
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#16-tool-commands-introduction" class="md-nav__link">
+    1.6. Tool commands introduction
+  </a>
+  
+    <nav class="md-nav" aria-label="1.6. Tool commands introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#161-fastcfs-setup" class="md-nav__link">
+    1.6.1. FastCFS setup
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#162-fastcfs-softwares-install" class="md-nav__link">
+    1.6.2. FastCFS softwares install
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#163-fastcfs-softwares-upgrade" class="md-nav__link">
+    1.6.3. FastCFS softwares upgrade
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#164-fastcfs-softwares-downgrade" class="md-nav__link">
+    1.6.4. FastCFS softwares downgrade
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#165-fastcfs-softwares-remove" class="md-nav__link">
+    1.6.5. FastCFS softwares remove
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#166-fastcfs-config-files-distribute" class="md-nav__link">
+    1.6.6. FastCFS config files distribute
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#167-cluster-manage" class="md-nav__link">
+    1.6.7. Cluster manage
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#168-display-cluster-logs" class="md-nav__link">
+    1.6.8. Display cluster logs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#169-display-cluster-service-status" class="md-nav__link">
+    1.6.9. Display cluster service status
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-fcfs_confsh-introduction" class="md-nav__link">
+    2. fcfs_conf.sh introduction
+  </a>
+  
+    <nav class="md-nav" aria-label="2. fcfs_conf.sh introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-fetch-fcfs_confsh" class="md-nav__link">
+    2.1. Fetch fcfs_conf.sh
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-use-preconditions-of-fcfs_confsh" class="md-nav__link">
+    2.2. Use preconditions of fcfs_conf.sh
+  </a>
+  
+    <nav class="md-nav" aria-label="2.2. Use preconditions of fcfs_conf.sh">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#221-fcfs_confsettings" class="md-nav__link">
+    2.2.1. fcfs_conf.settings
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-conf_tpl_tarsh-introduction" class="md-nav__link">
+    3. conf_tpl_tar.sh introduction
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+<a href="https://github.com/happyfish100/FastCFS/edit/master/docs/fcfs-ops-tool.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+
+<h1 id="fastcfs-ops-tools-introduction">FastCFS ops tools introduction<a class="headerlink" href="#fastcfs-ops-tools-introduction" title="Permanent link">&para;</a></h1>
+<ul>
+<li><a href="#fcfs.sh">fcfs.sh</a> -- a ops tool for quickly manage FastCFS clusters</li>
+<li><a href="#fcfs_conf.sh">fcfs_conf.sh</a> -- a ops tool for quickly create FastCFS clusters config files</li>
+</ul>
+<h2 id="1-fcfssh-introduction">1. fcfs.sh introduction<a class="headerlink" href="#1-fcfssh-introduction" title="Permanent link">&para;</a></h2>
+<p>fcfs.sh is a ops tool for quickly deploy and manage FastCFS clusters. It only relying on SSH access to the servers and sudo. It runs fully on your workstation, requiring no servers, databases, or anything like that.</p>
+<p>If you set up and tear down FastCFS clusters a lot, and want minimal extra repeating works, this is for you.</p>
+<p><strong><em>Tip： This shell only support for Centos 7, Centos 8.</em></strong></p>
+<p><a name="fcfs.sh"></a></p>
+<h3 id="11-what-this-tool-can-do">1.1. What this tool can do?<a class="headerlink" href="#11-what-this-tool-can-do" title="Permanent link">&para;</a></h3>
+<p>It can quickly setup FastCFS cluster, include install softwares, distribute config files, manage cluster services and query cluster logs.</p>
+<p>It can also upgrade or downgrade FastCFS softwares on single node or full cluster.</p>
+<p>It can reinstall software or redistribute config files.</p>
+<h3 id="12-what-this-tool-cannot-do">1.2. What this tool cannot do?<a class="headerlink" href="#12-what-this-tool-cannot-do" title="Permanent link">&para;</a></h3>
+<p>It is not a generic deployment tool, it is only for FastCFS. It does not handle cluster configuration beyond distribute config files to cluster servers. You must provide usable cluster config files for it.</p>
+<h3 id="13-fetch-fcfssh">1.3. Fetch fcfs.sh<a class="headerlink" href="#13-fetch-fcfssh" title="Permanent link">&para;</a></h3>
+<p>Get it from http://fastcfs.net/fastcfs/ops/fcfs.sh and put it in workstation's bin path.</p>
+<blockquote>
+<p>sudo curl -o /usr/bin/fcfs.sh  http://fastcfs.net/fastcfs/ops/fcfs.sh &amp;&amp; sudo chmod +x /usr/bin/fcfs.sh</p>
+</blockquote>
+<h3 id="14-use-preconditions">1.4. Use preconditions<a class="headerlink" href="#14-use-preconditions" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fcfs.settings -- cluster ops settings, in current working directory</li>
+<li>conf -- cluster config files, in current working directory</li>
+<li>remote server SSH password-free login, see also <a href="#SSH-password-free-login">SSH password-free login</a></li>
+</ul>
+<p>You must create a independent working directory(exp: <strong><em>fastcfs-ops</em></strong>) for a cluster, put "fcfs.settings" and "conf" into it. And then, all subsequent commands for this cluster must be execute at the same working directory.</p>
+<h4 id="141-fcfssettings">1.4.1. fcfs.settings<a class="headerlink" href="#141-fcfssettings" title="Permanent link">&para;</a></h4>
+<p>fcfs.settings include two fields <strong><em>fastcfs_version</em></strong> and <strong><em>fuseclient_ips</em></strong>, fastcfs_version specify FastCFS main version number, fuseclient_ips specify host to deploy fuse client. When upgrade or downgrade FastCFS, you need change fastcfs_version to version you expect.</p>
+<p>fcfs.settings content Example:</p>
+<div class="highlight"><pre><span></span><code># Version of FastCFS cluster（exp：2.2.0）
+fastcfs_version=2.2.0
+
+# Hosts which fuseclient will install，multiple hosts separated by comma
+fuseclient_ips=10.0.1.14
+</code></pre></div>
+<p><strong><em>Tip：Use version 2.2.0 and later for deploy.</em></strong></p>
+<h4 id="142-conf">1.4.2. conf<a class="headerlink" href="#142-conf" title="Permanent link">&para;</a></h4>
+<p>All config files of FastCFS cluster must be put into working directory beforehand, conf include four subdirectories：</p>
+<ul>
+<li>fdir -- config files for fdir server</li>
+<li>fstore -- config files for fstore server</li>
+<li>auth -- config files for fauth server</li>
+<li>fcfs -- config files for fuseclient</li>
+</ul>
+<p><strong>Fetch config sample</strong></p>
+<div class="highlight"><pre><span></span><code>mkdir fastcfs-ops
+cd fastcfs-ops/
+curl -o fcfs-config-sample.tar.gz http://fastcfs.net/fastcfs/ops/fcfs-config-sample.tar.gz
+tar -xzvf fcfs-config-sample.tar.gz
+</code></pre></div>
+<p><strong>Create config files use fcfs_conf.sh</strong></p>
+<p>You can also create FastCFS cluster config files use fcfs_conf.sh according to your own needs. see also <a href="#fcfs_conf.sh">fcfs_conf.sh</a></p>
+<p><a name="SSH-password-free-login"></a></p>
+<h3 id="15-ssh-password-free-login">1.5. SSH password-free login<a class="headerlink" href="#15-ssh-password-free-login" title="Permanent link">&para;</a></h3>
+<p>fcfs.sh will connect to cluster hosts via SSH. It requires that the workstation machine from which the shell is being run can connect via SSH as root(or sudo user) without password into cluster nodes.</p>
+<p>To enable password-free login, you need generate rsa key pair for ssh:</p>
+<blockquote>
+<p>ssh-keygen -t rsa -C cfs -f cfs-ssh-key</p>
+</blockquote>
+<p>it will generate key files：</p>
+<ul>
+<li>cfs-ssh-key  -- private key file</li>
+<li>cfs-ssh-key.pub -- public key file</li>
+</ul>
+<h4 id="151-deploy-private-key">1.5.1. Deploy private key<a class="headerlink" href="#151-deploy-private-key" title="Permanent link">&para;</a></h4>
+<p>Copy private key file cfs-ssh-key to workstation machine's current user directory <strong><em>"~/.ssh/"</em></strong>, and add the following phrase to ~/.ssh/config(for each host):</p>
+<div class="highlight"><pre><span></span><code>Host [node ip]
+    HostName [node host name]
+    User [ssh user]
+    Port 22
+    PubkeyAuthentication yes
+    IdentityFile ~/.ssh/cfs-ssh-key
+</code></pre></div>
+<h4 id="152-deploy-public-key">1.5.2. Deploy public key<a class="headerlink" href="#152-deploy-public-key" title="Permanent link">&para;</a></h4>
+<p>Copy public key to file .ssh/authorized_keys in every node server's sudo user home:</p>
+<blockquote>
+<p>ssh-copy-id -i cfs-ssh-key.pub [user name]@[node server ip]</p>
+</blockquote>
+<p>and ensure that the following lines are in server's sshd config:</p>
+<div class="highlight"><pre><span></span><code>RSAAuthentication yes
+PubkeyAuthentication yes
+AuthorizedKeysFile      .ssh/authorized_keys
+</code></pre></div>
+<h3 id="16-tool-commands-introduction">1.6. Tool commands introduction<a class="headerlink" href="#16-tool-commands-introduction" title="Permanent link">&para;</a></h3>
+<p>The tool's command include three parts: command, module and node. Command is required, module and node are optional.</p>
+<p>Usage:</p>
+<blockquote>
+<p>fcfs.sh command [module] [node]</p>
+</blockquote>
+<p><strong>Commands</strong>:</p>
+<ul>
+<li>setup -- Setup FastCFS softwares, a shortcut command combines install, config, and restart</li>
+<li>install -- Install FastCFS softwares</li>
+<li>reinstall -- Reinstall FastCFS softwares</li>
+<li>remove -- Remove FastCFS softwares, same as erase</li>
+<li>erase -- Erase FastCFS softwares</li>
+<li>config -- Copy cluster config files to target host path</li>
+<li>start -- Start all or one module service in cluster</li>
+<li>restart -- Restart all or one module service in cluster</li>
+<li>stop -- Stop all or one module service in cluster</li>
+<li>tail -- Display the last part of the specified module's log</li>
+<li>status -- Display the service processes status</li>
+<li>help -- Show the detail of commands and examples</li>
+</ul>
+<p><strong>Modules</strong>:</p>
+<ul>
+<li>fdir -- fastDIR server</li>
+<li>fstore -- faststore server</li>
+<li>fauth -- FastCFS auth server</li>
+<li>fuseclient -- FastCFS fuse client</li>
+</ul>
+<p><strong>Node</strong>:</p>
+<p>You can specify a single cluster IP, or command will be executed on all nodes.</p>
+<h4 id="161-fastcfs-setup">1.6.1. FastCFS setup<a class="headerlink" href="#161-fastcfs-setup" title="Permanent link">&para;</a></h4>
+<p>You can use command <strong><em>setup</em></strong> to quickly setup FastCFS softwares on nodes, then config and start module services.</p>
+<p><strong>Examples</strong></p>
+<p>Setup the full FastCFS cluster:</p>
+<blockquote>
+<p>fcfs.sh setup</p>
+</blockquote>
+<p>Setup fdir server on all fdir nodes:</p>
+<blockquote>
+<p>fcfs.sh setup fdir</p>
+</blockquote>
+<p>Setup fdir server on node 10.0.1.11:</p>
+<blockquote>
+<p>fcfs.sh setup fdir 10.0.1.11</p>
+</blockquote>
+<p>node 10.0.1.11 must belong to fdir cluster, or it will fail.</p>
+<h4 id="162-fastcfs-softwares-install">1.6.2. FastCFS softwares install<a class="headerlink" href="#162-fastcfs-softwares-install" title="Permanent link">&para;</a></h4>
+<p>You can use command <strong><em>install</em></strong> to install softwares only. This command is part of setup.</p>
+<p>First time, you must install all softwares on all nodes(that is to say you can't specify module and node). After that, you can install a new node with module and node params.</p>
+<p><strong>Examples</strong></p>
+<p>Install all FastCFS softwares on all nodes:</p>
+<blockquote>
+<p>fcfs.sh install</p>
+</blockquote>
+<p>Install fdir server on all fdir nodes:</p>
+<blockquote>
+<p>fcfs.sh install fdir</p>
+</blockquote>
+<p>Install fdir server on node 10.0.1.11:</p>
+<blockquote>
+<p>fcfs.sh install fdir 10.0.1.11</p>
+</blockquote>
+<h4 id="163-fastcfs-softwares-upgrade">1.6.3. FastCFS softwares upgrade<a class="headerlink" href="#163-fastcfs-softwares-upgrade" title="Permanent link">&para;</a></h4>
+<p>When you want to upgrade FastCFS's software, you can modify fcfs.settings, change field fastcfs_version to new version, then execute install command:</p>
+<blockquote>
+<p>fcfs.sh install</p>
+</blockquote>
+<h4 id="164-fastcfs-softwares-downgrade">1.6.4. FastCFS softwares downgrade<a class="headerlink" href="#164-fastcfs-softwares-downgrade" title="Permanent link">&para;</a></h4>
+<p>If you realy want to downgrade FastCFS softwares to an old version, you must execute command <strong><em>remove</em></strong> first:</p>
+<blockquote>
+<p>fcfs.sh remove</p>
+</blockquote>
+<p>or:</p>
+<blockquote>
+<p>fcfs.sh erase</p>
+</blockquote>
+<p>and change field fastcfs_version to old version, then execute install command: </p>
+<blockquote>
+<p>fcfs.sh install</p>
+</blockquote>
+<h4 id="165-fastcfs-softwares-remove">1.6.5. FastCFS softwares remove<a class="headerlink" href="#165-fastcfs-softwares-remove" title="Permanent link">&para;</a></h4>
+<p>You can use command <strong><em>remove</em></strong> or <strong><em>erase</em></strong> to remove FastCFS softwares.</p>
+<p><strong>Examples</strong></p>
+<p>Remove all softwares on all nodes:</p>
+<blockquote>
+<p>fcfs.sh remove</p>
+</blockquote>
+<p>Remove fdir server on all nodes:</p>
+<blockquote>
+<p>fcfs.sh remove fdir</p>
+</blockquote>
+<p>Remove fdir server on node 10.0.1.11:</p>
+<blockquote>
+<p>fcfs.sh remove fdir 10.0.1.11</p>
+</blockquote>
+<h4 id="166-fastcfs-config-files-distribute">1.6.6. FastCFS config files distribute<a class="headerlink" href="#166-fastcfs-config-files-distribute" title="Permanent link">&para;</a></h4>
+<p>After install FastCFS softwares, you must execute command <strong><em>config</em></strong> to distribute config files to cluster nodes. If target config file directory does't exist on node, it will create it automatically.</p>
+<p><strong>Exmaples</strong></p>
+<p>Distribute all module config files to all nodes respective：</p>
+<blockquote>
+<p>fcfs.sh config</p>
+</blockquote>
+<p>Distribute fdir server config files to all fdir nodes：</p>
+<blockquote>
+<p>fcfs.sh config fdir</p>
+</blockquote>
+<p>Distribute fdir server config files to fdir node 10.0.1.11：</p>
+<blockquote>
+<p>fcfs.sh config fdir 10.0.1.11</p>
+</blockquote>
+<h4 id="167-cluster-manage">1.6.7. Cluster manage<a class="headerlink" href="#167-cluster-manage" title="Permanent link">&para;</a></h4>
+<p>Manage commands include <strong><em>start</em></strong>, <strong><em>stop</em></strong>, <strong><em>restart</em></strong>. You can operate on all modules or one module's all nodes at same time, or a single node for one module.</p>
+<p>If you want to operate on a single node, you must specify node host after module, that is to say you can't operate on all modules on a single node at same time.</p>
+<p>Start all service on all nodes:</p>
+<blockquote>
+<p>fcfs.sh start</p>
+</blockquote>
+<p>Restart fdir service on all fdir nodes:</p>
+<blockquote>
+<p>fcfs.sh restart fdir</p>
+</blockquote>
+<p>Stop fdir service on fdir node 10.0.1.11:</p>
+<blockquote>
+<p>fcfs.sh stop fdir 10.0.1.11</p>
+</blockquote>
+<h4 id="168-display-cluster-logs">1.6.8. Display cluster logs<a class="headerlink" href="#168-display-cluster-logs" title="Permanent link">&para;</a></h4>
+<p>When you want to query FastCFS services last logs, you can use command <strong><em>tail</em></strong> to display the last part of the specified module's log.</p>
+<p><strong>Example</strong></p>
+<p>Display the last 100 lines of fdir server log:</p>
+<blockquote>
+<p>fcfs.sh tail fdir 10.0.1.11 -n 100</p>
+</blockquote>
+<p>or:</p>
+<blockquote>
+<p>fcfs.sh tail fdir 10.0.1.11 -100</p>
+</blockquote>
+<p>Display the last 10 lines of each fdir server log:</p>
+<blockquote>
+<p>fcfs.sh tail fdir</p>
+</blockquote>
+<h4 id="169-display-cluster-service-status">1.6.9. Display cluster service status<a class="headerlink" href="#169-display-cluster-service-status" title="Permanent link">&para;</a></h4>
+<p>When you want to query FastCFS services process status, you can use command <strong><em>status</em></strong> to display the status of the specified module's service process.</p>
+<p><strong>Example</strong></p>
+<p>Display the status of fdir service process:</p>
+<blockquote>
+<p>fcfs.sh status fdir 10.0.1.11</p>
+</blockquote>
+<p>Display the status of each fdir service process:</p>
+<blockquote>
+<p>fcfs.sh status fdir</p>
+</blockquote>
+<p>Display the status of all service processes:</p>
+<blockquote>
+<p>fcfs.sh status</p>
+</blockquote>
+<p><a name="fcfs_conf.sh"></a></p>
+<h2 id="2-fcfs_confsh-introduction">2. fcfs_conf.sh introduction<a class="headerlink" href="#2-fcfs_confsh-introduction" title="Permanent link">&para;</a></h2>
+<p>fcfs_conf.sh is a ops tool for quickly generate FastCFS cluster config files.It only relying on bash shell access to the local fcfs_conf.settings file. It runs fully on your workstation, requiring no servers, databases, or anything like that.</p>
+<p>If you want to generate cluster config files with specify server ips quickly, this is for you.</p>
+<h3 id="21-fetch-fcfs_confsh">2.1. Fetch fcfs_conf.sh<a class="headerlink" href="#21-fetch-fcfs_confsh" title="Permanent link">&para;</a></h3>
+<p>Get it from http://fastcfs.net/fastcfs/ops/fcfs_conf.sh and put it in workstation's bin path.</p>
+<blockquote>
+<p>sudo curl -o /usr/bin/fcfs_conf.sh  http://fastcfs.net/fastcfs/ops/fcfs_conf.sh &amp;&amp; sudo chmod +x /usr/bin/fcfs_conf.sh</p>
+</blockquote>
+<h3 id="22-use-preconditions-of-fcfs_confsh">2.2. Use preconditions of fcfs_conf.sh<a class="headerlink" href="#22-use-preconditions-of-fcfs_confsh" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fcfs_conf.settings -- cluster ops settings for create config files, in current working directory</li>
+</ul>
+<p>You must create a independent working directory(exp: <strong><em>fastcfs-ops</em></strong>) for a cluster, put "fcfs_conf.settings" into it. And then, subsequent commands for fcfs_conf.sh must be execute at the same working directory.</p>
+<h4 id="221-fcfs_confsettings">2.2.1. fcfs_conf.settings<a class="headerlink" href="#221-fcfs_confsettings" title="Permanent link">&para;</a></h4>
+<p>fcfs.settings include six fields: <strong><em>fastcfs_version</em></strong> and <strong><em>fuseclient_ips</em></strong>, fastcfs_version specify FastCFS main version number, fuseclient_ips specify host to deploy fuse client. When upgrade or downgrade FastCFS, you need change fastcfs_version to version you expect.</p>
+<ul>
+<li>fastcfs_version -- The FastCFS version you expect to create config files for.</li>
+<li>auth_ips -- FastCFS auth server IP list, multiple hosts separated by comma</li>
+<li>fdir_ips -- fastDIR server IP list, multiple hosts separated by comma</li>
+<li>fstore_group_count -- faststore server group count</li>
+<li>fstore_group_[N] -- faststore server group IP list, multiple hosts separated by comma</li>
+<li>data_group_count - faststore data group count(multiples of 64 are recommended)</li>
+</ul>
+<p>Parameter fstore_group_count's value must match fstore_group_[N], and N increases from 1。</p>
+<p>fcfs_conf.settings content Example:</p>
+<div class="highlight"><pre><span></span><code># Version of FastCFS cluster（exp：2.3.0）
+fastcfs_version=2.3.0
+
+# Cluster hosts list and group count
+auth_ips=10.0.1.11,10.0.1.12,10.0.1.13
+fdir_ips=10.0.1.11,10.0.1.12,10.0.1.13
+fstore_group_count=2
+fstore_group_1=10.0.1.11,10.0.1.12,10.0.1.13
+fstore_group_2=10.0.2.11,10.0.2.12,10.0.2.13
+data_group_count=128
+</code></pre></div>
+<p><strong><em>Tip：Use version 2.3.0 and later for crearte config files.</em></strong></p>
+<h2 id="3-conf_tpl_tarsh-introduction">3. conf_tpl_tar.sh introduction<a class="headerlink" href="#3-conf_tpl_tarsh-introduction" title="Permanent link">&para;</a></h2>
+<p>A simple cluster config file templates pack tool for developer of FastCFS.</p>
+<p>It will pack FastCFS cluster config file templates to a tar file from source code repository FastCFS, fastDIR, faststore. </p>
+<p>Three repository FastCFS, fastDIR, faststore must at same path, and execute conf_tpl_tar.sh in FastCFS/shell/</p>
+<p>Command:</p>
+<div class="highlight"><pre><span></span><code>conf_tpl_tar.sh &lt;version&gt; [update]
+</code></pre></div>
+<ul>
+<li>version -- Cluster version number to create template tar file.</li>
+<li>update -- Pull the last source codes before create tar file. Optional</li>
+</ul>
+<p>Exmaple:</p>
+<blockquote>
+<p>./conf_tpl_tar.sh 2.3.0 update</p>
+</blockquote>
+<p>It will create tar file <strong>conf.2.3.0.tpl.tar.gz</strong> in current dir.</p>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.467223ff.min.js"></script>
+      
+    
+  </body>
+</html>

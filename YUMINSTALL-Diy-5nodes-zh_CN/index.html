@@ -1,0 +1,1079 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="FastCFS Documents,Version: v3.2.0">
+      
+      
+      
+      <link rel="icon" href="../img/logo.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.5">
+    
+    
+      
+        <title>YUMINSTALL Diy 5nodes zh CN - FastCFS Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2d9f7617.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="FastCFS Docs" class="md-header__button md-logo" aria-label="FastCFS Docs" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            FastCFS Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              YUMINSTALL Diy 5nodes zh CN
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+          
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6zm0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4zM7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            </label>
+          
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+          
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3z"/></svg>
+            </label>
+          
+        
+      </form>
+    
+    
+      <div class="md-header__option">
+        <div class="md-select">
+          
+          <button class="md-header__button md-icon" aria-label="Select language">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7 1.62-4.33L19.12 17h-3.24z"/></svg>
+          </button>
+          <div class="md-select__inner">
+            <ul class="md-select__list">
+              
+                <li class="md-select__item">
+                  <a href="/" hreflang="en" class="md-select__link">
+                    English
+                  </a>
+                </li>
+                
+                <li class="md-select__item">
+                  <a href="/zh/" hreflang="zh" class="md-select__link">
+                    中文
+                  </a>
+                </li>
+                
+            </ul>
+          </div>
+        </div>
+      </div>
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/happyfish100/FastCFS/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="FastCFS Docs" class="md-nav__button md-logo" aria-label="FastCFS Docs" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    FastCFS Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/happyfish100/FastCFS/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          Introduction
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Introduction" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Introduction
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        FastCFS Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ReleaseNotes/" class="md-nav__link">
+        Release Notes
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmark/" class="md-nav__link">
+        Benchmarks
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Concepts
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Concepts" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Concepts
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Architecture
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Architecture" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Architecture
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fastDir.md" class="md-nav__link">
+        FastDir
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fast-store.md" class="md-nav__link">
+        FastStore
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fastDir.md" class="md-nav__link">
+        FastAuth
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          UserGuide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="UserGuide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          UserGuide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Easy-install-detail-zh_CN/" class="md-nav__link">
+        Quickstart
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INSTALL/" class="md-nav__link">
+        Install
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    安装的集群架构
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    前置依赖
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    服务端集群安装
+  </a>
+  
+    <nav class="md-nav" aria-label="服务端集群安装">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fastdir" class="md-nav__link">
+    安装FastDIR
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#faststore" class="md-nav__link">
+    安装FastStore
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    安装客户端
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    自定义安装配置
+  </a>
+  
+    <nav class="md-nav" aria-label="自定义安装配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    说明
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fastdir_1" class="md-nav__link">
+    FastDIR 配置
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#faststore_1" class="md-nav__link">
+    FastStore 配置
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fastclient" class="md-nav__link">
+    FastClient 配置
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    启动服务
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    服务监控
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+<a href="https://github.com/happyfish100/FastCFS/edit/master/docs/YUMINSTALL-Diy-5nodes-zh_CN.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+
+  <h1>YUMINSTALL Diy 5nodes zh CN</h1>
+
+<h3 id="_1">安装的集群架构<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<p>FastCFS支持大规模的集群，下面以最为典型的最小化集群的部署方式，说明下自定义安装的过程。更大规模的安装方式可参照此过程扩展安装。
+1. 节点类型和数量：共计5个节点，3个服务端节点（3副本策略），2客户端节点
+2. 服务端集群：FastStore和FastDir公用，也可以分开独立部署，生产环境建议分开。本说明为了降低节点数量，采用了公用部署的方式。
+3. 客户端：为了说明支持多客户端，使用了2个客户端节点。生产环境中如果只需要1个客户端，也是没问题的。
+<img src="../images/demo-5-nodes-deploy.jpg" width="800" alt="5个节点的集群架构图"></p>
+<h3 id="_2">前置依赖<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<p>先安装FastOS.repo yum源，FastCFS所需要的pkg都在此源中，安装成功后就可以安装FastCFS相关软件包了。</p>
+<ul>
+<li>
+<p>CentOS 7
+<div class="highlight"><pre><span></span><code>rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
+</code></pre></div></p>
+</li>
+<li>
+<p>CentOS 8
+<div class="highlight"><pre><span></span><code>rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
+</code></pre></div></p>
+</li>
+</ul>
+<h3 id="_3">服务端集群安装<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>在192.168.126.[101,102,103]上分别安装FastStore、FastDIR 两个服务. </p>
+<h4 id="fastdir">安装FastDIR<a class="headerlink" href="#fastdir" title="Permanent link">&para;</a></h4>
+<p><div class="highlight"><pre><span></span><code>yum install fastDIR-server
+</code></pre></div>
+安装过程中会安装所依赖的包，选y就可以了. 
+<div class="highlight"><pre><span></span><code>==================================================================================================================
+ Package                            Architecture          Version                     Repository             Size
+==================================================================================================================
+Installing:
+ fastDIR-server                     x86_64                2.0.1-1.el8                 FastOS                 71 k
+Installing dependencies:
+ FastCFS-auth-client                x86_64                2.0.1-1.el8                 FastOS                 36 k
+ FastCFS-auth-config                x86_64                2.0.1-1.el8                 FastOS                 10 k
+ fastDIR-config                     x86_64                2.0.1-1.el8                 FastOS                9.5 k
+ libfastcommon                      x86_64                1.0.50-1.el8                FastOS                140 k
+ libserverframe                     x86_64                1.1.7-1.el8                 FastOS                 47 k
+
+Transaction Summary
+==================================================================================================================
+Install  6 Packages
+
+Total download size: 313 k
+Installed size: 711 k
+Is this ok [y/N]: y   // 安装过程中会安装所依赖的包，选y就可以了. 
+</code></pre></div>
+安装完毕后，在/etc/fastcfs 下可看到fdir的目录，存储的是FastDIR的配置文件.  配置项的内容，后续会说明。
+<div class="highlight"><pre><span></span><code>$ ll /etc/fastcfs/fdir/
+total 16
+-rw-r--r--. 1 root root 1565 May  9 13:49 client.conf
+-rw-r--r--. 1 root root  753 May  9 13:49 cluster.conf
+-rw-r--r--. 1 root root 5242 May  9 13:49 server.conf
+</code></pre></div></p>
+<h4 id="faststore">安装FastStore<a class="headerlink" href="#faststore" title="Permanent link">&para;</a></h4>
+<p><div class="highlight"><pre><span></span><code>yum install faststore-server
+</code></pre></div>
+再说明下：实际生产环境部署中，FastDIR是和FastStore两个服务可以分开部署的，不需要再同一台服务器上。
+<div class="highlight"><pre><span></span><code>==================================================================================================================
+ Package                          Architecture           Version                     Repository              Size
+==================================================================================================================
+Installing:
+ faststore-server                 x86_64                 2.0.1-1.el8                 FastOS                 134 k
+Installing dependencies:
+ faststore-config                 x86_64                 2.0.1-1.el8                 FastOS                  11 k
+
+Transaction Summary
+==================================================================================================================
+Install  2 Packages
+
+Total download size: 145 k
+Installed size: 422 k
+Is this ok [y/N]: y  // 安装过程中会安装所依赖的包，选y就可以了. 
+</code></pre></div>
+安装完毕后，在/etc/fastcfs 下可看到fstore目录，存储的是FastStore的配置文件。配置项的内容，后续会说明。
+<div class="highlight"><pre><span></span><code>$ ll /etc/fastcfs/fstore/
+total 20
+-rw-r--r--. 1 root root 1577 May  9 13:52 client.conf
+-rw-r--r--. 1 root root 3256 May  9 13:52 cluster.conf
+-rw-r--r--. 1 root root 4965 May  9 13:52 server.conf
+-rw-r--r--. 1 root root 2609 May  9 13:52 storage.conf
+</code></pre></div></p>
+<h3 id="_4">安装客户端<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>在192.168.126.[201,202]上安装Client包, 包名为FastCFS-fused. 
+<div class="highlight"><pre><span></span><code>yum remove fuse -y // 仅第一次安装时执行
+yum install FastCFS-fused -y 
+</code></pre></div>
+原CentOS中fuse为老版本的包（fuse2.x），需要卸载才可以成功安装FastCFS-fused依赖的fuse3。第一次安装才需要卸载fuse包，以后就不用执行了。</p>
+<p>安装完毕后，在/etc/fastcfs 下可看到以下目录，存储是对应服务的配置文件.<br />
+<div class="highlight"><pre><span></span><code>$ ll /etc/fastcfs/
+drwxr-xr-x. 3 root root 113 May 14 15:20 auth
+drwxr-xr-x. 2 root root  23 May 14 15:20 fcfs
+drwxr-xr-x. 2 root root  64 May 14 15:20 fdir
+drwxr-xr-x. 2 root root  84 May 14 15:20 fstore
+</code></pre></div>
+<strong>为什么在Client的节点上，需要有fdir和fstore的目录呢？因为FastCFS是无中心配置的，Client需要知道fdir和fstore的集群情况，所以就需要fdir和fstore的配置文件。</strong></p>
+<h3 id="_5">自定义安装配置<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<h4 id="_6">说明<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h4>
+<p>FastCFS并没有统一的配置中心，需要在各个节点上单独部署配置文件。配置文件分为两大类：集群配置文件和服务配置文件。</p>
+<ol>
+<li>
+<p><strong>集群配置文件：</strong> 指的是描述 FastDir 和 FastStore 的配置文件，入口文件名称为cluster.conf . 该配置文件中设定是集群的参数，如服务节点的IP和端口号，服务节点的数量等。 cluster.conf 文件全局统一，各个节点上的内容是相同的, FastDir 和 FastStore 有各自的cluster.conf文件。</p>
+</li>
+<li>
+<p><strong>服务配置文件：</strong> 指的是服务本身的配置文件，入口文件名称server.conf 如线程数量、链接数量、缓冲区大小、日志配置等。 服务配置文件的内容，可以全局不统一。不过从集群的角度考虑，如果各服务器配置相同，最好是统一的。 </p>
+</li>
+</ol>
+<h4 id="fastdir_1">FastDIR 配置<a class="headerlink" href="#fastdir_1" title="Permanent link">&para;</a></h4>
+<ol>
+<li>
+<p><strong>配置文件说明</strong> 
+<div class="highlight"><pre><span></span><code>$ ll /etc/fastcfs/fdir/ 
+-rw-r--r--. 1 root root 1565 May  9 13:49 client.conf // 暂时不使用，不用关注
+-rw-r--r--. 1 root root  753 May  9 13:49 cluster.conf // 集群配置文件
+-rw-r--r--. 1 root root 5242 May  9 13:49 server.conf // 服务配置文件 
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>集群配置文件</strong> ：在101节点上，修改/etc/fastcfs/fdir/cluster.conf 文件，修改为正确的IP地址，修改后的内容如下
+<div class="highlight"><pre><span></span><code>  1 # config the auth config filename
+  2 auth_config_filename = /etc/fastcfs/auth/auth.conf
+  3
+  4
+  5 [group-cluster]
+  6 # the default cluster port
+  7 port = 11011  // 集群之间的通信使用的默认端口号，不用修改
+  8
+  9 [group-service]
+ 10 # the default service port
+ 11 port = 11012  // 对client提供服务，使用的默认端口号，不用修改
+ 12
+ 13 # config a server instance
+ 14 # section format: [server-$id]
+ 15 # server id is a 32 bits natural number (1, 2, 3 etc.),
+ 16 [server-1]
+ 17
+ 18 # format: host[:port]
+ 19 # host can be an IP address or a hostname
+ 20 # IP address is recommended
+ 21 # can occur more than once
+ 22 host = 192.168.126.101  // 节点101的地址，使用默认的端口号
+ 23
+ 24 [server-2]
+ 25 # cluster-port = 11013
+ 26 # service-port = 11014
+ 27 host = 192.168.126.102 // 节点102的地址，使用默认的端口号
+ 28
+ 29 [server-3]
+ 30 # cluster-port = 11015
+ 31 # service-port = 11016
+ 32 host = 192.168.126.103  // 节点103的地址，使用默认的端口号
+</code></pre></div></p>
+</li>
+<li><strong>服务配置文件</strong> ： 在101节点上，/etc/fastcfs/fdir/server.conf, 该文件配置项较多，但默认不用任何调整，确认文件底部的[service]区内容就好.
+<div class="highlight"><pre><span></span><code>180 [cluster]
+181 # bind an address of this host
+182 # empty for bind all addresses of this host
+183 bind_addr =
+184
+185 # the listen port
+186 port = 11011
+187
+188 # the accept thread count
+189 # default value is 1 which is recommended
+190 accept_threads = 1
+191
+192 # the network thread count
+193 # these threads deal network io
+194 # dispatched by the incoming socket fd
+195 # default value is 4
+196 work_threads = 2
+197
+198 [service]
+199 bind_addr =  // 保持为空，FastDIR 会自动使用本机的IP地址
+200 port = 11012  // 确保与cluster.conf 中 group-service 的设定值相同
+201 accept_threads = 1
+202 work_threads = 4
+</code></pre></div></li>
+<li>把cluster.conf文件复制到102-103,201-202 这5台服务器上,保证所有节点都能知道集群配置
+<div class="highlight"><pre><span></span><code>scp /etc/fastcfs/fdir/cluster.conf 192.168.126.102:/etc/fastcfs/fdir/
+scp /etc/fastcfs/fdir/cluster.conf 192.168.126.103:/etc/fastcfs/fdir/
+scp /etc/fastcfs/fdir/cluster.conf 192.168.126.201:/etc/fastcfs/fdir/
+scp /etc/fastcfs/fdir/cluster.conf 192.168.126.202:/etc/fastcfs/fdir/
+</code></pre></div></li>
+</ol>
+<h4 id="faststore_1">FastStore 配置<a class="headerlink" href="#faststore_1" title="Permanent link">&para;</a></h4>
+<ol>
+<li>
+<p><strong>配置文件说明</strong> 
+<div class="highlight"><pre><span></span><code>$ ll /etc/fastcfs/fstore
+-rw-r--r--. 1 root root 1577 May  9 13:52 client.conf // 暂时不使用，不用关注
+-rw-r--r--. 1 root root 3253 May 14 13:08 cluster.conf // 集群配置文件
+-rw-r--r--. 1 root root 4965 May  9 13:52 server.conf // 服务配置文件
+-rw-r--r--. 1 root root 2609 May  9 13:52 storage.conf // 服务配置文件
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>集群配置文件</strong> ：在101节点上，修改/etc/fastcfs/fstore/cluster.conf 文件，仅需要修改server_ids的值和[group-cluster]部分，其它参数不需要调整。修改后的内容如下. 
+<div class="highlight"><pre><span></span><code> 57 [server-group-1]
+ 58
+ 59 # config one or more server id(s) from servers.conf
+ 60 ## multiple server ids separated by comma(s).
+ 61 ## [start, end] for range, including start and end.
+ 62 # this parameter can occurs more than once.
+ 63 # server_ids = [1, 3]
+ 64 server_ids = [1,3]  //  使用了3副本的策略，有3个服务节点101/102/103，所以设定为[1,3]
+ 65
+ 66 # the data group id based 1. the formats as:
+ 67 ##  * multiple data group ids separated by comma(s).
+ 68 ##  * [start, end] for range, including start and end.
+ 69 # this parameter can occurs more than once.
+ 70 data_group_ids = [1, 32]
+ 71 data_group_ids = [33, 64]
+ 72
+ 73
+ 74 [group-cluster]
+ 75 # the default cluster port
+ 76 port = 21014  // 集群之间的通信使用的默认端口号，不用修改
+ 77
+ 78 [group-replica]
+ 79 # the default replica port
+ 80 port = 21015 // Master-Slave 之间同步数据使用的默认端口号，不用修改
+ 81
+ 82 [group-service]
+ 83 # the default service port
+ 84 port = 21016  // 对Client提供服务，使用的默认端口号，不用修改
+ 85
+ 86 # config a server
+ 87 # section format: [server-$id]
+ 88 # server id is a 32 bits natural number (1, 2, 3 etc.),
+ 89 [server-1]
+ 90
+ 91 # format: host[:port]
+ 92 # host can be an IP address or a hostname
+ 93 # IP address is recommended
+ 94 # can occur more than once
+ 95 host = 192.168.126.101  // 节点101的地址，使用默认的端口号 
+ 96 
+ 97 [server-2]
+ 99 host = 192.168.126.102 // 节点102的地址，使用默认的端口号
+100
+101 [server-3]
+103 host = 192.168.126.103  // 节点103的地址，使用默认的端口号
+</code></pre></div></p>
+</li>
+<li><strong>服务配置文件</strong> 在101节点上，/etc/fastcfs/fstore/server.conf 和  /etc/fastcfs/fstore/storage.conf. 默认均需要修改，只需确认下server.conf的配置是否正确
+<div class="highlight"><pre><span></span><code>190 [replica]
+191 bind_addr =
+192 port = 21015  // 保持与fstore/server.conf 中 [group-replica]设定的port值相同
+193 accept_threads = 1
+194 work_threads = 4
+195
+196 [service]
+197 bind_addr =
+198 port = 21016  // 保持与fstore/server.conf 中 [group-service]设定的port值相同
+199 accept_threads = 1
+200 work_threads = 4
+</code></pre></div></li>
+<li>把cluster.conf文件复制到102-103,201-202 这5台服务器上，保证所有节点都能知道集群配置
+<div class="highlight"><pre><span></span><code>scp /etc/fastcfs/fstore/cluster.conf 192.168.126.102:/etc/fastcfs/fstore/
+scp /etc/fastcfs/fstore/cluster.conf 192.168.126.103:/etc/fastcfs/fstore/
+scp /etc/fastcfs/fstore/cluster.conf 192.168.126.201:/etc/fastcfs/fstore/
+scp /etc/fastcfs/fstore/cluster.conf 192.168.126.202:/etc/fastcfs/fstore/
+</code></pre></div></li>
+</ol>
+<h4 id="fastclient">FastClient 配置<a class="headerlink" href="#fastclient" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Client 需要知道FastDIR和FastStore的集群配置数据，在上述scp过程中，已经分别scp到了对应的目录下，不需要修改.</li>
+<li>Client 自身的配置文件为 /etc/fastcfs/fcfs/fuse.conf 属于服务配置文件，也不需要修改. </li>
+</ol>
+<h3 id="_7">启动服务<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>安装并配置完成后，可以启动服务并验证.</p>
+<ol>
+<li><strong>关闭防火墙：</strong> CentOS 8 默认情况下开启防火墙，会导致各节点之间无法访问，可暂关闭防火墙。
+<div class="highlight"><pre><span></span><code>sudo systemctl stop firewalld.service
+</code></pre></div></li>
+<li>
+<p><strong>启动FastDir：</strong>*  在101/102/103 三个节点上，执行下列命令启动. 注意必须是3个节点都启动。
+<div class="highlight"><pre><span></span><code>sudo systemctl restart fastdir
+</code></pre></div>
+或者
+<div class="highlight"><pre><span></span><code>sudo /usr/bin/fdir_serverd /etc/fastcfs/fdir/server.conf restart
+</code></pre></div>
+查看日志，确认启动成功.
+<div class="highlight"><pre><span></span><code>$ tail /opt/fastcfs/fdir/logs/fdir_serverd.log
+
+[2021-05-14 15:39:36] ERROR - file: connection_pool.c, line: 140, connect to server 192.168.126.102:11011 fail, errno: 113, error info: No route to host
+[2021-05-14 15:39:36] ERROR - file: connection_pool.c, line: 140, connect to server 192.168.126.103:11011 fail, errno: 113, error info: No route to host
+[2021-05-14 15:39:36] INFO - file: cluster_relationship.c, line: 668, round 19th select master, alive server count: 1 &lt; server count: 3, the candidate server status: 0 (INIT) does not match the selection rule. you must start ALL servers in the first time, or remove the deprecated server(s) from the config file. try again after 32 seconds.
+[2021-05-14 15:40:01] INFO - file: cluster_relationship.c, line: 474, the master server id: 3, ip 192.168.126.103:11011
+</code></pre></div>
+日志中有error提示，是因为防火墙导致的3个节点无法互相通信产生的，关闭防火墙后FastDIR会自动进行尝试链接。从最后一行INFO日志可看到，服务已经启动成功了，并且选择了103节点作为Master. </p>
+</li>
+<li>
+<p><strong>启动FastStore:</strong> 与FastDir的启动方式类似，在101/102/103 三个节点上，执行下列命令启动. 注意必须是3个节点都启动。
+<div class="highlight"><pre><span></span><code>sudo systemctl restart faststore
+</code></pre></div>
+或者
+<div class="highlight"><pre><span></span><code>sudo /usr/bin/fs_serverd /etc/fastcfs/fstore/server.conf restart
+</code></pre></div>
+查看日志，确认启动成功.
+<div class="highlight"><pre><span></span><code>[2021-05-14 16:06:08.326966] INFO - file: replication/replication_processor.c, line: 419, connect to replication peer id: 3, 192.168.126.103:21015 successfully
+[2021-05-14 16:06:08.344415] INFO - file: replication/replication_processor.c, line: 419, connect to replication peer id: 3, 192.168.126.103:21015 successfully
+[2021-05-14 16:06:08.368437] INFO - file: replica_handler.c, line: 598, replication peer id: 1, 192.168.126.101:21014 join in
+[2021-05-14 16:06:09.942673] INFO - file: replica_handler.c, line: 598, replication peer id: 1, 192.168.126.101:21014 join in
+[2021-05-14 16:06:10.374344] INFO - file: recovery/binlog_fetch.c, line: 589, data group id: 1, wait replica channel of master id 1 ready success, waiting count: 2
+[2021-05-14 16:06:10.415848] INFO - file: recovery/binlog_fetch.c, line: 589, data group id: 6, wait replica channel of master id 1 ready success, waiting count: 2
+</code></pre></div>
+看到以上类似的日志，即是启动成功了。 </p>
+</li>
+<li>
+<p><strong>启动FastClient：</strong> 在201、202 节点上启动Client.
+<div class="highlight"><pre><span></span><code>sudo systemctl restart fastcfs
+</code></pre></div>
+或者
+<div class="highlight"><pre><span></span><code>sudo  /usr/bin/fcfs_fused /etc/fastcfs/fcfs/fuse.conf restart
+</code></pre></div>
+查看日志，确认启动成功
+<div class="highlight"><pre><span></span><code>$ tail /opt/fastcfs/fcfs/logs/fcfs_fused.log 
+[2021-05-14 16:14:15] INFO - file: sf_nio.c, line: 205, connect to server 192.168.126.101:11012 successfully
+[2021-05-14 16:14:15] INFO - file: sf_nio.c, line: 205, connect to server 192.168.126.103:11012 successfully
+[2021-05-14 16:14:15] INFO - file: sf_connection_manager.c, line: 827, [FastDIR] connection manager thread start
+[2021-05-14 16:14:15] INFO - file: sf_connection_manager.c, line: 827, [FastStore] connection manager thread start
+[2021-05-14 16:14:55] INFO - file: sf_nio.c, line: 205, connect to server 192.168.126.101:21016 successfully
+</code></pre></div>
+查看文件目录是否成功挂载
+<div class="highlight"><pre><span></span><code>$ df -h
+Filesystem           Size  Used Avail Use% Mounted on
+devtmpfs             189M     0  189M   0% /dev
+tmpfs                219M     0  219M   0% /dev/shm
+tmpfs                219M  6.6M  212M   4% /run
+tmpfs                219M     0  219M   0% /sys/fs/cgroup
+/dev/mapper/cs-root   47G  4.9G   43G  11% /
+/dev/sda1           1014M  242M  773M  24% /boot
+tmpfs                 44M  4.0K   44M   1% /run/user/1000
+/dev/fuse             38G     0   38G   0% /opt/fastcfs/fuse  // 这是即是FastCFS挂载的根目录
+</code></pre></div></p>
+</li>
+<li>验证 ：在201节点上创建文件
+<div class="highlight"><pre><span></span><code>[first@192.168.126.201 /opt/fastcfs/fuse]
+$ mkdir -p abc/123
+[first@192.168.126.201 /opt/fastcfs/fuse]
+$ touch abc/123/demo.txt
+[first@192.168.126.201 /opt/fastcfs/fuse]
+$ vim abc/123/demo.txt
+[first@192.168.126.201 /opt/fastcfs/fuse]
+$ ll abc/123
+total 1
+-rw-rw-r--+ 1 first first 13 May 14 16:22 demo.txt  
+</code></pre></div>
+在202节点上查看该文件，可见文件已经创建成功了
+<div class="highlight"><pre><span></span><code>[first@192.168.126.202 /opt/fastcfs/fuse]
+$ tail abc/123/demo.txt
+hello world
+[first@192.168.126.202 /opt/fastcfs/fuse]
+</code></pre></div></li>
+</ol>
+<h3 id="_8">服务监控<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<ol>
+<li>查看FastDir集群状态
+<div class="highlight"><pre><span></span><code>$ fdir_cluster_stat
+server_id: 1, host: 192.168.126.101:11012, status: 23 (ACTIVE), is_master: 0
+server_id: 2, host: 192.168.126.102:11012, status: 23 (ACTIVE), is_master: 0
+server_id: 3, host: 192.168.126.103:11012, status: 23 (ACTIVE), is_master: 1
+
+server count: 3
+</code></pre></div></li>
+<li>查看单个FastDir节点状态
+<div class="highlight"><pre><span></span><code>[first@192.168.126.201 /etc/fastcfs/fcfs]
+$ fdir_service_stat 192.168.126.101:11012
+        server_id: 1
+        status: 23 (ACTIVE)
+        is_master: false
+        connection : {current: 4, max: 4}
+        binlog : {current_version: 24}
+        dentry : {current_inode_sn: 1000009, ns_count: 1, dir_count: 3, file_count: 1}
+</code></pre></div></li>
+<li>查看FastStore集群状态
+<div class="highlight"><pre><span></span><code>$ fs_cluster_stat | more
+
+data_group_id: 1
+        server_id: 1, host: 192.168.126.101:21016, status: 5 (ACTIVE), is_preseted: 1, is_master: 1, data_version: 0
+        server_id: 2, host: 192.168.126.102:21016, status: 5 (ACTIVE), is_preseted: 0, is_master: 0, data_version: 0
+        server_id: 3, host: 192.168.126.103:21016, status: 5 (ACTIVE), is_preseted: 0, is_master: 0, data_version: 0
+
+data_group_id: 2
+        server_id: 1, host: 192.168.126.101:21016, status: 5 (ACTIVE), is_preseted: 0, is_master: 0, data_version: 0
+        server_id: 2, host: 192.168.126.102:21016, status: 5 (ACTIVE), is_preseted: 1, is_master: 1, data_version: 0
+.....................
+</code></pre></div></li>
+<li>查看磁盘使用情况
+<div class="highlight"><pre><span></span><code>df -h 
+</code></pre></div></li>
+</ol>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.467223ff.min.js"></script>
+      
+    
+  </body>
+</html>

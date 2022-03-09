@@ -1,0 +1,1090 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="FastCFS Documents,Version: v3.2.0">
+      
+      
+      
+      <link rel="icon" href="../img/logo.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.5">
+    
+    
+      
+        <title>Release Notes - FastCFS Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2d9f7617.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fastcfs-v310" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="FastCFS Docs" class="md-header__button md-logo" aria-label="FastCFS Docs" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            FastCFS Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Release Notes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+          
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6zm0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4zM7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            </label>
+          
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+          
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3z"/></svg>
+            </label>
+          
+        
+      </form>
+    
+    
+      <div class="md-header__option">
+        <div class="md-select">
+          
+          <button class="md-header__button md-icon" aria-label="Select language">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7 1.62-4.33L19.12 17h-3.24z"/></svg>
+          </button>
+          <div class="md-select__inner">
+            <ul class="md-select__list">
+              
+                <li class="md-select__item">
+                  <a href="/" hreflang="en" class="md-select__link">
+                    English
+                  </a>
+                </li>
+                
+                <li class="md-select__item">
+                  <a href="/zh/" hreflang="zh" class="md-select__link">
+                    中文
+                  </a>
+                </li>
+                
+            </ul>
+          </div>
+        </div>
+      </div>
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/happyfish100/FastCFS/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="FastCFS Docs" class="md-nav__button md-logo" aria-label="FastCFS Docs" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    FastCFS Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/happyfish100/FastCFS/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          Introduction
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Introduction" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Introduction
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        FastCFS Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Release Notes
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Release Notes
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v310" class="md-nav__link">
+    FastCFS V3.1.0 发布，主要改进如下：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V3.1.0 发布，主要改进如下：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v300" class="md-nav__link">
+    FastCFS V3.0.0 发布，主要改进如下：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V3.0.0 发布，主要改进如下：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_1" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v230" class="md-nav__link">
+    FastCFS V2.3.0发布，主要改进如下：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V2.3.0发布，主要改进如下：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_2" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v220" class="md-nav__link">
+    FastCFS V2.2.0 发布，主要改进如下：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V2.2.0 发布，主要改进如下：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_3" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v200-k8sv20" class="md-nav__link">
+    FastCFS V2.0.0 发布，为了更好地对接虚拟机和K8s，V2.0主要实现了存储池和访问权限控制，并支持配额：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V2.0.0 发布，为了更好地对接虚拟机和K8s，V2.0主要实现了存储池和访问权限控制，并支持配额：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_4" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v120-master5bugfastcfs" class="md-nav__link">
+    FastCFS V1.2.0 发布，主要对数据恢复和master任命机制做了改进，修复了5个稳定性bug，FastCFS的可靠性和稳定性上了一个新台阶：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V1.2.0 发布，主要对数据恢复和master任命机制做了改进，修复了5个稳定性bug，FastCFS的可靠性和稳定性上了一个新台阶：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_5" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v100" class="md-nav__link">
+    FastCFS V1.0.0 发布：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V1.0.0 发布：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    主要特性
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmark/" class="md-nav__link">
+        Benchmarks
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Concepts
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Concepts" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Concepts
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Architecture
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Architecture" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Architecture
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fastDir.md" class="md-nav__link">
+        FastDir
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fast-store.md" class="md-nav__link">
+        FastStore
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fastDir.md" class="md-nav__link">
+        FastAuth
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          UserGuide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="UserGuide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          UserGuide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Easy-install-detail-zh_CN/" class="md-nav__link">
+        Quickstart
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INSTALL/" class="md-nav__link">
+        Install
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v310" class="md-nav__link">
+    FastCFS V3.1.0 发布，主要改进如下：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V3.1.0 发布，主要改进如下：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v300" class="md-nav__link">
+    FastCFS V3.0.0 发布，主要改进如下：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V3.0.0 发布，主要改进如下：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_1" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v230" class="md-nav__link">
+    FastCFS V2.3.0发布，主要改进如下：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V2.3.0发布，主要改进如下：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_2" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v220" class="md-nav__link">
+    FastCFS V2.2.0 发布，主要改进如下：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V2.2.0 发布，主要改进如下：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_3" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v200-k8sv20" class="md-nav__link">
+    FastCFS V2.0.0 发布，为了更好地对接虚拟机和K8s，V2.0主要实现了存储池和访问权限控制，并支持配额：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V2.0.0 发布，为了更好地对接虚拟机和K8s，V2.0主要实现了存储池和访问权限控制，并支持配额：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_4" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v120-master5bugfastcfs" class="md-nav__link">
+    FastCFS V1.2.0 发布，主要对数据恢复和master任命机制做了改进，修复了5个稳定性bug，FastCFS的可靠性和稳定性上了一个新台阶：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V1.2.0 发布，主要对数据恢复和master任命机制做了改进，修复了5个稳定性bug，FastCFS的可靠性和稳定性上了一个新台阶：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    新特性
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug_5" class="md-nav__link">
+    Bug修复
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fastcfs-v100" class="md-nav__link">
+    FastCFS V1.0.0 发布：
+  </a>
+  
+    <nav class="md-nav" aria-label="FastCFS V1.0.0 发布：">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    主要特性
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+<a href="https://github.com/happyfish100/FastCFS/edit/master/docs/ReleaseNotes.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+
+  <h1>Release Notes</h1>
+
+<h2 id="fastcfs-v310">FastCFS V3.1.0 发布，主要改进如下：<a class="headerlink" href="#fastcfs-v310" title="Permanent link">&para;</a></h2>
+<h3 id="_1">新特性<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<ol>
+<li>[fdir] 对核心组件FastDIR进行改进，实现了LRU淘汰算法，以有限内存支持海量文件
+   分布式目录服务FastDIR的淘汰算法具有两大特性：<ol>
+<li>按目录结构淘汰：先淘汰子节点，然后淘汰父节点；</li>
+<li>按数据线程淘汰：每个数据线程作为一个独立的数据单元，数据存取和淘汰均在其数据线程中以无锁方式完成。</li>
+</ol>
+</li>
+</ol>
+<h3 id="bug">Bug修复<a class="headerlink" href="#bug" title="Permanent link">&para;</a></h3>
+<ol>
+<li>采用引用计数方式，不再延迟释放 dentry；</li>
+<li>delay free namespace string for lockless；</li>
+<li>bugfixed: get trunk_file_size from ini file correctly。</li>
+</ol>
+<hr />
+<h2 id="fastcfs-v300">FastCFS V3.0.0 发布，主要改进如下：<a class="headerlink" href="#fastcfs-v300" title="Permanent link">&para;</a></h2>
+<h3 id="_2">新特性<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<ol>
+<li>[fdir] 核心组件FastDIR通过插件方式实现数据存储引擎，采用binlog + 存储引擎插件，按需加载inode数据，单机以有限内存（如64GB）支持100亿级的海量文件</li>
+</ol>
+<h3 id="bug_1">Bug修复<a class="headerlink" href="#bug_1" title="Permanent link">&para;</a></h3>
+<ol>
+<li>[fdir] increase/decrease parent's nlink on rename operation</li>
+<li>[fdir] set dentry-&gt;kv_array-&gt;count to 0 correctly</li>
+<li>[fstore] should init barray-&gt;count to 0</li>
+</ol>
+<hr />
+<h2 id="fastcfs-v230">FastCFS V2.3.0发布，主要改进如下：<a class="headerlink" href="#fastcfs-v230" title="Permanent link">&para;</a></h2>
+<h3 id="_3">新特性<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<ol>
+<li>[fauth] auth server以主备方式支持多节点，避免单点；</li>
+<li>[fstore&amp;fdir] leader/master选举/切换引入超时机制，选举时长可控；</li>
+<li>[网络] 网络通信相关改进：
+  1）握手失败，server端主动断开连接； 
+  2）cluster内部通信server端超时控制； 
+  3）调整网络通信超时默认值（连接超时由10秒调整为2秒，收发数据超时由30秒调整为10秒）。</li>
+</ol>
+<h3 id="bug_2">Bug修复<a class="headerlink" href="#bug_2" title="Permanent link">&para;</a></h3>
+<hr />
+<h2 id="fastcfs-v220">FastCFS V2.2.0 发布，主要改进如下：<a class="headerlink" href="#fastcfs-v220" title="Permanent link">&para;</a></h2>
+<h3 id="_4">新特性<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<ol>
+<li>[fstore] 使用libaio实现异步读，随机读性能提升明显；</li>
+<li>[fstore] 支持预读机制，顺序读性能提升显著；</li>
+<li>[csi] k8s驱动（fastcfs-csi）已同步发布，</li>
+<li>[devOPS] 集群运维工具（fcfs.sh）</li>
+</ol>
+<h3 id="bug_3">Bug修复<a class="headerlink" href="#bug_3" title="Permanent link">&para;</a></h3>
+<ol>
+<li>[fstore] 修复V2.1.0引入的bug：第一次运行时，一个关键bool变量没有正确赋值；</li>
+<li>[fuseclient] 修复列举目录导致元数据缓存的一致性问题；</li>
+<li>[fauth] 修复username和poolname格式修饰符不当导致的乱码问题。</li>
+</ol>
+<hr />
+<h2 id="fastcfs-v200-k8sv20">FastCFS V2.0.0 发布，为了更好地对接虚拟机和K8s，V2.0主要实现了存储池和访问权限控制，并支持配额：<a class="headerlink" href="#fastcfs-v200-k8sv20" title="Permanent link">&para;</a></h2>
+<h3 id="_5">新特性<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<ol>
+<li>[fauth] 用户和权限体系</li>
+</ol>
+<h3 id="bug_4">Bug修复<a class="headerlink" href="#bug_4" title="Permanent link">&para;</a></h3>
+<hr />
+<h2 id="fastcfs-v120-master5bugfastcfs">FastCFS V1.2.0 发布，主要对数据恢复和master任命机制做了改进，修复了5个稳定性bug，FastCFS的可靠性和稳定性上了一个新台阶：<a class="headerlink" href="#fastcfs-v120-master5bugfastcfs" title="Permanent link">&para;</a></h2>
+<h3 id="_6">新特性<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h3 id="bug_5">Bug修复<a class="headerlink" href="#bug_5" title="Permanent link">&para;</a></h3>
+<hr />
+<h2 id="fastcfs-v100">FastCFS V1.0.0 发布：<a class="headerlink" href="#fastcfs-v100" title="Permanent link">&para;</a></h2>
+<p>FastCFS 3人小团队历经11个月的研发，推出了FastCFS第一个可用版本，MySQL、PostgresSQL和Oracle可以跑通。</p>
+<p>FastCFS服务端两个核心组件是 FastStore 和 FastDIR。FastStore是基于块存储的分布式数据存储服务，其文件block大小为4MB，文件 inode + 文件偏移量 (offset)作为block的key，对应的文件内容为 value，FastStore本质是一个分布式Key-Value系统。</p>
+<h3 id="_7">主要特性<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ol>
+<li>[fdir] 高性能分布式目录服务，管理文件元数据，支持命名空间</li>
+<li>[fstore] FastStore是一个分布式Key-Value系统，提供了文件块操作，基于数据块的无中心设计，（类一致性Hash），理论上可以无限扩容；</li>
+<li>[fuseclient] 基于FUSE的标准文件接口已经实现，可以使用fused模块mount到本地，为数据库、虚拟机以及其他使用标准文件接口的应用提供存储。</li>
+</ol>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href=".." class="md-footer__link md-footer__link--prev" aria-label="Previous: FastCFS Introduction" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              FastCFS Introduction
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../benchmark/" class="md-footer__link md-footer__link--next" aria-label="Next: Benchmarks" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Benchmarks
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.467223ff.min.js"></script>
+      
+    
+  </body>
+</html>

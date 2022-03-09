@@ -1,0 +1,1124 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="FastCFS Documents,Version: v3.2.0">
+      
+      
+      
+      <link rel="icon" href="../img/logo.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.5">
+    
+    
+      
+        <title>FastCFS 运维工具介绍 - FastCFS Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2d9f7617.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fastcfs" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="FastCFS Docs" class="md-header__button md-logo" aria-label="FastCFS Docs" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            FastCFS Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              FastCFS 运维工具介绍
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+          
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6zm0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4zM7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            </label>
+          
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+          
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3z"/></svg>
+            </label>
+          
+        
+      </form>
+    
+    
+      <div class="md-header__option">
+        <div class="md-select">
+          
+          <button class="md-header__button md-icon" aria-label="Select language">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7 1.62-4.33L19.12 17h-3.24z"/></svg>
+          </button>
+          <div class="md-select__inner">
+            <ul class="md-select__list">
+              
+                <li class="md-select__item">
+                  <a href="/" hreflang="en" class="md-select__link">
+                    English
+                  </a>
+                </li>
+                
+                <li class="md-select__item">
+                  <a href="/zh/" hreflang="zh" class="md-select__link">
+                    中文
+                  </a>
+                </li>
+                
+            </ul>
+          </div>
+        </div>
+      </div>
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/happyfish100/FastCFS/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="FastCFS Docs" class="md-nav__button md-logo" aria-label="FastCFS Docs" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    FastCFS Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/happyfish100/FastCFS/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          Introduction
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Introduction" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Introduction
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        FastCFS Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ReleaseNotes/" class="md-nav__link">
+        Release Notes
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmark/" class="md-nav__link">
+        Benchmarks
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Concepts
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Concepts" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Concepts
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Architecture
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Architecture" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Architecture
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fastDir.md" class="md-nav__link">
+        FastDir
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fast-store.md" class="md-nav__link">
+        FastStore
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/fastDir.md" class="md-nav__link">
+        FastAuth
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          UserGuide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="UserGuide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          UserGuide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Easy-install-detail-zh_CN/" class="md-nav__link">
+        Quickstart
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INSTALL/" class="md-nav__link">
+        Install
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-fcfssh" class="md-nav__link">
+    1. fcfs.sh 介绍
+  </a>
+  
+    <nav class="md-nav" aria-label="1. fcfs.sh 介绍">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    1.1. 这个工具能做什么？
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    1.2. 这个工具不能做什么？
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-fcfssh" class="md-nav__link">
+    1.3. 获取 fcfs.sh
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14" class="md-nav__link">
+    1.4. 使用工具的前置条件
+  </a>
+  
+    <nav class="md-nav" aria-label="1.4. 使用工具的前置条件">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#141-fcfssettings" class="md-nav__link">
+    1.4.1. fcfs.settings
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#142-conf" class="md-nav__link">
+    1.4.2. conf
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-ssh" class="md-nav__link">
+    1.5. SSH 免密登录
+  </a>
+  
+    <nav class="md-nav" aria-label="1.5. SSH 免密登录">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#151" class="md-nav__link">
+    1.5.1. 部署私钥
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#152" class="md-nav__link">
+    1.5.2. 部署公钥
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#16" class="md-nav__link">
+    1.6. 工具命令介绍
+  </a>
+  
+    <nav class="md-nav" aria-label="1.6. 工具命令介绍">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#161-fastcfs" class="md-nav__link">
+    1.6.1. FastCFS 一键安装
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#162-fastcfs" class="md-nav__link">
+    1.6.2. FastCFS 软件安装
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#163-fastcfs" class="md-nav__link">
+    1.6.3. FastCFS 软件升级
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#164-fastcfs" class="md-nav__link">
+    1.6.4. FastCFS 软件降级
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#165-fastcfs" class="md-nav__link">
+    1.6.5. FastCFS 软件卸载
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#166-fastcfs" class="md-nav__link">
+    1.6.6. FastCFS 配置文件分发
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#167" class="md-nav__link">
+    1.6.7. 集群管理
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#168" class="md-nav__link">
+    1.6.8. 查看集群日志
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#169" class="md-nav__link">
+    1.6.9. 查看集群服务进程状态
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-fcfs_confsh" class="md-nav__link">
+    2. fcfs_conf.sh 介绍
+  </a>
+  
+    <nav class="md-nav" aria-label="2. fcfs_conf.sh 介绍">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-fcfs_confsh" class="md-nav__link">
+    2.1. 获取 fcfs_conf.sh
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-fcfs_confsh" class="md-nav__link">
+    2.2. 使用fcfs_conf.sh的前置条件
+  </a>
+  
+    <nav class="md-nav" aria-label="2.2. 使用fcfs_conf.sh的前置条件">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#221-fcfs_confsettings" class="md-nav__link">
+    2.2.1. fcfs_conf.settings
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-fcfs_confsh" class="md-nav__link">
+    2.3. fcfs_conf.sh工具命令介绍
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-conf_tpl_tarsh" class="md-nav__link">
+    3. conf_tpl_tar.sh 介绍
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+<a href="https://github.com/happyfish100/FastCFS/edit/master/docs/fcfs-ops-tool-zh_CN.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+
+<h1 id="fastcfs">FastCFS 运维工具介绍<a class="headerlink" href="#fastcfs" title="Permanent link">&para;</a></h1>
+<ul>
+<li><a href="#fcfs.sh">fcfs.sh</a> -- 用于管理 FastCFS 集群的快捷运维工具</li>
+<li><a href="#fcfs_conf.sh">fcfs_conf.sh</a> -- 用于快速创建集群配置文件的工具</li>
+</ul>
+<h2 id="1-fcfssh">1. fcfs.sh 介绍<a class="headerlink" href="#1-fcfssh" title="Permanent link">&para;</a></h2>
+<p>fcfs.sh 是一个用于快速部署和管理 FastCFS 集群的脚本工具。它基于 SSH 访问协议连接远程节点服务器，并使用服务器上带有 sudo 功能的账号（也可以使用root）进行相关命令的执行。它只需在你的工作站机器上运行，不需要服务器、数据库或者其他额外资源。</p>
+<p>如果你需要经常搭建、卸载或配置 FastCFS集群，又想节省大量的重复工作，那么它很适合你。</p>
+<p><strong><em>注： 该脚本工具目前仅适用于 Centos 7, Centos 8。</em></strong></p>
+<p><a name="fcfs.sh"></a></p>
+<h3 id="11">1.1. 这个工具能做什么？<a class="headerlink" href="#11" title="Permanent link">&para;</a></h3>
+<p>它能快速构建 FastCFS 集群，包括安装软件、分发配置文件，以及管理集群服务和查看集群日志。</p>
+<p>它也能对 FastCFS 单节点或整个集群的相关软件进行升级或降级。</p>
+<p>它能重新安装软件或者重新分发配置文件。</p>
+<h3 id="12">1.2. 这个工具不能做什么？<a class="headerlink" href="#12" title="Permanent link">&para;</a></h3>
+<p>它不是一个通用的部署工具， 仅适用于 FastCFS 集群。除了将配置文件分发到集群的各个服务器节点以外，它不对集群配置做任何处理。你必须为它提供可用的集群配置文件。</p>
+<h3 id="13-fcfssh">1.3. 获取 fcfs.sh<a class="headerlink" href="#13-fcfssh" title="Permanent link">&para;</a></h3>
+<p>从以下地址下载 fcfs.sh，并将其放置在工作站机器的bin目录下，以便命令行能够找到：</p>
+<blockquote>
+<p>http://fastcfs.net/fastcfs/ops/fcfs.sh</p>
+</blockquote>
+<p>获取命令：</p>
+<blockquote>
+<p>sudo curl -o /usr/bin/fcfs.sh  http://fastcfs.net/fastcfs/ops/fcfs.sh &amp;&amp; sudo chmod +x /usr/bin/fcfs.sh</p>
+</blockquote>
+<p>下载完成后可通过命令 <strong><em>which fcfs.sh</em></strong> 测试工具是否生效。</p>
+<h3 id="14">1.4. 使用工具的前置条件<a class="headerlink" href="#14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fcfs.settings -- 集群运维配置，放置在当前工作目录中</li>
+<li>conf -- 集群配置文件目录，放置在当前工作目录中</li>
+<li>远程服务器 SSH 免密登录，参见 <a href="#SSH-password-free-login">5. SSH 免密登录</a></li>
+</ul>
+<p>你必须为每个集群创建一个独立的工作目录（例如：<strong><em>fastcfs-ops</em></strong>），将 <strong><em>fcfs.settings</em></strong> 和 <strong><em>conf</em></strong> 放入其中。然后所有针对该集群的后续命令操作，都必须在该工作目录中执行。</p>
+<h4 id="141-fcfssettings">1.4.1. fcfs.settings<a class="headerlink" href="#141-fcfssettings" title="Permanent link">&para;</a></h4>
+<p>fcfs.settings 包括两个字段 <strong><em>fastcfs_version</em></strong> 和 <strong><em>fuseclient_ips</em></strong>，fastcfs_version 用于指定 FastCFS 主版本号，fuseclient_ips 用于指定要部署 fuse client 的服务器主机。当需要对 FastCFS 集群软件进行升级或降级操作时，你需要先修改 fastcfs_version 对应的版本号为你期望的版本。</p>
+<p>fcfs.settings 配置文件内容举例:</p>
+<div class="highlight"><pre><span></span><code># 要安装的集群版本号（例如：2.2.0）
+fastcfs_version=2.2.0
+
+# 要安装 fuseclient 客户端的IP列表，多个ip以英文逗号分隔
+fuseclient_ips=10.0.1.14
+</code></pre></div>
+<p><strong><em>注：推荐使用 2.2.0 及以后的版本用于集群部署。</em></strong></p>
+<h4 id="142-conf">1.4.2. conf<a class="headerlink" href="#142-conf" title="Permanent link">&para;</a></h4>
+<p>FastCFS集群的所有配置文件必须提前放置在工作目录中的 <strong><em>conf</em></strong> 目录，conf 包含以下四个子目录：</p>
+<ul>
+<li>fdir -- fdir 服务器的配置文件</li>
+<li>fstore -- fstore 服务器的配置文件</li>
+<li>auth -- fauth 服务器的配置文件</li>
+<li>fcfs -- fuseclient 客户端的配置文件</li>
+</ul>
+<p><strong>获取配置文件样例</strong></p>
+<div class="highlight"><pre><span></span><code>mkdir fastcfs-ops
+cd fastcfs-ops/
+curl -o fcfs-config-sample.tar.gz http://fastcfs.net/fastcfs/ops/fcfs-config-sample.tar.gz
+tar -xzvf fcfs-config-sample.tar.gz
+</code></pre></div>
+<p><strong>使用fcfs_conf.sh创建集群配置文件</strong></p>
+<p>也可以根据自己的需要，使用脚本工具 fcfs_conf.sh 创建 FastCFS集群配置文件。参见：<a href="#fcfs_conf.sh">fcfs_conf.sh</a></p>
+<p><a name="SSH-password-free-login"></a></p>
+<h3 id="15-ssh">1.5. SSH 免密登录<a class="headerlink" href="#15-ssh" title="Permanent link">&para;</a></h3>
+<p>fcfs.sh 将通过 SSH 连接所有集群主机。它需要工作站机器可以通过 SSH 在远程主机上执行脚本，执行命令的用户身份可以是 root 或带 sudo的用户，并且必须支持免密登录。</p>
+<p>为了开启免密登录，你需要先为 SSH 生成 rsa 公钥/私钥对：</p>
+<blockquote>
+<p>ssh-keygen -t rsa -C cfs -f cfs-ssh-key</p>
+</blockquote>
+<p>将生成密钥文件：</p>
+<ul>
+<li>cfs-ssh-key  -- 私钥文件</li>
+<li>cfs-ssh-key.pub -- 公钥文件</li>
+</ul>
+<h4 id="151">1.5.1. 部署私钥<a class="headerlink" href="#151" title="Permanent link">&para;</a></h4>
+<p>将私钥文件 cfs-ssh-key 拷贝到工作站机器的当前用户home目录 <strong><em>"~/.ssh/"</em></strong>，然后将下面的配置片段加入配置文件 ~/.ssh/config（每个集群主机一份）：</p>
+<div class="highlight"><pre><span></span><code>Host [node ip]
+    HostName [node host name]
+    User [ssh user]
+    Port 22
+    PubkeyAuthentication yes
+    IdentityFile ~/.ssh/cfs-ssh-key
+</code></pre></div>
+<h4 id="152">1.5.2. 部署公钥<a class="headerlink" href="#152" title="Permanent link">&para;</a></h4>
+<p>将公钥文件内容加入到每个节点服务器sudo 用户的home目录下 <strong><em>.ssh/authorized_keys</em></strong> 文件中：</p>
+<blockquote>
+<p>ssh-copy-id -i cfs-ssh-key.pub [user name]@[node server ip]</p>
+</blockquote>
+<p>并确保服务器上sshd的配置文件中开启了以下配置参数：</p>
+<div class="highlight"><pre><span></span><code>RSAAuthentication yes
+PubkeyAuthentication yes
+AuthorizedKeysFile      .ssh/authorized_keys
+</code></pre></div>
+<h3 id="16">1.6. 工具命令介绍<a class="headerlink" href="#16" title="Permanent link">&para;</a></h3>
+<p>fcfs.sh工具的命令包括三部分：command，module 和 node。Command 是必须的，module 和 node 是可选的。</p>
+<p>用法:</p>
+<blockquote>
+<p>fcfs.sh command [module] [node]</p>
+</blockquote>
+<p><strong>Commands</strong>:</p>
+<ul>
+<li>setup -- 安装并运行 FastCFS 软件的快捷命令，组合了 install、config 和 restart三个命令</li>
+<li>install -- 安装 FastCFS 软件</li>
+<li>reinstall -- 重新安装 FastCFS 软件</li>
+<li>remove -- 移除 FastCFS 软件，功能与 erase 命令相同</li>
+<li>erase -- 移除 FastCFS 软件</li>
+<li>config -- 将集群配置文件拷贝到目标主机目录</li>
+<li>start -- 启动集群中的所有或单个模块服务</li>
+<li>restart -- 重启集群中的所有或单个模块服务</li>
+<li>stop -- 停止集群中的所有或单个模块服务</li>
+<li>tail -- 查看指定模块日志的最后一部分内容（等同于远程服务器的tail命令）</li>
+<li>status -- 查看指定模块服务进程状态</li>
+<li>help -- 查看命令的详细说明和样例</li>
+</ul>
+<p><strong>Modules</strong>:</p>
+<ul>
+<li>fdir -- fastDIR 服务器</li>
+<li>fstore -- faststore 服务器</li>
+<li>fauth -- FastCFS auth 服务器</li>
+<li>fuseclient -- FastCFS fuse 客户端</li>
+</ul>
+<p><strong>Node</strong>:</p>
+<p>可以用于指定要执行命令的单个集群节点主机名或IP，如果不指定，命令将在所有节点上执行。node 参数必须在使用了 module 参数的情况下使用，不能单独直接使用。</p>
+<h4 id="161-fastcfs">1.6.1. FastCFS 一键安装<a class="headerlink" href="#161-fastcfs" title="Permanent link">&para;</a></h4>
+<p>你可以使用命令 <strong><em>setup</em></strong> 在集群节点上快速安装 FastCFS 软件，并自动配置和启动模块服务.</p>
+<p><strong>样例</strong></p>
+<p>安装并启动整个 FastCFS 集群:</p>
+<blockquote>
+<p>fcfs.sh setup</p>
+</blockquote>
+<p>在所有 fdir 节点上安装并启动 fdir 服务器:</p>
+<blockquote>
+<p>fcfs.sh setup fdir</p>
+</blockquote>
+<p>在节点 10.0.1.11 上安装 fdir 服务器：</p>
+<blockquote>
+<p>fcfs.sh setup fdir 10.0.1.11</p>
+</blockquote>
+<p>节点 10.0.1.11 必须属于 fdir 集群，否则命令将失败。</p>
+<h4 id="162-fastcfs">1.6.2. FastCFS 软件安装<a class="headerlink" href="#162-fastcfs" title="Permanent link">&para;</a></h4>
+<p>你可以使用命令 <strong><em>install</em></strong> 只安装 FastCFS 软件。这个命令是 setup 命令的一部分。</p>
+<p>第一次执行该命令时，必须在所有节点上安装所有软件（也就是说，此时不能指定module和node）。之后，当需要增加新节点时，可以携带 module 和 node 参数使用。</p>
+<p><strong>样例</strong></p>
+<p>在所有节点安装所需的 FastCFS 软件:</p>
+<blockquote>
+<p>fcfs.sh install</p>
+</blockquote>
+<p>在所有 fdir 节点上安装 fdir 服务器：</p>
+<blockquote>
+<p>fcfs.sh install fdir</p>
+</blockquote>
+<p>在 10.0.1.11 节点上安装 fdir 服务器：</p>
+<blockquote>
+<p>fcfs.sh install fdir 10.0.1.11</p>
+</blockquote>
+<h4 id="163-fastcfs">1.6.3. FastCFS 软件升级<a class="headerlink" href="#163-fastcfs" title="Permanent link">&para;</a></h4>
+<p>当你想升级 FastCFS 软件时，你需要先将配置文件 fcfs.settings 中的 fastcfs_version 字段的值修改为新的版本号，然后执行 install 命令：</p>
+<blockquote>
+<p>fcfs.sh install</p>
+</blockquote>
+<h4 id="164-fastcfs">1.6.4. FastCFS 软件降级<a class="headerlink" href="#164-fastcfs" title="Permanent link">&para;</a></h4>
+<p>如果你确实需要将 FastCFS 软件降级为旧的版本，你必须先执行 <strong><em>remove</em></strong> 命令：</p>
+<blockquote>
+<p>fcfs.sh remove</p>
+</blockquote>
+<p>或:</p>
+<blockquote>
+<p>fcfs.sh erase</p>
+</blockquote>
+<p>并将字段 fastcfs_version 的值修改为旧的版本号，然后执行 install 命令：</p>
+<blockquote>
+<p>fcfs.sh install</p>
+</blockquote>
+<h4 id="165-fastcfs">1.6.5. FastCFS 软件卸载<a class="headerlink" href="#165-fastcfs" title="Permanent link">&para;</a></h4>
+<p>可以使用命令 <strong><em>remove</em></strong> 或 <strong><em>erase</em></strong> 卸载 FastCFS 软件。</p>
+<p><strong>样例</strong></p>
+<p>移除所有节点上的所有软件：</p>
+<blockquote>
+<p>fcfs.sh remove</p>
+</blockquote>
+<p>移除所有 fdir 节点上的 fdir 服务器：</p>
+<blockquote>
+<p>fcfs.sh remove fdir</p>
+</blockquote>
+<p>移除节点10.0.1.11上的 fdir 服务器：</p>
+<blockquote>
+<p>fcfs.sh remove fdir 10.0.1.11</p>
+</blockquote>
+<h4 id="166-fastcfs">1.6.6. FastCFS 配置文件分发<a class="headerlink" href="#166-fastcfs" title="Permanent link">&para;</a></h4>
+<p>成功安装 FastCFS 软件之后，你必须通过执行命令 <strong><em>config</em></strong> 来将配置文件分发到各个集群节点。如果节点上的目标配置文件目录不存在，它将会自动创建它们。</p>
+<p><strong>样例</strong></p>
+<p>将所有模块的配置文件分发到所有相应的节点上：</p>
+<blockquote>
+<p>fcfs.sh config</p>
+</blockquote>
+<p>将 fdir 服务器的配置文件分发到所有 fdir 节点上：</p>
+<blockquote>
+<p>fcfs.sh config fdir</p>
+</blockquote>
+<p>将 fdir 服务器的配置文件分发到 fdir 节点 10.0.1.11 上：</p>
+<blockquote>
+<p>fcfs.sh config fdir 10.0.1.11</p>
+</blockquote>
+<h4 id="167">1.6.7. 集群管理<a class="headerlink" href="#167" title="Permanent link">&para;</a></h4>
+<p>管理集群的命令包括 <strong><em>start</em></strong>, <strong><em>stop</em></strong>, <strong><em>restart</em></strong>。你可以同时操作所有模块的所有节点，也可以同时操作某一模块的所有节点，也可以单独操作某一模块的某一个节点。</p>
+<p>如果想操作单个节点，你必须在 module 参数后指定 node（host）参数（也就是说，你不能同时操作某一节点上的所有模块）。</p>
+<p><strong>样例</strong></p>
+<p>启动所有节点上的所有服务：</p>
+<blockquote>
+<p>fcfs.sh start</p>
+</blockquote>
+<p>重启所有 fdir 节点上的 fdir 服务：</p>
+<blockquote>
+<p>fcfs.sh restart fdir</p>
+</blockquote>
+<p>停止 节点10.0.1.11上的 fdir 服务：</p>
+<blockquote>
+<p>fcfs.sh stop fdir 10.0.1.11</p>
+</blockquote>
+<h4 id="168">1.6.8. 查看集群日志<a class="headerlink" href="#168" title="Permanent link">&para;</a></h4>
+<p>当你想查看 FastCFS 服务的最新日志时，你可以使用命令 <strong><em>tail</em></strong> 来显示指定模块日志文件的最后一部分。</p>
+<p><strong>样例</strong></p>
+<p>显示 10.0.1.11节点上 fdir 服务日志文件的最后 100 行：</p>
+<blockquote>
+<p>fcfs.sh tail fdir 10.0.1.11 -n 100</p>
+</blockquote>
+<p>或:</p>
+<blockquote>
+<p>fcfs.sh tail fdir 10.0.1.11 -100</p>
+</blockquote>
+<p>显示每个 fdir 服务器日志的最后 10 行：</p>
+<blockquote>
+<p>fcfs.sh tail fdir</p>
+</blockquote>
+<h4 id="169">1.6.9. 查看集群服务进程状态<a class="headerlink" href="#169" title="Permanent link">&para;</a></h4>
+<p>当你想查看 FastCFS 服务的进程状态时，你可以使用命令 <strong><em>status</em></strong> 来显示指定模块的服务进程状态。</p>
+<p><strong>样例</strong></p>
+<p>显示 10.0.1.11 节点上 fdir 服务进程状态：</p>
+<blockquote>
+<p>fcfs.sh status fdir 10.0.1.11</p>
+</blockquote>
+<p>显示每个 fdir 服务器进程状态：</p>
+<blockquote>
+<p>fcfs.sh status fdir</p>
+</blockquote>
+<p>显示所有服务进程状态：</p>
+<blockquote>
+<p>fcfs.sh status</p>
+</blockquote>
+<p><a name="fcfs_conf.sh"></a></p>
+<h2 id="2-fcfs_confsh">2. fcfs_conf.sh 介绍<a class="headerlink" href="#2-fcfs_confsh" title="Permanent link">&para;</a></h2>
+<p>fcfs_conf.sh 是一个快速创建 FastCFS集群配置文件的运维工具。它通过 bash shell 访问本地配置文件 fcfs_conf.settings。它只需在你的工作站机器上运行，不需要服务器、数据库或者其他额外资源。</p>
+<p>如果你需要在指定的服务器IP列表上快速生成集群配置文件，那么它很适合你。</p>
+<h3 id="21-fcfs_confsh">2.1. 获取 fcfs_conf.sh<a class="headerlink" href="#21-fcfs_confsh" title="Permanent link">&para;</a></h3>
+<p>从以下地址下载 fcfs_conf.sh，并将其放置在工作站机器的bin目录下，以便命令行能够找到：</p>
+<blockquote>
+<p>http://fastcfs.net/fastcfs/ops/fcfs_conf.sh</p>
+</blockquote>
+<p>获取命令：</p>
+<blockquote>
+<p>sudo curl -o /usr/bin/fcfs_conf.sh  http://fastcfs.net/fastcfs/ops/fcfs_conf.sh &amp;&amp; sudo chmod +x /usr/bin/fcfs_conf.sh</p>
+</blockquote>
+<p>下载完成后可通过命令 <strong><em>which fcfs_conf.sh</em></strong> 测试工具是否生效。</p>
+<h3 id="22-fcfs_confsh">2.2. 使用fcfs_conf.sh的前置条件<a class="headerlink" href="#22-fcfs_confsh" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fcfs_conf.settings -- 生成集群配置文件的参数配置，放置在当前工作目录中</li>
+</ul>
+<p>你必须为每个集群创建一个独立的工作目录（例如：<strong><em>fastcfs-ops</em></strong>），将 <strong><em>fcfs_conf.settings</em></strong>放入其中。然后在该工作目录中执行fcfs_conf.sh命令。</p>
+<h4 id="221-fcfs_confsettings">2.2.1. fcfs_conf.settings<a class="headerlink" href="#221-fcfs_confsettings" title="Permanent link">&para;</a></h4>
+<p>fcfs_conf.settings 包括以下六种字段：</p>
+<ul>
+<li>fastcfs_version -- 要生成哪个版本集群的配置文件</li>
+<li>auth_ips -- FastCFS auth 服务器IP地址列表，多个IP以英文半角逗号分隔</li>
+<li>fdir_ips --  fastDIR服务器IP地址列表，多个IP以英文半角逗号分隔</li>
+<li>fstore_group_count -- faststore服务器分组数量</li>
+<li>fstore_group_[N] -- faststore服务器分组IP地址列表，多个IP以英文半角逗号分隔</li>
+<li>data_group_count -- faststore服务区数据分组数（推荐64的整数倍）</li>
+</ul>
+<p>参数 fstore_group_count 设置的数量必须与 fstore_group_[N] 数量相匹配，并且编号从1开始递增。</p>
+<p>fcfs_conf.settings 配置文件内容举例:</p>
+<div class="highlight"><pre><span></span><code># 要生成配置的集群版本号（例如：2.3.0）
+fastcfs_version=2.3.0
+
+# 集群主机列表和分组数
+auth_ips=10.0.1.11,10.0.1.12,10.0.1.13
+fdir_ips=10.0.1.11,10.0.1.12,10.0.1.13
+fstore_group_count=2
+fstore_group_1=10.0.1.11,10.0.1.12,10.0.1.13
+fstore_group_2=10.0.2.11,10.0.2.12,10.0.2.13
+data_group_count=128
+</code></pre></div>
+<p><strong><em>注：推荐使用 2.3.0 及以后的版本用于生成集群配置文件。</em></strong></p>
+<h3 id="23-fcfs_confsh">2.3. fcfs_conf.sh工具命令介绍<a class="headerlink" href="#23-fcfs_confsh" title="Permanent link">&para;</a></h3>
+<p>fcfs_conf.sh工具的命令包括两部分：command，module。Command 是必须的，module 是可选的。</p>
+<p>用法:</p>
+<blockquote>
+<p>fcfs.sh command [module]</p>
+</blockquote>
+<p><strong>Commands</strong>:</p>
+<ul>
+<li>create -- 创建配置文件</li>
+<li>help -- 查看命令的详细说明和样例</li>
+</ul>
+<p><strong>Modules</strong>:</p>
+<ul>
+<li>fdir -- fastDIR 服务器</li>
+<li>fstore -- faststore 服务器</li>
+<li>fauth -- FastCFS auth 服务器</li>
+<li>fuseclient -- FastCFS fuse 客户端</li>
+</ul>
+<h2 id="3-conf_tpl_tarsh">3. conf_tpl_tar.sh 介绍<a class="headerlink" href="#3-conf_tpl_tarsh" title="Permanent link">&para;</a></h2>
+<p>一个简单的集群配置文件模版打包工具，仅供FastCFS开发者使用。</p>
+<p>它将从FastCFS, fastDIR, faststore的源代码仓库将FastCFS 集群配置文件模版打包成tar包。</p>
+<p>这三个仓库必须在同一个目录，并且 conf_tpl_tar.sh 必须在子目录 FastCFS/shell/ 中执行。</p>
+<p>命令格式:</p>
+<div class="highlight"><pre><span></span><code>conf_tpl_tar.sh &lt;version&gt; [update]
+</code></pre></div>
+<ul>
+<li>version -- 要创建模版压缩包的集群版本号.</li>
+<li>update -- 在创建之前获取最新的源代码，可选。</li>
+</ul>
+<p>举例:</p>
+<blockquote>
+<p>./conf_tpl_tar.sh 2.3.0 update</p>
+</blockquote>
+<p>将在当前目录创建配置模版压缩包文件 <strong>conf.2.3.0.tpl.tar.gz</strong>。</p>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.467223ff.min.js"></script>
+      
+    
+  </body>
+</html>
