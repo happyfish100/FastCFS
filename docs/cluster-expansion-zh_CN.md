@@ -1,5 +1,5 @@
 
-# FastCFS集群扩容
+# FastCFS集群扩容手册
 
 FastCFS集群三个服务组件：fauth、fdir 和fstore，下面将分别介绍这三个服务组件的扩容方法和步骤。
 
@@ -10,7 +10,7 @@ FastCFS集群三个服务组件：fauth、fdir 和fstore，下面将分别介绍
 
 ## 2. fdir（目录服务）
 
-FastCFS目录服务用于文件元数据管理，目前只支持一组服务器，使用常规服务器（如64GB内存 + NVMe SSD）可以支持百亿级文件。
+FastCFS目录服务用于文件元数据管理，目前只支持一组服务器，使用常规服务器（如64GB内存 + SSD）可以支持百亿级文件。
 详情参见[高性能大容量分布式目录服务FastDIR简介](https://my.oschina.net/u/3334339/blog/5405816)
 
 建议将fdir部署在3台服务器上，可以根据实际需要随时增加或减少fdir服务器，fdir将基于binlog自动完成数据同步。
@@ -132,6 +132,11 @@ data_group_ids = [129, 256]
 ```
 
 将cluster.conf分发到fstore集群所有服务器以及所有fuseclient后，重启fstore集群和fuseclient
+
+为了清除迁移出去的数据占用空间，V3.2支持清除迁移出去的replica和slice binlog，启动 fs_serverd时带上参数 --migrate-clean 即可，示例如下：
+```
+/usr/bin/fs_serverd  /etc/fastcfs/fstore/server.conf restart --migrate-clean
+```
 
 * 友情提示：
    * 配置文件分发和程序启停可以使用fcfs.sh，使用说明参见[FastCFS集群运维工具](fcfs-ops-tool-zh_CN.md)

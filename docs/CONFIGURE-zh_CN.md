@@ -45,6 +45,8 @@ FastCFS集群配置包含如下四部分：
         |__ fdir
         |    |__ serverd.pid: 服务进程fdir_serverd的pid文件
         |    |__ data: 系统数据文件目录，包含集群拓扑结构和binlog
+        |    |    |__binlog: 存放binlog文件
+        |    |
         |    |__ logs: 日志文件目录
         |         |__ fdir_serverd.log: 错误日志
         |         |__ slow.log: 慢查询日志
@@ -52,6 +54,9 @@ FastCFS集群配置包含如下四部分：
         |__ fstore
               |__ serverd.pid: 服务进程fs_serverd的pid文件
               |__ data: 系统数据文件目录，包含集群拓扑结构和binlog
+              |    |__replica: replica binlog，一个DG对应一个子目录
+              |    |__slice: slice binlog
+              |
               |__ logs: 日志文件目录
                    |__ fs_serverd.log: 错误日志
                    |__ slow.log: 慢查询日志

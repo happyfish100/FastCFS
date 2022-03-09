@@ -15,7 +15,7 @@ FastCFS 主要特点：
 
 ## 2. 当前版本
 
-V3.1.0
+V3.2.0
 
 ## 3. 支持的操作系统
 
@@ -28,14 +28,14 @@ V3.1.0
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
-* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.55)
-* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.12)
-* [libdiskallocator](https://gitee.com/fastdfs100/libdiskallocator) (tag: V1.0.1)
-* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V3.1.0)
-* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V3.1.0)
-* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V3.1.0)
+* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.56)
+* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.13)
+* [libdiskallocator](https://gitee.com/fastdfs100/libdiskallocator) (tag: V1.0.2)
+* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V3.2.0)
+* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V3.2.0)
+* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V3.2.0)
 
-## 5. 部署
+## 5. 部署 & 运维
 
 FastCFS包含 libfastcommon、libserverframe、libdiskallocator、fastDIR、faststore和FastCFS 六个安装包。
 
@@ -73,6 +73,9 @@ df -h /opt/fastcfs/fuse | grep fuse
 
 FastCFS安装完成后，请参阅[配置指南](docs/CONFIGURE-zh_CN.md)
 
+### 集群扩容
+
+详情参见 [FastCFS集群扩容手册](docs/cluster-expansion-zh_CN.md)
 
 ## 6. 性能测试
 
