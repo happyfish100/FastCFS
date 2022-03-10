@@ -139,7 +139,7 @@ data_group_ids = [129, 256]
 /usr/bin/fs_serverd  /etc/fastcfs/fstore/server.conf restart --migrate-clean
 ```
 
-**注意：**为了防止误操作，正常情况下启动fs_serverd**不要**使用--migrate-clean
+**注意：** 为了防止误操作，正常情况下启动fs_serverd **不要** 使用--migrate-clean！
 
 * 友情提示：
    * 配置文件分发和程序启停可以使用fcfs.sh，使用说明参见[FastCFS集群运维工具](fcfs-ops-tool-zh_CN.md)

@@ -99,10 +99,10 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 
 ## 10. 待完成工作
 
-*  [fstore] 提供集群扩容工具，实现自动化扩容
-*  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
-*  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）
+*  [fstore] 单盘故障恢复后，自动恢复数据
 *  [fstore] 机器故障恢复后，master需重新均衡分配
+*  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）
+*  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 
 ## 11. 联系我们
 
