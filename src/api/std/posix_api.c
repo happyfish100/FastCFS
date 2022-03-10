@@ -51,6 +51,7 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
     IniContext iniContext;
     IniFullContext ini_ctx;
 
+    log_try_init();
     if ((result=iniLoadFromFile(config_filename, &iniContext)) != 0) {
         logError("file: "__FILE__", line: %d, "
                 "load conf file \"%s\" fail, ret code: %d",

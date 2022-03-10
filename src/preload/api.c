@@ -91,7 +91,7 @@ __attribute__ ((destructor)) static void preload_global_destroy(void)
     FCFS_LOG_DEBUG("pid: %d, file: "__FILE__", line: %d, "
             "destructor\n", getpid(), __LINE__);
     if (g_fcfs_preload_global_vars.inited) {
-        fcfs_posix_api_terminate();
+        fcfs_posix_api_stop();
     }
 }
 

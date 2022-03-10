@@ -262,7 +262,7 @@ static int copy_file()
     fcfs_fsync(dst_fd);
     fcfs_close(dst_fd);
 
-    fcfs_posix_api_terminate();
+    fcfs_posix_api_stop();
     return 0;
 }
 

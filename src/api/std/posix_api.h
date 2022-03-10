@@ -31,11 +31,30 @@ extern "C" {
 
     extern FCFSPosixAPIGlobalVars g_fcfs_papi_global_vars;
 
+    /** FastCFS POSIX API init
+     * parameters:
+     *   ctx: the POSIX API context
+     *   log_prefix_name: the prefix name for log filename, NULL for stderr
+     *   ns: the namespace/poolname of FastDIR
+     *   config_filename: the config filename, eg. /etc/fastcfs/fcfs/fuse.conf
+     *   fdir_section_name: the section name of FastDIR
+     *   fs_section_name: the section name of FastStore
+     *   publish: if publish the session, this parameter is valid when auth enabled
+     * return: error no, 0 for success, != 0 fail
+    */
     int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx,
             const char *log_prefix_name, const char *ns,
             const char *config_filename, const char *fdir_section_name,
             const char *fs_section_name, const bool publish);
 
+    /** FastCFS POSIX API init with default section names
+     * parameters:
+     *   ctx: the POSIX API context
+     *   log_prefix_name: the prefix name for log filename, NULL for stderr
+     *   ns: the namespace/poolname of FastDIR
+     *   config_filename: the config filename, eg. /etc/fastcfs/fcfs/fuse.conf
+     * return: error no, 0 for success, != 0 fail
+    */
     static inline int fcfs_posix_api_init_ex(FCFSPosixAPIContext *ctx,
             const char *log_prefix_name, const char *ns,
             const char *config_filename)
@@ -46,6 +65,13 @@ extern "C" {
                 FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME, publish);
     }
 
+    /** FastCFS POSIX API init with the global context
+     * parameters:
+     *   log_prefix_name: the prefix name for log filename, NULL for stderr
+     *   ns: the namespace/poolname of FastDIR
+     *   config_filename: the config filename, eg. /etc/fastcfs/fcfs/fuse.conf
+     * return: error no, 0 for success, != 0 fail
+    */
     static inline int fcfs_posix_api_init(const char *log_prefix_name,
             const char *ns, const char *config_filename)
     {
@@ -53,9 +79,21 @@ extern "C" {
                 log_prefix_name, ns, config_filename);
     }
 
+    /** log configs of FastCFS POSIX API
+     * parameters:
+     *   ctx: the POSIX API context
+     *   fdir_section_name: the section name of FastDIR
+     *   fs_section_name: the section name of FastStore
+     * return: none
+    */
     void fcfs_posix_api_log_configs_ex(FCFSPosixAPIContext *ctx,
             const char *fdir_section_name, const char *fs_section_name);
 
+    /** log configs of FastCFS POSIX API with the global context
+     *  and default section names
+     *
+     * return: none
+    */
     static inline void fcfs_posix_api_log_configs()
     {
         fcfs_posix_api_log_configs_ex(&g_fcfs_papi_global_vars.ctx,
@@ -63,32 +101,97 @@ extern "C" {
                 FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME);
     }
 
+    /** FastCFS POSIX API start (create the background threads)
+     * parameters:
+     *   ctx: the POSIX API context
+     * return: error no, 0 for success, != 0 fail
+    */
     static inline int fcfs_posix_api_start_ex(FCFSPosixAPIContext *ctx)
     {
         return fcfs_api_start_ex(&ctx->api_ctx, &ctx->owner);
     }
 
-    static inline void fcfs_posix_api_terminate_ex(FCFSPosixAPIContext *ctx)
+    /** FastCFS POSIX API init and start
+     * parameters:
+     *   ctx: the POSIX API context
+     *   log_prefix_name: the prefix name for log filename, NULL for stderr
+     *   ns: the namespace/poolname of FastDIR
+     *   config_filename: the config filename, eg. /etc/fastcfs/fcfs/fuse.conf
+     * return: error no, 0 for success, != 0 fail
+    */
+    static inline int fcfs_posix_api_init_start_ex(
+            FCFSPosixAPIContext *ctx, const char *log_prefix_name,
+            const char *ns, const char *config_filename)
+    {
+        int result;
+
+        if ((result=fcfs_posix_api_init_ex(ctx, log_prefix_name,
+                        ns, config_filename)) != 0)
+        {
+            return result;
+        }
+        return fcfs_api_start_ex(&ctx->api_ctx, &ctx->owner);
+    }
+
+    /** FastCFS POSIX API stop the background threads
+     * parameters:
+     *   ctx: the POSIX API context
+     * return: none
+    */
+    static inline void fcfs_posix_api_stop_ex(FCFSPosixAPIContext *ctx)
     {
         fcfs_api_terminate_ex(&ctx->api_ctx);
     }
 
+    /** FastCFS POSIX API destroy
+     * parameters:
+     *   ctx: the POSIX API context
+     * return: none
+    */
     void fcfs_posix_api_destroy_ex(FCFSPosixAPIContext *ctx);
 
+
+    /** FastCFS POSIX API start (create the background threads)
+     *
+     * return: error no, 0 for success, != 0 fail
+    */
     static inline int fcfs_posix_api_start()
     {
         return fcfs_posix_api_start_ex(&g_fcfs_papi_global_vars.ctx);
     }
 
-    static inline void fcfs_posix_api_terminate()
+    /** FastCFS POSIX API init and start with the global context
+     * parameters:
+     *   log_prefix_name: the prefix name for log filename, NULL for stderr
+     *   ns: the namespace/poolname of FastDIR
+     *   config_filename: the config filename, eg. /etc/fastcfs/fcfs/fuse.conf
+     * return: error no, 0 for success, != 0 fail
+    */
+    static inline int fcfs_posix_api_init_start(const char *log_prefix_name,
+            const char *ns, const char *config_filename)
     {
-        fcfs_posix_api_terminate_ex(&g_fcfs_papi_global_vars.ctx);
+        return fcfs_posix_api_init_start_ex(&g_fcfs_papi_global_vars.ctx,
+                log_prefix_name, ns, config_filename);
     }
 
+    /** FastCFS POSIX API stop the background threads with the global context
+     *
+     * return: none
+    */
+    static inline void fcfs_posix_api_stop()
+    {
+        fcfs_posix_api_stop_ex(&g_fcfs_papi_global_vars.ctx);
+    }
+
+    /** FastCFS POSIX API destroy with the global context
+     *
+     * return: none
+    */
     static inline void fcfs_posix_api_destroy()
     {
         fcfs_posix_api_destroy_ex(&g_fcfs_papi_global_vars.ctx);
     }
+
 
     static inline pid_t fcfs_posix_api_getpid()
     {
