@@ -133,10 +133,13 @@ data_group_ids = [129, 256]
 
 将cluster.conf分发到fstore集群所有服务器以及所有fuseclient后，重启fstore集群和fuseclient
 
-为了清除迁移出去的数据占用空间，V3.2支持清除迁移出去的replica和slice binlog，启动 fs_serverd时带上参数 --migrate-clean 即可，示例如下：
+### 清除已迁走的数据
+数据迁移完成后，为了清除迁移出去的数据占用空间，V3.2支持清除迁移出去的replica和slice binlog，启动 fs_serverd时带上参数 --migrate-clean 即可，示例如下：
 ```
 /usr/bin/fs_serverd  /etc/fastcfs/fstore/server.conf restart --migrate-clean
 ```
+
+**注意：**为了防止误操作，正常情况下启动fs_serverd**不要**使用--migrate-clean
 
 * 友情提示：
    * 配置文件分发和程序启停可以使用fcfs.sh，使用说明参见[FastCFS集群运维工具](fcfs-ops-tool-zh_CN.md)
