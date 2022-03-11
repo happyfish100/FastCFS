@@ -1,11 +1,11 @@
-# FastCFS -- a high performance general distributed file system for databases, K8s and VM etc.
+# FastCFS -- a high performance general distributed file system for databases, K8s and KVM etc.
 
 English | [Chinese](./README-zh_CN.md)
 
 ## 1. About
 
 FastCFS is a general distributed file system with strong consistency, high performance, high availability and supporting 10 billion massive files.
-FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Oracle etc.), K8s and NAS.
+FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Oracle etc.), K8s, KVM and NAS.
 
 ## 2. Current Version
 
