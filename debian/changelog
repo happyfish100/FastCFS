@@ -1,4 +1,107 @@
-fastcfs (3.1.0-1) UNRELEASED; urgency=medium
+fastcfs (3.2.0-1) unstable; urgency=medium
+
+  [ sungness ]
+  * Update README.md
+  * Update AUTH-zh_CN.md
+  * Update docs style
+  * Update CONFIGURE-zh_CN.md
+  * update docs style
+  * Update fcfs.sh add status command
+  * Update fcfs-ops-tool.md add  description for status command
+  * Update fcfs.sh
+
+  [ YuQing ]
+  * CONFIGURE-zh_CN.md changed for storage engine
+
+  [ sungness ]
+  * Update fcfs.sh and fcfs_conf.sh add storage.conf for fdir
+
+  [ YuQing ]
+  * AUTH-zh_CN.md changed
+  * AUTH-zh_CN.md refined
+  * AUTH-zh_CN.md format
+  * fcfs_authd.service rename to fastauth.service
+  * README: description improved
+  * fix permission check for storage pool list
+  * fcfs_pool.c: beautify spool output
+  * fix list_spool and list_gpool return status
+  * [fauth] support regenerate secret key
+  * use -y option to confirm when the user is same with the admin
+  * beautify prompt for -y option
+  * change FUSEOwnerType to FCFSAPIOwnerType
+  * add files src/api/fcfs_posix_api.[hc]
+  * move fcfs_posix_api.[hc] to std/posix_api.[hc]
+  * add files: std/fd_manager.[hc]
+  * add files: std/papi_file.[hc] and std/papi_dir.[hc]
+  * fcfs_write and fcfs_pwrite impl.
+  * fcfs_writev and fcfs_pwritev impl.
+  * fcfs_read[v] and fcfs_pread[v] impl.
+  * impl. fcfs_fstat, fcfs_symlinkat, etc.
+  * rename papi_file.[hc] to papi.[hc]
+  * call stat_dentry_xxx with flags
+  * call link_dentry_xxx with flags
+  * fcfs_api_file.c: check_writable and check_readable
+  * impl. fcfs_utimes, fcfs_rename etc.
+  * call remove_dentry_xxx with flags
+  * impl. fcfs_setxattr, fcfs_getxattr etc.
+  * impl. opendir, readdir, closedir ...
+  * fcntl impl.
+  * chdir and getcwd impl.
+  * wrapper chroot, dup, dup2 etc.
+  * add src/api/tests/test_papi_copy.c and test passed
+  * test_papi_copy.c: support readv & writev
+  * add preload files: types.h and global.[hc]
+  * adapt dlsym in mac OS
+  * preload api wrapper done.
+  * set get size flags for getxattr and listxattr
+  * proxy api correctly (such as use syscall) when not inited
+  * __xstat, __lxstat etc. implement OK.
+
+  [ vazmin ]
+  * fcfs_authd service rename to fastauth
+
+  [ YuQing ]
+  * support posix_fallocate, dprintf etc.
+  * support euidaccess and eaccess
+  * preload support posix_fallocate, dprintf etc.
+  * C API fcfs_fopen impl.
+  * remove ctx parameter for posix functions with fd
+  * fdopen, freopen impl.
+  * impl. fputc, fgetc, fread, fwrite etc.
+  * impl. getdelim, getline etc.
+  * support function fcfs_readline
+  * preload for c APIs
+  * change function prototypes for __xmknod and __xmknodat
+  * compile passed in MacOS
+  * impl. __fprintf_chk and __vfprintf_chk
+  * impl. fsync, fdatasync and fcloseall
+  * preload use syscall to forward request
+  * papi.[hc] use fcfs_getcwd for current directory
+  * extract common codes for posix_api_init
+  * impl. fcfs_api_log_client_common_configs and fcfs_posix_api_log_configs
+  * add docs/cluster-expansion-zh_CN.md
+  * docs/cluster-expansion-zh_CN.md refined
+  * docs/cluster-expansion-zh_CN.md refined v2
+  * docs/cluster-expansion-zh_CN.md refined v3
+  * upgrade version to 3.2.0
+  * upgrade versions for RPM spec files
+  * compile passed in CentOS 7.4
+  * fuse.conf add parameter: xattr_enabled
+  * docs/cluster-expansion-zh_CN.md refined v4
+  * add link to docs/cluster-expansion-zh_CN.md
+
+  [ Jerry ]
+  * add mkdocs for documents build
+
+  [ YuQing ]
+  * add comments for posix_api.h
+  * cluster-expansion-zh_CN.md refined v5
+  * change version declare for README.md
+  * README refined
+
+ -- YuQing <384681@qq.com>  Sun, 13 Mar 2022 17:07:08 +0800
+
+fastcfs (3.1.0-1) unstable; urgency=medium
 
   * upgrade version to 3.1.0
 
