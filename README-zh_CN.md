@@ -108,8 +108,8 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 
 查看FastCFS相关技术文章，请关注微信公众号：
 
-<img src="images/wechat_subscribe.jpg" width="200" alt="微信公众号">
+<img src="https://gitee.com/fastdfs100/FastCFS/raw/master/images/wechat_subscribe.jpg" width="200" alt="微信公众号">
 
 微信交流群：
 
-<img src="images/wechat_group.jpg" width="200" alt="微信交流群">
+<img src="https://gitee.com/fastdfs100/FastCFS/raw/master/images/wechat_group.jpg" width="200" alt="微信交流群">
