@@ -45,7 +45,11 @@ FastCFS集群配置包含如下四部分：
         |__ fdir
         |    |__ serverd.pid: 服务进程fdir_serverd的pid文件
         |    |__ data: 系统数据文件目录，包含集群拓扑结构和binlog
-        |    |    |__binlog: 存放binlog文件
+        |    |    |__ cluster.info: 集群拓扑信息
+        |    |    |__ .inode.sn: 当前inode顺序号
+        |    |    |__ binlog: 存放binlog文件
+        |    |
+        |    |__ db: 存储引擎默认数据目录
         |    |
         |    |__ logs: 日志文件目录
         |         |__ fdir_serverd.log: 错误日志
@@ -54,8 +58,15 @@ FastCFS集群配置包含如下四部分：
         |__ fstore
               |__ serverd.pid: 服务进程fs_serverd的pid文件
               |__ data: 系统数据文件目录，包含集群拓扑结构和binlog
-              |    |__replica: replica binlog，一个DG对应一个子目录
-              |    |__slice: slice binlog
+              |    |__ data_group.info: 集群数据分组信息
+              |    |__ .store_path_index.dat: 存储路径索引
+              |    |__ .trunk_id.dat: 当前trunk id信息
+              |    |__ replica: replica binlog，一个DG对应一个子目录
+              |    |__ slice: slice binlog
+              |    |__ trunk: trunk binlog
+              |    |__ recovery: slave追加master历史数据，一个DG对应一个子目录
+              |    |__ migrate: 迁移出去的DG数据清理
+              |    |__ rebuild: 单盘数据恢复
               |
               |__ logs: 日志文件目录
                    |__ fs_serverd.log: 错误日志
