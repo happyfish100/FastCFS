@@ -235,7 +235,7 @@ static int init_allocator_array(ServerSessionAllocatorArray *array)
     for (mblock=array->allocators; mblock<end; mblock++) {
         if ((result=fast_mblock_init_ex1(mblock, "session_entry",
                         element_size, 4096, 0,
-                        (fast_mblock_alloc_init_func)
+                        (fast_mblock_object_init_func)
                         server_session_alloc_init,
                         mblock, true)) != 0)
         {

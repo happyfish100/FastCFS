@@ -43,7 +43,7 @@ static int init_allocator_context(FCFSAPIAllocatorContext *ctx)
     int result;
     if ((result=fast_mblock_init_ex1(&ctx->async_report_event,
                     "async_report_event", sizeof(FCFSAPIAsyncReportEvent),
-                    4096, 0, (fast_mblock_alloc_init_func)
+                    4096, 0, (fast_mblock_object_init_func)
                     async_report_event_alloc_init,
                     &ctx->async_report_event, true)) != 0)
     {
@@ -52,7 +52,7 @@ static int init_allocator_context(FCFSAPIAllocatorContext *ctx)
 
     if ((result=fast_mblock_init_ex1(&ctx->waiting_task,
                     "waiting_task", sizeof(FCFSAPIWaitingTask), 1024, 0,
-                    (fast_mblock_alloc_init_func)waiting_task_alloc_init,
+                    (fast_mblock_object_init_func)waiting_task_alloc_init,
                     &ctx->waiting_task, true)) != 0)
     {
         return result;
