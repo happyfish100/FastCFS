@@ -1,6 +1,6 @@
 # FastCFS -- 可以跑数据库的高性能通用分布式文件系统
 
-[English](./README.md) | 简体中文
+[English](README.md) | 简体中文
 
 ## 1. 简介
 
@@ -19,7 +19,7 @@ V3.2.0
 
 ## 3. 支持的操作系统
 
-* Linux: Kernel version >= 3.10 （完全支持） 
+* Linux: Kernel version >= 3.10 （完全支持，推荐使用4.18及更高版本）
 * MacOS or FreeBSD  （仅支持服务端，不支持FUSE）
 
 ## 4. 依赖
@@ -100,7 +100,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 ## 10. 待完成工作
 
 *  [fstore] 单盘故障恢复后，自动恢复数据
-*  [fstore] 机器故障恢复后，master需重新均衡分配
+*  [fstore] 机器故障或网络短暂故障恢复后，master需重新均衡分配
 *  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 

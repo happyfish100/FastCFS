@@ -1,6 +1,6 @@
 # FastCFS -- a high performance general distributed file system for databases, K8s and KVM etc.
 
-English | [Chinese](./README-zh_CN.md)
+English | [Chinese](README-zh_CN.md)
 
 ## 1. About
 
@@ -13,7 +13,7 @@ V3.2.0
 
 ## 3. Supported Platforms
 
-* Linux: Kernel version >= 3.10  (Full support)
+* Linux: Kernel version >= 3.10  (Full support, >=4.18 is recommended)
 * MacOS or FreeBSD (Only server side)
 
 ## 4. Dependencies
