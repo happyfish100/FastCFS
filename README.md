@@ -93,8 +93,9 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 
 ## 9. TODO List
 
-*  [fstore] data recovery after single disk fault
-*  [fstore] after the machine recovery, the data masters should be rebalanced
+*  [fstore] data recovery after single disk fault (in progress)
+*  [fstore] after the machine recovery, the data masters should be rebalanced (in progress)
+*  [fauth & fdir & fstore] leader election uses  more than half principle to prevent brain-split (in progress)
 *  [fdir & fstore] binlog deduplication (fdir binlog, fstore replica & slice binlog)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 
