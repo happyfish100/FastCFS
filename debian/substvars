@@ -1,0 +1,7 @@
+libfastcommon:Version=1.0.56
+libserverframe:Version=1.1.13
+faststore-config:Version=1.0.0
+fastcfs-fuse-config:Version=1.0.0
+fastcfs-auth-config:Version=2.0.0
+fastdir-client:Version=3.2.0
+faststore-client:Version=3.2.0

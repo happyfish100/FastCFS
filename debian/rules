@@ -36,3 +36,7 @@ endif
 override_dh_installsystemd:
 	dh_installsystemd --package=fastcfs-fused --name=fastcfs --no-start --no-restart-on-upgrade
 	dh_installsystemd --package=fastcfs-auth-server --name=fastauth --no-start --no-restart-on-upgrade
+
+.PHONY: override_dh_gencontrol
+override_dh_gencontrol:
+	dh_gencontrol -- -Tdebian/substvars
