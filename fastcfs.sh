@@ -365,7 +365,7 @@ install_all_softwares() {
   if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
     check_install_fastos_repo
     rpm -q fuse >/dev/null && yum remove fuse -y
-    yum install libaio-devel FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
+    yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
   else
     ./libfuse_setup.sh
     pull_source_codes
