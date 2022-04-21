@@ -34,6 +34,7 @@ typedef struct server_global_vars {
         FCFSAuthClusterServerArray server_array;
 
         struct {
+            SFElectionQuorum quorum;
             int master_lost_timeout;
             int max_wait_time;
         } master_election;
@@ -59,6 +60,8 @@ typedef struct server_global_vars {
     SFSlowLogContext slow_log;
 } AuthServerGlobalVars;
 
+#define MASTER_ELECTION_QUORUM g_server_global_vars.cluster. \
+    master_election.quorum
 #define ELECTION_MASTER_LOST_TIMEOUT g_server_global_vars.cluster. \
     master_election.master_lost_timeout
 #define ELECTION_MAX_WAIT_TIME   g_server_global_vars.cluster. \

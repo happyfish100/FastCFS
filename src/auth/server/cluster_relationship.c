@@ -30,6 +30,7 @@
 #include "fastcommon/shared_func.h"
 #include "fastcommon/pthread_func.h"
 #include "fastcommon/sched_thread.h"
+#include "sf/sf_configs.h"
 #include "sf/sf_service.h"
 #include "sf/sf_func.h"
 #include "common/auth_proto.h"
@@ -315,6 +316,7 @@ static int cluster_check_brainsplit(const int inactive_count)
 static int master_check()
 {
     int result;
+    int active_count;
     int inactive_count;
 
     PTHREAD_MUTEX_LOCK(&INACTIVE_SERVER_ARRAY.lock);
@@ -324,13 +326,26 @@ static int master_check()
         if ((result=cluster_check_brainsplit(inactive_count)) != 0) {
             return result;
         }
+
+        active_count = CLUSTER_SERVER_ARRAY.count -
+            INACTIVE_SERVER_ARRAY.count;
+        if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM,
+                    CLUSTER_SERVER_ARRAY.count, active_count))
+        {
+            logWarning("file: "__FILE__", line: %d, "
+                    "trigger re-select master because alive server "
+                    "count: %d < half of total server count: %d ...",
+                    __LINE__, active_count, CLUSTER_SERVER_ARRAY.count);
+            cluster_unset_master();
+            return EBUSY;
+        }
     }
 
     return 0;
 }
 
 static int cluster_get_master(FCFSAuthClusterServerStatus *server_status,
-        int *active_count)
+        const bool log_connect_error, int *active_count)
 {
 #define STATUS_ARRAY_FIXED_COUNT  8
 	FCFSAuthClusterServerInfo *server;
@@ -359,7 +374,7 @@ static int cluster_get_master(FCFSAuthClusterServerStatus *server_status,
 	end = CLUSTER_SERVER_ARRAY.servers + CLUSTER_SERVER_ARRAY.count;
 	for (server=CLUSTER_SERVER_ARRAY.servers; server<end; server++) {
 		current_status->cs = server;
-        r = cluster_get_server_status(current_status);
+        r = cluster_get_server_status_ex(current_status, log_connect_error);
 		if (r == 0) {
 			current_status++;
 		} else if (r != ENOENT) {
@@ -641,10 +656,12 @@ static int cluster_select_master()
 	int result;
     int active_count;
     int i;
+    bool need_log;
     int max_sleep_secs;
     int sleep_secs;
     int remain_time;
     time_t start_time;
+    time_t last_log_time;
 	FCFSAuthClusterServerStatus server_status;
     FCFSAuthClusterServerInfo *next_master;
 
@@ -652,12 +669,41 @@ static int cluster_select_master()
 		"selecting master...", __LINE__);
 
     start_time = g_current_time;
+    last_log_time = 0;
+    sleep_secs = 10;
     max_sleep_secs = 1;
     i = 0;
     while (CLUSTER_MASTER_ATOM_PTR == NULL) {
-        if ((result=cluster_get_master(&server_status, &active_count)) != 0) {
+        if (sleep_secs > 1 || g_current_time - last_log_time >= 10) {
+            need_log = true;
+            last_log_time = g_current_time;
+        } else {
+            need_log = false;
+        }
+
+        if ((result=cluster_get_master(&server_status,
+                        need_log, &active_count)) != 0)
+        {
             return result;
         }
+
+        ++i;
+        if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM,
+                    CLUSTER_SERVER_ARRAY.count, active_count))
+        {
+            sleep_secs = 1;
+            if (need_log) {
+                logWarning("file: "__FILE__", line: %d, "
+                        "round %dth select master fail because alive server "
+                        "count: %d < half of total server count: %d, "
+                        "try again after %d seconds.", __LINE__, i,
+                        active_count, CLUSTER_SERVER_ARRAY.count,
+                        sleep_secs);
+            }
+            sleep(sleep_secs);
+            continue;
+        }
+
         if ((active_count == CLUSTER_SERVER_ARRAY.count) ||
                 (active_count >= 2 && server_status.is_master))
         {
@@ -669,9 +715,8 @@ static int cluster_select_master()
             break;
         }
 
-        ++i;
         sleep_secs = FC_MIN(remain_time, max_sleep_secs);
-        logInfo("file: "__FILE__", line: %d, "
+        logWarning("file: "__FILE__", line: %d, "
                 "round %dth select master, alive server count: %d "
                 "< server count: %d, try again after %d seconds.",
                 __LINE__, i, active_count, CLUSTER_SERVER_ARRAY.count,
