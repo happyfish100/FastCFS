@@ -674,9 +674,14 @@ static int cluster_select_master()
     max_sleep_secs = 1;
     i = 0;
     while (CLUSTER_MASTER_ATOM_PTR == NULL) {
-        if (sleep_secs > 1 || g_current_time - last_log_time >= 10) {
+        if (sleep_secs > 1) {
             need_log = true;
             last_log_time = g_current_time;
+        } if (g_current_time - last_log_time > 8) {
+            need_log = ((i + 1) % 10 == 0);
+            if (need_log) {
+                last_log_time = g_current_time;
+            }
         } else {
             need_log = false;
         }
