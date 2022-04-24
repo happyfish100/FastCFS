@@ -291,7 +291,7 @@ int session_subscribe_init()
 
     if ((result=fast_mblock_init_ex1(&subscribe_ctx.subs_allocator,
                     "session_subscriber", sizeof(ServerSessionSubscriber),
-                    1024, 0, (fast_mblock_alloc_init_func)
+                    1024, 0, (fast_mblock_object_init_func)
                     subscriber_alloc_init_func, NULL, true)) != 0)
     {
         return result;

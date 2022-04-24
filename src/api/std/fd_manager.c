@@ -88,7 +88,7 @@ int fcfs_fd_manager_init()
     __sync_add_and_fetch(&PAPI_NEXT_FD, FCFS_POSIX_API_FD_BASE);
     if ((result=fast_mblock_init_ex1(&FINFO_ALLOCATOR, "papi_file_info",
                     sizeof(FCFSPosixAPIFileInfo), FILE_INFO_ALLOC_ONCE, 0,
-                    (fast_mblock_alloc_init_func)finfo_init_func,
+                    (fast_mblock_object_init_func)finfo_init_func,
                     NULL, true)) != 0)
     {
         return result;
