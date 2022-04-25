@@ -45,14 +45,14 @@ fcfs.settings include two fields ***fastcfs_version*** and ***fuseclient_ips***,
 fcfs.settings content Example:
 
 ```
-# Version of FastCFS cluster（exp：2.2.0）
-fastcfs_version=2.2.0
+# Version of FastCFS cluster
+fastcfs_version=3.3.0
 
 # Hosts which fuseclient will install，multiple hosts separated by comma
 fuseclient_ips=10.0.1.14
 ```
 
-***Tip：Use version 2.2.0 and later for deploy.***
+***Tip：Use version 3.3.0 and later for deploy.***
 
 #### 1.4.2. conf
 
@@ -336,8 +336,8 @@ Parameter fstore_group_count's value must match fstore_group_[N], and N increase
 fcfs_conf.settings content Example:
 
 ```
-# Version of FastCFS cluster（exp：2.3.0）
-fastcfs_version=2.3.0
+# Version of FastCFS cluster
+fastcfs_version=3.3.0
 
 # Cluster hosts list and group count
 auth_ips=10.0.1.11,10.0.1.12,10.0.1.13
@@ -348,7 +348,7 @@ fstore_group_2=10.0.2.11,10.0.2.12,10.0.2.13
 data_group_count=128
 ```
 
-***Tip：Use version 2.3.0 and later for crearte config files.***
+***Tip：Use version 3.3.0 and later for crearte config files.***
 
 ## 3. conf_tpl_tar.sh introduction
 
@@ -369,6 +369,6 @@ conf_tpl_tar.sh <version> [update]
 
 Exmaple:
 
-> ./conf_tpl_tar.sh 2.3.0 update
+> ./conf_tpl_tar.sh 3.3.0 update
 
-It will create tar file **conf.2.3.0.tpl.tar.gz** in current dir.
+It will create tar file **conf.3.3.0.tpl.tar.gz** in current dir.

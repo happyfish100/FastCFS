@@ -9,7 +9,7 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Or
 
 ## 2. Current Version
 
-V3.2.0
+V3.3.0
 
 ## 3. Supported Platforms
 
@@ -22,12 +22,12 @@ V3.2.0
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.56)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.13)
-* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.0.2)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V3.2.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V3.2.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V3.2.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.57)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.14)
+* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.0.3)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V3.3.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V3.3.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V3.3.0)
 
 ## 5. Installation
 
@@ -93,9 +93,9 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 
 ## 9. TODO List
 
-*  [fstore] data recovery after single disk fault (in progress)
-*  [fstore] after the machine recovery, the data masters should be rebalanced (in progress)
-*  [fauth & fdir & fstore] leader election uses  more than half principle to prevent brain-split (in progress)
+*  [fstore] data recovery after single disk fault (done)
+*  [fstore] after the machine recovery, the data masters should be rebalanced (done)
+*  [fauth & fdir & fstore] leader election uses  more than half principle to prevent brain-split (done)
 *  [fdir & fstore] binlog deduplication (fdir binlog, fstore replica & slice binlog)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 
