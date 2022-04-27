@@ -102,6 +102,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fstore] 单盘故障恢复后，自动恢复数据（已完成）
 *  [fstore] 机器故障或网络短暂故障恢复后，master需重新均衡分配（已完成）
 *  [fauth & fdir & fstore] leader选举支持过半原则，防止脑裂（已完成）
+*  [fauth & fdir & fstore] 实现公用选举节点，双副本防脑裂（进行中）
 *  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 
