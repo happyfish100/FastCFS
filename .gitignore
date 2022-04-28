@@ -7,6 +7,8 @@ src/tools/Makefile
 src/auth/server/Makefile
 src/auth/client/Makefile
 src/auth/client/tools/Makefile
+src/vote/client/Makefile
+src/vote/server/Makefile
 
 # Prerequisites
 *.d
@@ -46,6 +48,7 @@ src/auth/client/tools/fcfs_user
 src/auth/client/tools/fcfs_pool
 src/auth/client/tools/fauth_list_servers
 src/auth/client/tools/fauth_cluster_stat
+src/vote/server/fcfs_voted
 
 # other
 logs

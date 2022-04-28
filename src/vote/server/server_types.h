@@ -23,17 +23,10 @@
 #include "fastcommon/locked_list.h"
 #include "sf/sf_types.h"
 #include "common/vote_types.h"
-#include "common/server_session.h"
 
 #define TASK_STATUS_CONTINUE           12345
 #define TASK_ARG           ((VoteServerTaskArg *)task->arg)
 #define TASK_CTX           TASK_ARG->context
-#define SESSION_ENTRY      TASK_CTX.shared.service.session
-#define SESSION_FIELDS     ((ServerSessionFields *)SESSION_ENTRY->fields)
-#define SESSION_DBUSER     SESSION_FIELDS->dbuser
-#define SESSION_DBPOOL     SESSION_FIELDS->dbpool
-#define SESSION_USER       SESSION_FIELDS->dbuser->user
-#define SESSION_SUBSCRIBER TASK_CTX.shared.cluster.subscriber
 #define REQUEST            TASK_CTX.common.request
 #define RESPONSE           TASK_CTX.common.response
 #define RESPONSE_STATUS    RESPONSE.header.status
@@ -41,9 +34,7 @@
 #define SERVER_TASK_TYPE   TASK_CTX.task_type
 #define CLUSTER_PEER       TASK_CTX.shared.cluster.peer
 
-#define VOTE_SERVER_TASK_TYPE_SESSION      1
-#define VOTE_SERVER_TASK_TYPE_SUBSCRIBE    2
-#define VOTE_SERVER_TASK_TYPE_RELATIONSHIP 3
+#define VOTE_SERVER_TASK_TYPE_RELATIONSHIP 1
 
 #define SERVER_CTX        ((VoteServerContext *)task->thread_data->arg)
 #define SESSION_HOLDER    SERVER_CTX->service.session_holder
@@ -58,56 +49,20 @@ typedef struct fcfs_vote_cluster_server_array {
     int count;
 } FCFSVoteClusterServerArray;
 
-struct db_user_info;
-struct db_storage_pool_info;
-
-typedef struct server_session_fields {
-    bool publish;
-    const struct db_user_info *dbuser;
-    const struct db_storage_pool_info *dbpool;
-    FCFSVoteSPoolPriviledges pool_privs;
-
-    struct fc_list_head dlink; //for publish list
-} ServerSessionFields;
-
-typedef struct server_session_subscriber {
-    struct fc_queue queue;     //element: ServerSessionSubscribeEntry
-    struct fc_list_head dlink; //for global subscriber's chain
-    struct {
-        volatile int in_queue;   //if in the subscriber queue of NIO thread
-        struct fast_task_info *task;
-        struct fc_list_head dlink; //for nio thread subscriber's chain
-    } nio;
-} ServerSessionSubscriber;
-
 typedef struct server_task_arg {
     struct {
         SFCommonTaskContext common;
         int task_type;
         union {
             struct {
-                ServerSessionEntry *session;
             } service;
 
             union {
-                ServerSessionSubscriber *subscriber;
                 FCFSVoteClusterServerInfo *peer;   //the peer server in the cluster
             } cluster;
         } shared;
 
     } context;
 } VoteServerTaskArg;
-
-typedef struct vote_server_context {
-    void *dao_ctx;
-    union {
-        struct {
-            FCLockedList subscribers;   //element: ServerSessionSubscriber
-        } cluster;
-        struct {
-            ServerSessionEntry *session_holder;
-        } service;
-    };
-} VoteServerContext;
 
 #endif

@@ -13,27 +13,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//cluster_handler.h
+//cluster_info.h
 
-#ifndef FCFS_VOTE_CLUSTER_HANDLER_H
-#define FCFS_VOTE_CLUSTER_HANDLER_H
+#ifndef _CLUSTER_INFO_H_
+#define _CLUSTER_INFO_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "fastcommon/fast_task_queue.h"
-#include "server_types.h"
+#include <time.h>
+#include <pthread.h>
+#include "server_global.h"
 
 #ifdef __cplusplus
-
 extern "C" {
 #endif
 
-int cluster_handler_init();
-int cluster_handler_destroy();
-int cluster_deal_task(struct fast_task_info *task, const int stage);
-void cluster_task_finish_cleanup(struct fast_task_info *task);
-int cluster_recv_timeout_callback(struct fast_task_info *task);
+int cluster_info_init(const char *cluster_config_filename);
+int cluster_info_destroy();
+
+FCFSVoteClusterServerInfo *fcfs_vote_get_server_by_id(const int server_id);
 
 #ifdef __cplusplus
 }

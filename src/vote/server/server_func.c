@@ -26,162 +26,9 @@
 #include "sf/sf_service.h"
 #include "sf/sf_cluster_cfg.h"
 #include "common/vote_proto.h"
-#include "common/vote_func.h"
-#include "common/server_session.h"
 #include "server_global.h"
-#include "session_subscribe.h"
 #include "cluster_info.h"
 #include "server_func.h"
-
-#define SECTION_NAME_FASTDIR  "FastDIR"
-
-static int server_load_fdir_client_config(IniContext *ini_context,
-        const char *config_filename)
-{
-#define ITEM_NAME_FDIR_CLIENT_CFG_FILENAME  "client_config_filename"
-
-    char full_filename[PATH_MAX];
-    char *client_cfg_filename;
-    int result;
-
-    if ((client_cfg_filename=iniGetRequiredStrValue(SECTION_NAME_FASTDIR,
-                    ITEM_NAME_FDIR_CLIENT_CFG_FILENAME, ini_context)) == NULL)
-    {
-        return ENOENT;
-    }
-
-    resolve_path(config_filename, client_cfg_filename,
-            full_filename, sizeof(full_filename));
-    if (!fileExists(full_filename)) {
-        result = errno != 0 ? errno : ENOENT;
-        logError("file: "__FILE__", line: %d, "
-                "config file: %s, item: %s, value: %s, access file %s fail, "
-                "errno: %d, error info: %s", __LINE__, config_filename,
-                ITEM_NAME_FDIR_CLIENT_CFG_FILENAME, client_cfg_filename,
-                full_filename, result, STRERROR(result));
-        return result;
-    }
-
-    if ((g_server_global_vars.fdir_client_cfg_filename=
-                fc_strdup(full_filename)) == NULL)
-    {
-        return ENOMEM;
-    }
-    return 0;
-}
-
-static int server_load_admin_generate_config(IniContext *ini_context,
-        const char *config_filename)
-{
-#define SECTION_NAME_ADMIN_GENERATE  "admin-generate"
-#define USERNAME_VARIABLE_STR  "${username}"
-#define USERNAME_VARIABLE_LEN  (sizeof(USERNAME_VARIABLE_STR) - 1)
-
-    char *mode;
-    string_t username;
-    string_t secret_key_filename;
-    FilenameString new_filename;
-    char full_filename[PATH_MAX];
-    int result;
-
-    mode = iniGetStrValue(SECTION_NAME_ADMIN_GENERATE, "mode", ini_context);
-    if (mode != NULL && strcmp(mode, "always") == 0) {
-        ADMIN_GENERATE_MODE = VOTE_ADMIN_GENERATE_MODE_ALWAYS;
-    } else {
-        ADMIN_GENERATE_MODE = VOTE_ADMIN_GENERATE_MODE_FIRST;
-    }
-
-    username.str = iniGetStrValue(SECTION_NAME_ADMIN_GENERATE,
-            "username", ini_context);
-    if (username.str == NULL || *username.str == '\0') {
-        username.str = "admin";
-    }
-    username.len = strlen(username.str);
-    if ((result=fc_check_filename(&username, "username")) != 0) {
-        return result;
-    }
-
-    secret_key_filename.str = iniGetStrValue(SECTION_NAME_ADMIN_GENERATE,
-            "secret_key_filename", ini_context);
-    if (secret_key_filename.str == NULL || *secret_key_filename.str == '\0') {
-        secret_key_filename.str = "keys/"USERNAME_VARIABLE_STR".key";
-    }
-    secret_key_filename.len = strlen(secret_key_filename.str);
-    fcfs_vote_replace_filename_with_username(&secret_key_filename,
-            &username, &new_filename);
-
-    resolve_path(config_filename, FC_FILENAME_STRING_PTR(new_filename),
-            full_filename, sizeof(full_filename));
-    FC_SET_STRING(secret_key_filename, full_filename);
-
-    if (!fileExists(full_filename)) {
-        char abs_path[PATH_MAX];
-        int create_count;
-
-        getAbsolutePath(full_filename, abs_path, sizeof(abs_path));
-        if ((result=fc_mkdirs_ex(abs_path, 0755, &create_count)) != 0) {
-            return result;
-        }
-        SF_CHOWN_TO_RUNBY_RETURN_ON_ERROR(abs_path);
-    }
-
-    ADMIN_GENERATE_BUFF = (char *)fc_malloc(username.len +
-            secret_key_filename.len + 2);
-    if (ADMIN_GENERATE_BUFF == NULL) {
-        return ENOMEM;
-    }
-    ADMIN_GENERATE_USERNAME.str = ADMIN_GENERATE_BUFF;
-    memcpy(ADMIN_GENERATE_USERNAME.str,
-            username.str, username.len + 1);
-    ADMIN_GENERATE_USERNAME.len = username.len;
-
-    ADMIN_GENERATE_KEY_FILENAME.str =
-        ADMIN_GENERATE_BUFF + username.len + 1;
-    memcpy(ADMIN_GENERATE_KEY_FILENAME.str,
-            secret_key_filename.str,
-            secret_key_filename.len + 1);
-    ADMIN_GENERATE_KEY_FILENAME.len = secret_key_filename.len;
-
-    return 0;
-}
-
-static int server_load_pool_generate_config(IniContext *ini_context,
-        const char *config_filename)
-{
-#define SECTION_NAME_POOL_GENERATE  "pool-generate"
-
-    char *name_template;
-    int result;
-
-    AUTO_ID_INITIAL = iniGetInt64Value(SECTION_NAME_POOL_GENERATE,
-            "auto_id_initial", ini_context, 1);
-
-    name_template = iniGetStrValue(SECTION_NAME_POOL_GENERATE,
-            "pool_name_template", ini_context);
-    if (name_template == NULL || *name_template == '\0') {
-        name_template = FCFS_VOTE_AUTO_ID_TAG_STR;
-    } else if (strstr(name_template, FCFS_VOTE_AUTO_ID_TAG_STR) == NULL) {
-        logError("file: "__FILE__", line: %d, "
-                "config file: %s, pool_name_template: %s is invalid, "
-                "must contains %s", __LINE__, config_filename,
-                name_template, FCFS_VOTE_AUTO_ID_TAG_STR);
-        return EINVAL;
-    }
-
-    POOL_NAME_TEMPLATE.len = strlen(name_template);
-    POOL_NAME_TEMPLATE.str = (char *)fc_malloc(POOL_NAME_TEMPLATE.len + 1);
-    if (POOL_NAME_TEMPLATE.str == NULL) {
-        return ENOMEM;
-    }
-    memcpy(POOL_NAME_TEMPLATE.str, name_template, POOL_NAME_TEMPLATE.len + 1);
-    if ((result=fc_check_filename(&POOL_NAME_TEMPLATE,
-                    "pool_name_template")) != 0)
-    {
-        return result;
-    }
-
-    return 0;
-}
 
 static void log_cluster_server_config()
 {
@@ -203,15 +50,12 @@ static void server_log_configs()
     char sz_global_config[512];
     char sz_slowlog_config[256];
     char sz_service_config[256];
-    char sz_session_config[512];
 
     sf_global_config_to_string(sz_global_config, sizeof(sz_global_config));
     sf_slow_log_config_to_string(&SLOW_LOG_CFG, "slow-log",
             sz_slowlog_config, sizeof(sz_slowlog_config));
     sf_context_config_to_string(&g_sf_context,
             sz_service_config, sizeof(sz_service_config));
-    server_session_cfg_to_string(sz_session_config,
-            sizeof(sz_session_config));
 
     snprintf(sz_server_config, sizeof(sz_server_config),
             "admin-generate {mode: %s, username: %s, "
@@ -232,11 +76,6 @@ static void server_log_configs()
             g_fcfs_vote_global_vars.version.patch,
             sz_global_config, sz_slowlog_config,
             sz_service_config, sz_server_config);
-
-    logInfo("FastDIR {client_config_filename: %s, "
-            "pool_usage_refresh_interval: %d}, %s",
-            g_server_global_vars.fdir_client_cfg_filename,
-            POOL_USAGE_REFRESH_INTERVAL, sz_session_config);
 
     log_local_host_ip_addrs();
     log_cluster_server_config();
@@ -325,38 +164,6 @@ int server_load_config(const char *filename)
                     full_cluster_filename)) != 0)
     {
         return result;
-    }
-
-    ini_ctx.section_name = "session";
-    if ((result=server_session_init_ex(&ini_ctx,
-                    sizeof(ServerSessionFields),
-                    &g_server_session_callbacks)) != 0)
-    {
-        return result;
-    }
-
-    if ((result=server_load_admin_generate_config(
-                    &ini_context, filename)) != 0)
-    {
-        return result;
-    }
-
-    if ((result=server_load_pool_generate_config(
-                    &ini_context, filename)) != 0)
-    {
-        return result;
-    }
-
-    if ((result=server_load_fdir_client_config(
-                    &ini_context, filename)) != 0)
-    {
-        return result;
-    }
-
-    POOL_USAGE_REFRESH_INTERVAL = iniGetIntValue(SECTION_NAME_FASTDIR,
-            "pool_usage_refresh_interval", &ini_context, 3);
-    if (POOL_USAGE_REFRESH_INTERVAL <= 0) {
-        POOL_USAGE_REFRESH_INTERVAL = 1;
     }
 
     if ((result=sf_load_slow_log_config(filename, &ini_context,

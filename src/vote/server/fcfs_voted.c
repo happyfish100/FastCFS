@@ -41,7 +41,6 @@
 #include "common/vote_proto.h"
 #include "server_global.h"
 #include "server_func.h"
-#include "session_subscribe.h"
 #include "cluster_relationship.h"
 #include "common_handler.h"
 #include "cluster_handler.h"
@@ -149,17 +148,11 @@ int main(int argc, char *argv[])
             break;
         }
 
-        if ((result=session_subscribe_init()) != 0) {
-            break;
-        }
-
         common_handler_init();
         //sched_print_all_entries();
 
-        result = sf_service_init_ex(&CLUSTER_SF_CTX, "cluster",
-                cluster_alloc_thread_extra_data,
-                cluster_thread_loop_callback, NULL,
-                sf_proto_set_body_length, cluster_deal_task,
+        result = sf_service_init_ex(&CLUSTER_SF_CTX, "cluster", NULL,
+                NULL, NULL, sf_proto_set_body_length, cluster_deal_task,
                 cluster_task_finish_cleanup, cluster_recv_timeout_callback,
                 1000, sizeof(FCFSVoteProtoHeader), sizeof(VoteServerTaskArg));
         if (result != 0) {
@@ -169,8 +162,7 @@ int main(int argc, char *argv[])
         sf_set_remove_from_ready_list_ex(&CLUSTER_SF_CTX, false);
         sf_accept_loop_ex(&CLUSTER_SF_CTX, false);
 
-        result = sf_service_init_ex(&g_sf_context, "service",
-                service_alloc_thread_extra_data, NULL,
+        result = sf_service_init_ex(&g_sf_context, "service", NULL, NULL,
                 NULL, sf_proto_set_body_length, service_deal_task,
                 service_task_finish_cleanup, NULL, 1000,
                 sizeof(FCFSVoteProtoHeader), sizeof(VoteServerTaskArg));

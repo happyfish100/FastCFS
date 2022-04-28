@@ -34,10 +34,7 @@
 #include "sf/sf_service.h"
 #include "sf/sf_func.h"
 #include "common/vote_proto.h"
-#include "db/vote_db.h"
-#include "db/pool_usage_updater.h"
 #include "server_global.h"
-#include "session_subscribe.h"
 #include "cluster_relationship.h"
 
 typedef struct fcfs_vote_cluster_server_status {
@@ -160,10 +157,6 @@ static inline void cluster_unset_master()
     if (old_master != NULL) {
         __sync_bool_compare_and_swap(&CLUSTER_MASTER_PTR, old_master, NULL);
         if (old_master == CLUSTER_MYSELF_PTR) {
-            session_subscribe_clear_session();
-            server_session_clear();
-            pool_usage_updater_terminate();
-            vote_db_destroy();
         }
     }
 }
@@ -466,28 +459,9 @@ int cluster_relationship_pre_set_master(FCFSVoteClusterServerInfo *master)
     return 0;
 }
 
-static int load_data()
-{
-    int result;
-
-    if ((result=adb_load_data((VoteServerContext *)
-                    sf_get_random_thread_data()->arg)) != 0)
-    {
-        return result;
-    }
-    if ((result=adb_check_generate_admin_user((VoteServerContext *)
-                    sf_get_random_thread_data()->arg)) != 0)
-    {
-        return result;
-    }
-
-    return 0;
-}
-
 static int cluster_relationship_set_master(FCFSVoteClusterServerInfo
         *new_master, const time_t start_time)
 {
-    int result;
     FCFSVoteClusterServerInfo *old_master;
 
     old_master = CLUSTER_MASTER_ATOM_PTR;
@@ -501,10 +475,6 @@ static int cluster_relationship_set_master(FCFSVoteClusterServerInfo
     }
 
     if (CLUSTER_MYSELF_PTR == new_master) {
-        if ((result=load_data()) != 0) {
-            sf_terminate_myself();
-            return result;
-        }
     } else {
         char time_used[128];
         if (start_time > 0) {
@@ -530,13 +500,6 @@ static int cluster_relationship_set_master(FCFSVoteClusterServerInfo
         }
         old_master = CLUSTER_MASTER_ATOM_PTR;
     } while (old_master != new_master);
-
-    if (CLUSTER_MYSELF_PTR == new_master) {
-        if ((result=pool_usage_updater_start()) != 0) {
-            sf_terminate_myself();
-            return result;
-        }
-    }
 
     return 0;
 }

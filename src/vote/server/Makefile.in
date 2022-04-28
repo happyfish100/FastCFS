@@ -2,19 +2,14 @@
 
 COMPILE = $(CC) $(CFLAGS)
 INC_PATH = -I.. -I../common
-LIB_PATH = $(LIBS) -lfdirclient -lfastcommon -lserverframe -lfcfsauthclient
+LIB_PATH = $(LIBS) -lfastcommon -lserverframe
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
-STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o   \
-              ../common/auth_func.o ../common/server_session.o \
-              db/dao/dao.o db/dao/func.o db/dao/user.o \
-              db/dao/storage_pool.o db/dao/granted_pool.o \
-              db/auth_db.o db/pool_usage_updater.o server_global.o \
-              server_func.o common_handler.o service_handler.o \
-              cluster_handler.o session_subscribe.o cluster_relationship.o \
-              cluster_info.o
+STATIC_OBJS = ../common/vote_global.o ../common/vote_proto.o  \
+              server_global.o server_func.o common_handler.o service_handler.o \
+              cluster_handler.o cluster_relationship.o cluster_info.o
 
-ALL_PRGS = fcfs_authd
+ALL_PRGS = fcfs_voted
 
 all: $(STATIC_OBJS) $(ALL_PRGS)
 
