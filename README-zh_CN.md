@@ -106,6 +106,8 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 
+参见更多 [TODO List](docs/TODO-zh_CN.md)，欢迎大家参与。
+
 ## 11. 联系我们
 
 查看FastCFS相关技术文章，请关注微信公众号：
