@@ -1,0 +1,60 @@
+.SUFFIXES: .c .o .lo
+
+COMPILE = $(CC) $(CFLAGS)
+INC_PATH = -I../common
+LIB_PATH = $(LIBS) -lfastcommon -lserverframe
+TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
+
+FAST_SHARED_OBJS = ../common/auth_global.lo ../common/auth_proto.lo \
+                   ../common/auth_func.lo  ../common/server_session.lo \
+                   client_func.lo client_global.lo client_proto.lo \
+                   fcfs_auth_client.lo simple_connection_manager.lo \
+                   session_sync.lo session_regenerate.lo \
+                   fcfs_auth_for_server.lo
+
+FAST_STATIC_OBJS = ../common/auth_global.o ../common/auth_proto.o \
+                   ../common/auth_func.o ../common/server_session.o \
+                   client_func.o client_global.o client_proto.o \
+                   fcfs_auth_client.o  simple_connection_manager.o \
+                   session_sync.o session_regenerate.o \
+                   fcfs_auth_for_server.o
+
+HEADER_FILES = ../common/auth_global.h ../common/auth_types.h \
+               ../common/auth_proto.h ../common/auth_func.h \
+               ../common/server_session.h \
+               fcfs_auth_client.h client_types.h client_func.h \
+               client_global.h client_proto.h simple_connection_manager.h \
+               session_sync.h session_regenerate.h fcfs_auth_for_server.h
+
+ALL_OBJS = $(FAST_STATIC_OBJS) $(FAST_SHARED_OBJS)
+
+ALL_PRGS = 
+SHARED_LIBS = libfcfsauthclient.so
+STATIC_LIBS = libfcfsauthclient.a
+ALL_LIBS = $(SHARED_LIBS) $(STATIC_LIBS)
+
+all: $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
+libfcfsauthclient.so: $(FAST_SHARED_OBJS)
+	$(COMPILE) -o $@ -shared $(FAST_SHARED_OBJS) $(LIB_PATH)
+libfcfsauthclient.a: $(FAST_STATIC_OBJS)
+	ar rcs $@ $(FAST_STATIC_OBJS)
+.o:
+	$(COMPILE) -o $@ $<  $(FAST_STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c:
+	$(COMPILE) -o $@ $<  $(FAST_STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c.o:
+	$(COMPILE) -c -o $@ $<  $(INC_PATH)
+.c.lo:
+	$(COMPILE) -c -fPIC -o $@ $<  $(INC_PATH)
+install:
+	mkdir -p $(TARGET_LIB)
+	mkdir -p $(TARGET_PREFIX)/lib
+	mkdir -p $(TARGET_PREFIX)/include/fastcfs/auth
+
+	install -m 755 $(SHARED_LIBS) $(TARGET_LIB)
+	install -m 644 $(HEADER_FILES) $(TARGET_PREFIX)/include/fastcfs/auth
+	@BUILDROOT=$$(echo "$(TARGET_PREFIX)" | grep BUILDROOT); \
+	if [ -z "$$BUILDROOT" ] && [ ! -e $(TARGET_PREFIX)/lib/libfcfsauthclient.so ]; then ln -s $(TARGET_LIB)/libfcfsauthclient.so $(TARGET_PREFIX)/lib/libfcfsauthclient.so; fi
+clean:
+	rm -f $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
+
