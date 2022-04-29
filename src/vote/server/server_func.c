@@ -58,15 +58,8 @@ static void server_log_configs()
             sz_service_config, sizeof(sz_service_config));
 
     snprintf(sz_server_config, sizeof(sz_server_config),
-            "admin-generate {mode: %s, username: %s, "
-            "secret_key_filename: %s}, pool-generate: "
-            "{auto_id_initial: %"PRId64", pool_name_template: %s}, "
             "master-election {quorum: %s, master_lost_timeout: %ds, "
-            "max_wait_time: %ds}",
-            (ADMIN_GENERATE_MODE == VOTE_ADMIN_GENERATE_MODE_FIRST ?
-             "first" : "always"), ADMIN_GENERATE_USERNAME.str,
-            ADMIN_GENERATE_KEY_FILENAME.str, AUTO_ID_INITIAL,
-            POOL_NAME_TEMPLATE.str, sf_get_quorum_caption(
+            "max_wait_time: %ds}", sf_get_quorum_caption(
                 MASTER_ELECTION_QUORUM), ELECTION_MASTER_LOST_TIMEOUT,
             ELECTION_MAX_WAIT_TIME);
 

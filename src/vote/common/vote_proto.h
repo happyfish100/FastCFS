@@ -19,26 +19,34 @@
 #include "sf/sf_proto.h"
 #include "vote_types.h"
 
+//service commands
 #define FCFS_VOTE_SERVICE_PROTO_GET_MASTER_REQ            61
 #define FCFS_VOTE_SERVICE_PROTO_GET_MASTER_RESP           62
-#define FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_REQ          63
-#define FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_RESP         64
+#define FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_REQ           63
+#define FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_RESP          64
+#define FCFS_VOTE_SERVICE_PROTO_GET_VOTE_REQ    \
+    SF_CLUSTER_PROTO_GET_SERVER_STATUS_REQ
+#define FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP   \
+    SF_CLUSTER_PROTO_GET_SERVER_STATUS_RESP
+#define FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_REQ          71
+#define FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_RESP         72
 
 //cluster commands
-#define FCFS_VOTE_CLUSTER_PROTO_GET_SERVER_STATUS_REQ    201
-#define FCFS_VOTE_CLUSTER_PROTO_GET_SERVER_STATUS_RESP   202
-#define FCFS_VOTE_CLUSTER_PROTO_JOIN_MASTER              203  //slave -> master
-#define FCFS_VOTE_CLUSTER_PROTO_PING_MASTER_REQ          205
-#define FCFS_VOTE_CLUSTER_PROTO_PING_MASTER_RESP         206
-#define FCFS_VOTE_CLUSTER_PROTO_PRE_SET_NEXT_MASTER      207  //notify next master to other servers
-#define FCFS_VOTE_CLUSTER_PROTO_COMMIT_NEXT_MASTER       208  //commit next master to other servers
+#define FCFS_VOTE_CLUSTER_PROTO_GET_SERVER_STATUS_REQ     81
+#define FCFS_VOTE_CLUSTER_PROTO_GET_SERVER_STATUS_RESP    82
+#define FCFS_VOTE_CLUSTER_PROTO_JOIN_MASTER               83  //slave -> master
+#define FCFS_VOTE_CLUSTER_PROTO_PING_MASTER_REQ           85
+#define FCFS_VOTE_CLUSTER_PROTO_PING_MASTER_RESP          86
+#define FCFS_VOTE_CLUSTER_PROTO_PRE_SET_NEXT_MASTER       87  //notify next master to other servers
+#define FCFS_VOTE_CLUSTER_PROTO_COMMIT_NEXT_MASTER        88  //commit next master to other servers
 
 typedef SFCommonProtoHeader  FCFSVoteProtoHeader;
 
-typedef struct fcfs_vote_proto_name_info {
-    unsigned char len;
-    char str[0];
-} FCFSVoteProtoNameInfo;
+typedef struct fcfs_vote_proto_client_join_req {
+    char server_id[4];
+    unsigned char service_id;   //which service: fauth/fdir/fstore
+    char padding[3];
+} FCFSVoteProtoClientJoinReq;
 
 typedef struct fcfs_vote_proto_get_server_resp {
     char server_id[4];
@@ -48,8 +56,9 @@ typedef struct fcfs_vote_proto_get_server_resp {
 } FCFSVoteProtoGetServerResp;
 
 typedef struct fcfs_vote_proto_get_server_status_req {
-    char server_id[4];
     char config_sign[SF_CLUSTER_CONFIG_SIGN_LEN];
+    char server_id[4];
+    char padding[4];
 } FCFSVoteProtoGetServerStatusReq;
 
 typedef struct fcfs_vote_proto_get_server_status_resp {

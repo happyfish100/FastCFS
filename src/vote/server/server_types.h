@@ -33,11 +33,12 @@
 #define REQUEST_STATUS     REQUEST.header.status
 #define SERVER_TASK_TYPE   TASK_CTX.task_type
 #define CLUSTER_PEER       TASK_CTX.shared.cluster.peer
+#define SERVICE_ID         TASK_CTX.shared.service.id
 
-#define VOTE_SERVER_TASK_TYPE_RELATIONSHIP 1
+#define VOTE_SERVER_TASK_TYPE_VOTE_NODE    1
+#define VOTE_SERVER_TASK_TYPE_RELATIONSHIP 2
 
 #define SERVER_CTX        ((VoteServerContext *)task->thread_data->arg)
-#define SESSION_HOLDER    SERVER_CTX->service.session_holder
 
 typedef struct fcfs_vote_cluster_server_info {
     FCServerInfo *server;
@@ -49,12 +50,19 @@ typedef struct fcfs_vote_cluster_server_array {
     int count;
 } FCFSVoteClusterServerArray;
 
+typedef struct fcfs_vote_service_peer_info {
+    int server_id;
+    short service_id;
+    short response_size;
+} FCFSVoteServicePeerInfo;
+
 typedef struct server_task_arg {
     struct {
         SFCommonTaskContext common;
         int task_type;
         union {
             struct {
+                FCFSVoteServicePeerInfo *peer;
             } service;
 
             union {

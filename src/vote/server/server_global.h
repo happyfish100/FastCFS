@@ -22,9 +22,6 @@
 #include "../common/vote_global.h"
 #include "server_types.h"
 
-#define VOTE_ADMIN_GENERATE_MODE_FIRST  'F'
-#define VOTE_ADMIN_GENERATE_MODE_ALWAYS 'A'
-
 typedef struct server_global_vars {
     struct {
         FCFSVoteClusterServerInfo *master;
@@ -41,21 +38,6 @@ typedef struct server_global_vars {
 
         SFContext sf_context;  //for cluster communication
     } cluster;
-
-    struct {
-        int mode;
-        char *buff; //space for username and secret_key_filename
-        string_t username;
-        string_t secret_key_filename;
-    } admin_generate;
-
-    struct {
-        int64_t auto_id_initial;
-        string_t pool_name_template;
-    } pool_generate;
-
-    char *fdir_client_cfg_filename;
-    int pool_usage_refresh_interval;
 
     SFSlowLogContext slow_log;
 } VoteServerGlobalVars;
@@ -81,19 +63,6 @@ typedef struct server_global_vars {
 #define CLUSTER_MY_SERVER_ID    CLUSTER_MYSELF_PTR->server->id
 
 #define CLUSTER_SF_CTX          g_server_global_vars.cluster.sf_context
-
-#define ADMIN_GENERATE               g_server_global_vars.admin_generate
-#define ADMIN_GENERATE_MODE          ADMIN_GENERATE.mode
-#define ADMIN_GENERATE_BUFF          ADMIN_GENERATE.buff
-#define ADMIN_GENERATE_USERNAME      ADMIN_GENERATE.username
-#define ADMIN_GENERATE_KEY_FILENAME  ADMIN_GENERATE.secret_key_filename
-
-#define POOL_GENERATE           g_server_global_vars.pool_generate
-#define AUTO_ID_INITIAL         POOL_GENERATE.auto_id_initial
-#define POOL_NAME_TEMPLATE      POOL_GENERATE.pool_name_template
-
-#define POOL_USAGE_REFRESH_INTERVAL g_server_global_vars. \
-    pool_usage_refresh_interval
 
 #define SLOW_LOG                g_server_global_vars.slow_log
 #define SLOW_LOG_CFG            SLOW_LOG.cfg

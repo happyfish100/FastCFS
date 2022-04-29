@@ -26,6 +26,14 @@ const char *fcfs_vote_get_cmd_caption(const int cmd)
             return "GET_MASTER_REQ";
         case FCFS_VOTE_SERVICE_PROTO_GET_MASTER_RESP:
             return "GET_MASTER_RESP";
+        case FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_REQ:
+            return "CLIENT_JOIN_REQ";
+        case FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_RESP:
+            return "CLIENT_JOIN_RESP";
+        case FCFS_VOTE_SERVICE_PROTO_GET_VOTE_REQ:
+            return "GET_VOTE_REQ";
+        case FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP:
+            return "GET_VOTE_RESP";
         case FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_REQ:
             return "CLUSTER_STAT_REQ";
         case FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_RESP:

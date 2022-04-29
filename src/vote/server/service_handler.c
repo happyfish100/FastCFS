@@ -93,14 +93,90 @@ static int service_deal_cluster_stat(struct fast_task_info *task)
     return 0;
 }
 
+static int service_deal_client_join(struct fast_task_info *task)
+{
+    int result;
+    int server_id;
+    int service_id;
+    FCFSVoteProtoClientJoinReq *req;
+
+    if ((result=server_expect_body_length(sizeof(
+                        FCFSVoteProtoClientJoinReq))) != 0)
+    {
+        return result;
+    }
+
+    req = (FCFSVoteProtoClientJoinReq *)REQUEST.body;
+    server_id = buff2int(req->server_id);
+    service_id = req->service_id;
+    switch (service_id) {
+        case FCFS_VOTE_SERVICE_ID_FAUTH:
+        case FCFS_VOTE_SERVICE_ID_FDIR:
+        case FCFS_VOTE_SERVICE_ID_FSTORE:
+            break;
+        default:
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "server_id: %d, unkown service id: %d",
+                    server_id, service_id);
+            return -EINVAL;
+    }
+
+    RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_RESP;
+    return 0;
+}
+
+static int service_deal_get_vote(struct fast_task_info *task)
+{
+    int result;
+    int server_id;
+    int service_id;
+    int response_size;
+    SFProtoGetServerStatusReq *req;
+
+    if ((result=server_expect_body_length(sizeof(
+                        SFProtoGetServerStatusReq))) != 0)
+    {
+        return result;
+    }
+
+    req = (SFProtoGetServerStatusReq *)REQUEST.body;
+    server_id = buff2int(req->server_id);
+    service_id = req->service_id;
+    response_size = buff2short(req->response_size);
+    if (response_size <= 0 || response_size > (task->size -
+                sizeof(FCFSVoteProtoHeader)))
+    {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "server_id: %d, invalid response_size: %d",
+                server_id, response_size);
+        return -EINVAL;
+    }
+    switch (service_id) {
+        case FCFS_VOTE_SERVICE_ID_FAUTH:
+        case FCFS_VOTE_SERVICE_ID_FDIR:
+        case FCFS_VOTE_SERVICE_ID_FSTORE:
+            break;
+        default:
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "server_id: %d, unkown service id: %d",
+                    server_id, service_id);
+            return -EINVAL;
+    }
+
+    memset(REQUEST.body, 0, response_size);
+    RESPONSE.header.body_len = response_size;
+    RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP;
+    TASK_CTX.common.response_done = true;
+    return 0;
+}
+
 static int service_process(struct fast_task_info *task)
 {
     int result;
 
     if (!MYSELF_IS_MASTER) {
         if (!(REQUEST.header.cmd == FCFS_VOTE_SERVICE_PROTO_GET_MASTER_REQ ||
-                    REQUEST.header.cmd == SF_SERVICE_PROTO_GET_LEADER_REQ ||
-                    REQUEST.header.cmd == SF_PROTO_ACTIVE_TEST_REQ))
+                    REQUEST.header.cmd == SF_SERVICE_PROTO_GET_LEADER_REQ))
         {
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
@@ -129,6 +205,10 @@ static int service_process(struct fast_task_info *task)
                 RESPONSE.header.cmd = SF_SERVICE_PROTO_GET_LEADER_RESP;
             }
             return result;
+        case FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_REQ:
+            return service_deal_client_join(task);
+        case FCFS_VOTE_SERVICE_PROTO_GET_VOTE_REQ:
+            return service_deal_get_vote(task);
         default:
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
