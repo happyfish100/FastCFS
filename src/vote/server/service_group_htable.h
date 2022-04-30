@@ -13,20 +13,32 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//cluster_info.h
+//service_group_htable.h
 
-#ifndef _CLUSTER_INFO_H_
-#define _CLUSTER_INFO_H_
+#ifndef _SERVICE_GROUP_HTABLE_H_
+#define _SERVICE_GROUP_HTABLE_H_
 
+#include <time.h>
 #include "server_global.h"
+
+typedef struct fcfs_vote_service_group_info {
+    int64_t hash_code;
+    short service_id;
+    short response_size;
+    int group_id;
+    volatile int leader_id;
+    struct fcfs_vote_service_group_info *next;  //for htable
+} FCFSVoteServiceGroupInfo;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int cluster_info_init(const char *cluster_config_filename);
+int service_group_htable_init();
 
-FCFSVoteClusterServerInfo *fcfs_vote_get_server_by_id(const int server_id);
+int service_group_htable_get(const short service_id, const int group_id,
+        const int leader_id, const short response_size,
+        FCFSVoteServiceGroupInfo **group);
 
 #ifdef __cplusplus
 }

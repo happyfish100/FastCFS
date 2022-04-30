@@ -98,6 +98,7 @@ static int service_deal_client_join(struct fast_task_info *task)
     int result;
     int server_id;
     int service_id;
+    int group_id;
     FCFSVoteProtoClientJoinReq *req;
 
     if ((result=server_expect_body_length(sizeof(
@@ -109,6 +110,7 @@ static int service_deal_client_join(struct fast_task_info *task)
     req = (FCFSVoteProtoClientJoinReq *)REQUEST.body;
     server_id = buff2int(req->server_id);
     service_id = req->service_id;
+    group_id = buff2short(req->group_id);
     switch (service_id) {
         case FCFS_VOTE_SERVICE_ID_FAUTH:
         case FCFS_VOTE_SERVICE_ID_FDIR:
@@ -129,7 +131,6 @@ static int service_deal_get_vote(struct fast_task_info *task)
 {
     int result;
     int server_id;
-    int service_id;
     int response_size;
     SFProtoGetServerStatusReq *req;
 
@@ -141,8 +142,8 @@ static int service_deal_get_vote(struct fast_task_info *task)
 
     req = (SFProtoGetServerStatusReq *)REQUEST.body;
     server_id = buff2int(req->server_id);
-    service_id = req->service_id;
-    response_size = buff2short(req->response_size);
+    //TODO
+    response_size = 1234;
     if (response_size <= 0 || response_size > (task->size -
                 sizeof(FCFSVoteProtoHeader)))
     {
@@ -150,17 +151,6 @@ static int service_deal_get_vote(struct fast_task_info *task)
                 "server_id: %d, invalid response_size: %d",
                 server_id, response_size);
         return -EINVAL;
-    }
-    switch (service_id) {
-        case FCFS_VOTE_SERVICE_ID_FAUTH:
-        case FCFS_VOTE_SERVICE_ID_FDIR:
-        case FCFS_VOTE_SERVICE_ID_FSTORE:
-            break;
-        default:
-            RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                    "server_id: %d, unkown service id: %d",
-                    server_id, service_id);
-            return -EINVAL;
     }
 
     memset(REQUEST.body, 0, response_size);
