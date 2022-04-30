@@ -40,6 +40,7 @@
 #include "common/vote_proto.h"
 #include "server_global.h"
 #include "server_func.h"
+#include "service_group_htable.h"
 #include "common_handler.h"
 #include "service_handler.h"
 
@@ -55,6 +56,14 @@ int service_handler_destroy()
 
 void service_task_finish_cleanup(struct fast_task_info *task)
 {
+    if (SERVER_TASK_TYPE == VOTE_SERVER_TASK_TYPE_VOTE_NODE) {
+        __sync_bool_compare_and_swap(&SERVICE_PEER.group->leader_id,
+                SERVICE_PEER.server_id, 0);
+        SERVICE_PEER.server_id = 0;
+        SERVICE_PEER.group = NULL;
+        SERVER_TASK_TYPE = VOTE_SERVER_TASK_TYPE_NONE;
+    }
+
     sf_task_finish_clean_up(task);
 }
 
@@ -99,7 +108,9 @@ static int service_deal_client_join(struct fast_task_info *task)
     int server_id;
     int service_id;
     int group_id;
+    int response_size;
     FCFSVoteProtoClientJoinReq *req;
+    FCFSVoteServiceGroupInfo *group;
 
     if ((result=server_expect_body_length(sizeof(
                         FCFSVoteProtoClientJoinReq))) != 0)
@@ -111,6 +122,7 @@ static int service_deal_client_join(struct fast_task_info *task)
     server_id = buff2int(req->server_id);
     service_id = req->service_id;
     group_id = buff2short(req->group_id);
+    response_size = buff2short(req->response_size);
     switch (service_id) {
         case FCFS_VOTE_SERVICE_ID_FAUTH:
         case FCFS_VOTE_SERVICE_ID_FDIR:
@@ -123,27 +135,11 @@ static int service_deal_client_join(struct fast_task_info *task)
             return -EINVAL;
     }
 
-    RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_RESP;
-    return 0;
-}
-
-static int service_deal_get_vote(struct fast_task_info *task)
-{
-    int result;
-    int server_id;
-    int response_size;
-    SFProtoGetServerStatusReq *req;
-
-    if ((result=server_expect_body_length(sizeof(
-                        SFProtoGetServerStatusReq))) != 0)
-    {
-        return result;
+    if (server_id <= 0) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "invalid server_id: %d", server_id);
+        return -EINVAL;
     }
-
-    req = (SFProtoGetServerStatusReq *)REQUEST.body;
-    server_id = buff2int(req->server_id);
-    //TODO
-    response_size = 1234;
     if (response_size <= 0 || response_size > (task->size -
                 sizeof(FCFSVoteProtoHeader)))
     {
@@ -153,8 +149,63 @@ static int service_deal_get_vote(struct fast_task_info *task)
         return -EINVAL;
     }
 
-    memset(REQUEST.body, 0, response_size);
-    RESPONSE.header.body_len = response_size;
+    result = service_group_htable_get(service_id, group_id,
+            req->is_leader ? server_id : 0, response_size, &group);
+    if (result != 0) {
+        if (result == SF_CLUSTER_ERROR_LEADER_INCONSISTENT) {
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "service_id: %d, group_id: %d, target server_id: %d, "
+                    "current leader id: %d, leader inconsistent",
+                    service_id, group_id, server_id, group->leader_id);
+        }
+        return result;
+    }
+
+    if (SERVICE_PEER.group != NULL) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "service_id: %d, server_id: %d already joined",
+                service_id, server_id);
+        return EEXIST;
+    }
+
+    SERVICE_PEER.server_id = server_id;
+    SERVICE_PEER.group = group;
+    SERVER_TASK_TYPE = VOTE_SERVER_TASK_TYPE_VOTE_NODE;
+    RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_RESP;
+    return 0;
+}
+
+static inline int service_check_login(struct fast_task_info *task)
+{
+    if (SERVER_TASK_TYPE != VOTE_SERVER_TASK_TYPE_VOTE_NODE) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "please login first");
+        return EPERM;
+    }
+
+    return 0;
+}
+
+static int service_deal_get_vote(struct fast_task_info *task)
+{
+    int result;
+    int server_id;
+    SFProtoGetServerStatusReq *req;
+
+    if ((result=server_expect_body_length(sizeof(
+                        SFProtoGetServerStatusReq))) != 0)
+    {
+        return result;
+    }
+
+    if ((result=service_check_login(task)) != 0) {
+        return result;
+    }
+
+    req = (SFProtoGetServerStatusReq *)REQUEST.body;
+    server_id = buff2int(req->server_id);
+    memset(REQUEST.body, 0, SERVICE_PEER.group->response_size);
+    RESPONSE.header.body_len = SERVICE_PEER.group->response_size;
     RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP;
     TASK_CTX.common.response_done = true;
     return 0;

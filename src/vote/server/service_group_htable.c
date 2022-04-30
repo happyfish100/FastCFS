@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include "fastcommon/logger.h"
 #include "fastcommon/shared_func.h"
+#include "fastcommon/fc_atomic.h"
 #include "server_global.h"
 #include "service_group_htable.h"
 
@@ -84,18 +85,63 @@ int service_group_htable_get(const short service_id, const int group_id,
 {
     int64_t hash_code;
     int bucket_index;
+    int old_leader_id;
+    int result;
     pthread_mutex_t *lock;
     FCFSVoteServiceGroupInfo **buckets;
+    FCFSVoteServiceGroupInfo *current;
 
     hash_code = ((int64_t)service_id << 32) | (int64_t)group_id;
-
     bucket_index = hash_code % service_group_ctx.htable.capacity;
     lock = service_group_ctx.lock_array.locks + bucket_index %
         service_group_ctx.lock_array.count;
     buckets = service_group_ctx.htable.buckets + bucket_index;
 
     PTHREAD_MUTEX_LOCK(lock);
-    //TODO
+    current = *buckets;
+    while (current != NULL) {
+        if (hash_code == current->hash_code) {
+            break;
+        }
+        current = current->next;
+    }
+
+    if (current == NULL) {
+        current = fast_mblock_alloc_object(&service_group_ctx.allocator);
+        if (current != NULL) {
+            current->hash_code = hash_code;
+            current->service_id = service_id;
+            current->response_size = response_size;
+            current->group_id = group_id;
+            current->leader_id = leader_id;
+            current->next = *buckets;
+            *buckets = current;
+            result = 0;
+        } else {
+            result = ENOMEM;
+        }
+    } else {
+        if (leader_id > 0) {
+            old_leader_id = FC_ATOMIC_GET(current->leader_id);
+            if (old_leader_id == 0) {
+                if (__sync_bool_compare_and_swap(&current->leader_id,
+                            old_leader_id, leader_id))
+                {
+                    result = 0;
+                } else {
+                    result = SF_CLUSTER_ERROR_LEADER_INCONSISTENT;
+                }
+            } else if (old_leader_id == leader_id) {
+                result = 0;
+            } else {
+                result = SF_CLUSTER_ERROR_LEADER_INCONSISTENT;
+            }
+        } else {
+            result = 0;
+        }
+    }
     PTHREAD_MUTEX_UNLOCK(lock);
-    return 0;
+
+    *group = current;
+    return result;
 }

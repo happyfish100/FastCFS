@@ -45,8 +45,10 @@ typedef SFCommonProtoHeader  FCFSVoteProtoHeader;
 typedef struct fcfs_vote_proto_client_join_req {
     char server_id[4];
     char group_id[4];
+    char response_size[2];
+    char is_leader;
     unsigned char service_id;   //which service: fauth/fdir/fstore
-    char padding[7];
+    char padding[4];
 } FCFSVoteProtoClientJoinReq;
 
 typedef struct fcfs_vote_proto_get_server_resp {
