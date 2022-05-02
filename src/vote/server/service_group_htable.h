@@ -26,6 +26,7 @@ typedef struct fcfs_vote_service_group_info {
     short service_id;
     short response_size;
     int group_id;
+    volatile int next_leader;
     volatile int leader_id;
     struct fcfs_vote_service_group_info *next;  //for htable
 } FCFSVoteServiceGroupInfo;

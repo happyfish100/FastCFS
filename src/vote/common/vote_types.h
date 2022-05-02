@@ -26,4 +26,26 @@
 #define FCFS_VOTE_SERVICE_ID_FDIR     'D'
 #define FCFS_VOTE_SERVICE_ID_FSTORE   'S'
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    static inline const char *fcfs_vote_get_service_name(const int service_id)
+    {
+        switch (service_id) {
+            case FCFS_VOTE_SERVICE_ID_FAUTH:
+                return "fauth";
+            case FCFS_VOTE_SERVICE_ID_FDIR:
+                return "fdir";
+            case FCFS_VOTE_SERVICE_ID_FSTORE:
+                return "fstore";
+            default:
+                return "unkown";
+        }
+    }
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

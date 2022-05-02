@@ -177,7 +177,9 @@ static int service_deal_client_join(struct fast_task_info *task)
 
 static inline int service_check_login(struct fast_task_info *task)
 {
-    if (SERVER_TASK_TYPE != VOTE_SERVER_TASK_TYPE_VOTE_NODE) {
+    if (!(SERVER_TASK_TYPE == VOTE_SERVER_TASK_TYPE_VOTE_NODE &&
+                SERVICE_PEER.group != NULL))
+    {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
                 "please login first");
         return EPERM;
@@ -209,6 +211,98 @@ static int service_deal_get_vote(struct fast_task_info *task)
     RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP;
     TASK_CTX.common.response_done = true;
     return 0;
+}
+
+static int service_deal_active_test(struct fast_task_info *task)
+{
+    int result;
+
+    if ((result=server_expect_body_length(0)) != 0) {
+        return result;
+    }
+
+    if ((result=service_check_login(task)) != 0) {
+        return result;
+    }
+
+    if (FC_ATOMIC_GET(SERVICE_PEER.group->leader_id) !=
+            SERVICE_PEER.server_id)
+    {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "service: %s, leader id: %d != peer server id: %d",
+                fcfs_vote_get_service_name(SERVICE_PEER.group->service_id),
+                FC_ATOMIC_GET(SERVICE_PEER.group->leader_id),
+                SERVICE_PEER.server_id);
+        return SF_CLUSTER_ERROR_LEADER_INCONSISTENT;
+    }
+
+    RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_ACTIVE_TEST_RESP;
+    return 0;
+}
+
+static int service_deal_next_leader(struct fast_task_info *task)
+{
+    int result;
+    int next_leader;
+    int old_leader_id;
+    int leader_id;
+
+    if ((result=server_expect_body_length(0)) != 0) {
+        return result;
+    }
+
+    if ((result=service_check_login(task)) != 0) {
+        return result;
+    }
+
+    leader_id = SERVICE_PEER.server_id;
+    old_leader_id = FC_ATOMIC_GET(SERVICE_PEER.group->leader_id);
+    if (old_leader_id != 0) {
+        if (old_leader_id == leader_id) {
+            return 0;
+        } else {
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "service: %s, leader id: %d != peer server id: %d",
+                    fcfs_vote_get_service_name(SERVICE_PEER.group->
+                        service_id), old_leader_id, leader_id);
+            return SF_CLUSTER_ERROR_LEADER_INCONSISTENT;
+        }
+    }
+
+    next_leader = FC_ATOMIC_GET(SERVICE_PEER.group->next_leader);
+    if (REQUEST.header.cmd == FCFS_VOTE_SERVICE_PROTO_PRE_SET_NEXT_LEADER) {
+        if (next_leader == 0) {
+            if (__sync_bool_compare_and_swap(&SERVICE_PEER.group->
+                        next_leader, 0, leader_id))
+            {
+                return 0;
+            }
+        } else if (next_leader == leader_id) {
+            return 0;
+        } else {
+            __sync_bool_compare_and_swap(&SERVICE_PEER.group->
+                    next_leader, next_leader, 0);
+        }
+    } else {  //commit leader
+        if (next_leader != leader_id) {
+            __sync_bool_compare_and_swap(&SERVICE_PEER.group->
+                    next_leader, next_leader, 0);
+        } else if (__sync_bool_compare_and_swap(&SERVICE_PEER.
+                    group->leader_id, 0, leader_id))
+        {
+            return 0;
+        } else if (FC_ATOMIC_GET(SERVICE_PEER.group->
+                    leader_id) == leader_id)
+        {
+            return 0;
+        }
+    }
+
+    RESPONSE.error.length = sprintf(RESPONSE.error.message,
+            "service: %s, next leader id: %d != peer server id: %d",
+            fcfs_vote_get_service_name(SERVICE_PEER.group->
+                service_id), next_leader, leader_id);
+    return SF_CLUSTER_ERROR_LEADER_INCONSISTENT;
 }
 
 static int service_process(struct fast_task_info *task)
@@ -250,6 +344,12 @@ static int service_process(struct fast_task_info *task)
             return service_deal_client_join(task);
         case FCFS_VOTE_SERVICE_PROTO_GET_VOTE_REQ:
             return service_deal_get_vote(task);
+        case FCFS_VOTE_SERVICE_PROTO_PRE_SET_NEXT_LEADER:
+            return service_deal_next_leader(task);
+        case FCFS_VOTE_SERVICE_PROTO_COMMIT_NEXT_LEADER:
+            return service_deal_next_leader(task);
+        case FCFS_VOTE_SERVICE_PROTO_ACTIVE_TEST_REQ:
+            return service_deal_active_test(task);
         default:
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,
