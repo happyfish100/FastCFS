@@ -20,7 +20,6 @@
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "client_global.h"
-#include "simple_connection_manager.h"
 #include "client_func.h"
 
 int fcfs_vote_alloc_group_servers(FCFSVoteServerGroup *server_group,

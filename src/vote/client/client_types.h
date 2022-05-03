@@ -22,18 +22,7 @@
 #include "sf/sf_cluster_cfg.h"
 #include "vote_types.h"
 
-#define FCFS_VOTE_CLIENT_DEFAULT_CONFIG_FILENAME "/etc/fastcfs/auth/client.conf"
-
-typedef struct fcfs_vote_client_user_key_pair {
-    string_t username;
-    string_t key_filename;
-} FCFSVoteClientUserKeyPair;
-
-typedef struct fcfs_vote_client_server_entry {
-    int server_id;
-    ConnectionInfo conn;
-    char status;
-} FCFSVoteClientServerEntry;
+#define FCFS_VOTE_CLIENT_DEFAULT_CONFIG_FILENAME "/etc/fastcfs/vote/client.conf"
 
 typedef struct fcfs_vote_server_group {
     int alloc_size;
@@ -41,24 +30,10 @@ typedef struct fcfs_vote_server_group {
     ConnectionInfo *servers;
 } FCFSVoteServerGroup;
 
-typedef struct fcfs_vote_client_common_cfg {
-    string_t username;
-    string_t passwd;
-    string_t secret_key_filename;
-    unsigned char passwd_buff[FCFS_VOTE_PASSWD_LEN];
-    char *buff;  //for username and secret_key_filename
-} FCFSVoteClientCommonCfg;
-
 typedef struct fcfs_vote_client_context {
     bool inited;
     SFClusterConfig cluster;
-    SFConnectionManager cm;
-    FCFSVoteClientCommonCfg vote_cfg;
     SFClientCommonConfig common_cfg;
-    struct {
-        string_t *poolname;
-        char id[FCFS_VOTE_SESSION_ID_LEN];
-    } session;
 } FCFSVoteClientContext;
 
 typedef struct fcfs_vote_client_full_context {
