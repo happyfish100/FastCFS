@@ -18,6 +18,7 @@
 #define _FCFS_VOTE_CLIENT_PROTO_H
 
 #include "fastcommon/fast_mpool.h"
+#include "fastcommon/connection_pool.h"
 #include "sf/sf_proto.h"
 #include "client_types.h"
 
@@ -33,8 +34,14 @@ typedef struct fcfs_vote_client_cluster_stat_entry {
 extern "C" {
 #endif
 
-int fcfs_vote_client_get_master(FCFSVoteClientContext *client_ctx,
-        FCFSVoteClientServerEntry *master);
+int fcfs_vote_client_get_master_connection(FCFSVoteClientContext
+        *client_ctx, ConnectionInfo *conn);
+
+static inline void fcfs_vote_client_close_connection(FCFSVoteClientContext
+        *client_ctx, ConnectionInfo *conn)
+{
+    conn_pool_disconnect_server(conn);
+}
 
 int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
         FCFSVoteClientClusterStatEntry *stats, const int size, int *count);

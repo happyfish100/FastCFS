@@ -7,8 +7,9 @@ src/tools/Makefile
 src/auth/server/Makefile
 src/auth/client/Makefile
 src/auth/client/tools/Makefile
-src/vote/client/Makefile
 src/vote/server/Makefile
+src/vote/client/Makefile
+src/vote/client/tools/Makefile
 
 # Prerequisites
 *.d

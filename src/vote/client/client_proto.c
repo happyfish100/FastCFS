@@ -71,31 +71,17 @@ static int get_connection(FCFSVoteClientContext *client_ctx,
     return result;
 }
 
-static inline int get_master_connection(FCFSVoteClientContext
+int fcfs_vote_client_get_master_connection(FCFSVoteClientContext
         *client_ctx, ConnectionInfo *conn)
 {
     int result;
-    FCFSVoteClientServerEntry master;
-
-    if ((result=fcfs_vote_client_get_master(client_ctx, &master)) != 0) {
-        return result;
-    }
-
-    return get_spec_connection(client_ctx, &master.conn, conn);
-}
-
-int fcfs_vote_client_get_master(FCFSVoteClientContext *client_ctx,
-        FCFSVoteClientServerEntry *master)
-{
-    int result;
-    ConnectionInfo *conn;
     FCFSVoteProtoHeader *header;
+    FCFSVoteClientServerEntry master;
     SFResponseInfo response;
     FCFSVoteProtoGetServerResp server_resp;
     char out_buff[sizeof(FCFSVoteProtoHeader)];
 
-    conn = client_ctx->cm.ops.get_connection(&client_ctx->cm, 0, &result);
-    if (conn == NULL) {
+    if ((result=get_connection(client_ctx, conn)) != 0) {
         return result;
     }
 
@@ -105,19 +91,24 @@ int fcfs_vote_client_get_master(FCFSVoteClientContext *client_ctx,
     response.error.length = 0;
     if ((result=sf_send_and_recv_response(conn, out_buff, sizeof(out_buff),
                     &response, client_ctx->common_cfg.network_timeout,
-                    FCFS_VOTE_SERVICE_PROTO_GET_MASTER_RESP,
-                    (char *)&server_resp, sizeof(FCFSVoteProtoGetServerResp))) != 0)
+                    FCFS_VOTE_SERVICE_PROTO_GET_MASTER_RESP, (char *)
+                    &server_resp, sizeof(FCFSVoteProtoGetServerResp))) != 0)
     {
         sf_log_network_error(&response, conn, result);
-    } else {
-        master->server_id = buff2int(server_resp.server_id);
-        memcpy(master->conn.ip_addr, server_resp.ip_addr, IP_ADDRESS_SIZE);
-        *(master->conn.ip_addr + IP_ADDRESS_SIZE - 1) = '\0';
-        master->conn.port = buff2short(server_resp.port);
+        conn_pool_disconnect_server(conn);
+        return result;
     }
 
-    SF_CLIENT_RELEASE_CONNECTION(&client_ctx->cm, conn, result);
-    return result;
+    master.server_id = buff2int(server_resp.server_id);
+    memcpy(master.conn.ip_addr, server_resp.ip_addr, IP_ADDRESS_SIZE);
+    *(master.conn.ip_addr + IP_ADDRESS_SIZE - 1) = '\0';
+    master.conn.port = buff2short(server_resp.port);
+    if (FC_CONNECTION_SERVER_EQUAL1(*conn, master.conn)) {
+        return 0;
+    }
+
+    conn_pool_disconnect_server(conn);
+    return get_spec_connection(client_ctx, &master.conn, conn);
 }
 
 int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
@@ -128,7 +119,7 @@ int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
     FCFSVoteProtoClusterStatRespBodyPart *body_part;
     FCFSVoteProtoClusterStatRespBodyPart *body_end;
     FCFSVoteClientClusterStatEntry *stat;
-    ConnectionInfo *conn;
+    ConnectionInfo conn;
     char out_buff[sizeof(FCFSVoteProtoHeader)];
     char fixed_buff[8 * 1024];
     char *in_buff;
@@ -136,8 +127,8 @@ int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
     int result;
     int calc_size;
 
-    if ((conn=client_ctx->cm.ops.get_master_connection(
-                    &client_ctx->cm, 0, &result)) == NULL)
+    if ((result=fcfs_vote_client_get_master_connection(
+                    client_ctx, &conn)) != 0)
     {
         return result;
     }
@@ -148,9 +139,10 @@ int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
 
     response.error.length = 0;
     in_buff = fixed_buff;
-    if ((result=sf_send_and_check_response_header(conn, out_buff,
-                    sizeof(out_buff), &response, client_ctx->common_cfg.
-                    network_timeout, FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_RESP)) == 0)
+    if ((result=sf_send_and_check_response_header(&conn,
+                    out_buff, sizeof(out_buff), &response,
+                    client_ctx->common_cfg.network_timeout,
+                    FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_RESP)) == 0)
     {
         if (response.header.body_len > sizeof(fixed_buff)) {
             in_buff = (char *)fc_malloc(response.header.body_len);
@@ -162,7 +154,7 @@ int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
         }
 
         if (result == 0) {
-            result = tcprecvdata_nb(conn->sock, in_buff,
+            result = tcprecvdata_nb(conn.sock, in_buff,
                     response.header.body_len, client_ctx->
                     common_cfg.network_timeout);
         }
@@ -193,7 +185,7 @@ int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
     }
 
     if (result != 0) {
-        sf_log_network_error(&response, conn, result);
+        sf_log_network_error(&response, &conn, result);
     } else {
         body_end = body_part + (*count);
         for (stat=stats; body_part<body_end; body_part++, stat++) {
@@ -206,7 +198,7 @@ int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
         }
     }
 
-    SF_CLIENT_RELEASE_CONNECTION(&client_ctx->cm, conn, result);
+    fcfs_vote_client_close_connection(client_ctx, &conn);
     if (in_buff != fixed_buff) {
         if (in_buff != NULL) {
             free(in_buff);

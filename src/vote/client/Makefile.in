@@ -6,16 +6,13 @@ LIB_PATH = $(LIBS) -lfastcommon -lserverframe
 TARGET_LIB = $(TARGET_PREFIX)/$(LIB_VERSION)
 
 FAST_SHARED_OBJS = ../common/vote_global.lo ../common/vote_proto.lo \
-                   client_func.lo client_global.lo \
-                   client_proto.lo fcfs_vote_client.lo
+                   client_func.lo client_global.lo client_proto.lo
 
 FAST_STATIC_OBJS = ../common/vote_global.o ../common/vote_proto.o \
-                   client_func.o client_global.o \
-                   client_proto.o fcfs_vote_client.o
+                   client_func.o client_global.o client_proto.o
 
 HEADER_FILES = ../common/vote_global.h ../common/vote_types.h \
-               ../common/vote_proto.h fcfs_vote_client.h \
-               client_types.h client_func.h \
+               ../common/vote_proto.h client_types.h client_func.h \
                client_global.h client_proto.h
 
 ALL_OBJS = $(FAST_STATIC_OBJS) $(FAST_SHARED_OBJS)
