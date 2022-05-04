@@ -63,16 +63,15 @@ static inline int fcfs_vote_client_load_from_file_ex(FCFSVoteClientContext
 }
 
 int fcfs_vote_client_init_ex2(FCFSVoteClientContext *client_ctx,
-        IniFullContext *ini_ctx, const SFServerGroupIndexType index_type);
+        IniFullContext *ini_ctx);
 
 static inline int fcfs_vote_client_init_ex1(FCFSVoteClientContext *client_ctx,
-        const char *config_filename, const char *section_name,
-        const SFServerGroupIndexType index_type)
+        const char *config_filename, const char *section_name)
 {
     IniFullContext ini_ctx;
 
     FAST_INI_SET_FULL_CTX(ini_ctx, config_filename, section_name);
-    return fcfs_vote_client_init_ex2(client_ctx, &ini_ctx, index_type);
+    return fcfs_vote_client_init_ex2(client_ctx, &ini_ctx);
 }
 
 /**

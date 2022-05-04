@@ -21,17 +21,14 @@
 #include "client_types.h"
 
 typedef struct fcfs_vote_client_global_vars {
-    char base_path[MAX_PATH_SIZE];
-    bool need_load_passwd;   //false for auth server
-    bool ignore_when_passwd_not_exist; //true for fdir and fstore servers
     FCFSVoteClientContext client_ctx;
 } FCFSVoteClientGlobalVars;
 
-#define fcfs_vote_client_init_full_ctx_ex(auth, client_ctx) \
-    (auth)->ctx = client_ctx
+#define fcfs_vote_client_init_full_ctx_ex(vote, client_ctx) \
+    (vote)->ctx = client_ctx
 
-#define fcfs_vote_client_init_full_ctx(auth) \
-    fcfs_vote_client_init_full_ctx_ex(auth, &g_fcfs_vote_client_vars.client_ctx)
+#define fcfs_vote_client_init_full_ctx(vote) \
+    fcfs_vote_client_init_full_ctx_ex(vote, &g_fcfs_vote_client_vars.client_ctx)
 
 #ifdef __cplusplus
 extern "C" {

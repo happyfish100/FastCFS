@@ -56,18 +56,7 @@ static int fcfs_vote_load_server_config(FCFSVoteClientContext *client_ctx,
 static int fcfs_vote_client_do_init_ex(FCFSVoteClientContext *client_ctx,
         IniFullContext *ini_ctx)
 {
-    char *pBasePath;
     int result;
-
-    pBasePath = iniGetStrValue(NULL, "base_path", ini_ctx->context);
-    if (pBasePath == NULL) {
-        strcpy(g_fcfs_vote_client_vars.base_path, "/tmp");
-    } else {
-        snprintf(g_fcfs_vote_client_vars.base_path,
-                sizeof(g_fcfs_vote_client_vars.base_path),
-                "%s", pBasePath);
-        chopPath(g_fcfs_vote_client_vars.base_path);
-    }
 
     client_ctx->common_cfg.connect_timeout = iniGetIntValueEx(
             ini_ctx->section_name, "connect_timeout",
@@ -102,15 +91,13 @@ void fcfs_vote_client_log_config_ex(FCFSVoteClientContext *client_ctx,
 
     sf_net_retry_config_to_string(&client_ctx->common_cfg.net_retry_cfg,
             net_retry_output, sizeof(net_retry_output));
-    logInfo("FastDIR v%d.%d.%d, "
-            "base_path=%s, "
+    logInfo("fvote v%d.%d.%d, "
             "connect_timeout=%d, "
             "network_timeout=%d, "
             "%s, vote_server_count=%d%s%s",
             g_fcfs_vote_global_vars.version.major,
             g_fcfs_vote_global_vars.version.minor,
             g_fcfs_vote_global_vars.version.patch,
-            g_fcfs_vote_client_vars.base_path,
             client_ctx->common_cfg.connect_timeout,
             client_ctx->common_cfg.network_timeout,
             net_retry_output, FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg),
@@ -147,22 +134,12 @@ int fcfs_vote_client_load_from_file_ex1(FCFSVoteClientContext *client_ctx,
 }
 
 int fcfs_vote_client_init_ex2(FCFSVoteClientContext *client_ctx,
-        IniFullContext *ini_ctx, const SFServerGroupIndexType index_type)
+        IniFullContext *ini_ctx)
 {
     int result;
-    int server_group_index;
 
     if ((result=fcfs_vote_client_load_from_file_ex1(
                     client_ctx, ini_ctx)) != 0)
-    {
-        return result;
-    }
-
-    server_group_index = (index_type == sf_server_group_index_type_cluster ?
-            client_ctx->cluster.cluster_group_index :
-            client_ctx->cluster.service_group_index);
-    if ((result=fcfs_vote_simple_connection_manager_init(client_ctx,
-                    &client_ctx->cm, server_group_index)) != 0)
     {
         return result;
     }
@@ -173,6 +150,5 @@ int fcfs_vote_client_init_ex2(FCFSVoteClientContext *client_ctx,
 void fcfs_vote_client_destroy_ex(FCFSVoteClientContext *client_ctx)
 {
     fc_server_destroy(&client_ctx->cluster.server_cfg);
-    fcfs_vote_simple_connection_manager_destroy(&client_ctx->cm);
     memset(client_ctx, 0, sizeof(FCFSVoteClientContext));
 }

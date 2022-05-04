@@ -24,6 +24,12 @@
 
 #define FCFS_VOTE_CLIENT_DEFAULT_CONFIG_FILENAME "/etc/fastcfs/vote/client.conf"
 
+typedef struct fcfs_vote_client_server_entry {
+    int server_id;
+    ConnectionInfo conn;
+    char status;
+} FCFSVoteClientServerEntry;
+
 typedef struct fcfs_vote_server_group {
     int alloc_size;
     int count;
@@ -32,6 +38,7 @@ typedef struct fcfs_vote_server_group {
 
 typedef struct fcfs_vote_client_context {
     bool inited;
+    short server_group_index;
     SFClusterConfig cluster;
     SFClientCommonConfig common_cfg;
 } FCFSVoteClientContext;

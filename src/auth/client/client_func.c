@@ -103,7 +103,7 @@ void fcfs_auth_client_log_config_ex(FCFSAuthClientContext *client_ctx,
 
     sf_net_retry_config_to_string(&client_ctx->common_cfg.net_retry_cfg,
             net_retry_output, sizeof(net_retry_output));
-    logInfo("FastDIR v%d.%d.%d, "
+    logInfo("fauth v%d.%d.%d, "
             "base_path=%s, "
             "connect_timeout=%d, "
             "network_timeout=%d, "
