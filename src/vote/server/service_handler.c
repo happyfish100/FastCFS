@@ -120,9 +120,9 @@ static int service_deal_client_join(struct fast_task_info *task)
 
     req = (FCFSVoteProtoClientJoinReq *)REQUEST.body;
     server_id = buff2int(req->server_id);
-    service_id = req->service_id;
     group_id = buff2short(req->group_id);
     response_size = buff2short(req->response_size);
+    service_id = req->service_id;
     switch (service_id) {
         case FCFS_VOTE_SERVICE_ID_FAUTH:
         case FCFS_VOTE_SERVICE_ID_FDIR:
@@ -150,7 +150,7 @@ static int service_deal_client_join(struct fast_task_info *task)
     }
 
     result = service_group_htable_get(service_id, group_id,
-            req->is_leader ? server_id : 0, response_size, &group);
+            (req->is_leader ? server_id : 0), response_size, &group);
     if (result != 0) {
         if (result == SF_CLUSTER_ERROR_LEADER_INCONSISTENT) {
             RESPONSE.error.length = sprintf(RESPONSE.error.message,
@@ -213,7 +213,7 @@ static int service_deal_get_vote(struct fast_task_info *task)
     return 0;
 }
 
-static int service_deal_active_test(struct fast_task_info *task)
+static int service_deal_active_check(struct fast_task_info *task)
 {
     int result;
 
@@ -236,7 +236,7 @@ static int service_deal_active_test(struct fast_task_info *task)
         return SF_CLUSTER_ERROR_LEADER_INCONSISTENT;
     }
 
-    RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_ACTIVE_TEST_RESP;
+    RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_RESP;
     return 0;
 }
 
@@ -348,8 +348,8 @@ static int service_process(struct fast_task_info *task)
             return service_deal_next_leader(task);
         case FCFS_VOTE_SERVICE_PROTO_COMMIT_NEXT_LEADER:
             return service_deal_next_leader(task);
-        case FCFS_VOTE_SERVICE_PROTO_ACTIVE_TEST_REQ:
-            return service_deal_active_test(task);
+        case FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_REQ:
+            return service_deal_active_check(task);
         default:
             RESPONSE.error.length = sprintf(
                     RESPONSE.error.message,

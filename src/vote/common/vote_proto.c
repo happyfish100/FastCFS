@@ -39,10 +39,10 @@ const char *fcfs_vote_get_cmd_caption(const int cmd)
             return "VOTE_PRE_SET_NEXT_LEADER";
         case FCFS_VOTE_SERVICE_PROTO_COMMIT_NEXT_LEADER:
             return "VOTE_COMMIT_NEXT_LEADER";
-        case FCFS_VOTE_SERVICE_PROTO_ACTIVE_TEST_REQ:
-            return "VOTE_ACTIVE_TEST_REQ";
-        case FCFS_VOTE_SERVICE_PROTO_ACTIVE_TEST_RESP:
-            return "VOTE_ACTIVE_TEST_RESP";
+        case FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_REQ:
+            return "VOTE_ACTIVE_CHECK_REQ";
+        case FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_RESP:
+            return "VOTE_ACTIVE_CHECK_RESP";
 
         case FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_REQ:
             return "CLUSTER_STAT_REQ";

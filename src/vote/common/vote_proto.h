@@ -29,11 +29,11 @@
 #define FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP   \
     SF_CLUSTER_PROTO_GET_SERVER_STATUS_RESP
 #define FCFS_VOTE_SERVICE_PROTO_PRE_SET_NEXT_LEADER       67
-#define FCFS_VOTE_SERVICE_PROTO_COMMIT_NEXT_LEADER        68
-#define FCFS_VOTE_SERVICE_PROTO_ACTIVE_TEST_REQ           69
-#define FCFS_VOTE_SERVICE_PROTO_ACTIVE_TEST_RESP          70
-#define FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_REQ          71
-#define FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_RESP         72
+#define FCFS_VOTE_SERVICE_PROTO_COMMIT_NEXT_LEADER        69
+#define FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_REQ          71
+#define FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_RESP         72
+#define FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_REQ          77
+#define FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_RESP         78
 
 //cluster commands
 #define FCFS_VOTE_CLUSTER_PROTO_GET_SERVER_STATUS_REQ     81
@@ -55,12 +55,7 @@ typedef struct fcfs_vote_proto_client_join_req {
     char padding[4];
 } FCFSVoteProtoClientJoinReq;
 
-typedef struct fcfs_vote_proto_get_server_resp {
-    char server_id[4];
-    char port[2];
-    char padding[2];
-    char ip_addr[IP_ADDRESS_SIZE];
-} FCFSVoteProtoGetServerResp;
+typedef SFProtoGetServerResp FCFSVoteProtoGetServerResp;
 
 typedef struct fcfs_vote_proto_get_server_status_req {
     char config_sign[SF_CLUSTER_CONFIG_SIGN_LEN];
