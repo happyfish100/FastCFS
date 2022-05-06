@@ -28,16 +28,15 @@ static inline int get_spec_connection(FCFSVoteClientContext *client_ctx,
 {
     memcpy(conn, target, sizeof(ConnectionInfo));
     conn->sock = -1;
-    return conn_pool_connect_server(conn, client_ctx->
-            common_cfg.connect_timeout);
+    return conn_pool_connect_server(conn, client_ctx->connect_timeout);
 }
 
 static inline int make_connection(FCFSVoteClientContext *client_ctx,
         FCServerInfo *server, ConnectionInfo *conn)
 {
     return fc_server_make_connection(&server->group_addrs[client_ctx->
-            server_group_index].address_array, conn, client_ctx->
-            common_cfg.connect_timeout);
+            cluster.service_group_index].address_array, conn,
+            client_ctx->connect_timeout);
 }
 
 static int get_connection(FCFSVoteClientContext *client_ctx,
@@ -89,7 +88,7 @@ int vote_client_proto_get_master_connection_ex(FCFSVoteClientContext
             sizeof(out_buff) - sizeof(FCFSVoteProtoHeader));
     response.error.length = 0;
     if ((result=sf_send_and_recv_response(conn, out_buff, sizeof(out_buff),
-                    &response, client_ctx->common_cfg.network_timeout,
+                    &response, client_ctx->network_timeout,
                     FCFS_VOTE_SERVICE_PROTO_GET_MASTER_RESP, (char *)
                     &server_resp, sizeof(FCFSVoteProtoGetServerResp))) != 0)
     {
@@ -140,7 +139,7 @@ int fcfs_vote_client_cluster_stat_ex(FCFSVoteClientContext *client_ctx,
     in_buff = fixed_buff;
     if ((result=sf_send_and_check_response_header(&conn,
                     out_buff, sizeof(out_buff), &response,
-                    client_ctx->common_cfg.network_timeout,
+                    client_ctx->network_timeout,
                     FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_RESP)) == 0)
     {
         if (response.header.body_len > sizeof(fixed_buff)) {
@@ -153,9 +152,8 @@ int fcfs_vote_client_cluster_stat_ex(FCFSVoteClientContext *client_ctx,
         }
 
         if (result == 0) {
-            result = tcprecvdata_nb(conn.sock, in_buff,
-                    response.header.body_len, client_ctx->
-                    common_cfg.network_timeout);
+            result = tcprecvdata_nb(conn.sock, in_buff, response.
+                    header.body_len, client_ctx->network_timeout);
         }
     }
 
@@ -230,7 +228,7 @@ int vote_client_proto_join_ex(FCFSVoteClientContext *client_ctx,
     response.error.length = 0;
     if ((result=sf_send_and_recv_none_body_response(conn,
                     out_buff, sizeof(out_buff), &response,
-                    client_ctx->common_cfg.network_timeout,
+                    client_ctx->network_timeout,
                     FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_RESP)) != 0)
     {
         sf_log_network_error(&response, conn, result);
@@ -257,7 +255,7 @@ int vote_client_proto_get_vote_ex(FCFSVoteClientContext *client_ctx,
 
     response.error.length = 0;
     if ((result=sf_send_and_recv_response(conn, out_buff, sizeof(out_buff),
-                    &response, client_ctx->common_cfg.network_timeout,
+                    &response, client_ctx->network_timeout,
                     FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP, in_buff,
                     in_len)) != 0)
     {
@@ -279,7 +277,7 @@ int vote_client_proto_notify_next_leader_ex(FCFSVoteClientContext *client_ctx,
             sizeof(FCFSVoteProtoHeader));
     response.error.length = 0;
     if ((result=sf_send_and_recv_none_body_response(conn, out_buff,
-                    sizeof(out_buff), &response, client_ctx->common_cfg.
+                    sizeof(out_buff), &response, client_ctx->
                     network_timeout, SF_PROTO_ACK)) != 0)
     {
         sf_log_network_error(&response, conn, result);
@@ -301,7 +299,7 @@ int vote_client_proto_active_check_ex(FCFSVoteClientContext
     response.error.length = 0;
     if ((result=sf_send_and_recv_none_body_response(conn,
                     out_buff, sizeof(out_buff), &response,
-                    client_ctx->common_cfg.network_timeout,
+                    client_ctx->network_timeout,
                     FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_RESP)) != 0)
     {
         sf_log_network_error(&response, conn, result);

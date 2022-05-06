@@ -322,7 +322,7 @@ static int master_check()
 
         active_count = CLUSTER_SERVER_ARRAY.count -
             INACTIVE_SERVER_ARRAY.count;
-        if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM,
+        if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM, false,
                     CLUSTER_SERVER_ARRAY.count, active_count))
         {
             logWarning("file: "__FILE__", line: %d, "
@@ -656,7 +656,7 @@ static int cluster_select_master()
         }
 
         ++i;
-        if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM,
+        if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM, false,
                     CLUSTER_SERVER_ARRAY.count, active_count))
         {
             sleep_secs = 1;

@@ -313,7 +313,7 @@ static int cluster_process(struct fast_task_info *task)
             return result;
         default:
             RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                    "unkown cmd: %d", REQUEST.header.cmd);
+                    "unkown cluster cmd: %d", REQUEST.header.cmd);
             return -EINVAL;
     }
 }

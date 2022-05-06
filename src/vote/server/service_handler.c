@@ -351,9 +351,8 @@ static int service_process(struct fast_task_info *task)
         case FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_REQ:
             return service_deal_active_check(task);
         default:
-            RESPONSE.error.length = sprintf(
-                    RESPONSE.error.message,
-                    "unkown cmd: %d", REQUEST.header.cmd);
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "unkown service cmd: %d", REQUEST.header.cmd);
             return -EINVAL;
     }
 }

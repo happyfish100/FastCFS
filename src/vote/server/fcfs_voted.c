@@ -41,6 +41,7 @@
 #include "common/vote_proto.h"
 #include "server_global.h"
 #include "server_func.h"
+#include "service_group_htable.h"
 #include "cluster_relationship.h"
 #include "common_handler.h"
 #include "cluster_handler.h"
@@ -141,6 +142,10 @@ int main(int argc, char *argv[])
         }
 
         if ((result=write_to_pid_file(g_pid_filename)) != 0) {
+            break;
+        }
+
+        if ((result=service_group_htable_init()) != 0) {
             break;
         }
 

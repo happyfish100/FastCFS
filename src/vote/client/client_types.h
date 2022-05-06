@@ -37,10 +37,9 @@ typedef struct fcfs_vote_server_group {
 } FCFSVoteServerGroup;
 
 typedef struct fcfs_vote_client_context {
-    bool inited;
-    short server_group_index;
     SFClusterConfig cluster;
-    SFClientCommonConfig common_cfg;
+    int connect_timeout;
+    int network_timeout;
 } FCFSVoteClientContext;
 
 #endif

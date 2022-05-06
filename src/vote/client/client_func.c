@@ -14,35 +14,31 @@
  */
 
 
-#include <sys/stat.h>
-#include <limits.h>
 #include "fastcommon/ini_file_reader.h"
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
+#include "sf/sf_global.h"
 #include "client_global.h"
 #include "client_func.h"
 
-int fcfs_vote_alloc_group_servers(FCFSVoteServerGroup *server_group,
-        const int alloc_size)
-{
-    int bytes;
-
-    bytes = sizeof(ConnectionInfo) * alloc_size;
-    server_group->servers = (ConnectionInfo *)fc_malloc(bytes);
-    if (server_group->servers == NULL) {
-        return errno != 0 ? errno : ENOMEM;
-    }
-    memset(server_group->servers, 0, bytes);
-
-    server_group->alloc_size = alloc_size;
-    server_group->count = 0;
-    return 0;
-}
-
-static int fcfs_vote_load_server_config(FCFSVoteClientContext *client_ctx,
+static int fcfs_vote_client_do_init_ex(FCFSVoteClientContext *client_ctx,
         IniFullContext *ini_ctx)
 {
     int result;
+
+    client_ctx->connect_timeout = iniGetIntValueEx(
+            ini_ctx->section_name, "connect_timeout",
+            ini_ctx->context, SF_DEFAULT_CONNECT_TIMEOUT, true);
+    if (client_ctx->connect_timeout <= 0) {
+        client_ctx->connect_timeout = SF_DEFAULT_CONNECT_TIMEOUT;
+    }
+
+    client_ctx->network_timeout = iniGetIntValueEx(
+            ini_ctx->section_name, "network_timeout",
+            ini_ctx->context, SF_DEFAULT_NETWORK_TIMEOUT, true);
+    if (client_ctx->network_timeout <= 0) {
+        client_ctx->network_timeout = SF_DEFAULT_NETWORK_TIMEOUT;
+    }
 
     if ((result=sf_load_cluster_config(&client_ctx->cluster, ini_ctx,
                     FCFS_VOTE_DEFAULT_CLUSTER_PORT)) != 0)
@@ -53,54 +49,18 @@ static int fcfs_vote_load_server_config(FCFSVoteClientContext *client_ctx,
     return 0;
 }
 
-static int fcfs_vote_client_do_init_ex(FCFSVoteClientContext *client_ctx,
-        IniFullContext *ini_ctx)
-{
-    int result;
-
-    client_ctx->common_cfg.connect_timeout = iniGetIntValueEx(
-            ini_ctx->section_name, "connect_timeout",
-            ini_ctx->context, SF_DEFAULT_CONNECT_TIMEOUT, true);
-    if (client_ctx->common_cfg.connect_timeout <= 0) {
-        client_ctx->common_cfg.connect_timeout = SF_DEFAULT_CONNECT_TIMEOUT;
-    }
-
-    client_ctx->common_cfg.network_timeout = iniGetIntValueEx(
-            ini_ctx->section_name, "network_timeout",
-            ini_ctx->context, SF_DEFAULT_NETWORK_TIMEOUT, true);
-    if (client_ctx->common_cfg.network_timeout <= 0) {
-        client_ctx->common_cfg.network_timeout = SF_DEFAULT_NETWORK_TIMEOUT;
-    }
-    if ((result=fcfs_vote_load_server_config(client_ctx, ini_ctx)) != 0) {
-        return result;
-    }
-
-    if ((result=sf_load_net_retry_config(&client_ctx->
-                    common_cfg.net_retry_cfg, ini_ctx)) != 0)
-    {
-        return result;
-    }
-
-    return 0;
-}
-
 void fcfs_vote_client_log_config_ex(FCFSVoteClientContext *client_ctx,
         const char *extra_config)
 {
-    char net_retry_output[256];
-
-    sf_net_retry_config_to_string(&client_ctx->common_cfg.net_retry_cfg,
-            net_retry_output, sizeof(net_retry_output));
     logInfo("fvote v%d.%d.%d, "
             "connect_timeout=%d, "
             "network_timeout=%d, "
-            "%s, vote_server_count=%d%s%s",
+            "vote_server_count=%d%s%s",
             g_fcfs_vote_global_vars.version.major,
             g_fcfs_vote_global_vars.version.minor,
             g_fcfs_vote_global_vars.version.patch,
-            client_ctx->common_cfg.connect_timeout,
-            client_ctx->common_cfg.network_timeout,
-            net_retry_output, FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg),
+            client_ctx->connect_timeout, client_ctx->network_timeout,
+            FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg),
             extra_config != NULL ? ", " : "",
             extra_config != NULL ? extra_config : "");
 }
@@ -121,10 +81,7 @@ int fcfs_vote_client_load_from_file_ex1(FCFSVoteClientContext *client_ctx,
         ini_ctx->context = &iniContext;
     }
 
-    if ((result=fcfs_vote_client_do_init_ex(client_ctx, ini_ctx)) == 0) {
-        client_ctx->inited = true;
-    }
-
+    result = fcfs_vote_client_do_init_ex(client_ctx, ini_ctx);
     if (ini_ctx->context == &iniContext) {
         iniFreeContext(&iniContext);
         ini_ctx->context = NULL;
@@ -145,6 +102,22 @@ int fcfs_vote_client_init_ex2(FCFSVoteClientContext *client_ctx,
     }
 
     return 0;
+}
+
+int fcfs_vote_client_init_for_server(IniFullContext *ini_ctx,
+        bool *vote_node_enabled)
+{
+    g_fcfs_vote_client_vars.client_ctx.connect_timeout = SF_G_CONNECT_TIMEOUT;
+    g_fcfs_vote_client_vars.client_ctx.network_timeout = SF_G_NETWORK_TIMEOUT;
+    *vote_node_enabled = iniGetBoolValue(ini_ctx->section_name,
+            "vote_node_enabled", ini_ctx->context, false);
+    if (*vote_node_enabled) {
+        return sf_load_cluster_config1(&g_fcfs_vote_client_vars.client_ctx.
+                cluster, ini_ctx, "vote_node_cluster_filename",
+                FCFS_VOTE_DEFAULT_CLUSTER_PORT);
+    } else {
+        return 0;
+    }
 }
 
 void fcfs_vote_client_destroy_ex(FCFSVoteClientContext *client_ctx)

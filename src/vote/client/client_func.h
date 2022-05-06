@@ -38,8 +38,8 @@ extern "C" {
 #define fcfs_vote_client_log_config(client_ctx) \
     fcfs_vote_client_log_config_ex(client_ctx, NULL)
 
-int fcfs_vote_client_load_from_file_ex1(FCFSVoteClientContext *client_ctx,
-        IniFullContext *ini_ctx);
+int fcfs_vote_client_load_from_file_ex1(FCFSVoteClientContext
+        *client_ctx, IniFullContext *ini_ctx);
 
 /**
 * client initial from config file
@@ -70,6 +70,9 @@ static inline int fcfs_vote_client_init_ex1(FCFSVoteClientContext *client_ctx,
     return fcfs_vote_client_init_ex2(client_ctx, &ini_ctx);
 }
 
+int fcfs_vote_client_init_for_server(IniFullContext *ini_ctx,
+        bool *vote_node_enabled);
+
 /**
 * client destroy function
 * params:
@@ -77,9 +80,6 @@ static inline int fcfs_vote_client_init_ex1(FCFSVoteClientContext *client_ctx,
 * return: none
 **/
 void fcfs_vote_client_destroy_ex(FCFSVoteClientContext *client_ctx);
-
-int fcfs_vote_alloc_group_servers(FCFSVoteServerGroup *server_group,
-        const int alloc_size);
 
 void fcfs_vote_client_log_config_ex(FCFSVoteClientContext *client_ctx,
         const char *extra_config);
