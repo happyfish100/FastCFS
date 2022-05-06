@@ -20,6 +20,7 @@
 #include "fastcommon/fast_mpool.h"
 #include "fastcommon/connection_pool.h"
 #include "sf/sf_proto.h"
+#include "vote_proto.h"
 #include "client_types.h"
 
 typedef struct fcfs_vote_client_cluster_stat_ex_entry {

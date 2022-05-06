@@ -20,7 +20,6 @@
 #include "fastcommon/logger.h"
 #include "fastcommon/sockopt.h"
 #include "fastcommon/connection_pool.h"
-#include "vote_proto.h"
 #include "client_global.h"
 #include "client_proto.h"
 

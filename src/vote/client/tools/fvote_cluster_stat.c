@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
         return result;
     }
 
-    if ((result=fcfs_vote_client_cluster_stat(&g_fcfs_vote_client_vars.client_ctx,
-                    stats, CLUSTER_MAX_SERVER_COUNT, &count)) != 0)
+    if ((result=fcfs_vote_client_cluster_stat(stats,
+                    CLUSTER_MAX_SERVER_COUNT, &count)) != 0)
     {
         fprintf(stderr, "fcfs_vote_client_cluster_stat fail, "
                 "errno: %d, error info: %s\n", result, STRERROR(result));
