@@ -14,21 +14,17 @@
  */
 
 
-#ifndef _FCFS_VOTE_CLIENT_GLOBAL_H
-#define _FCFS_VOTE_CLIENT_GLOBAL_H
+#ifndef _FCFS_VOTE_CLIENT_H
+#define _FCFS_VOTE_CLIENT_H
 
-#include "vote_global.h"
 #include "client_types.h"
-
-typedef struct fcfs_vote_client_global_vars {
-    FCFSVoteClientContext client_ctx;
-} FCFSVoteClientGlobalVars;
+#include "client_func.h"
+#include "client_global.h"
+#include "client_proto.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-    extern FCFSVoteClientGlobalVars g_fcfs_vote_client_vars;
 
 #ifdef __cplusplus
 }

@@ -43,9 +43,4 @@ typedef struct fcfs_vote_client_context {
     SFClientCommonConfig common_cfg;
 } FCFSVoteClientContext;
 
-typedef struct fcfs_vote_client_full_context {
-    bool enabled;
-    FCFSVoteClientContext *ctx;
-} FCFSVoteClientFullContext;
-
 #endif

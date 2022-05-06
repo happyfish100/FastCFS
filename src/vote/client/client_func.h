@@ -25,16 +25,12 @@ extern "C" {
 #endif
 
 #define fcfs_vote_client_load_from_file(filename) \
-    fcfs_vote_client_load_from_file_ex((&g_fcfs_vote_client_vars.client_ctx), \
-            filename, NULL)
-
-#define fcfs_vote_client_init_ex(filename, index_type)  \
-    fcfs_vote_client_init_ex1((&g_fcfs_vote_client_vars.client_ctx),  \
-            filename, NULL, index_type)
+    fcfs_vote_client_load_from_file_ex((&g_fcfs_vote_client_vars. \
+                client_ctx), filename, NULL)
 
 #define fcfs_vote_client_init(filename)  \
-    fcfs_vote_client_init_ex(filename,   \
-            sf_server_group_index_type_service)
+    fcfs_vote_client_init_ex1((&g_fcfs_vote_client_vars. \
+                client_ctx), filename, NULL)
 
 #define fcfs_vote_client_destroy() \
     fcfs_vote_client_destroy_ex((&g_fcfs_vote_client_vars.client_ctx))

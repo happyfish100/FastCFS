@@ -71,7 +71,7 @@ static int get_connection(FCFSVoteClientContext *client_ctx,
     return result;
 }
 
-int vote_client_proto_get_master_connection(FCFSVoteClientContext
+int vote_client_proto_get_master_connection_ex(FCFSVoteClientContext
         *client_ctx, ConnectionInfo *conn)
 {
     int result;
@@ -111,7 +111,7 @@ int vote_client_proto_get_master_connection(FCFSVoteClientContext
     return get_spec_connection(client_ctx, &master.conn, conn);
 }
 
-int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
+int fcfs_vote_client_cluster_stat_ex(FCFSVoteClientContext *client_ctx,
         FCFSVoteClientClusterStatEntry *stats, const int size, int *count)
 {
     FCFSVoteProtoHeader *header;
@@ -127,7 +127,7 @@ int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
     int result;
     int calc_size;
 
-    if ((result=vote_client_proto_get_master_connection(
+    if ((result=vote_client_proto_get_master_connection_ex(
                     client_ctx, &conn)) != 0)
     {
         return result;
@@ -198,7 +198,7 @@ int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
         }
     }
 
-    vote_client_proto_close_connection(client_ctx, &conn);
+    vote_client_proto_close_connection_ex(client_ctx, &conn);
     if (in_buff != fixed_buff) {
         if (in_buff != NULL) {
             free(in_buff);
@@ -208,7 +208,7 @@ int fcfs_vote_client_cluster_stat(FCFSVoteClientContext *client_ctx,
     return result;
 }
 
-int vote_client_proto_join(FCFSVoteClientContext *client_ctx,
+int vote_client_proto_join_ex(FCFSVoteClientContext *client_ctx,
         ConnectionInfo *conn, const FCFSVoteClientJoinRequest *r)
 {
     int result;
@@ -239,7 +239,7 @@ int vote_client_proto_join(FCFSVoteClientContext *client_ctx,
     return result;
 }
 
-int vote_client_proto_get_vote(FCFSVoteClientContext *client_ctx,
+int vote_client_proto_get_vote_ex(FCFSVoteClientContext *client_ctx,
         ConnectionInfo *conn, const SFGetServerStatusRequest *r,
         char *in_buff, const int in_len)
 {
@@ -267,7 +267,7 @@ int vote_client_proto_get_vote(FCFSVoteClientContext *client_ctx,
     return result;
 }
 
-int vote_client_proto_notify_next_leader(FCFSVoteClientContext *client_ctx,
+int vote_client_proto_notify_next_leader_ex(FCFSVoteClientContext *client_ctx,
         ConnectionInfo *conn, const unsigned char req_cmd)
 {
     int result;
@@ -288,7 +288,7 @@ int vote_client_proto_notify_next_leader(FCFSVoteClientContext *client_ctx,
     return result;
 }
 
-int vote_client_proto_active_check(FCFSVoteClientContext
+int vote_client_proto_active_check_ex(FCFSVoteClientContext
         *client_ctx, ConnectionInfo *conn)
 {
     int result;
@@ -310,7 +310,7 @@ int vote_client_proto_active_check(FCFSVoteClientContext
     return result;
 }
 
-int fcfs_vote_client_get_vote(FCFSVoteClientContext *client_ctx,
+int fcfs_vote_client_get_vote_ex(FCFSVoteClientContext *client_ctx,
         const FCFSVoteClientJoinRequest *join_request,
         const unsigned char *servers_sign,
         const unsigned char *cluster_sign,
@@ -320,16 +320,16 @@ int fcfs_vote_client_get_vote(FCFSVoteClientContext *client_ctx,
     ConnectionInfo conn;
     SFGetServerStatusRequest status_request;
 
-    if ((result=fcfs_vote_client_join(client_ctx,
+    if ((result=fcfs_vote_client_join_ex(client_ctx,
                     &conn, join_request)) == 0)
     {
         status_request.servers_sign = servers_sign;
         status_request.cluster_sign = cluster_sign;
         status_request.server_id = join_request->server_id;
         status_request.is_leader = join_request->is_leader;
-        result = vote_client_proto_get_vote(client_ctx,
+        result = vote_client_proto_get_vote_ex(client_ctx,
                 &conn, &status_request, in_buff, in_len);
-        vote_client_proto_close_connection(client_ctx, &conn);
+        vote_client_proto_close_connection_ex(client_ctx, &conn);
     }
 
     return result;
