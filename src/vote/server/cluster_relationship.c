@@ -239,7 +239,7 @@ static int cluster_get_server_status_ex(FCFSVoteClusterServerStatus
         return 0;
     } else {
         if ((result=fc_server_make_connection_ex(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                            server_status->cs->server), &conn,
+                            server_status->cs->server), &conn, "fvote",
                         connect_timeout, NULL, log_connect_error)) != 0)
         {
             return result;
@@ -417,7 +417,7 @@ static int do_notify_master_changed(FCFSVoteClusterServerInfo *cs,
 
     connect_timeout = FC_MIN(SF_G_CONNECT_TIMEOUT, 2);
     if ((result=fc_server_make_connection(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                        cs->server), &conn, connect_timeout)) != 0)
+                        cs->server), &conn, "fvote", connect_timeout)) != 0)
     {
         *bConnectFail = true;
         return result;
@@ -756,7 +756,8 @@ static int cluster_ping_master(FCFSVoteClusterServerInfo *master,
     if (conn->sock < 0) {
         connect_timeout = FC_MIN(SF_G_CONNECT_TIMEOUT, timeout);
         if ((result=fc_server_make_connection(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                            master->server), conn, connect_timeout)) != 0)
+                            master->server), conn, "fvote",
+                        connect_timeout)) != 0)
         {
             return result;
         }

@@ -102,6 +102,10 @@ int fcfs_vote_client_get_vote_ex(FCFSVoteClientContext *client_ctx,
         const unsigned char *cluster_sign,
         char *in_buff, const int in_len);
 
+int fcfs_vote_client_notify_next_leader_ex(FCFSVoteClientContext
+        *client_ctx, const FCFSVoteClientJoinRequest *join_request,
+        const unsigned char req_cmd);
+
 int fcfs_vote_client_cluster_stat_ex(FCFSVoteClientContext *client_ctx,
         FCFSVoteClientClusterStatEntry *stats, const int size, int *count);
 
@@ -144,6 +148,21 @@ int fcfs_vote_client_cluster_stat_ex(FCFSVoteClientContext *client_ctx,
         cluster_sign, in_buff, in_len) \
         fcfs_vote_client_get_vote_ex(&g_fcfs_vote_client_vars.client_ctx, \
                 join_request, servers_sign, cluster_sign, in_buff, in_len)
+
+#define fcfs_vote_client_notify_next_leader(join_request, req_cmd) \
+    fcfs_vote_client_notify_next_leader_ex(  \
+            &g_fcfs_vote_client_vars.client_ctx, \
+            join_request, req_cmd)
+
+#define fcfs_vote_client_pre_set_next_leader(join_request) \
+    fcfs_vote_client_notify_next_leader_ex(  \
+            &g_fcfs_vote_client_vars.client_ctx, join_request, \
+            FCFS_VOTE_SERVICE_PROTO_PRE_SET_NEXT_LEADER)
+
+#define fcfs_vote_client_commit_next_leader(join_request) \
+    fcfs_vote_client_notify_next_leader_ex(  \
+            &g_fcfs_vote_client_vars.client_ctx, join_request, \
+            FCFS_VOTE_SERVICE_PROTO_COMMIT_NEXT_LEADER)
 
 #define fcfs_vote_client_cluster_stat(stats, size, count) \
     fcfs_vote_client_cluster_stat_ex(&g_fcfs_vote_client_vars. \

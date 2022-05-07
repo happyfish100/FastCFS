@@ -36,7 +36,7 @@ static inline int make_connection(FCFSVoteClientContext *client_ctx,
 {
     return fc_server_make_connection(&server->group_addrs[client_ctx->
             cluster.service_group_index].address_array, conn,
-            client_ctx->connect_timeout);
+            "fvote", client_ctx->connect_timeout);
 }
 
 static int get_connection(FCFSVoteClientContext *client_ctx,
@@ -63,9 +63,11 @@ static int get_connection(FCFSVoteClientContext *client_ctx,
         i = (i + 1) % FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg);
     }
 
-    logError("file: "__FILE__", line: %d, "
-            "get_connection fail, configured server count: %d",
-            __LINE__, FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg));
+    if (FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg) > 1) {
+        logError("file: "__FILE__", line: %d, "
+                "get vote connection fail, configured server count: %d",
+                __LINE__, FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg));
+    }
     return result;
 }
 
@@ -326,6 +328,24 @@ int fcfs_vote_client_get_vote_ex(FCFSVoteClientContext *client_ctx,
         status_request.is_leader = join_request->is_leader;
         result = vote_client_proto_get_vote_ex(client_ctx,
                 &conn, &status_request, in_buff, in_len);
+        vote_client_proto_close_connection_ex(client_ctx, &conn);
+    }
+
+    return result;
+}
+
+int fcfs_vote_client_notify_next_leader_ex(FCFSVoteClientContext
+        *client_ctx, const FCFSVoteClientJoinRequest *join_request,
+        const unsigned char req_cmd)
+{
+    int result;
+    ConnectionInfo conn;
+
+    if ((result=fcfs_vote_client_join_ex(client_ctx,
+                    &conn, join_request)) == 0)
+    {
+        result = vote_client_proto_notify_next_leader_ex(
+                client_ctx, &conn, req_cmd);
         vote_client_proto_close_connection_ex(client_ctx, &conn);
     }
 
