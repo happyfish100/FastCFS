@@ -13,10 +13,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <pthread.h>
 #include "fastcommon/logger.h"
 #include "fastcommon/shared_func.h"
 #include "fastcommon/fc_atomic.h"
+#include "sf/sf_nio.h"
 #include "server_global.h"
 #include "service_group_htable.h"
 
@@ -81,24 +81,24 @@ int service_group_htable_init()
 
 int service_group_htable_get(const short service_id, const int group_id,
         const int leader_id, const short response_size,
-        FCFSVoteServiceGroupInfo **group)
+        struct fast_task_info *task, FCFSVoteServiceGroupInfo **group)
 {
-    int64_t hash_code;
+    uint64_t hash_code;
     int bucket_index;
     int old_leader_id;
     int result;
     pthread_mutex_t *lock;
-    FCFSVoteServiceGroupInfo **buckets;
+    FCFSVoteServiceGroupInfo **bucket;
     FCFSVoteServiceGroupInfo *current;
 
     hash_code = ((int64_t)service_id << 32) | (int64_t)group_id;
     bucket_index = hash_code % service_group_ctx.htable.capacity;
     lock = service_group_ctx.lock_array.locks + bucket_index %
         service_group_ctx.lock_array.count;
-    buckets = service_group_ctx.htable.buckets + bucket_index;
+    bucket = service_group_ctx.htable.buckets + bucket_index;
 
     PTHREAD_MUTEX_LOCK(lock);
-    current = *buckets;
+    current = *bucket;
     while (current != NULL) {
         if (hash_code == current->hash_code) {
             break;
@@ -114,8 +114,9 @@ int service_group_htable_get(const short service_id, const int group_id,
             current->response_size = response_size;
             current->group_id = group_id;
             current->leader_id = leader_id;
-            current->next = *buckets;
-            *buckets = current;
+            current->task = (leader_id > 0 ? task : NULL);
+            current->next = *bucket;
+            *bucket = current;
             result = 0;
         } else {
             result = ENOMEM;
@@ -136,12 +137,72 @@ int service_group_htable_get(const short service_id, const int group_id,
             } else {
                 result = SF_CLUSTER_ERROR_LEADER_INCONSISTENT;
             }
+
+            if (result == 0 && task != NULL && task != current->task) {
+                if (current->task != NULL) {
+                    logWarning("file: "__FILE__", line: %d, "
+                            "network task already exist, clean it!",
+                            __LINE__);
+                    sf_nio_notify(current->task, SF_NIO_STAGE_CLOSE);
+                }
+                current->task = task;
+            }
         } else {
             result = 0;
         }
     }
+
     PTHREAD_MUTEX_UNLOCK(lock);
 
     *group = current;
     return result;
+}
+
+void service_group_htable_unset_task(FCFSVoteServiceGroupInfo *group)
+{
+    int bucket_index;
+    pthread_mutex_t *lock;
+
+    bucket_index = group->hash_code % service_group_ctx.htable.capacity;
+    lock = service_group_ctx.lock_array.locks + bucket_index %
+        service_group_ctx.lock_array.count;
+    PTHREAD_MUTEX_LOCK(lock);
+    group->task = NULL;
+    PTHREAD_MUTEX_UNLOCK(lock);
+}
+
+void service_group_htable_clear_tasks()
+{
+    FCFSVoteServiceGroupInfo **bucket;
+    FCFSVoteServiceGroupInfo **end;
+    FCFSVoteServiceGroupInfo *current;
+    int bucket_index;
+    int group_count;
+    int clear_count;
+    pthread_mutex_t *lock;
+
+    group_count = clear_count = 0;
+    end = service_group_ctx.htable.buckets +
+        service_group_ctx.htable.capacity;
+    for (bucket=service_group_ctx.htable.buckets; bucket<end; bucket++) {
+        bucket_index = bucket - service_group_ctx.htable.buckets;
+        lock = service_group_ctx.lock_array.locks + bucket_index %
+            service_group_ctx.lock_array.count;
+        PTHREAD_MUTEX_LOCK(lock);
+        if (*bucket != NULL) {
+            current = *bucket;
+            do {
+                ++group_count;
+                if (current->task != NULL) {
+                    ++clear_count;
+                    sf_nio_notify(current->task, SF_NIO_STAGE_CLOSE);
+                }
+            } while ((current=current->next) != NULL);
+        }
+        PTHREAD_MUTEX_UNLOCK(lock);
+    }
+
+    logInfo("file: "__FILE__", line: %d, "
+            "service group count: %d, clear count: %d",
+            __LINE__, group_count, clear_count);
 }

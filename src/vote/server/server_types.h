@@ -54,6 +54,7 @@ typedef struct fcfs_vote_cluster_server_array {
 typedef struct fcfs_vote_service_peer_info {
     struct fcfs_vote_service_group_info *group;
     int server_id;
+    bool persistent;
 } FCFSVoteServicePeerInfo;
 
 typedef struct server_task_arg {

@@ -35,6 +35,7 @@
 #include "sf/sf_func.h"
 #include "common/vote_proto.h"
 #include "server_global.h"
+#include "service_group_htable.h"
 #include "cluster_relationship.h"
 
 typedef struct fcfs_vote_cluster_server_status {
@@ -157,7 +158,7 @@ static inline void cluster_unset_master()
     if (old_master != NULL) {
         __sync_bool_compare_and_swap(&CLUSTER_MASTER_PTR, old_master, NULL);
         if (old_master == CLUSTER_MYSELF_PTR) {
-            //TODO
+            service_group_htable_clear_tasks();
         }
     }
 }

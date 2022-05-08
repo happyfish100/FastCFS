@@ -57,6 +57,10 @@ int service_handler_destroy()
 void service_task_finish_cleanup(struct fast_task_info *task)
 {
     if (SERVER_TASK_TYPE == VOTE_SERVER_TASK_TYPE_VOTE_NODE) {
+        if (SERVICE_PEER.persistent) {
+            service_group_htable_unset_task(SERVICE_PEER.group);
+            SERVICE_PEER.persistent = false;
+        }
         __sync_bool_compare_and_swap(&SERVICE_PEER.group->leader_id,
                 SERVICE_PEER.server_id, 0);
         SERVICE_PEER.server_id = 0;
@@ -120,7 +124,7 @@ static int service_deal_client_join(struct fast_task_info *task)
 
     req = (FCFSVoteProtoClientJoinReq *)REQUEST.body;
     server_id = buff2int(req->server_id);
-    group_id = buff2short(req->group_id);
+    group_id = buff2int(req->group_id);
     response_size = buff2short(req->response_size);
     service_id = req->service_id;
     switch (service_id) {
@@ -137,39 +141,57 @@ static int service_deal_client_join(struct fast_task_info *task)
 
     if (server_id <= 0) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                "invalid server_id: %d", server_id);
+                "service: %s, invalid server_id: %d",
+                fcfs_vote_get_service_name(service_id),
+                server_id);
         return -EINVAL;
     }
     if (response_size <= 0 || response_size > (task->size -
                 sizeof(FCFSVoteProtoHeader)))
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                "server_id: %d, invalid response_size: %d",
+                "service: %s, server_id: %d, invalid response_size: %d",
+                fcfs_vote_get_service_name(service_id),
                 server_id, response_size);
         return -EINVAL;
     }
 
-    result = service_group_htable_get(service_id, group_id,
-            (req->is_leader ? server_id : 0), response_size, &group);
-    if (result != 0) {
-        if (result == SF_CLUSTER_ERROR_LEADER_INCONSISTENT) {
-            RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                    "service_id: %d, group_id: %d, target server_id: %d, "
-                    "current leader id: %d, leader inconsistent",
-                    service_id, group_id, server_id, group->leader_id);
-        }
-        return result;
+    if (req->persistent && !req->is_leader) {
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "service: %s, server_id: %d, unexpected is_leader: %d",
+                fcfs_vote_get_service_name(service_id),
+                server_id, req->is_leader);
+        return -EINVAL;
     }
 
     if (SERVICE_PEER.group != NULL) {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                "service_id: %d, server_id: %d already joined",
-                service_id, server_id);
+                "service: %s, server_id: %d already joined",
+                fcfs_vote_get_service_name(service_id), server_id);
         return EEXIST;
+    }
+
+    logInfo("service: %s, group_id: %d, server_id: %d, is_leader: %d, persistent: %d",
+            fcfs_vote_get_service_name(service_id), group_id, server_id,
+            req->is_leader, req->persistent);
+
+    result = service_group_htable_get(service_id, group_id,
+            (req->is_leader ? server_id : 0), response_size,
+            (req->persistent ? task : NULL), &group);
+    if (result != 0) {
+        if (result == SF_CLUSTER_ERROR_LEADER_INCONSISTENT) {
+            RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                    "service: %s, group_id: %d, target server_id: %d, "
+                    "current leader id: %d, leader inconsistent",
+                    fcfs_vote_get_service_name(service_id),
+                    group_id, server_id, group->leader_id);
+        }
+        return result;
     }
 
     SERVICE_PEER.server_id = server_id;
     SERVICE_PEER.group = group;
+    SERVICE_PEER.persistent = (req->persistent ? true : false);
     SERVER_TASK_TYPE = VOTE_SERVER_TASK_TYPE_VOTE_NODE;
     RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_RESP;
     return 0;
@@ -284,9 +306,10 @@ static int service_deal_next_leader(struct fast_task_info *task)
                     next_leader, next_leader, 0);
         }
     } else {  //commit leader
+        __sync_bool_compare_and_swap(&SERVICE_PEER.group->
+                next_leader, next_leader, 0);
         if (next_leader != leader_id) {
-            __sync_bool_compare_and_swap(&SERVICE_PEER.group->
-                    next_leader, next_leader, 0);
+            //error
         } else if (__sync_bool_compare_and_swap(&SERVICE_PEER.
                     group->leader_id, 0, leader_id))
         {

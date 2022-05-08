@@ -22,12 +22,13 @@
 #include "server_global.h"
 
 typedef struct fcfs_vote_service_group_info {
-    int64_t hash_code;
+    uint64_t hash_code;
     short service_id;
     short response_size;
     int group_id;
     volatile int next_leader;
     volatile int leader_id;
+    struct fast_task_info *task;
     struct fcfs_vote_service_group_info *next;  //for htable
 } FCFSVoteServiceGroupInfo;
 
@@ -39,7 +40,11 @@ int service_group_htable_init();
 
 int service_group_htable_get(const short service_id, const int group_id,
         const int leader_id, const short response_size,
-        FCFSVoteServiceGroupInfo **group);
+        struct fast_task_info *task, FCFSVoteServiceGroupInfo **group);
+
+void service_group_htable_unset_task(FCFSVoteServiceGroupInfo *group);
+
+void service_group_htable_clear_tasks();
 
 #ifdef __cplusplus
 }

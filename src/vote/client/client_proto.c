@@ -226,6 +226,7 @@ int vote_client_proto_join_ex(FCFSVoteClientContext *client_ctx,
     short2buff(r->response_size, req->response_size);
     req->service_id = r->service_id;
     req->is_leader = (r->is_leader ? 1 : 0);
+    req->persistent = (r->persistent ? 1 : 0);
 
     response.error.length = 0;
     if ((result=sf_send_and_recv_none_body_response(conn,

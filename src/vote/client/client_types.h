@@ -30,12 +30,6 @@ typedef struct fcfs_vote_client_server_entry {
     char status;
 } FCFSVoteClientServerEntry;
 
-typedef struct fcfs_vote_server_group {
-    int alloc_size;
-    int count;
-    ConnectionInfo *servers;
-} FCFSVoteServerGroup;
-
 typedef struct fcfs_vote_client_context {
     SFClusterConfig cluster;
     int connect_timeout;

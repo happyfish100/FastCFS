@@ -37,6 +37,7 @@ typedef struct fcfs_vote_client_join_request {
     short response_size;
     short service_id;
     bool is_leader;
+    bool persistent;
 } FCFSVoteClientJoinRequest;
 
 #ifdef __cplusplus
