@@ -94,7 +94,8 @@ static ConnectionInfo *get_spec_connection(SFConnectionManager *cm,
         conn_pool_set_server_info(conn, target->ip_addr, target->port);
     }
 
-    return conn_pool_get_connection(&extra->cpool, target, err_no);
+    return conn_pool_get_connection_ex(&extra->cpool,
+            target, "fauth", err_no);
 }
 
 static ConnectionInfo *get_connection(SFConnectionManager *cm,
@@ -140,8 +141,8 @@ static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
 
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
     if (extra->master_cache.valid) {
-        if ((conn=conn_pool_get_connection(&extra->cpool,
-                        &extra->master_cache.conn, err_no)) != NULL)
+        if ((conn=conn_pool_get_connection_ex(&extra->cpool, &extra->
+                        master_cache.conn, "fauth", err_no)) != NULL)
         {
             return conn;
         } else {

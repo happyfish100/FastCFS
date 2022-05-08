@@ -32,6 +32,7 @@ typedef struct server_global_vars {
 
         struct {
             SFElectionQuorum quorum;
+            bool vote_node_enabled;
             int master_lost_timeout;
             int max_wait_time;
         } master_election;

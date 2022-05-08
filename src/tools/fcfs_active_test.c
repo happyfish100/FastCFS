@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
     response.error.length = 0;
     if ((result=sf_active_test(&conn, &response, network_timeout)) != 0) {
-        sf_log_network_error(&response, &conn, result);
+        sf_log_network_error(&response, &conn, NULL, result);
         return result;
     }
 

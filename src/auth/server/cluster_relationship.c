@@ -102,7 +102,7 @@ static int proto_get_server_status(ConnectionInfo *conn,
 			sizeof(out_buff), &response, network_timeout,
             FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
         return result;
     }
 
@@ -189,7 +189,7 @@ static int proto_join_master(ConnectionInfo *conn, const int network_timeout)
                     sizeof(out_buff), &response, network_timeout,
                     SF_PROTO_ACK)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -207,7 +207,7 @@ static int proto_ping_master(ConnectionInfo *conn, const int network_timeout)
                     sizeof(header), &response, network_timeout,
                     FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -246,7 +246,7 @@ static int cluster_get_server_status_ex(FCFSAuthClusterServerStatus
         return 0;
     } else {
         if ((result=fc_server_make_connection_ex(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                            server_status->cs->server), &conn,
+                            server_status->cs->server), &conn, "fauth",
                         connect_timeout, NULL, log_connect_error)) != 0)
         {
             return result;
@@ -330,7 +330,8 @@ static int master_check()
         active_count = CLUSTER_SERVER_ARRAY.count -
             INACTIVE_SERVER_ARRAY.count;
         if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM,
-                    CLUSTER_SERVER_ARRAY.count, active_count))
+                    VOTE_NODE_ENABLED, CLUSTER_SERVER_ARRAY.count,
+                    active_count))
         {
             logWarning("file: "__FILE__", line: %d, "
                     "trigger re-select master because alive server "
@@ -424,7 +425,7 @@ static int do_notify_master_changed(FCFSAuthClusterServerInfo *cs,
 
     connect_timeout = FC_MIN(SF_G_CONNECT_TIMEOUT, 2);
     if ((result=fc_server_make_connection(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                        cs->server), &conn, connect_timeout)) != 0)
+                        cs->server), &conn, "fauth", connect_timeout)) != 0)
     {
         *bConnectFail = true;
         return result;
@@ -440,7 +441,7 @@ static int do_notify_master_changed(FCFSAuthClusterServerInfo *cs,
                     sizeof(out_buff), &response, SF_G_NETWORK_TIMEOUT,
                     SF_PROTO_ACK)) != 0)
     {
-        sf_log_network_error(&response, &conn, result);
+        auth_log_network_error(&response, &conn, result);
     }
 
     conn_pool_disconnect_server(&conn);
@@ -694,7 +695,8 @@ static int cluster_select_master()
 
         ++i;
         if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM,
-                    CLUSTER_SERVER_ARRAY.count, active_count))
+                    VOTE_NODE_ENABLED, CLUSTER_SERVER_ARRAY.count,
+                    active_count))
         {
             sleep_secs = 1;
             if (need_log) {
@@ -793,7 +795,8 @@ static int cluster_ping_master(FCFSAuthClusterServerInfo *master,
     if (conn->sock < 0) {
         connect_timeout = FC_MIN(SF_G_CONNECT_TIMEOUT, timeout);
         if ((result=fc_server_make_connection(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                            master->server), conn, connect_timeout)) != 0)
+                            master->server), conn, "fauth",
+                        connect_timeout)) != 0)
         {
             return result;
         }

@@ -89,6 +89,12 @@ typedef struct fcfs_vote_proto_cluster_stat_resp_body_part {
     char ip_addr[IP_ADDRESS_SIZE];
 } FCFSVoteProtoClusterStatRespBodyPart;
 
+#define vote_log_network_error_ex(response, conn, result, log_level) \
+    sf_log_network_error_ex(response, conn, "fvote", result, log_level)
+
+#define vote_log_network_error(response, conn, result) \
+    sf_log_network_error(response, conn, "fvote", result)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

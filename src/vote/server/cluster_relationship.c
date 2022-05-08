@@ -99,7 +99,7 @@ static int proto_get_server_status(ConnectionInfo *conn,
 			sizeof(out_buff), &response, network_timeout,
             FCFS_VOTE_CLUSTER_PROTO_GET_SERVER_STATUS_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        vote_log_network_error(&response, conn, result);
         return result;
     }
 
@@ -157,6 +157,7 @@ static inline void cluster_unset_master()
     if (old_master != NULL) {
         __sync_bool_compare_and_swap(&CLUSTER_MASTER_PTR, old_master, NULL);
         if (old_master == CLUSTER_MYSELF_PTR) {
+            //TODO
         }
     }
 }
@@ -182,7 +183,7 @@ static int proto_join_master(ConnectionInfo *conn, const int network_timeout)
                     sizeof(out_buff), &response, network_timeout,
                     SF_PROTO_ACK)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        vote_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -200,7 +201,7 @@ static int proto_ping_master(ConnectionInfo *conn, const int network_timeout)
                     sizeof(header), &response, network_timeout,
                     FCFS_VOTE_CLUSTER_PROTO_PING_MASTER_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        vote_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -433,7 +434,7 @@ static int do_notify_master_changed(FCFSVoteClusterServerInfo *cs,
                     sizeof(out_buff), &response, SF_G_NETWORK_TIMEOUT,
                     SF_PROTO_ACK)) != 0)
     {
-        sf_log_network_error(&response, &conn, result);
+        vote_log_network_error(&response, &conn, result);
     }
 
     conn_pool_disconnect_server(&conn);
@@ -566,7 +567,11 @@ static int cluster_commit_next_master(FCFSVoteClusterServerInfo *cs,
     }
 }
 
-static int cluster_notify_master_changed(FCFSVoteClusterServerStatus *server_status)
+typedef int (*cluster_notify_next_master_func)(FCFSVoteClusterServerInfo *cs,
+        FCFSVoteClusterServerStatus *server_status, bool *bConnectFail);
+
+static int notify_next_master(cluster_notify_next_master_func notify_func,
+        FCFSVoteClusterServerStatus *server_status)
 {
 	FCFSVoteClusterServerInfo *server;
 	FCFSVoteClusterServerInfo *send;
@@ -575,43 +580,45 @@ static int cluster_notify_master_changed(FCFSVoteClusterServerStatus *server_sta
 	int success_count;
 
 	result = ENOENT;
+	success_count = 0;
 	send = CLUSTER_SERVER_ARRAY.servers + CLUSTER_SERVER_ARRAY.count;
-	success_count = 0;
-	for (server=CLUSTER_SERVER_ARRAY.servers; server<send; server++) {
-		if ((result=cluster_notify_next_master(server,
-				server_status, &bConnectFail)) != 0)
-		{
-			if (!bConnectFail) {
-				return result;
-			}
-		} else {
-			success_count++;
-		}
-	}
+    for (server=CLUSTER_SERVER_ARRAY.servers; server<send; server++) {
+        if ((result=notify_func(server, server_status, &bConnectFail)) != 0) {
+            if (!bConnectFail) {
+                return result;
+            }
+        } else {
+            success_count++;
+        }
+    }
 
-	if (success_count == 0) {
-		return result;
-	}
-
-	result = ENOENT;
-	success_count = 0;
-	for (server=CLUSTER_SERVER_ARRAY.servers; server<send; server++) {
-		if ((result=cluster_commit_next_master(server,
-				server_status, &bConnectFail)) != 0)
-		{
-			if (!bConnectFail) {
-				return result;
-			}
-		} else {
-			success_count++;
-		}
-	}
-
-	if (success_count == 0) {
-		return result;
-	}
+    if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM, false,
+                CLUSTER_SERVER_ARRAY.count, success_count))
+    {
+        return EAGAIN;
+    }
 
 	return 0;
+}
+
+static inline int cluster_notify_master_changed(
+        FCFSVoteClusterServerStatus *server_status)
+{
+    int result;
+
+    if ((result=notify_next_master(cluster_notify_next_master,
+                    server_status)) != 0)
+    {
+        return result;
+    }
+
+    if ((result=notify_next_master(cluster_commit_next_master,
+                    server_status)) != 0)
+    {
+        cluster_unset_master();
+    }
+
+    return result;
 }
 
 static int cluster_select_master()

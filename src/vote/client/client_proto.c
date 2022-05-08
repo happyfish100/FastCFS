@@ -94,7 +94,7 @@ int vote_client_proto_get_master_connection_ex(FCFSVoteClientContext
                     FCFS_VOTE_SERVICE_PROTO_GET_MASTER_RESP, (char *)
                     &server_resp, sizeof(FCFSVoteProtoGetServerResp))) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        vote_log_network_error(&response, conn, result);
         conn_pool_disconnect_server(conn);
         return result;
     }
@@ -184,7 +184,7 @@ int fcfs_vote_client_cluster_stat_ex(FCFSVoteClientContext *client_ctx,
     }
 
     if (result != 0) {
-        sf_log_network_error(&response, &conn, result);
+        vote_log_network_error(&response, &conn, result);
     } else {
         body_end = body_part + (*count);
         for (stat=stats; body_part<body_end; body_part++, stat++) {
@@ -233,7 +233,7 @@ int vote_client_proto_join_ex(FCFSVoteClientContext *client_ctx,
                     client_ctx->network_timeout,
                     FCFS_VOTE_SERVICE_PROTO_CLIENT_JOIN_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        vote_log_network_error(&response, conn, result);
     }
     return result;
 }
@@ -261,7 +261,7 @@ int vote_client_proto_get_vote_ex(FCFSVoteClientContext *client_ctx,
                     FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP, in_buff,
                     in_len)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        vote_log_network_error(&response, conn, result);
     }
     return result;
 }
@@ -282,7 +282,7 @@ int vote_client_proto_notify_next_leader_ex(FCFSVoteClientContext *client_ctx,
                     sizeof(out_buff), &response, client_ctx->
                     network_timeout, SF_PROTO_ACK)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        vote_log_network_error(&response, conn, result);
     }
     return result;
 }
@@ -304,7 +304,7 @@ int vote_client_proto_active_check_ex(FCFSVoteClientContext
                     client_ctx->network_timeout,
                     FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        vote_log_network_error(&response, conn, result);
     }
     return result;
 }

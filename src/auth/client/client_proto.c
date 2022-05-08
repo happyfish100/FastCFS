@@ -155,7 +155,7 @@ int fcfs_auth_client_proto_user_login(FCFSAuthClientContext *client_ctx,
         memcpy(client_ctx->session.id, login_resp.session_id,
                 FCFS_AUTH_SESSION_ID_LEN);
     } else {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -190,7 +190,7 @@ int fcfs_auth_client_proto_session_subscribe(
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -244,7 +244,7 @@ int fcfs_auth_client_proto_session_validate(
     {
         result = buff2int(validate_resp.result);
     } else {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -279,7 +279,7 @@ int fcfs_auth_client_proto_user_create(FCFSAuthClientContext *client_ctx,
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_USER_CREATE_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -314,7 +314,7 @@ int fcfs_auth_client_proto_user_passwd(FCFSAuthClientContext *client_ctx,
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_USER_PASSWD_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -364,7 +364,7 @@ static int client_proto_user_list_do(FCFSAuthClientContext *client_ctx,
                     FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP, buffer,
                     sizeof(FCFSAuthProtoListRespHeader))) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
         return result;
     }
 
@@ -485,7 +485,7 @@ int fcfs_auth_client_proto_user_grant(FCFSAuthClientContext *client_ctx,
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_USER_GRANT_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -516,7 +516,7 @@ int fcfs_auth_client_proto_user_remove(FCFSAuthClientContext *client_ctx,
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_USER_REMOVE_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -562,7 +562,7 @@ int fcfs_auth_client_proto_spool_create(FCFSAuthClientContext *client_ctx,
                     FCFS_AUTH_SERVICE_PROTO_SPOOL_CREATE_RESP, in_buff,
                     buff_size, &body_len)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
         return result;
     }
 
@@ -620,7 +620,7 @@ int client_proto_spool_list_do(FCFSAuthClientContext *client_ctx,
                     FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP, buffer,
                     sizeof(FCFSAuthProtoListRespHeader))) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
         return result;
     }
 
@@ -694,7 +694,7 @@ int fcfs_auth_client_proto_spool_remove(FCFSAuthClientContext *client_ctx,
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_SPOOL_REMOVE_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -726,7 +726,7 @@ int fcfs_auth_client_proto_spool_set_quota(FCFSAuthClientContext *client_ctx,
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_SPOOL_SET_QUOTA_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -761,7 +761,7 @@ int fcfs_auth_client_proto_spool_get_quota(FCFSAuthClientContext *client_ctx,
     {
         *quota = buff2long(resp.quota);
     } else {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -800,7 +800,7 @@ int fcfs_auth_client_proto_gpool_grant(FCFSAuthClientContext *client_ctx,
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_GPOOL_GRANT_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -837,7 +837,7 @@ int fcfs_auth_client_proto_gpool_withdraw(FCFSAuthClientContext
                     &response, client_ctx->common_cfg.network_timeout,
                     FCFS_AUTH_SERVICE_PROTO_GPOOL_WITHDRAW_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -884,7 +884,7 @@ static int client_proto_gpool_list_do(FCFSAuthClientContext
                     FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP, buffer,
                     sizeof(FCFSAuthProtoListRespHeader))) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
         return result;
     }
 
@@ -966,7 +966,7 @@ int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,
                     FCFS_AUTH_SERVICE_PROTO_GET_MASTER_RESP,
                     (char *)&server_resp, sizeof(FCFSAuthProtoGetServerResp))) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     } else {
         master->server_id = buff2int(server_resp.server_id);
         memcpy(master->conn.ip_addr, server_resp.ip_addr, IP_ADDRESS_SIZE);
@@ -1051,7 +1051,7 @@ int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
     }
 
     if (result != 0) {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     } else {
         body_end = body_part + (*count);
         for (stat=stats; body_part<body_end; body_part++, stat++) {
