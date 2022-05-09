@@ -106,6 +106,31 @@ static int service_deal_cluster_stat(struct fast_task_info *task)
     return 0;
 }
 
+static int service_check_config_sign(struct fast_task_info *task,
+        const int service_id, const int server_id,
+        const char *config_sign)
+{
+    if (memcmp(config_sign, CLUSTER_CONFIG_SIGN_BUF,
+                SF_CLUSTER_CONFIG_SIGN_LEN) != 0)
+    {
+        char peer_hex[2 * SF_CLUSTER_CONFIG_SIGN_LEN + 1];
+        char my_hex[2 * SF_CLUSTER_CONFIG_SIGN_LEN + 1];
+
+        bin2hex(config_sign, SF_CLUSTER_CONFIG_SIGN_LEN, peer_hex);
+        bin2hex((const char *)CLUSTER_CONFIG_SIGN_BUF,
+                SF_CLUSTER_CONFIG_SIGN_LEN, my_hex);
+
+        RESPONSE.error.length = sprintf(RESPONSE.error.message,
+                "service: %s, server_id: %d, client 's "
+                "cluster config md5: %s != mine: %s",
+                fcfs_vote_get_service_name(service_id),
+                server_id, peer_hex, my_hex);
+        return EFAULT;
+    }
+
+    return 0;
+}
+
 static int service_deal_client_join(struct fast_task_info *task)
 {
     int result;
@@ -162,6 +187,12 @@ static int service_deal_client_join(struct fast_task_info *task)
                 fcfs_vote_get_service_name(service_id),
                 server_id, req->is_leader);
         return -EINVAL;
+    }
+
+    if ((result=service_check_config_sign(task, service_id,
+                    server_id, req->config_sign)) != 0)
+    {
+        return result;
     }
 
     if (SERVICE_PEER.group != NULL) {

@@ -227,6 +227,8 @@ int vote_client_proto_join_ex(FCFSVoteClientContext *client_ctx,
     req->service_id = r->service_id;
     req->is_leader = (r->is_leader ? 1 : 0);
     req->persistent = (r->persistent ? 1 : 0);
+    memcpy(req->config_sign, client_ctx->cluster.md5_digest,
+            SF_CLUSTER_CONFIG_SIGN_LEN);
 
     response.error.length = 0;
     if ((result=sf_send_and_recv_none_body_response(conn,

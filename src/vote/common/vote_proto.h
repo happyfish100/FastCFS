@@ -54,6 +54,7 @@ typedef struct fcfs_vote_proto_client_join_req {
     unsigned char service_id;   //which service: fauth/fdir/fstore
     char persistent;
     char padding[3];
+    char config_sign[SF_CLUSTER_CONFIG_SIGN_LEN];
 } FCFSVoteProtoClientJoinReq;
 
 typedef SFProtoGetServerResp FCFSVoteProtoGetServerResp;
