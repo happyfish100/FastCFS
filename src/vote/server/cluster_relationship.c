@@ -280,13 +280,13 @@ static int do_check_brainsplit(FCFSVoteClusterServerInfo *cs)
     return 0;
 }
 
-static int cluster_check_brainsplit(const int inactive_count)
+static int cluster_check_brainsplit(int *inactive_count)
 {
     FCFSVoteClusterServerDetectEntry *entry;
     FCFSVoteClusterServerDetectEntry *end;
     int result;
 
-    end = INACTIVE_SERVER_ARRAY.entries + inactive_count;
+    end = INACTIVE_SERVER_ARRAY.entries + *inactive_count;
     for (entry=INACTIVE_SERVER_ARRAY.entries; entry<end; entry++) {
         if (entry >= INACTIVE_SERVER_ARRAY.entries +
                 INACTIVE_SERVER_ARRAY.count)
@@ -298,7 +298,9 @@ static int cluster_check_brainsplit(const int inactive_count)
         }
 
         result = do_check_brainsplit(entry->cs);
-        if (result == EEXIST) {  //brain-split occurs
+        if (result == 0) { //success
+            --(*inactive_count);
+        } else if (result == EEXIST) {  //brain-split occurs
             return result;
         }
 
@@ -318,12 +320,11 @@ static int master_check()
     inactive_count = INACTIVE_SERVER_ARRAY.count;
     PTHREAD_MUTEX_UNLOCK(&INACTIVE_SERVER_ARRAY.lock);
     if (inactive_count > 0) {
-        if ((result=cluster_check_brainsplit(inactive_count)) != 0) {
+        if ((result=cluster_check_brainsplit(&inactive_count)) != 0) {
             return result;
         }
 
-        active_count = CLUSTER_SERVER_ARRAY.count -
-            INACTIVE_SERVER_ARRAY.count;
+        active_count = CLUSTER_SERVER_ARRAY.count - inactive_count;
         if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM, false,
                     CLUSTER_SERVER_ARRAY.count, active_count))
         {
