@@ -258,4 +258,8 @@ fused 重启：
 
 如果需要开启存储池或访问权限控制，请参阅 [认证配置文档](AUTH-zh_CN.md)
 
+## 5. 共享存储配置指南（可选）
+
+将FastCFS作为Oracle RAC等系统的共享存储，请参阅 [共享存储配置指南](shared-storage-guide-zh_CN.md)
+
 祝顺利！ have a nice day!
