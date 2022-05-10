@@ -177,7 +177,7 @@ void pool_usage_updater_terminate()
 {
     int count;
 
-    if (FC_ATOMIC_GET(updater_ctx.running) == 0) {
+    if (!updater_ctx.inited || FC_ATOMIC_GET(updater_ctx.running) == 0) {
         return;
     }
 

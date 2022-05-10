@@ -13,18 +13,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <time.h>
-#include <fcntl.h>
-#include <pthread.h>
 #include "fastcommon/logger.h"
 #include "fastcommon/sockopt.h"
 #include "fastcommon/shared_func.h"
@@ -150,17 +138,9 @@ static void init_inactive_server_array()
     PTHREAD_MUTEX_UNLOCK(&INACTIVE_SERVER_ARRAY.lock);
 }
 
-static inline void cluster_unset_master()
+static inline bool cluster_unset_master(FCFSVoteClusterServerInfo *master)
 {
-    FCFSVoteClusterServerInfo *old_master;
-
-    old_master = CLUSTER_MASTER_ATOM_PTR;
-    if (old_master != NULL) {
-        __sync_bool_compare_and_swap(&CLUSTER_MASTER_PTR, old_master, NULL);
-        if (old_master == CLUSTER_MYSELF_PTR) {
-            service_group_htable_clear_tasks();
-        }
-    }
+    return __sync_bool_compare_and_swap(&CLUSTER_MASTER_PTR, master, NULL);
 }
 
 static int proto_join_master(ConnectionInfo *conn, const int network_timeout)
@@ -273,7 +253,7 @@ static int do_check_brainsplit(FCFSVoteClusterServerInfo *cs)
                 "trigger re-select master ...", __LINE__, cs->server->id,
                 CLUSTER_GROUP_ADDRESS_FIRST_IP(cs->server),
                 CLUSTER_GROUP_ADDRESS_FIRST_PORT(cs->server));
-        cluster_unset_master();
+        cluster_relationship_trigger_reselect_master();
         return EEXIST;
     }
 
@@ -332,7 +312,7 @@ static int master_check()
                     "trigger re-select master because alive server "
                     "count: %d < half of total server count: %d ...",
                     __LINE__, active_count, CLUSTER_SERVER_ARRAY.count);
-            cluster_unset_master();
+            cluster_relationship_trigger_reselect_master();
             return EBUSY;
         }
     }
@@ -534,7 +514,16 @@ int cluster_relationship_commit_master(FCFSVoteClusterServerInfo *master)
 
 void cluster_relationship_trigger_reselect_master()
 {
-    cluster_unset_master();
+    FCFSVoteClusterServerInfo *master;
+
+    master = CLUSTER_MASTER_ATOM_PTR;
+    if (CLUSTER_MYSELF_PTR != master) {
+        return;
+    }
+
+    if (cluster_unset_master(master)) {
+        service_group_htable_clear_tasks();
+    }
 }
 
 static int cluster_notify_next_master(FCFSVoteClusterServerInfo *cs,
@@ -617,7 +606,7 @@ static inline int cluster_notify_master_changed(
     if ((result=notify_next_master(cluster_commit_next_master,
                     server_status)) != 0)
     {
-        cluster_unset_master();
+        cluster_relationship_trigger_reselect_master();
     }
 
     return result;
@@ -840,14 +829,14 @@ static void *cluster_thread_entrance(void* arg)
                         CLUSTER_GROUP_ADDRESS_FIRST_IP(master->server),
                         CLUSTER_GROUP_ADDRESS_FIRST_PORT(master->server));
                 if (result == SF_RETRIABLE_ERROR_NOT_MASTER) {
-                    cluster_unset_master();
+                    cluster_unset_master(master);
                     fail_count = 0;
                     sleep_seconds = 0;
                 } else if (g_current_time - ping_start_time >
                         ELECTION_MASTER_LOST_TIMEOUT)
                 {
                     if (fail_count > 1) {
-                        cluster_unset_master();
+                        cluster_unset_master(master);
                         fail_count = 0;
                     }
                     sleep_seconds = 0;

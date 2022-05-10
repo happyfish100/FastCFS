@@ -36,6 +36,7 @@ static int auth_db_init();
 typedef struct auth_db_context {
     pthread_mutex_t lock;
     struct fast_allocator_context name_acontext;
+    bool inited;
 
     struct {
         int count;
@@ -251,15 +252,19 @@ static int auth_db_init()
         return result;
     }
 
+    adb_ctx.inited = true;
     return 0;
 }
 
 void auth_db_destroy()
 {
-    destroy_skiplists();
-    destroy_allocators();
-    fast_allocator_destroy(&adb_ctx.name_acontext);
-    pthread_mutex_destroy(&adb_ctx.lock);
+    if (adb_ctx.inited) {
+        destroy_skiplists();
+        destroy_allocators();
+        fast_allocator_destroy(&adb_ctx.name_acontext);
+        pthread_mutex_destroy(&adb_ctx.lock);
+        adb_ctx.inited = false;
+    }
 }
 
 static inline DBUserInfo *user_get(AuthServerContext *server_ctx,
