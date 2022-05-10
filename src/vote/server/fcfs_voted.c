@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
 
         result = sf_service_init_ex(&g_sf_context, "service", NULL, NULL,
                 NULL, sf_proto_set_body_length, service_deal_task,
-                service_task_finish_cleanup, NULL, 1000,
-                sizeof(FCFSVoteProtoHeader), sizeof(VoteServerTaskArg));
+                service_task_finish_cleanup, service_recv_timeout_callback,
+                1000, sizeof(FCFSVoteProtoHeader), sizeof(VoteServerTaskArg));
         if (result != 0) {
             break;
         }

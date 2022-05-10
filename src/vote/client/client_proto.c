@@ -26,7 +26,7 @@
 static inline int get_spec_connection(FCFSVoteClientContext *client_ctx,
         const ConnectionInfo *target, ConnectionInfo *conn)
 {
-    memcpy(conn, target, sizeof(ConnectionInfo));
+    *conn = *target;
     conn->sock = -1;
     return conn_pool_connect_server(conn, client_ctx->connect_timeout);
 }

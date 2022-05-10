@@ -54,15 +54,42 @@ int service_handler_destroy()
     return 0;
 }
 
+int service_recv_timeout_callback(struct fast_task_info *task)
+{
+    if (SERVER_TASK_TYPE == VOTE_SERVER_TASK_TYPE_VOTE_NODE &&
+            SERVICE_PEER.group != NULL)
+    {
+        logWarning("file: "__FILE__", line: %d, "
+                "client ip: %s, service: %s, group_id: %d, server id: %d, "
+                "recv timeout", __LINE__, task->client_ip,
+                fcfs_vote_get_service_name(SERVICE_PEER.group->service_id),
+                SERVICE_PEER.group->group_id, SERVICE_PEER.server_id);
+        return ETIMEDOUT;
+    }
+
+    return 0;
+}
+
 void service_task_finish_cleanup(struct fast_task_info *task)
 {
     if (SERVER_TASK_TYPE == VOTE_SERVER_TASK_TYPE_VOTE_NODE) {
-        if (SERVICE_PEER.persistent) {
-            service_group_htable_unset_task(SERVICE_PEER.group);
-            SERVICE_PEER.persistent = false;
+        if (__sync_bool_compare_and_swap(&SERVICE_PEER.group->
+                    leader_id, SERVICE_PEER.server_id, 0))
+        {
+            logInfo("service: %s, group_id: %d, server id: %d, "
+                    "persistent: %d, next_leader: %d, offline",
+                    fcfs_vote_get_service_name(SERVICE_PEER.group->service_id),
+                    SERVICE_PEER.group->group_id, SERVICE_PEER.server_id,
+                    SERVICE_PEER.persistent,
+                    FC_ATOMIC_GET(SERVICE_PEER.group->next_leader));
+
+            if (SERVICE_PEER.persistent) {
+                service_group_htable_unset_task(SERVICE_PEER.group);
+                SERVICE_PEER.persistent = false;
+
+            }
         }
-        __sync_bool_compare_and_swap(&SERVICE_PEER.group->leader_id,
-                SERVICE_PEER.server_id, 0);
+
         SERVICE_PEER.server_id = 0;
         SERVICE_PEER.group = NULL;
         SERVER_TASK_TYPE = VOTE_SERVER_TASK_TYPE_NONE;
@@ -207,8 +234,8 @@ static int service_deal_client_join(struct fast_task_info *task)
             req->is_leader, req->persistent);
 
     result = service_group_htable_get(service_id, group_id,
-            (req->is_leader ? server_id : 0), response_size,
-            (req->persistent ? task : NULL), &group);
+            (req->persistent && req->is_leader ? server_id : 0),
+            response_size, (req->persistent ? task : NULL), &group);
     if (result != 0) {
         if (result == SF_CLUSTER_ERROR_LEADER_INCONSISTENT) {
             RESPONSE.error.length = sprintf(RESPONSE.error.message,
@@ -322,6 +349,14 @@ static int service_deal_next_leader(struct fast_task_info *task)
         }
     }
 
+    logInfo("cmd: %s, service: %s, group_id: %d, server id: %d, "
+            "persistent: %d, next_leader: %d",
+            fcfs_vote_get_cmd_caption(REQUEST.header.cmd),
+            fcfs_vote_get_service_name(SERVICE_PEER.group->service_id),
+            SERVICE_PEER.group->group_id, SERVICE_PEER.server_id,
+            SERVICE_PEER.persistent,
+            FC_ATOMIC_GET(SERVICE_PEER.group->next_leader));
+
     next_leader = FC_ATOMIC_GET(SERVICE_PEER.group->next_leader);
     if (REQUEST.header.cmd == FCFS_VOTE_SERVICE_PROTO_PRE_SET_NEXT_LEADER) {
         if (next_leader == 0) {
@@ -399,7 +434,6 @@ static int service_process(struct fast_task_info *task)
         case FCFS_VOTE_SERVICE_PROTO_GET_VOTE_REQ:
             return service_deal_get_vote(task);
         case FCFS_VOTE_SERVICE_PROTO_PRE_SET_NEXT_LEADER:
-            return service_deal_next_leader(task);
         case FCFS_VOTE_SERVICE_PROTO_COMMIT_NEXT_LEADER:
             return service_deal_next_leader(task);
         case FCFS_VOTE_SERVICE_PROTO_ACTIVE_CHECK_REQ:

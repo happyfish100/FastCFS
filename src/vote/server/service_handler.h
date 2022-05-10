@@ -32,6 +32,7 @@ int service_handler_init();
 int service_handler_destroy();
 int service_deal_task(struct fast_task_info *task, const int stage);
 void service_task_finish_cleanup(struct fast_task_info *task);
+int service_recv_timeout_callback(struct fast_task_info *task);
 
 #ifdef __cplusplus
 }
