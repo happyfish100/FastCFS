@@ -18,6 +18,8 @@ ALL_PRGS = fcfs_authd
 
 all: $(STATIC_OBJS) $(ALL_PRGS)
 
+$(ALL_PRGS): $(STATIC_OBJS)
+
 .o:
 	$(COMPILE) -o $@ $<  $(STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
 .c:

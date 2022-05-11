@@ -76,12 +76,14 @@ void service_task_finish_cleanup(struct fast_task_info *task)
         if (__sync_bool_compare_and_swap(&SERVICE_PEER.group->
                     leader_id, SERVICE_PEER.server_id, 0))
         {
+            /*
             logInfo("service: %s, group_id: %d, server id: %d, "
                     "persistent: %d, next_leader: %d, offline",
                     fcfs_vote_get_service_name(SERVICE_PEER.group->service_id),
                     SERVICE_PEER.group->group_id, SERVICE_PEER.server_id,
                     SERVICE_PEER.persistent,
                     FC_ATOMIC_GET(SERVICE_PEER.group->next_leader));
+                    */
 
             if (SERVICE_PEER.persistent) {
                 service_group_htable_unset_task(SERVICE_PEER.group);
@@ -229,9 +231,11 @@ static int service_deal_client_join(struct fast_task_info *task)
         return EEXIST;
     }
 
-    logInfo("service: %s, group_id: %d, server_id: %d, is_leader: %d, persistent: %d",
-            fcfs_vote_get_service_name(service_id), group_id, server_id,
-            req->is_leader, req->persistent);
+    /*
+    logInfo("service: %s, group_id: %d, server_id: %d, is_leader: %d, "
+            "persistent: %d", fcfs_vote_get_service_name(service_id),
+            group_id, server_id, req->is_leader, req->persistent);
+            */
 
     result = service_group_htable_get(service_id, group_id,
             (req->persistent && req->is_leader ? server_id : 0),
@@ -348,14 +352,6 @@ static int service_deal_next_leader(struct fast_task_info *task)
             return SF_CLUSTER_ERROR_LEADER_INCONSISTENT;
         }
     }
-
-    logInfo("cmd: %s, service: %s, group_id: %d, server id: %d, "
-            "persistent: %d, next_leader: %d",
-            fcfs_vote_get_cmd_caption(REQUEST.header.cmd),
-            fcfs_vote_get_service_name(SERVICE_PEER.group->service_id),
-            SERVICE_PEER.group->group_id, SERVICE_PEER.server_id,
-            SERVICE_PEER.persistent,
-            FC_ATOMIC_GET(SERVICE_PEER.group->next_leader));
 
     next_leader = FC_ATOMIC_GET(SERVICE_PEER.group->next_leader);
     if (REQUEST.header.cmd == FCFS_VOTE_SERVICE_PROTO_PRE_SET_NEXT_LEADER) {
