@@ -7,6 +7,24 @@ English | [Chinese](README-zh_CN.md)
 FastCFS is a general distributed file system with strong consistency, high performance, high availability and supporting 10 billion massive files.
 FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Oracle etc.), K8s, KVM, FTP, SMB and NFS.
 
+### Main Features
+
+* High performance on the premise of strong data consistency: performance is more better than ceph
+* Fully compatible with POSIX, supporting file lock and 10 billion massive files
+* High availability: no single point & automatic failover
+* Easy to use:
+    * simple and efficient architecture and native implementation
+    * independent of third-party components
+    * built-in operation and maintenance tools
+
+### Classical Application Scene
+
+* Database: supports two storage methods (conventional exclusive data and high-level shared data), and supports database cloud
+* File Storage: documents, pictures, videos, etc., FastCFS is easier to integrate with general software than the object storage
+* Unified Storage: database and file storage share a storage cluster, which significantly improves the utilization of storage resources
+* High Performance Computing: FastCFS with high reliability and high performance is naturally suitable for the HPC scene.
+
+
 ## 2. Current Version
 
 V3.3.0
@@ -96,7 +114,8 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fstore] data recovery after single disk fault (done)
 *  [fstore] after the machine recovery, the data masters should be rebalanced (done)
 *  [fauth & fdir & fstore] leader election uses  more than half principle to prevent brain-split (done)
-*  [fdir & fstore] binlog deduplication (fdir binlog, fstore replica & slice binlog)
+*  [fauth & fdir & fstore] import public vote node under 2 copies scene to prevent brain-split (completed but not released)
+*  [fdir & fstore] binlog deduplication and historical data deletion (fdir binlog, fstore replica & slice binlog, doing)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 
 ## 10. Contact us

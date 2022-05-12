@@ -6,14 +6,14 @@
 
 FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文件的通用分布式文件系统，可以作为MySQL、PostgresSQL、Oracle等数据库，k8s，KVM，FTP，SMB和NFS等系统的后端存储。
 
-### FastCFS 主要特点：
+### FastCFS 主要特点
 
 * 保证数据强一致前提下实现了高性能：性能完胜Ceph；
 * 完全兼容POSIX文件接口，支持文件锁，支持百亿级海量文件；
 * 高可用：不存在单点，自动failover；
 * 简洁高效的架构和原生实现，不依赖第三方组件，内置运维工具，易用性较好。
 
-### FastCFS 典型应用场景：
+### FastCFS 典型应用场景
 
 * 数据库：支持常规的独享数据和高阶的共享数据两种存储方式，支持数据库云化；
 * 文件存储：如文档、图片、视频等等，FastCFS比对象存储更容易与通用软件集成；
@@ -109,8 +109,8 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fstore] 单盘故障恢复后，自动恢复数据（已完成）
 *  [fstore] 机器故障或网络短暂故障恢复后，master需重新均衡分配（已完成）
 *  [fauth & fdir & fstore] leader选举支持过半原则，防止脑裂（已完成）
-*  [fauth & fdir & fstore] 实现公用选举节点，双副本防脑裂（进行中）
-*  [fdir & fstore] binlog去重（fdir binlog、fstore replica & slice binlog）
+*  [fauth & fdir & fstore] 实现公用选举节点，双副本防脑裂（完成未发布）
+*  [fdir & fstore] binlog去重及历史数据清理（fdir binlog、fstore replica & slice binlog）（进行中）
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 
 参见更多 [TODO List](docs/TODO-zh_CN.md)，欢迎大家参与。
