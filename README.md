@@ -117,6 +117,7 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fauth & fdir & fstore] import public vote node under 2 copies scene to prevent brain-split (completed but not released)
 *  [fdir & fstore] binlog deduplication and historical data deletion (fdir binlog, fstore replica & slice binlog, doing)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
+*  [all] cluster online expansion
 
 ## 10. Contact us
 
