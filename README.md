@@ -114,8 +114,8 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fstore] data recovery after single disk fault (done)
 *  [fstore] after the machine recovery, the data masters should be rebalanced (done)
 *  [fauth & fdir & fstore] leader election uses  more than half principle to prevent brain-split (done)
-*  [fauth & fdir & fstore] import public vote node under 2 copies scene to prevent brain-split (completed but not released)
-*  [fdir & fstore] binlog deduplication and historical data deletion (fdir binlog, fstore replica & slice binlog, doing)
+*  [fauth & fdir & fstore] import public vote node under 2 copies scene to prevent brain-split (not released)
+*  [fdir & fstore] binlog deduplication and historical data deletion (doing)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [all] cluster online expansion
 
