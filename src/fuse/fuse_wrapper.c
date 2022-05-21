@@ -968,18 +968,23 @@ static void fs_do_getlk(fuse_req_t req, fuse_ino_t ino,
     FCFSAPIFileInfo *fh;
     int64_t owner_id;
 
-    /*
-    logInfo("file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", fh: %"PRId64", type: %d, pid: %d",
-            __LINE__, __FUNCTION__, ino, fi->fh, lock->l_type, lock->l_pid);
-            */
-
     fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         result = EBADF;
+        owner_id = 0;
     } else {
         result = fcfs_api_getlk_ex(fh, lock, &owner_id);
     }
+
+    //TODO
+    lock->l_type = F_UNLCK;
+
+    logInfo("file: "__FILE__", line: %d, func: %s, "
+            "ino: %"PRId64", fh: %"PRId64", type: %d, "
+            "whence: %d, start: %"PRId64", len: %"PRId64", pid: %d, "
+            "owner_id: %"PRId64", result: %d", __LINE__, __FUNCTION__,
+            ino, fi->fh, lock->l_type, lock->l_whence, lock->l_start,
+            lock->l_len, lock->l_pid, fi->lock_owner, result);
 
     if (result == 0) {
         fuse_reply_lock(req, lock);
@@ -995,18 +1000,20 @@ static void fs_do_setlk(fuse_req_t req, fuse_ino_t ino,
     int result;
     FCFSAPIFileInfo *fh;
 
-    /*
-    logInfo("file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", fh: %"PRId64", lock_owner: %"PRId64", pid: %d",
-            __LINE__, __FUNCTION__, ino, fi->fh, fi->lock_owner, lock->l_pid);
-            */
-
     fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {
         result = EBADF;
     } else {
         result = fcfs_api_setlk_ex(fh, lock, fi->lock_owner, blocked);
     }
+
+    logInfo("file: "__FILE__", line: %d, func: %s, "
+            "ino: %"PRId64", fh: %"PRId64", lock_owner: %"PRId64", "
+            "type: %d, whence: %d, start: %"PRId64", len: %"PRId64", "
+            "pid: %d, sleep: %d, result: %d", __LINE__, __FUNCTION__,
+            ino, fi->fh, fi->lock_owner, lock->l_type, lock->l_whence,
+            lock->l_start, lock->l_len, lock->l_pid, sleep, result);
+
     fuse_reply_err(req, result);
 }
 
@@ -1016,13 +1023,11 @@ static void fs_do_flock(fuse_req_t req, fuse_ino_t ino,
     int result;
     FCFSAPIFileInfo *fh;
 
-    /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
             "ino: %"PRId64", fh: %"PRId64", lock_owner: %"PRId64", "
             "op: %d, operation: %d", __LINE__, __FUNCTION__,
             ino, fi->fh, fi->lock_owner, op,
             (op & (LOCK_SH | LOCK_EX | LOCK_UN)));
-            */
 
     fh = (FCFSAPIFileInfo *)fi->fh;
     if (fh == NULL) {

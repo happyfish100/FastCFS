@@ -350,6 +350,10 @@ int fcfs_api_start_ex(FCFSAPIContext *ctx, const FCFSAPIOwnerInfo *owner)
         }
     }
 
+    if ((result=fdir_client_init_node_id(ctx->contexts.fdir)) != 0) {
+        return result;
+    }
+
     if (ctx->async_report.enabled) {
         return async_reporter_init(ctx);
     } else {
