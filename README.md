@@ -23,7 +23,8 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Or
 * **Database**: supports two storage methods (conventional exclusive data and high-level shared data) and database cloudification
 * **File Storage**: documents, pictures, videos, etc., FastCFS is easier to integrate with general software than the object storage
 * **Unified Storage**: database and file storage share a storage cluster, which significantly improves the utilization of storage resources
-* **High Performance Computing**: FastCFS with high reliability and high performance is naturally suitable for the HPC scene.
+* **High Performance Computing**: FastCFS with high reliability and high performance is naturally suitable for the HPC scene
+* **Video monitoring**: smooth writing for multi-channel videos with HDD such as SATA because FastCFS uses sequential writing approach
 
 
 ## 2. Current Version
