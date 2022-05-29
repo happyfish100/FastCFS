@@ -16,6 +16,7 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Or
     * simple and efficient architecture and native implementation
     * independent of third-party components
     * built-in operation and maintenance tools
+* Strong random write performance: FCFS allocates space based on the trunk file, converts random writes from the client to sequential writes
 
 ### Classical Application Scene
 
