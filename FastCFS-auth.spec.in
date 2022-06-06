@@ -4,7 +4,7 @@
 %define CommitVersion %(echo $COMMIT_VERSION)
 
 Name: FastCFS-auth
-Version: 3.3.0
+Version: 3.4.0
 Release: 1%{?dist}
 Summary: the auth client library and config files of FastCFS. FastCFS is a high performance cloud native distributed file system for databases, KVM and K8s
 License: AGPL v3.0
@@ -14,11 +14,11 @@ Source: http://github.com/happyfish100/FastCFS/%{name}-%{version}.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n) 
 
-BuildRequires: libfastcommon-devel >= 1.0.57
-BuildRequires: libserverframe-devel >= 1.1.14
+BuildRequires: libfastcommon-devel >= 1.0.58
+BuildRequires: libserverframe-devel >= 1.1.15
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
-Requires: libfastcommon >= 1.0.57
-Requires: libserverframe >= 1.1.14
+Requires: libfastcommon >= 1.0.58
+Requires: libserverframe >= 1.1.15
 Requires: FastCFS-auth-server = %{version}-%{release}
 Requires: %{FastCFSAuthClient} = %{version}-%{release}
 Requires: %{FastCFSAuthConfig} >= 2.0.0
@@ -33,8 +33,8 @@ Requires: %{FastCFSAuthClient} = %{version}-%{release}
 Summary: header files of FastCFS auth client
 
 %package -n %{FastCFSAuthClient}
-Requires: libfastcommon >= 1.0.57
-Requires: libserverframe >= 1.1.14
+Requires: libfastcommon >= 1.0.58
+Requires: libserverframe >= 1.1.15
 Summary: FastCFS auth client
 
 %package -n %{FastCFSAuthConfig}

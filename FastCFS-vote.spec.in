@@ -1,0 +1,94 @@
+%define FastCFSVoteClient    FastCFS-vote-client
+%define FastCFSVoteDevel     FastCFS-vote-devel
+%define FastCFSVoteConfig    FastCFS-vote-config
+%define CommitVersion %(echo $COMMIT_VERSION)
+
+Name: FastCFS-vote
+Version: 3.4.0
+Release: 1%{?dist}
+Summary: the vote client library and config files of FastCFS. FastCFS is a high performance cloud native distributed file system for databases, KVM and K8s
+License: AGPL v3.0
+Group: Arch/Tech
+URL:  http://github.com/happyfish100/FastCFS/
+Source: http://github.com/happyfish100/FastCFS/%{name}-%{version}.tar.gz
+
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n) 
+
+BuildRequires: libfastcommon-devel >= 1.0.58
+BuildRequires: libserverframe-devel >= 1.1.15
+Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
+Requires: libfastcommon >= 1.0.58
+Requires: libserverframe >= 1.1.15
+Requires: FastCFS-vote-server = %{version}-%{release}
+Requires: %{FastCFSVoteClient} = %{version}-%{release}
+Requires: %{FastCFSVoteConfig} >= 3.4.0
+
+%description
+the vote client library and config files of FastCFS.
+FastCFS is a high performance distributed file system which can be used as the back-end storage of databases and cloud platforms.
+commit version: %{CommitVersion}
+
+%package -n %{FastCFSVoteDevel}
+Requires: %{FastCFSVoteClient} = %{version}-%{release}
+Summary: header files of FastCFS vote client
+
+%package -n %{FastCFSVoteClient}
+Requires: libfastcommon >= 1.0.58
+Requires: libserverframe >= 1.1.15
+Summary: FastCFS vote client
+
+%package -n %{FastCFSVoteConfig}
+Summary: FastCFS vote config files for sample
+
+%description -n %{FastCFSVoteDevel}
+This package provides the header files of libfcfsvoteclient
+commit version: %{CommitVersion}
+
+%description -n %{FastCFSVoteClient}
+FastCFS vote client
+commit version: %{CommitVersion}
+
+%description -n %{FastCFSVoteConfig}
+FastCFS vote config files for sample
+commit version: %{CommitVersion}
+
+
+%prep
+%setup -q
+
+%build
+./make.sh --module=vote_client clean && ./make.sh --module=vote_client
+
+%install
+rm -rf %{buildroot}
+DESTDIR=$RPM_BUILD_ROOT ./make.sh --module=vote_client install
+VOTE_CONFDIR=%{buildroot}/etc/fastcfs/vote/
+mkdir -p $VOTE_CONFDIR
+cp src/vote/conf/*.conf $VOTE_CONFDIR
+
+%post
+
+%preun
+
+%postun
+
+%clean
+rm -rf %{buildroot}
+
+%files
+
+%files -n %{FastCFSVoteClient}
+/usr/lib64/libfcfsvoteclient.so*
+/usr/bin/fvote_cluster_stat
+
+%files -n %{FastCFSVoteDevel}
+%defattr(-,root,root,-)
+/usr/include/fastcfs/vote/*
+
+%files -n %{FastCFSVoteConfig}
+%defattr(-,root,root,-)
+%config(noreplace) /etc/fastcfs/vote/*.conf
+
+%changelog
+* Thu Apr 22 2021 YuQing <384681@qq.com>
+- first RPM release (1.0)
