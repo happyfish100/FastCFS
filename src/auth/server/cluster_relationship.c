@@ -314,7 +314,8 @@ static inline void fill_join_request(FCFSVoteClientJoinRequest *join_request,
         const bool persistent)
 {
     join_request->server_id = CLUSTER_MY_SERVER_ID;
-    join_request->is_leader = (CLUSTER_MYSELF_PTR == CLUSTER_MASTER_ATOM_PTR);
+    join_request->is_leader = (CLUSTER_MYSELF_PTR ==
+            CLUSTER_MASTER_ATOM_PTR ? 1 : 0);
     join_request->group_id = 1;
     join_request->response_size = sizeof(FCFSAuthProtoGetServerStatusResp);
     join_request->service_id = FCFS_VOTE_SERVICE_ID_FAUTH;
@@ -396,14 +397,29 @@ static int master_check()
 static int get_vote_server_status(FCFSAuthClusterServerStatus *server_status)
 {
     FCFSVoteClientJoinRequest join_request;
+    SFGetServerStatusRequest status_request;
     FCFSAuthProtoGetServerStatusResp resp;
     int result;
 
-    fill_join_request(&join_request, false);
-    if ((result=fcfs_vote_client_get_vote(&join_request,
-                    CLUSTER_CONFIG_SIGN_BUF, NULL,
-                    (char *)&resp, sizeof(resp))) == 0)
-    {
+    if (VOTE_CONNECTION.sock >= 0) {
+        status_request.servers_sign = CLUSTER_CONFIG_SIGN_BUF;
+        status_request.cluster_sign = NULL;
+        status_request.server_id = CLUSTER_MY_SERVER_ID;
+        status_request.is_leader = (CLUSTER_MYSELF_PTR ==
+                CLUSTER_MASTER_ATOM_PTR ? 1 : 0);
+        result = vote_client_proto_get_vote(&VOTE_CONNECTION,
+                &status_request, (char *)&resp, sizeof(resp));
+        if (result != 0) {
+            vote_client_proto_close_connection(&VOTE_CONNECTION);
+        }
+    } else {
+        fill_join_request(&join_request, false);
+        result = fcfs_vote_client_get_vote(&join_request,
+                CLUSTER_CONFIG_SIGN_BUF, NULL,
+                (char *)&resp, sizeof(resp));
+    }
+
+    if (result == 0) {
         proto_unpack_server_status(&resp, server_status);
     }
     return result;
