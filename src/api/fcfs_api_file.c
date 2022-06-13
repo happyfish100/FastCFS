@@ -111,6 +111,11 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRDEntryFullName *fullname,
     return 0;
 }
 
+#define SET_FILE_COMMON_FIELDS(fi, _ctx, _flags) \
+    fi->ctx = _ctx;     \
+    fi->flags = _flags; \
+    fi->sessions.flock.mconn = NULL
+
 int fcfs_api_open_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
         const char *path, const int flags,
         const FCFSAPIFileContext *fctx)
@@ -127,9 +132,7 @@ int fcfs_api_open_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
         new_omp.mode = fctx->omp.mode | S_IFREG;
     }
 
-    fi->ctx = ctx;
-    fi->flags = flags;
-    fi->sessions.flock.mconn = NULL;
+    SET_FILE_COMMON_FIELDS(fi, ctx, flags);
     fullname.ns = ctx->ns;
     FC_SET_STRING(fullname.path, (char *)path);
 
@@ -151,10 +154,8 @@ int fcfs_api_open_by_dentry_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
 {
     int result;
 
+    SET_FILE_COMMON_FIELDS(fi, ctx, flags);
     fi->dentry = *dentry;
-    fi->ctx = ctx;
-    fi->flags = flags;
-    fi->sessions.flock.mconn = NULL;
     result = 0;
     if ((result=deal_open_flags(fi, NULL, &fctx->omp,
                     fctx->tid, result)) != 0)
@@ -178,9 +179,7 @@ int fcfs_api_open_by_inode_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
         return result;
     }
 
-    fi->ctx = ctx;
-    fi->flags = flags;
-    fi->sessions.flock.mconn = NULL;
+    SET_FILE_COMMON_FIELDS(fi, ctx, flags);
     if ((result=deal_open_flags(fi, NULL, &fctx->omp,
                     fctx->tid, result)) != 0)
     {
@@ -1053,87 +1052,32 @@ int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path,
     return fapi_stat(ctx, path, buf, flags);
 }
 
-static inline int flock_lock(FCFSAPIFileInfo *fi, const int operation,
-        const int64_t owner_id, const pid_t pid)
-{
-    int result;
-    const int64_t offset = 0;
-    const int64_t length = 0;
-
-    if ((result=fdir_client_init_session(fi->ctx->contexts.fdir,
-                    &fi->sessions.flock)) != 0)
-    {
-        return result;
-    }
-
-    if ((result=fdir_client_flock_dentry_ex2(&fi->sessions.flock,
-                    &fi->ctx->ns, fi->dentry.inode, operation,
-                    offset, length, owner_id, pid)) != 0)
-    {
-        fdir_client_close_session(&fi->sessions.flock, result != 0);
-    }
-
-    return result;
-}
-
-static inline int flock_unlock(FCFSAPIFileInfo *fi, const int operation,
-        const int64_t owner_id, const pid_t pid)
-{
-    int result;
-    const int64_t offset = 0;
-    const int64_t length = 0;
-
-    result = fdir_client_flock_dentry_ex2(&fi->sessions.flock,
-            &fi->ctx->ns, fi->dentry.inode, operation,
-            offset, length, owner_id, pid);
-    fdir_client_close_session(&fi->sessions.flock, result != 0);
-    return result;
-}
-
-int fcfs_api_flock_ex2(FCFSAPIFileInfo *fi, const int operation,
-        const int64_t owner_id, const pid_t pid)
-{
-    if (fi->magic != FCFS_API_MAGIC_NUMBER) {
-        return EBADF;
-    }
-
-    if ((operation & LOCK_UN)) {
-        if (fi->sessions.flock.mconn == NULL) {
-            return ENOENT;
-        }
-        return flock_unlock(fi, operation, owner_id, pid);
-    } else if ((operation & LOCK_SH) || (operation & LOCK_EX)) {
-        if (fi->sessions.flock.mconn != NULL) {
-            logError("file: "__FILE__", line: %d, "
-                    "flock on inode: %"PRId64" already exist",
-                    __LINE__, fi->dentry.inode);
-            return EEXIST;
-        }
-        return flock_lock(fi, operation, owner_id, pid);
-    } else {
-        return EINVAL;
-    }
-}
-
 static inline int fcntl_lock(FCFSAPIFileInfo *fi, const int operation,
         const int64_t offset, const int64_t length,
         const int64_t owner_id, const pid_t pid)
 {
     int result;
-    if ((result=fdir_client_init_session(fi->ctx->contexts.fdir,
-                    &fi->sessions.flock)) != 0)
+    FDIRFlockOwner owner;
+
+    if (fi->sessions.flock.mconn == NULL) {
+        if ((result=fdir_client_init_session(fi->ctx->contexts.
+                        fdir, &fi->sessions.flock)) != 0)
+        {
+            return result;
+        }
+    }
+
+    owner.id = owner_id;
+    owner.pid = pid;
+    if ((result=fdir_client_flock_dentry_ex(&fi->sessions.flock,
+                    &fi->ctx->ns, fi->dentry.inode, operation,
+                    offset, length, &owner)) != 0)
     {
+        logError("%s result ====== %d", __FUNCTION__, result);
         return result;
     }
 
-    if ((result=fdir_client_flock_dentry_ex2(&fi->sessions.flock,
-                    &fi->ctx->ns, fi->dentry.inode, operation,
-                    offset, length, owner_id, pid)) != 0)
-    {
-        fdir_client_close_session(&fi->sessions.flock, result != 0);
-    }
-
-    return result;
+    return 0;
 }
 
 static inline int fcntl_unlock(FCFSAPIFileInfo *fi, const int operation,
@@ -1141,11 +1085,41 @@ static inline int fcntl_unlock(FCFSAPIFileInfo *fi, const int operation,
         const int64_t owner_id, const pid_t pid)
 {
     int result;
-    result = fdir_client_flock_dentry_ex2(&fi->sessions.flock,
+    FDIRFlockOwner owner;
+
+    if (fi->sessions.flock.mconn == NULL) {
+        return 0;
+    }
+
+    owner.id = owner_id;
+    owner.pid = pid;
+    if ((result=fdir_client_flock_dentry_ex(&fi->sessions.flock,
             &fi->ctx->ns, fi->dentry.inode, operation,
-            offset, length, owner_id, pid);
-    fdir_client_close_session(&fi->sessions.flock, result != 0);
-    return result;
+            offset, length, &owner)) != 0)
+    {
+        return (result == ENOENT ? 0 : result);
+    }
+
+    return 0;
+}
+
+int fcfs_api_flock_ex2(FCFSAPIFileInfo *fi, const int operation,
+        const int64_t owner_id, const pid_t pid)
+{
+    const int64_t offset = 0;
+    const int64_t length = 0;
+
+    if (fi->magic != FCFS_API_MAGIC_NUMBER) {
+        return EBADF;
+    }
+
+    if ((operation & LOCK_UN)) {
+        return fcntl_unlock(fi, operation, offset, length, owner_id, pid);
+    } else if ((operation & LOCK_SH) || (operation & LOCK_EX)) {
+        return fcntl_lock(fi, operation, offset, length, owner_id, pid);
+    } else {
+        return EINVAL;
+    }
 }
 
 static inline int fcntl_type_to_flock_op(const short type, int *operation)
@@ -1208,18 +1182,9 @@ int fcfs_api_setlk_ex(FCFSAPIFileInfo *fi, const struct flock *lock,
     }
 
     if (operation == LOCK_UN) {
-        if (fi->sessions.flock.mconn == NULL) {
-            return ENOENT;
-        }
         return fcntl_unlock(fi, operation, offset,
                 lock->l_len, owner_id, lock->l_pid);
     } else {
-        if (fi->sessions.flock.mconn != NULL) {
-            logError("file: "__FILE__", line: %d, "
-                    "flock on inode: %"PRId64" already exist",
-                    __LINE__, fi->dentry.inode);
-            return EEXIST;
-        }
         if (!blocked) {
             operation |= LOCK_NB;
         }
@@ -1235,6 +1200,7 @@ int fcfs_api_getlk_ex(FCFSAPIFileInfo *fi,
     int result;
     int64_t offset;
     int64_t length;
+    FDIRFlockOwner owner;
 
     if (fi->magic != FCFS_API_MAGIC_NUMBER) {
         return EBADF;
@@ -1243,6 +1209,9 @@ int fcfs_api_getlk_ex(FCFSAPIFileInfo *fi,
     if ((result=fcntl_type_to_flock_op(lock->l_type, &operation)) != 0) {
         return result;
     }
+    if (operation == LOCK_UN) {
+        return EINVAL;
+    }
 
     if ((result=calc_file_offset(fi, lock->l_start,
                     lock->l_whence, &offset)) != 0)
@@ -1250,14 +1219,12 @@ int fcfs_api_getlk_ex(FCFSAPIFileInfo *fi,
         return result;
     }
 
-    if (operation == LOCK_UN) {
-        return EINVAL;
-    }
-
     length = lock->l_len;
+    owner.id = *owner_id;
+    owner.pid = lock->l_pid;
     if ((result=fdir_client_getlk_dentry(fi->ctx->contexts.fdir,
                     &fi->ctx->ns, fi->dentry.inode, &operation,
-                    &offset, &length, owner_id, &lock->l_pid)) == 0)
+                    &offset, &length, &owner)) == 0)
     {
         flock_op_to_fcntl_type(operation, &lock->l_type);
         lock->l_whence = SEEK_SET;

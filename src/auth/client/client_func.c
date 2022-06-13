@@ -57,18 +57,7 @@ static int fcfs_auth_load_server_config(FCFSAuthClientContext *client_ctx,
 static int fcfs_auth_client_do_init_ex(FCFSAuthClientContext *client_ctx,
         IniFullContext *ini_ctx)
 {
-    char *pBasePath;
     int result;
-
-    pBasePath = iniGetStrValue(NULL, "base_path", ini_ctx->context);
-    if (pBasePath == NULL) {
-        strcpy(g_fcfs_auth_client_vars.base_path, "/tmp");
-    } else {
-        snprintf(g_fcfs_auth_client_vars.base_path,
-                sizeof(g_fcfs_auth_client_vars.base_path),
-                "%s", pBasePath);
-        chopPath(g_fcfs_auth_client_vars.base_path);
-    }
 
     client_ctx->common_cfg.connect_timeout = iniGetIntValueEx(
             ini_ctx->section_name, "connect_timeout",
@@ -103,20 +92,18 @@ void fcfs_auth_client_log_config_ex(FCFSAuthClientContext *client_ctx,
 
     sf_net_retry_config_to_string(&client_ctx->common_cfg.net_retry_cfg,
             net_retry_output, sizeof(net_retry_output));
-    logInfo("FastDIR v%d.%d.%d, "
-            "base_path=%s, "
+    logInfo("fauth v%d.%d.%d, "
             "connect_timeout=%d, "
             "network_timeout=%d, "
             "%s, auth_server_count=%d%s%s",
             g_fcfs_auth_global_vars.version.major,
             g_fcfs_auth_global_vars.version.minor,
             g_fcfs_auth_global_vars.version.patch,
-            g_fcfs_auth_client_vars.base_path,
             client_ctx->common_cfg.connect_timeout,
             client_ctx->common_cfg.network_timeout,
-            net_retry_output, FC_SID_SERVER_COUNT(client_ctx->cluster.server_cfg),
-            extra_config != NULL ? ", " : "",
-            extra_config != NULL ? extra_config : "");
+            net_retry_output, FC_SID_SERVER_COUNT(client_ctx->cluster.
+                server_cfg), (extra_config != NULL ? ", " : ""),
+            (extra_config != NULL ? extra_config : ""));
 }
 
 int fcfs_auth_client_load_from_file_ex1(FCFSAuthClientContext *client_ctx,

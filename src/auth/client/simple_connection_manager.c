@@ -35,22 +35,6 @@ typedef struct fcfs_auth_cm_simple_extra {
     FCFSAuthServerGroup *cluster_sarray;
 } FCFSAuthCMSimpleExtra;
 
-static int connect_done_callback(ConnectionInfo *conn, void *args)
-{
-    //TODO
-    /*
-       SFConnectionParameters *params;
-       int result;
-
-       params = (SFConnectionParameters *)conn->args;
-       result = fcfs_auth_client_proto_join_server(
-       (FCFSAuthClientContext *)args, conn, params);
-       return result;
-     */
-
-    return 0;
-}
-
 static int check_realloc_group_servers(FCFSAuthServerGroup *server_group)
 {
     int bytes;
@@ -110,7 +94,8 @@ static ConnectionInfo *get_spec_connection(SFConnectionManager *cm,
         conn_pool_set_server_info(conn, target->ip_addr, target->port);
     }
 
-    return conn_pool_get_connection(&extra->cpool, target, err_no);
+    return conn_pool_get_connection_ex(&extra->cpool,
+            target, "fauth", err_no);
 }
 
 static ConnectionInfo *get_connection(SFConnectionManager *cm,
@@ -156,8 +141,8 @@ static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
 
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
     if (extra->master_cache.valid) {
-        if ((conn=conn_pool_get_connection(&extra->cpool,
-                        &extra->master_cache.conn, err_no)) != NULL)
+        if ((conn=conn_pool_get_connection_ex(&extra->cpool, &extra->
+                        master_cache.conn, "fauth", err_no)) != NULL)
         {
             return conn;
         } else {
@@ -288,8 +273,7 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
     }
     if ((result=conn_pool_init_ex1(&extra->cpool, client_ctx->common_cfg.
                     connect_timeout, max_count_per_entry, max_idle_time,
-                    socket_domain, htable_init_capacity,
-                    connect_done_callback, client_ctx,
+                    socket_domain, htable_init_capacity, NULL, client_ctx,
                     sf_cm_validate_connection_callback, cm,
                     sizeof(SFConnectionParameters))) != 0)
     {

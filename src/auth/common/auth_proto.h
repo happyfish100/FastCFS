@@ -270,6 +270,12 @@ typedef struct fcfs_auth_proto_cluster_stat_resp_body_part {
     char ip_addr[IP_ADDRESS_SIZE];
 } FCFSAuthProtoClusterStatRespBodyPart;
 
+#define auth_log_network_error_ex(response, conn, result, log_level) \
+    sf_log_network_error_ex(response, conn, "fauth", result, log_level)
+
+#define auth_log_network_error(response, conn, result) \
+    sf_log_network_error(response, conn, "fauth", result)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -75,10 +75,12 @@ static int dump_to_granted_array(FDIRClientContext *client_ctx,
 {
     const FDIRClientDentry *entry;
     const FDIRClientDentry *end;
+    char pool_id_buff[32];
     char *endptr;
     FCFSAuthGrantedPoolFullInfo *new_gpools;
     FCFSAuthGrantedPoolFullInfo *gpool;
     FCFSAuthGrantedPoolInfo *granted;
+    int len;
     int result;
 
     if (darray->count > parray->alloc) {
@@ -99,9 +101,17 @@ static int dump_to_granted_array(FDIRClientContext *client_ctx,
     for (entry=darray->entries, gpool=parray->gpools;
             entry<end; entry++, gpool++)
     {
+        if (entry->name.len < sizeof(pool_id_buff)) {
+            len = entry->name.len;
+        } else {
+            len = sizeof(pool_id_buff) - 1;
+        }
+        memcpy(pool_id_buff, entry->name.str, len);
+        *(pool_id_buff + len) = '\0';
+
         granted = &gpool->granted;
         granted->id = entry->dentry.inode;
-        granted->pool_id = strtoll(entry->name.str, &endptr, 10);
+        granted->pool_id = strtoll(pool_id_buff, &endptr, 10);
         if ((result=dao_get_xattr_int32(client_ctx, granted->id,
                         &AUTH_XTTR_NAME_FDIR, &granted->privs.fdir)) != 0)
         {

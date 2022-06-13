@@ -170,12 +170,32 @@ if [ -z $module ] || [ "$module" = 'auth_server' ]; then
 fi
 
 if [ -z $module ] || [ "$module" = 'auth_client' ]; then
-  if [ "x$exclude" != 'xauth_client' ]; then
+  if [ "x$exclude" != 'xauth_client' ] && [ "x$exclude" != 'xclient' ]; then
     cd $base_path/src/auth/client
     replace_makefile
     make $param1 $param2
 
     cd $base_path/src/auth/client/tools
+    replace_makefile
+    make $param1 $param2
+  fi
+fi
+
+if [ -z $module ] || [ "$module" = 'vote_server' ]; then
+  if [ "x$exclude" != 'xvote_server' ]; then
+    cd $base_path/src/vote/server
+    replace_makefile
+    make $param1 $param2
+  fi
+fi
+
+if [ -z $module ] || [ "$module" = 'vote_client' ]; then
+  if [ "x$exclude" != 'xvote_client' ] && [ "x$exclude" != 'xclient' ]; then
+    cd $base_path/src/vote/client
+    replace_makefile
+    make $param1 $param2
+
+    cd $base_path/src/vote/client/tools
     replace_makefile
     make $param1 $param2
   fi

@@ -21,7 +21,6 @@
 #include "client_types.h"
 
 typedef struct fcfs_auth_client_global_vars {
-    char base_path[MAX_PATH_SIZE];
     bool need_load_passwd;   //false for auth server
     bool ignore_when_passwd_not_exist; //true for fdir and fstore servers
     FCFSAuthClientContext client_ctx;

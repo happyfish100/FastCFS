@@ -210,7 +210,7 @@ static int session_sync(ConnectionInfo *conn)
         if (result == 0) {
             if ((result=parse_session_push(&response)) != 0) {
                 if (response.error.length > 0) {
-                    sf_log_network_error(&response, conn, result);
+                    auth_log_network_error(&response, conn, result);
                 }
                 break;
             }
@@ -223,7 +223,7 @@ static int session_sync(ConnectionInfo *conn)
                 break;
             }
         } else {
-            sf_log_network_error(&response, conn, result);
+            auth_log_network_error(&response, conn, result);
             break;
         }
     }

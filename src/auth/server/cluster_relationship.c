@@ -13,18 +13,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <time.h>
-#include <fcntl.h>
-#include <pthread.h>
 #include "fastcommon/logger.h"
 #include "fastcommon/sockopt.h"
 #include "fastcommon/shared_func.h"
@@ -33,12 +21,21 @@
 #include "sf/sf_configs.h"
 #include "sf/sf_service.h"
 #include "sf/sf_func.h"
+#include "fastcfs/vote/fcfs_vote_client.h"
 #include "common/auth_proto.h"
 #include "db/auth_db.h"
 #include "db/pool_usage_updater.h"
 #include "server_global.h"
 #include "session_subscribe.h"
 #include "cluster_relationship.h"
+
+#define NEED_REQUEST_VOTE_NODE(active_count) \
+    SF_QUORUM_NEED_REQUEST_VOTE_NODE(MASTER_ELECTION_QUORUM, \
+            VOTE_NODE_ENABLED, CLUSTER_SERVER_ARRAY.count, active_count)
+
+#define NEED_CHECK_VOTE_NODE() \
+    SF_QUORUM_NEED_CHECK_VOTE_NODE(MASTER_ELECTION_QUORUM, \
+            VOTE_NODE_ENABLED, CLUSTER_SERVER_ARRAY.count)
 
 typedef struct fcfs_auth_cluster_server_status {
     FCFSAuthClusterServerInfo *cs;
@@ -60,9 +57,11 @@ typedef struct fcfs_auth_cluster_server_detect_array {
 
 typedef struct fcfs_auth_cluster_relationship_context {
     FCFSAuthClusterServerDetectArray inactive_server_array;
+    ConnectionInfo vote_connection;
 } FCFSAuthClusterRelationshipContext;
 
 #define INACTIVE_SERVER_ARRAY relationship_ctx.inactive_server_array
+#define VOTE_CONNECTION relationship_ctx.vote_connection
 
 static FCFSAuthClusterRelationshipContext relationship_ctx = {
     {NULL, 0, 0}
@@ -73,6 +72,14 @@ static FCFSAuthClusterRelationshipContext relationship_ctx = {
         entry->cs = server;    \
         entry->next_time = g_current_time + 1; \
     } while (0)
+
+static inline void proto_unpack_server_status(
+        FCFSAuthProtoGetServerStatusResp *resp,
+        FCFSAuthClusterServerStatus *server_status)
+{
+    server_status->is_master = resp->is_master;
+    server_status->server_id = buff2int(resp->server_id);
+}
 
 static int proto_get_server_status(ConnectionInfo *conn,
         const int network_timeout,
@@ -102,7 +109,7 @@ static int proto_get_server_status(ConnectionInfo *conn,
 			sizeof(out_buff), &response, network_timeout,
             FCFS_AUTH_CLUSTER_PROTO_GET_SERVER_STATUS_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
         return result;
     }
 
@@ -127,8 +134,7 @@ static int proto_get_server_status(ConnectionInfo *conn,
     }
 
     resp = (FCFSAuthProtoGetServerStatusResp *)in_body;
-    server_status->is_master = resp->is_master;
-    server_status->server_id = buff2int(resp->server_id);
+    proto_unpack_server_status(resp, server_status);
     return 0;
 }
 
@@ -152,20 +158,9 @@ static void init_inactive_server_array()
     PTHREAD_MUTEX_UNLOCK(&INACTIVE_SERVER_ARRAY.lock);
 }
 
-static inline void cluster_unset_master()
+static inline bool cluster_unset_master(FCFSAuthClusterServerInfo *master)
 {
-    FCFSAuthClusterServerInfo *old_master;
-
-    old_master = CLUSTER_MASTER_ATOM_PTR;
-    if (old_master != NULL) {
-        __sync_bool_compare_and_swap(&CLUSTER_MASTER_PTR, old_master, NULL);
-        if (old_master == CLUSTER_MYSELF_PTR) {
-            session_subscribe_clear_session();
-            server_session_clear();
-            pool_usage_updater_terminate();
-            auth_db_destroy();
-        }
-    }
+    return __sync_bool_compare_and_swap(&CLUSTER_MASTER_PTR, master, NULL);
 }
 
 static int proto_join_master(ConnectionInfo *conn, const int network_timeout)
@@ -189,7 +184,7 @@ static int proto_join_master(ConnectionInfo *conn, const int network_timeout)
                     sizeof(out_buff), &response, network_timeout,
                     SF_PROTO_ACK)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -207,7 +202,7 @@ static int proto_ping_master(ConnectionInfo *conn, const int network_timeout)
                     sizeof(header), &response, network_timeout,
                     FCFS_AUTH_CLUSTER_PROTO_PING_MASTER_RESP)) != 0)
     {
-        sf_log_network_error(&response, conn, result);
+        auth_log_network_error(&response, conn, result);
     }
 
     return result;
@@ -246,7 +241,7 @@ static int cluster_get_server_status_ex(FCFSAuthClusterServerStatus
         return 0;
     } else {
         if ((result=fc_server_make_connection_ex(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                            server_status->cs->server), &conn,
+                            server_status->cs->server), &conn, "fauth",
                         connect_timeout, NULL, log_connect_error)) != 0)
         {
             return result;
@@ -278,20 +273,20 @@ static int do_check_brainsplit(FCFSAuthClusterServerInfo *cs)
                 "trigger re-select master ...", __LINE__, cs->server->id,
                 CLUSTER_GROUP_ADDRESS_FIRST_IP(cs->server),
                 CLUSTER_GROUP_ADDRESS_FIRST_PORT(cs->server));
-        cluster_unset_master();
+        cluster_relationship_trigger_reselect_master();
         return EEXIST;
     }
 
     return 0;
 }
 
-static int cluster_check_brainsplit(const int inactive_count)
+static int cluster_check_brainsplit(int *inactive_count)
 {
     FCFSAuthClusterServerDetectEntry *entry;
     FCFSAuthClusterServerDetectEntry *end;
     int result;
 
-    end = INACTIVE_SERVER_ARRAY.entries + inactive_count;
+    end = INACTIVE_SERVER_ARRAY.entries + *inactive_count;
     for (entry=INACTIVE_SERVER_ARRAY.entries; entry<end; entry++) {
         if (entry >= INACTIVE_SERVER_ARRAY.entries +
                 INACTIVE_SERVER_ARRAY.count)
@@ -303,7 +298,9 @@ static int cluster_check_brainsplit(const int inactive_count)
         }
 
         result = do_check_brainsplit(entry->cs);
-        if (result == EEXIST) {  //brain-split occurs
+        if (result == 0) {  //success
+            --(*inactive_count);
+        } else if (result == EEXIST) {  //brain-split occurs
             return result;
         }
 
@@ -313,35 +310,128 @@ static int cluster_check_brainsplit(const int inactive_count)
     return 0;
 }
 
+static inline void fill_join_request(FCFSVoteClientJoinRequest *join_request,
+        const bool persistent)
+{
+    join_request->server_id = CLUSTER_MY_SERVER_ID;
+    join_request->is_leader = (CLUSTER_MYSELF_PTR ==
+            CLUSTER_MASTER_ATOM_PTR ? 1 : 0);
+    join_request->group_id = 1;
+    join_request->response_size = sizeof(FCFSAuthProtoGetServerStatusResp);
+    join_request->service_id = FCFS_VOTE_SERVICE_ID_FAUTH;
+    join_request->persistent = persistent;
+}
+
+static inline int vote_node_active_check()
+{
+    int result;
+    FCFSVoteClientJoinRequest join_request;
+
+    if (VOTE_CONNECTION.sock < 0) {
+        fill_join_request(&join_request, true);
+        if ((result=fcfs_vote_client_join(&VOTE_CONNECTION,
+                        &join_request)) != 0)
+        {
+            return result;
+        }
+    }
+
+    if ((result=vote_client_proto_active_check(&VOTE_CONNECTION)) != 0) {
+        vote_client_proto_close_connection(&VOTE_CONNECTION);
+    }
+
+    return result;
+}
+
 static int master_check()
 {
     int result;
     int active_count;
     int inactive_count;
+    int vote_node_active;
+
+    if (NEED_CHECK_VOTE_NODE()) {
+        if ((result=vote_node_active_check()) == 0) {
+            vote_node_active = 1;
+        } else {
+            if (result == SF_CLUSTER_ERROR_LEADER_INCONSISTENT) {
+                logWarning("file: "__FILE__", line: %d, "
+                        "trigger re-select master because master "
+                        "inconsistent with the vote node", __LINE__);
+                cluster_relationship_trigger_reselect_master();
+                return EBUSY;
+            }
+            vote_node_active = 0;
+        }
+    } else {
+        vote_node_active = 0;
+    }
+
 
     PTHREAD_MUTEX_LOCK(&INACTIVE_SERVER_ARRAY.lock);
     inactive_count = INACTIVE_SERVER_ARRAY.count;
     PTHREAD_MUTEX_UNLOCK(&INACTIVE_SERVER_ARRAY.lock);
     if (inactive_count > 0) {
-        if ((result=cluster_check_brainsplit(inactive_count)) != 0) {
+        if ((result=cluster_check_brainsplit(&inactive_count)) != 0) {
             return result;
         }
 
-        active_count = CLUSTER_SERVER_ARRAY.count -
-            INACTIVE_SERVER_ARRAY.count;
+        active_count = (CLUSTER_SERVER_ARRAY.count -
+                inactive_count) + vote_node_active;
         if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM,
-                    CLUSTER_SERVER_ARRAY.count, active_count))
+                    VOTE_NODE_ENABLED, CLUSTER_SERVER_ARRAY.count,
+                    active_count))
         {
             logWarning("file: "__FILE__", line: %d, "
                     "trigger re-select master because alive server "
                     "count: %d < half of total server count: %d ...",
                     __LINE__, active_count, CLUSTER_SERVER_ARRAY.count);
-            cluster_unset_master();
+            cluster_relationship_trigger_reselect_master();
             return EBUSY;
         }
     }
 
     return 0;
+}
+
+static int get_vote_server_status(FCFSAuthClusterServerStatus *server_status)
+{
+    FCFSVoteClientJoinRequest join_request;
+    SFGetServerStatusRequest status_request;
+    FCFSAuthProtoGetServerStatusResp resp;
+    int result;
+
+    if (VOTE_CONNECTION.sock >= 0) {
+        status_request.servers_sign = CLUSTER_CONFIG_SIGN_BUF;
+        status_request.cluster_sign = NULL;
+        status_request.server_id = CLUSTER_MY_SERVER_ID;
+        status_request.is_leader = (CLUSTER_MYSELF_PTR ==
+                CLUSTER_MASTER_ATOM_PTR ? 1 : 0);
+        result = vote_client_proto_get_vote(&VOTE_CONNECTION,
+                &status_request, (char *)&resp, sizeof(resp));
+        if (result != 0) {
+            vote_client_proto_close_connection(&VOTE_CONNECTION);
+        }
+    } else {
+        fill_join_request(&join_request, false);
+        result = fcfs_vote_client_get_vote(&join_request,
+                CLUSTER_CONFIG_SIGN_BUF, NULL,
+                (char *)&resp, sizeof(resp));
+    }
+
+    if (result == 0) {
+        proto_unpack_server_status(&resp, server_status);
+    }
+    return result;
+}
+
+static int notify_vote_next_leader(FCFSAuthClusterServerStatus *server_status,
+        const unsigned char vote_req_cmd)
+{
+    FCFSVoteClientJoinRequest join_request;
+
+    fill_join_request(&join_request, false);
+    return fcfs_vote_client_notify_next_leader(&join_request, vote_req_cmd);
 }
 
 static int cluster_get_master(FCFSAuthClusterServerStatus *server_status,
@@ -391,16 +481,29 @@ static int cluster_get_master(FCFSAuthClusterServerStatus *server_status,
         return result == 0 ? ENOENT : result;
     }
 
-	qsort(cs_status, *active_count, sizeof(FCFSAuthClusterServerStatus),
-		cluster_cmp_server_status);
+    if (NEED_REQUEST_VOTE_NODE(*active_count)) {
+        current_status->cs = NULL;
+        if (get_vote_server_status(current_status) == 0) {
+            ++(*active_count);
+        }
+    }
+
+    qsort(cs_status, *active_count,
+            sizeof(FCFSAuthClusterServerStatus),
+            cluster_cmp_server_status);
 
 	for (i=0; i<*active_count; i++) {
-        logDebug("file: "__FILE__", line: %d, "
-                "server_id: %d, ip addr %s:%u, is_master: %d",
-                __LINE__, cs_status[i].server_id,
-                CLUSTER_GROUP_ADDRESS_FIRST_IP(cs_status[i].cs->server),
-                CLUSTER_GROUP_ADDRESS_FIRST_PORT(cs_status[i].cs->server),
-                cs_status[i].is_master);
+        if (cs_status[i].cs == NULL) {
+            logDebug("file: "__FILE__", line: %d, "
+                    "%d. status from vote server", __LINE__, i + 1);
+        } else {
+            logDebug("file: "__FILE__", line: %d, "
+                    "server_id: %d, ip addr %s:%u, is_master: %d",
+                    __LINE__, cs_status[i].server_id,
+                    CLUSTER_GROUP_ADDRESS_FIRST_IP(cs_status[i].cs->server),
+                    CLUSTER_GROUP_ADDRESS_FIRST_PORT(cs_status[i].cs->server),
+                    cs_status[i].is_master);
+        }
     }
 
 	memcpy(server_status, cs_status + (*active_count - 1),
@@ -424,7 +527,7 @@ static int do_notify_master_changed(FCFSAuthClusterServerInfo *cs,
 
     connect_timeout = FC_MIN(SF_G_CONNECT_TIMEOUT, 2);
     if ((result=fc_server_make_connection(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                        cs->server), &conn, connect_timeout)) != 0)
+                        cs->server), &conn, "fauth", connect_timeout)) != 0)
     {
         *bConnectFail = true;
         return result;
@@ -440,7 +543,7 @@ static int do_notify_master_changed(FCFSAuthClusterServerInfo *cs,
                     sizeof(out_buff), &response, SF_G_NETWORK_TIMEOUT,
                     SF_PROTO_ACK)) != 0)
     {
-        sf_log_network_error(&response, &conn, result);
+        auth_log_network_error(&response, &conn, result);
     }
 
     conn_pool_disconnect_server(&conn);
@@ -568,10 +671,27 @@ int cluster_relationship_commit_master(FCFSAuthClusterServerInfo *master)
 
 void cluster_relationship_trigger_reselect_master()
 {
-    cluster_unset_master();
+    FCFSAuthClusterServerInfo *master;
+
+    master = CLUSTER_MASTER_ATOM_PTR;
+    if (CLUSTER_MYSELF_PTR != master) {
+        return;
+    }
+
+    if (!cluster_unset_master(master)) {
+        return;
+    }
+
+    if (NEED_CHECK_VOTE_NODE()) {
+        vote_client_proto_close_connection(&VOTE_CONNECTION);
+    }
+    session_subscribe_clear_session();
+    server_session_clear();
+    pool_usage_updater_terminate();
+    auth_db_destroy();
 }
 
-static int cluster_notify_next_master(FCFSAuthClusterServerInfo *cs,
+static int cluster_pre_set_next_master(FCFSAuthClusterServerInfo *cs,
         FCFSAuthClusterServerStatus *server_status, bool *bConnectFail)
 {
     FCFSAuthClusterServerInfo *master;
@@ -603,52 +723,92 @@ static int cluster_commit_next_master(FCFSAuthClusterServerInfo *cs,
     }
 }
 
-static int cluster_notify_master_changed(FCFSAuthClusterServerStatus *server_status)
+typedef int (*cluster_notify_next_master_func)(FCFSAuthClusterServerInfo *cs,
+        FCFSAuthClusterServerStatus *server_status, bool *bConnectFail);
+
+static int notify_next_master(cluster_notify_next_master_func notify_func,
+        FCFSAuthClusterServerStatus *server_status, const unsigned
+        char vote_req_cmd, int *success_count)
 {
 	FCFSAuthClusterServerInfo *server;
 	FCFSAuthClusterServerInfo *send;
 	int result;
 	bool bConnectFail;
-	int success_count;
 
 	result = ENOENT;
+	*success_count = 0;
 	send = CLUSTER_SERVER_ARRAY.servers + CLUSTER_SERVER_ARRAY.count;
-	success_count = 0;
-	for (server=CLUSTER_SERVER_ARRAY.servers; server<send; server++) {
-		if ((result=cluster_notify_next_master(server,
-				server_status, &bConnectFail)) != 0)
-		{
-			if (!bConnectFail) {
-				return result;
-			}
-		} else {
-			success_count++;
-		}
-	}
+    for (server=CLUSTER_SERVER_ARRAY.servers; server<send; server++) {
+        if ((result=notify_func(server, server_status, &bConnectFail)) != 0) {
+            if (!bConnectFail) {
+                return result;
+            }
+        } else {
+            ++(*success_count);
+        }
+    }
 
-	if (success_count == 0) {
-		return result;
-	}
+    if (NEED_CHECK_VOTE_NODE()) {
+        result = notify_vote_next_leader(server_status, vote_req_cmd);
+        if (result == 0) {
+            if (*success_count < CLUSTER_SERVER_ARRAY.count) {
+                ++(*success_count);
+            }
+        } else if (result == SF_CLUSTER_ERROR_LEADER_INCONSISTENT) {
+            return -1 * result;
+        }
+    }
 
-	result = ENOENT;
-	success_count = 0;
-	for (server=CLUSTER_SERVER_ARRAY.servers; server<send; server++) {
-		if ((result=cluster_commit_next_master(server,
-				server_status, &bConnectFail)) != 0)
-		{
-			if (!bConnectFail) {
-				return result;
-			}
-		} else {
-			success_count++;
-		}
-	}
+    if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM,
+                    VOTE_NODE_ENABLED, CLUSTER_SERVER_ARRAY.count,
+                    *success_count))
+    {
+        return EAGAIN;
+    }
 
-	if (success_count == 0) {
-		return result;
-	}
+    return 0;
+}
 
-	return 0;
+static int cluster_notify_master_changed(
+        FCFSAuthClusterServerStatus *server_status)
+{
+    int result;
+    int success_count;
+    const char *caption;
+
+    if ((result=notify_next_master(cluster_pre_set_next_master, server_status,
+                    FCFS_VOTE_SERVICE_PROTO_PRE_SET_NEXT_LEADER,
+                    &success_count)) != 0)
+    {
+        return result;
+    }
+
+    if ((result=notify_next_master(cluster_commit_next_master, server_status,
+                    FCFS_VOTE_SERVICE_PROTO_COMMIT_NEXT_LEADER,
+                    &success_count)) != 0)
+    {
+        if (result == SF_CLUSTER_ERROR_MASTER_INCONSISTENT ||
+                result == -SF_CLUSTER_ERROR_LEADER_INCONSISTENT)
+        {
+            if (result == SF_CLUSTER_ERROR_MASTER_INCONSISTENT) {
+                caption = "other server";
+            } else {
+                caption = "the vote node";
+                result = SF_CLUSTER_ERROR_MASTER_INCONSISTENT;
+            }
+            logWarning("file: "__FILE__", line: %d, "
+                    "trigger re-select master because master "
+                    "inconsistent with %s", __LINE__, caption);
+        } else {
+            logWarning("file: "__FILE__", line: %d, "
+                    "trigger re-select master because alive server "
+                    "count: %d < half of total server count: %d ...",
+                    __LINE__, success_count, CLUSTER_SERVER_ARRAY.count);
+        }
+        cluster_relationship_trigger_reselect_master();
+    }
+
+    return result;
 }
 
 static int cluster_select_master()
@@ -694,7 +854,8 @@ static int cluster_select_master()
 
         ++i;
         if (!sf_election_quorum_check(MASTER_ELECTION_QUORUM,
-                    CLUSTER_SERVER_ARRAY.count, active_count))
+                    VOTE_NODE_ENABLED, CLUSTER_SERVER_ARRAY.count,
+                    active_count))
         {
             sleep_secs = 1;
             if (need_log) {
@@ -793,7 +954,8 @@ static int cluster_ping_master(FCFSAuthClusterServerInfo *master,
     if (conn->sock < 0) {
         connect_timeout = FC_MIN(SF_G_CONNECT_TIMEOUT, timeout);
         if ((result=fc_server_make_connection(&CLUSTER_GROUP_ADDRESS_ARRAY(
-                            master->server), conn, connect_timeout)) != 0)
+                            master->server), conn, "fauth",
+                        connect_timeout)) != 0)
         {
             return result;
         }
@@ -867,14 +1029,14 @@ static void *cluster_thread_entrance(void* arg)
                         CLUSTER_GROUP_ADDRESS_FIRST_IP(master->server),
                         CLUSTER_GROUP_ADDRESS_FIRST_PORT(master->server));
                 if (result == SF_RETRIABLE_ERROR_NOT_MASTER) {
-                    cluster_unset_master();
+                    cluster_unset_master(master);
                     fail_count = 0;
                     sleep_seconds = 0;
                 } else if (g_current_time - ping_start_time >
                         ELECTION_MASTER_LOST_TIMEOUT)
                 {
                     if (fail_count > 1) {
-                        cluster_unset_master();
+                        cluster_unset_master(master);
                         fail_count = 0;
                     }
                     sleep_seconds = 0;
@@ -882,7 +1044,7 @@ static void *cluster_thread_entrance(void* arg)
                     sleep_seconds = 1;
                 }
             } else {
-                sleep_seconds = 1;
+                sleep_seconds = 0;  //master check fail
             }
         }
 
@@ -900,6 +1062,7 @@ int cluster_relationship_init()
     int bytes;
     pthread_t tid;
 
+    VOTE_CONNECTION.sock = -1;
     bytes = sizeof(FCFSAuthClusterServerDetectEntry) * CLUSTER_SERVER_ARRAY.count;
     INACTIVE_SERVER_ARRAY.entries = (FCFSAuthClusterServerDetectEntry *)
         fc_malloc(bytes);

@@ -25,6 +25,7 @@
 #include "sf/sf_configs.h"
 #include "sf/sf_service.h"
 #include "sf/sf_cluster_cfg.h"
+#include "fastcfs/vote/fcfs_vote_client.h"
 #include "common/auth_proto.h"
 #include "common/auth_func.h"
 #include "common/server_session.h"
@@ -217,14 +218,14 @@ static void server_log_configs()
             "admin-generate {mode: %s, username: %s, "
             "secret_key_filename: %s}, pool-generate: "
             "{auto_id_initial: %"PRId64", pool_name_template: %s}, "
-            "master-election {quorum: %s, master_lost_timeout: %ds, "
-            "max_wait_time: %ds}",
+            "master-election {quorum: %s, vote_node_enabled: %d, "
+            "master_lost_timeout: %ds, max_wait_time: %ds}",
             (ADMIN_GENERATE_MODE == AUTH_ADMIN_GENERATE_MODE_FIRST ?
              "first" : "always"), ADMIN_GENERATE_USERNAME.str,
             ADMIN_GENERATE_KEY_FILENAME.str, AUTO_ID_INITIAL,
             POOL_NAME_TEMPLATE.str, sf_get_quorum_caption(
-                MASTER_ELECTION_QUORUM), ELECTION_MASTER_LOST_TIMEOUT,
-            ELECTION_MAX_WAIT_TIME);
+                MASTER_ELECTION_QUORUM), VOTE_NODE_ENABLED,
+            ELECTION_MASTER_LOST_TIMEOUT, ELECTION_MAX_WAIT_TIME);
 
     logInfo("FCFSAuth V%d.%d.%d, %s, %s, service: {%s}, %s",
             g_fcfs_auth_global_vars.version.major,
@@ -262,13 +263,14 @@ static int load_master_election_config(const char *cluster_filename)
     ELECTION_MAX_WAIT_TIME = iniGetIntCorrectValue(
             &ini_ctx, "max_wait_time", 5, 1, 300);
     if ((result=sf_load_quorum_config(&MASTER_ELECTION_QUORUM,
-                    &ini_ctx)) != 0)
+                    &ini_ctx)) == 0)
     {
-        return result;
+        result = fcfs_vote_client_init_for_server(
+                &ini_ctx, &VOTE_NODE_ENABLED);
     }
 
     iniFreeContext(&ini_context);
-    return 0;
+    return result;
 }
 
 static int load_cluster_config(IniFullContext *ini_ctx,

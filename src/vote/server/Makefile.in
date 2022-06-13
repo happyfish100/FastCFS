@@ -1,0 +1,31 @@
+.SUFFIXES: .c .o .lo
+
+COMPILE = $(CC) $(CFLAGS)
+INC_PATH = -I.. -I../common
+LIB_PATH = $(LIBS) -lfastcommon -lserverframe
+TARGET_PATH = $(TARGET_PREFIX)/bin
+
+STATIC_OBJS = ../common/vote_global.o ../common/vote_proto.o  \
+              server_global.o server_func.o common_handler.o service_handler.o \
+              cluster_handler.o cluster_relationship.o cluster_info.o \
+              service_group_htable.o
+
+ALL_PRGS = fcfs_voted
+
+all: $(STATIC_OBJS) $(ALL_PRGS)
+
+$(ALL_PRGS): $(STATIC_OBJS)
+
+.o:
+	$(COMPILE) -o $@ $<  $(STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c:
+	$(COMPILE) -o $@ $<  $(STATIC_OBJS) $(LIB_PATH) $(INC_PATH)
+.c.o:
+	$(COMPILE) -c -o $@ $<  $(INC_PATH)
+
+install:
+	mkdir -p $(TARGET_PATH)
+	cp -f $(ALL_PRGS) $(TARGET_PATH)
+
+clean:
+	rm -f $(STATIC_OBJS) $(ALL_PRGS)
