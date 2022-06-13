@@ -275,7 +275,6 @@ static inline int service_check_login(struct fast_task_info *task)
 static int service_deal_get_vote(struct fast_task_info *task)
 {
     int result;
-    SFProtoGetServerStatusReq *req;
 
     if ((result=server_expect_body_length(sizeof(
                         SFProtoGetServerStatusReq))) != 0)
@@ -287,7 +286,6 @@ static int service_deal_get_vote(struct fast_task_info *task)
         return result;
     }
 
-    req = (SFProtoGetServerStatusReq *)REQUEST.body;
     memset(REQUEST.body, 0, SERVICE_PEER.group->response_size);
     RESPONSE.header.body_len = SERVICE_PEER.group->response_size;
     RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP;
