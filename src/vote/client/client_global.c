@@ -15,6 +15,4 @@
 
 #include "client_global.h"
 
-FCFSVoteClientGlobalVars g_fcfs_vote_client_vars = {
-    {false}
-};
+FCFSVoteClientGlobalVars g_fcfs_vote_client_vars;
