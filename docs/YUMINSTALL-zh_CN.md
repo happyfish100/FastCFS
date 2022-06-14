@@ -43,7 +43,16 @@ yum install FastCFS-fused -y
    * 第一次安装才需要卸载fuse包，以后就不用执行了。
 ```
 
-### 5. Auth server安装（可选）
+### 5. Vote server安装（可选）
+
+Vote server作为FastCFS多个服务模块共用的选举节点，主要作用是实现双副本防脑裂（即双活互备防脑裂）。
+
+在需要运行选举节点的服务器上执行：
+```
+yum install FastCFS-vote-server -y
+```
+
+### 6. Auth server安装（可选）
 
 如果需要存储池或访问控制，则需要安装本模块。
 
@@ -59,14 +68,16 @@ FastCFS后台程序可通过systemd管理。systemd服务名称如下：
   * fastdir： 目录服务，对应程序为 fdir_serverd
   * faststore：存储服务，对应程序为 fs_serverd
   * fastcfs： FUSE后台服务，对应程序为 fcfs_fused
+  * fastvote： 选举节点，对应程序为 fcfs_voted
   * fastauth： 认证服务，对应程序为 fcfs_authd
 ```
 
-可以使用标准的systemd命令对上述4个服务进行管理，例如：
+可以使用标准的systemd命令对上述5个服务进行管理，例如：
 ```
 systemctl restart fastdir
 systemctl restart faststore
 systemctl restart fastcfs
+systemctl restart fastvote
 systemctl restart fastauth
 ```
 ### 6. 一个包含5个节点的安装过程的详细文档
