@@ -94,11 +94,11 @@ commit version: %{CommitVersion}
 %setup -q
 
 %build
-./make.sh --exclude=auth_client clean && ./make.sh --exclude=auth_client
+./make.sh clean && ./make.sh --exclude=client
 
 %install
 rm -rf %{buildroot}
-DESTDIR=$RPM_BUILD_ROOT ./make.sh --exclude=auth_client install
+DESTDIR=$RPM_BUILD_ROOT ./make.sh --exclude=client install
 FUSE_CONFDIR=%{buildroot}/etc/fastcfs/fcfs/
 SYSTEMDIR=%{buildroot}/usr/lib/systemd/system/
 mkdir -p $FUSE_CONFDIR
