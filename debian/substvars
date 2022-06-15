@@ -5,3 +5,4 @@ fastdir-client:Version=3.3.0
 faststore-config:Version=1.0.0
 faststore-client:Version=3.3.0
 fastcfs-fuse-config:Version=1.0.0
+fastcfs-vote-config:Version=3.4.0

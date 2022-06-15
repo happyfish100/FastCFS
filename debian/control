@@ -113,8 +113,55 @@ Package: fastcfs-auth-config
 Architecture: any
 Multi-Arch: foreign
 Build-Profiles: <pkg.auth.client>
-Depends: libfastcommon (>= ${libfastcommon:Version}),
-         libserverframe (>= ${libserverframe:Version}),
-         ${misc:Depends}
+Depends: ${misc:Depends}
 Description: FastCFS auth config files for sample
  FastCFS auth config files for sample
+
+Package: fastcfs-vote-server
+Architecture: any
+Multi-Arch: foreign
+Build-Profiles: <pkg.fastcfs.core>
+Depends: libserverframe (>= ${libserverframe:Version}),
+         fastcfs-vote-config (>= ${fastcfs-vote-config:Version}),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS vote server
+
+Package: fastcfs-vote
+Architecture: any
+Multi-Arch: foreign
+Build-Profiles: <pkg.vote.client>
+Depends: libfastcommon (>= ${libfastcommon:Version}),
+         libserverframe (>= ${libserverframe:Version}),
+         fastcfs-vote-server (= ${binary:Version}),
+         fastcfs-vote-client (= ${binary:Version}),
+         fastcfs-vote-config (= ${fastcfs-vote-config:Version}),
+         ${misc:Depends}
+Description: the vote client library and config files of FastCFS.
+ FastCFS is a high performance distributed file system which can be used as the back-end storage of databases and cloud platforms.
+
+Package: fastcfs-vote-dev
+Architecture: any
+Multi-Arch: foreign
+Build-Profiles: <pkg.vote.client>
+Depends: fastcfs-vote-client (= ${binary:Version}),
+         ${misc:Depends}
+Description: header files of FastCFS vote client
+ This package provides the header files of libfcfsauthclient
+ 
+Package: fastcfs-vote-client
+Architecture: any
+Multi-Arch: foreign
+Build-Profiles: <pkg.vote.client>
+Depends: libfastcommon (>= ${libfastcommon:Version}),
+         libserverframe (>= ${libserverframe:Version}),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS vote client
+ FastCFS vote client
+
+Package: fastcfs-vote-config
+Architecture: any
+Multi-Arch: foreign
+Build-Profiles: <pkg.vote.client>
+Depends: ${misc:Depends}
+Description: FastCFS vote config files for sample
+ FastCFS vote config files for sample

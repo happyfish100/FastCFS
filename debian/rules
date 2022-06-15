@@ -3,6 +3,7 @@
 export DESTDIR = $(CURDIR)/debian/tmp
 export FUSE_CONFDIR=$(DESTDIR)/etc/fastcfs/fcfs/
 export AUTH_CONFDIR=$(DESTDIR)/etc/fastcfs/auth/
+export VOTE_CONFDIR=$(DESTDIR)/etc/fastcfs/vote/
 
 %:
 	dh $@
@@ -30,6 +31,12 @@ ifneq ($(filter pkg.auth.client,$(DEB_BUILD_PROFILES)),)
 	mkdir -p $(AUTH_CONFDIR)
 	cp src/auth/conf/*.conf $(AUTH_CONFDIR)
 	cp -R src/auth/conf/keys $(AUTH_CONFDIR)
+endif
+ifneq ($(filter pkg.vote.client,$(DEB_BUILD_PROFILES)),)
+	./make.sh --module=vote_client install
+	VOTE_CONFDIR=%{buildroot}/etc/fastcfs/vote/
+	mkdir -p $(VOTE_CONFDIR)
+	cp src/vote/conf/*.conf $(VOTE_CONFDIR)
 endif
 	dh_auto_install
 
