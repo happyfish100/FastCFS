@@ -1,4 +1,4 @@
-### 1. Linux need install libaio devel
+### 1. install libaio devel
 
 for CentOS or REHL:
 ```
@@ -42,7 +42,15 @@ cd libdiskallocator/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-### 5. Auth client
+### 5. Vote Node client
+
+```
+git clone git@github.com:happyfish100/FastCFS.git || git clone https://github.com/happyfish100/FastCFS.git
+cd FastCFS/
+./make.sh clean && ./make.sh --module=vote_client && ./make.sh --module=vote_client install
+```
+
+### 6. Auth client
 
 ```
 git clone git@github.com:happyfish100/FastCFS.git || git clone https://github.com/happyfish100/FastCFS.git
@@ -50,7 +58,7 @@ cd FastCFS/
 ./make.sh clean && ./make.sh --module=auth_client && ./make.sh --module=auth_client install
 ```
 
-### 6. fastDIR
+### 7. fastDIR
 
 ```
 git clone git@github.com:happyfish100/fastDIR.git || git clone https://github.com/happyfish100/fastDIR.git
@@ -60,7 +68,7 @@ mkdir -p /etc/fastcfs/fdir/
 cp conf/*.conf /etc/fastcfs/fdir/
 ```
 
-### 7. faststore
+### 8. faststore
 
 ```
 git clone git@github.com:happyfish100/faststore.git || git clone https://github.com/happyfish100/faststore.git
@@ -71,7 +79,7 @@ cp conf/*.conf /etc/fastcfs/fstore/
 ```
 
 
-### 8. libfuse
+### 9. libfuse
 
 libfuse requires meson and ninja which require python3.5 or higher version
 
@@ -122,13 +130,15 @@ ninja && ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 ```
 
-### 9. FastCFS
+### 10. FastCFS
 
 ```
 cd FastCFS/
-./make.sh --exclude=auth_client clean && ./make.sh --exclude=auth_client && ./make.sh --exclude=auth_client install
+./make.sh --exclude=client clean && ./make.sh --exclude=client && ./make.sh --exclude=client install
 mkdir -p /etc/fastcfs/fcfs/
+mkdir -p /etc/fastcfs/vote/
 mkdir -p /etc/fastcfs/auth/
 cp conf/*.conf /etc/fastcfs/fcfs/
+cp -R src/vote/conf/* /etc/fastcfs/vote/
 cp -R src/auth/conf/* /etc/fastcfs/auth/
 ```
