@@ -15,6 +15,9 @@ endif
 ifneq ($(filter pkg.auth.client,$(DEB_BUILD_PROFILES)),)
 	./make.sh --module=auth_client clean && ./make.sh --module=auth_client
 endif
+ifneq ($(filter pkg.vote.client,$(DEB_BUILD_PROFILES)),)
+	./make.sh --module=vote_client clean && ./make.sh --module=vote_client
+endif
 	
 
 override_dh_auto_install:

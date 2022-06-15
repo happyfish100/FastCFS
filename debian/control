@@ -83,7 +83,7 @@ Depends: libfastcommon (>= ${libfastcommon:Version}),
          libserverframe (>= ${libserverframe:Version}),
          fastcfs-auth-server (= ${binary:Version}),
          fastcfs-auth-client (= ${binary:Version}),
-         fastcfs-auth-config (= ${fastcfs-auth-config:Version}),
+         fastcfs-auth-config (>= ${fastcfs-auth-config:Version}),
          ${misc:Depends}
 Description: the auth client library and config files of FastCFS.
  FastCFS is a high performance distributed file system which can be used as the back-end storage of databases and cloud platforms.
@@ -134,7 +134,7 @@ Depends: libfastcommon (>= ${libfastcommon:Version}),
          libserverframe (>= ${libserverframe:Version}),
          fastcfs-vote-server (= ${binary:Version}),
          fastcfs-vote-client (= ${binary:Version}),
-         fastcfs-vote-config (= ${fastcfs-vote-config:Version}),
+         fastcfs-vote-config (>= ${fastcfs-vote-config:Version}),
          ${misc:Depends}
 Description: the vote client library and config files of FastCFS.
  FastCFS is a high performance distributed file system which can be used as the back-end storage of databases and cloud platforms.
