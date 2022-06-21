@@ -113,6 +113,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fauth & fdir & fstore] leader选举支持过半原则，防止脑裂（已完成）
 *  [fauth & fdir & fstore] 实现公用选举节点，双副本防脑裂（已完成）
 *  [fdir & fstore] binlog去重及历史数据清理（已完成）
+*  [fdir & fstore] 数据提交采用多数派确认机制保证数据一致性和可靠性（进行中）
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 *  [all] 支持集群在线扩容
 
