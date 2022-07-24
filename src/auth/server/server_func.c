@@ -223,7 +223,7 @@ static void server_log_configs()
             (ADMIN_GENERATE_MODE == AUTH_ADMIN_GENERATE_MODE_FIRST ?
              "first" : "always"), ADMIN_GENERATE_USERNAME.str,
             ADMIN_GENERATE_KEY_FILENAME.str, AUTO_ID_INITIAL,
-            POOL_NAME_TEMPLATE.str, sf_get_quorum_caption(
+            POOL_NAME_TEMPLATE.str, sf_get_election_quorum_caption(
                 MASTER_ELECTION_QUORUM), VOTE_NODE_ENABLED,
             ELECTION_MASTER_LOST_TIMEOUT, ELECTION_MAX_WAIT_TIME);
 
@@ -262,7 +262,7 @@ static int load_master_election_config(const char *cluster_filename)
             &ini_ctx, "master_lost_timeout", 3, 1, 30);
     ELECTION_MAX_WAIT_TIME = iniGetIntCorrectValue(
             &ini_ctx, "max_wait_time", 5, 1, 300);
-    if ((result=sf_load_quorum_config(&MASTER_ELECTION_QUORUM,
+    if ((result=sf_load_election_quorum_config(&MASTER_ELECTION_QUORUM,
                     &ini_ctx)) == 0)
     {
         result = fcfs_vote_client_init_for_server(

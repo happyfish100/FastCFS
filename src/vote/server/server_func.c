@@ -59,7 +59,7 @@ static void server_log_configs()
 
     snprintf(sz_server_config, sizeof(sz_server_config),
             "master-election {quorum: %s, master_lost_timeout: %ds, "
-            "max_wait_time: %ds}", sf_get_quorum_caption(
+            "max_wait_time: %ds}", sf_get_election_quorum_caption(
                 MASTER_ELECTION_QUORUM), ELECTION_MASTER_LOST_TIMEOUT,
             ELECTION_MAX_WAIT_TIME);
 
@@ -93,7 +93,7 @@ static int load_master_election_config(const char *cluster_filename)
             &ini_ctx, "master_lost_timeout", 3, 1, 30);
     ELECTION_MAX_WAIT_TIME = iniGetIntCorrectValue(
             &ini_ctx, "max_wait_time", 5, 1, 300);
-    if ((result=sf_load_quorum_config(&MASTER_ELECTION_QUORUM,
+    if ((result=sf_load_election_quorum_config(&MASTER_ELECTION_QUORUM,
                     &ini_ctx)) != 0)
     {
         return result;

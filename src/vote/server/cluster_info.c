@@ -57,7 +57,7 @@ static int find_myself_in_cluster_config(const char *filename)
     } found;
     FCServerInfo *server;
     FCFSVoteClusterServerInfo *myself;
-    int ports[2];
+    int ports[4];
     int count;
     int i;
 
@@ -65,6 +65,11 @@ static int find_myself_in_cluster_config(const char *filename)
     ports[count++] = g_sf_context.inner_port;
     if (g_sf_context.outer_port != g_sf_context.inner_port) {
         ports[count++] = g_sf_context.outer_port;
+    }
+
+    ports[count++] = CLUSTER_SF_CTX.inner_port;
+    if (CLUSTER_SF_CTX.outer_port != CLUSTER_SF_CTX.inner_port) {
+        ports[count++] = CLUSTER_SF_CTX.outer_port;
     }
 
     found.ip_addr = NULL;
