@@ -29,11 +29,11 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Or
 
 ## 2. Current Version
 
-V3.4.0
+V3.5.0
 
 ## 3. Supported Platforms
 
-* Linux: Kernel version >= 3.10  (Full support, >=4.18 is recommended)
+* Linux: Kernel version >= 3.10  (Full support, >= 4.18 is recommended)
 * MacOS or FreeBSD (Only server side)
 
 ## 4. Dependencies
@@ -42,12 +42,12 @@ V3.4.0
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.58)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.15)
-* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.0.4)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V3.4.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V3.4.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V3.4.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.59)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.16)
+* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.0.5)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V3.5.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V3.5.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V3.5.0)
 
 ## 5. Installation
 
@@ -118,7 +118,7 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fauth & fdir & fstore] leader election uses  more than half principle to prevent brain-split (done)
 *  [fauth & fdir & fstore] import public vote node under 2 copies scene to prevent brain-split (done)
 *  [fdir & fstore] binlog deduplication and historical data deletion (done)
-*  [fdir & fstore] data submission by majority confirmation to ensure data consistency (doing)
+*  [fdir & fstore] data submission by majority confirmation to ensure data consistency (done)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [all] cluster online expansion
 

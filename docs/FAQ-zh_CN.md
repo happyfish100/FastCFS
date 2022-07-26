@@ -44,12 +44,15 @@ leader/master选举时采用过半数机制，一个分组的节点数最好为�
 v3.4引入公用选举节点，在偶数节点数（比如双副本）时也可以防脑裂，详情参见配置文档。
 ```
 
-## 5. fstore多副本（如3副本）情况下，停机后重启不能写入数据
+## 5. fdir和fstore多副本（如3副本）情况下，停机后重启不能写入数据
 
 ```
-为了保证数据一致性，当停机时间超过1个小时，需要等待本组的其他服务器在线才可以选出leader。
-以3副本为例，如果3台服务器停机均超过1个小时，而有的服务器没有启动，那么leader选举不出来
-将导致不能写入数据，此时启动fs_serverd需要加上命令行参数--force-leader-election
+为了保证数据一致性，当停机时间超过配置参数max_shutdown_duration（默认配置300秒），
+需要等待本组的其他服务器在线才可以选出master/leader。
+
+以3副本为例，如果3台服务器停机均超过max_shutdown_duration，而有的服务器没有启动，
+那么master/leader选举不出来，导致不能写入数据。此时启动fdir_serverd需要加上命令行
+参数--force-master-election，启动fs_serverd需要加上命令行参数--force-leader-election
 ```
 
 ## 6. 如何验证多个副本的数据一致性？

@@ -11,6 +11,12 @@ curl http://www.fastken.com/aptrepo/packages.fastos.pub | sudo apt-key add
 sudo sh -c 'echo "deb http://www.fastken.com/aptrepo/fastos/ fastos main" >> /etc/apt/sources.list'
 ```
 
+如果需要安装调试包，执行：
+```shell
+sudo sh -c 'echo "deb http://www.fastken.com/aptrepo/fastos-debug/ fastos-debug main" >> /etc/apt/sources.list'
+```
+
+
 然后更新包缓存
 ```
 sudo apt update
