@@ -40,6 +40,7 @@ static struct fuse_session *create_fuse_session(char *argv0,
 static void fuse_exit_handler(int sig);
 
 static bool daemon_mode = true;
+static bool need_delete_pid_file = false;
 static const char *config_filename;
 static char g_pid_filename[MAX_PATH_SIZE];
 
@@ -175,11 +176,11 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
 
 int main(int argc, char *argv[])
 {
-    pthread_t schedule_tid;
+    int result;
     int wait_count;
+    pthread_t schedule_tid;
     struct fuse_lowlevel_ops fuse_operations;
     struct fuse_session *se;
-    int result;
 
     result = process_cmdline(argc, argv, (bool *)&SF_G_CONTINUE_FLAG);
     if (!SF_G_CONTINUE_FLAG) {
@@ -215,10 +216,6 @@ int main(int argc, char *argv[])
             break;
         }
 
-        if ((result=write_to_pid_file(g_pid_filename)) != 0) {
-            break;
-        }
-
         /* Block until ctrl+c or fusermount -u */
         if (g_fuse_global_vars.singlethread) {
             result = fuse_session_loop(se);
@@ -231,7 +228,6 @@ int main(int argc, char *argv[])
 
         fuse_session_unmount(se);
         fcfs_api_terminate();
-        delete_pid_file(g_pid_filename);
     } while (0);
 
     if (g_schedule_flag) {
@@ -254,6 +250,10 @@ int main(int argc, char *argv[])
         logCrit("file: "__FILE__", line: %d, "
                 "program exit abnormally with errno: %d!\n",
                 __LINE__, result);
+    }
+
+    if (need_delete_pid_file) {
+        delete_pid_file(g_pid_filename);
     }
     log_destroy();
 
@@ -287,8 +287,13 @@ static int setup_server_env(const char *config_filename)
     if ((result=sf_setup_signal_handler()) != 0) {
         return result;
     }
-    log_set_cache(true);
 
+    if ((result=write_to_pid_file(g_pid_filename)) != 0) {
+        return result;
+    }
+
+    log_set_cache(true);
+    need_delete_pid_file = true;
     return fcfs_api_start_ex(&g_fcfs_api_ctx,
             &g_fuse_global_vars.owner);
 }
