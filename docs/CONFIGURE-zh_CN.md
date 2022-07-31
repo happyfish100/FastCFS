@@ -199,6 +199,8 @@ fused 配置文件路径：
 
 > /etc/fastcfs/fcfs
 
+_注：如果fused客户端与faststore和fastDIR部署在同一个服务器上，可跳过5.1、5.2节，否则需要将faststore和fastDIR的cluster.conf配置文件复制到fused客户端所在服务器上。_
+
 ### 5.1 复制faststore server上的如下配置文件到 /etc/fastcfs/fstore/
 
 ```
