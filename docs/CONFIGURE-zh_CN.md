@@ -135,7 +135,7 @@ sudo systemctl restart fastdir
 tail /opt/fastcfs/fdir/logs/fdir_serverd.log
 ```
 
-## 2. faststore server（服务实例）配置
+## 4. faststore server（服务实例）配置
 
 配置文件路径：
 
@@ -143,15 +143,15 @@ tail /opt/fastcfs/fdir/logs/fdir_serverd.log
 
 faststore集群各个服务实例配置的cluster.conf必须完全一样，建议把cluster.conf一次性配置好，然后分发到集群中的所有服务器和客户端。
 
-### 2.1 把 faststore 集群中的所有服务实例配置到 cluster.conf 中
+### 4.1 把 faststore 集群中的所有服务实例配置到 cluster.conf 中
 
 每个 **faststore** 服务实例包含3个服务端口：cluster、replica 和 service，和 **fastDIR** 的 cluster.conf 相比，多了一个replica端口，二者配置方式完全相同。
 
-### 2.2 在 cluster.conf 中配置服务器分组和数据分组对应关系
+### 4.2 在 cluster.conf 中配置服务器分组和数据分组对应关系
 
 对于生产环境，为了便于今后扩容，建议数据分组数目至少为64，最好不要超过1024（视业务未来5年发展规模而定）。
 
-### 2.3 在storage.conf 中配置存储路径等参数
+### 4.3 在storage.conf 中配置存储路径等参数
 
 支持配置多个存储路径。为了充分发挥出硬盘性能，建议挂载单盘，每块盘作为一个存储路径。
 
@@ -164,7 +164,7 @@ store_path_count = 1
 path = /opt/faststore/data
 ```
 
-### 2.4 配置 server.conf
+### 4.4 配置 server.conf
 
 * 如果需要修改binlog存放路径，修改配置项 data_path 为绝对路径
 * 本机端口包含cluster、replica和service 3个端口，分配在[cluster]、[replica] 和 [service] 中配置
@@ -193,25 +193,25 @@ sudo systemctl restart faststore
 tail /opt/fastcfs/fstore/logs/fs_serverd.log
 ```
 
-## 3. FastCFS客户端配置
+## 5. FastCFS客户端配置
 
 fused 配置文件路径：
 
 > /etc/fastcfs/fcfs
 
-### 3.1 复制faststore server上的如下配置文件到 /etc/fastcfs/fstore/
+### 5.1 复制faststore server上的如下配置文件到 /etc/fastcfs/fstore/
 
 ```
 /etc/fastcfs/fstore/cluster.conf
 ```
 
-### 3.2 复制fastDIR server上的如下配置文件到 /etc/fastcfs/fdir/
+### 5.2 复制fastDIR server上的如下配置文件到 /etc/fastcfs/fdir/
 
 ```
 /etc/fastcfs/fdir/cluster.conf
 ```
 
-### 3.3 修改fuse挂载点（可选）
+### 5.3 修改fuse挂载点（可选）
 
 如有必要，可修改配置文件 **fuse.conf** 中的 **mountpoint** 参数来指定挂载点：
 
@@ -255,15 +255,15 @@ fused 重启：
 
 至此，mountpoint（如：/opt/fastcfs/fuse）可以作为本地文件目录访问了。
 
-## 4. 选举节点配置（可选）
+## 6. 选举节点配置（可选）
 
 如果需要实现双副本防脑裂（即双活互备防脑裂），请参阅 [选举节点配置文档](VoteNode-zh_CN.md)
 
-## 5. 认证配置（可选）
+## 7. 认证配置（可选）
 
 如果需要开启存储池或访问权限控制，请参阅 [认证配置文档](AUTH-zh_CN.md)
 
-## 6. 共享数据配置（可选）
+## 8. 共享数据配置（可选）
 
 将FastCFS作为Oracle RAC等系统的共享存储，请参阅 [共享数据配置指南](shared-storage-guide-zh_CN.md)
 
