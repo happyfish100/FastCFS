@@ -20,8 +20,8 @@ print_usage() {
   echo "A self-sufficient config file templates pack shell for FastCFS cluster"
   echo ""
   echo "version:"
-  echo "  Version of the tar file, exp: 2.0.1."
-  echo "  Tar file example: conf.2.0.1.template.tar.gz"
+  echo "  Version of the tar file, exp: 3.4.0."
+  echo "  Tar file example: conf.3.4.0.tpl.tar.gz"
   echo ""
   echo "update: Pull source code from remote before execute tar command."
   echo ""
@@ -73,14 +73,17 @@ else
   rm -rf "$config_file_template_path/fcfs"
   rm -rf "$config_file_template_path/fdir"
   rm -rf "$config_file_template_path/fstore"
+  rm -rf "$config_file_template_path/vote"
 fi
 # Copy config files from source to temp tpl path
 mkdir -p "$config_file_template_path/auth/keys"
 mkdir "$config_file_template_path/fcfs"
 mkdir "$config_file_template_path/fdir"
 mkdir "$config_file_template_path/fstore"
+mkdir "$config_file_template_path/vote"
 `cp ../src/auth/conf/keys/*.key $config_file_template_path/auth/keys/`
 `cp ../src/auth/conf/*.conf $config_file_template_path/auth/`
+`cp ../src/vote/conf/*.conf $config_file_template_path/vote/`
 `cp ../conf/*.conf $config_file_template_path/fcfs/`
 `cp ../../fastDIR/conf/*.conf $config_file_template_path/fdir/`
 `cp ../../faststore/conf/*.conf $config_file_template_path/fstore/`

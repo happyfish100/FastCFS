@@ -20,6 +20,10 @@ FDIR_CONF_FILES=(client.conf cluster.conf server.conf storage.conf)
 FDIR_CONF_PATH="/etc/fastcfs/fdir/"
 FDIR_LOG_FILE="/opt/fastcfs/fdir/logs/fdir_serverd.log "
 
+VOTE_CONF_FILES=(client.conf cluster.conf server.conf)
+VOTE_CONF_PATH="/etc/fastcfs/vote/"
+VOTE_LOG_FILE="/opt/fastcfs/vote/logs/fcfs_voted.log "
+
 AUTH_CONF_FILES=(auth.conf client.conf cluster.conf server.conf session.conf)
 AUTH_CONF_PATH="/etc/fastcfs/auth/"
 AUTH_KEYS_FILES=(session_validate.key)
@@ -62,6 +66,7 @@ print_detail_usage() {
   # Print usage to console.
   print_usage
   echo "Modules:"
+  echo "  fvote        FastCFS vote server"
   echo "  fdir         fastDIR server"
   echo "  fstore       faststore server"
   echo "  fauth        FastCFS auth server"
@@ -263,6 +268,34 @@ parse_fauth_servers() {
     exit 1
   fi
 }
+
+parse_fvote_servers() {
+  local conf_file=$1
+  if ! [ -f $conf_file ]; then
+    echo "ERROR: fvote cluster config file $conf_file does not exist."
+    exit 1
+  fi
+  local fvote_servers=`sed -n '/^\[server-/ p' $conf_file | sed 's/\[//' | sed 's/\]//'`
+  local fvote_server_hosts=""
+  for fvote_server in ${fvote_servers[@]}; do
+    local server_host=$(parse_value_in_section $conf_file $fvote_server "host")
+    server_host=${server_host%%:*}
+    if [ -n server_host ]; then
+      fvote_server_hosts="$fvote_server_hosts $server_host"
+    fi
+  done
+  fvote_server_hosts=`echo $fvote_server_hosts | sed 's/ *^//g'`
+  if [[ -n $fvote_server_hosts ]]; then
+    local array_str="fvote_group=($fvote_server_hosts)"
+    eval $array_str
+  else
+    echo "ERROR: Parse fvote server hosts failed, $conf_file must conform to format below:"
+    echo "  [server-1]"
+    echo "  host = 10.0.1.11"
+    echo "  ..."
+    exit 1
+  fi
+}
 #---Parse cluster servers section end---#
 
 #---Settings and cluster info section begin---#
@@ -333,6 +366,9 @@ load_dependency_settings() {
   if [ -z $libserverframe ]; then
     echo "WARN: Dependency libserverframe has no version value in $dependency_settings_file."
   fi
+  if [ -z $fvote ]; then
+    echo "WARN: Dependency fvote has no version value in $dependency_settings_file."
+  fi
   if [ -z $fauth ]; then
     echo "WARN: Dependency fauth has no version value in $dependency_settings_file."
   fi
@@ -348,6 +384,7 @@ load_dependency_settings() {
 fdir_need_execute=0
 fstore_need_execute=0
 fauth_need_execute=0
+fvote_need_execute=0
 fuseclient_need_execute=0
 
 has_module_param=1
@@ -364,6 +401,9 @@ check_module_param() {
       'fauth')
         fauth_need_execute=1
       ;;
+      'fvote')
+        fvote_need_execute=1
+      ;;
       'fuseclient')
         fuseclient_need_execute=1
       ;;
@@ -371,12 +411,13 @@ check_module_param() {
         has_module_param=0
         if ! [ $shell_command = 'tail' ] || ! [[ $module_name =~ ^- ]]; then
           echo "ERROR: Module name invalid, $module_name."
-          echo "       Allowed module names: fdir, fstore, fauth, fuseclient."
+          echo "       Allowed module names: fdir, fstore, fauth, fvote, fuseclient."
           exit 1
         else
           fdir_need_execute=1
           fstore_need_execute=1
           fauth_need_execute=1
+          fvote_need_execute=1
           fuseclient_need_execute=1
         fi
       ;;
@@ -386,6 +427,7 @@ check_module_param() {
     fdir_need_execute=1
     fstore_need_execute=1
     fauth_need_execute=1
+    fvote_need_execute=1
     fuseclient_need_execute=1
   fi
 }
@@ -436,11 +478,16 @@ load_cluster_groups() {
     # list_servers_in_config fauth_list_servers conf/auth/cluster.conf
     parse_fauth_servers "conf/auth/cluster.conf"
   fi
+  if [ $fvote_need_execute -eq 1 ]; then
+    # list_servers_in_config fvote_list_servers conf/vote/cluster.conf
+    parse_fvote_servers "conf/vote/cluster.conf"
+  fi
 }
 
 fuseclient_share_fdir=0
 fuseclient_share_fstore=0
 fuseclient_share_fauth=0
+fuseclient_share_fvote=0
 
 check_if_client_share_servers() {
   if ! [ ${#fuseclient_ip_array[@]} -eq 0 ]; then
@@ -458,6 +505,11 @@ check_if_client_share_servers() {
       for fauth_server_ip in ${fauth_group[@]}; do
         if [ $fauth_server_ip = "$fuseclient_server_ip" ]; then
           fuseclient_share_fauth=1
+        fi
+      done
+      for fvote_server_ip in ${fvote_group[@]}; do
+        if [ $fvote_server_ip = "$fuseclient_server_ip" ]; then
+          fuseclient_share_fvote=1
         fi
       done
     done
@@ -543,6 +595,32 @@ execute_command_on_fauth_servers() {
     done
     if ! [ -z $node_host_need_execute ] && [ $fauth_node_match_setting -eq 0 ]; then
       echo "ERROR: The node $node_host_need_execute not match host in fauth cluster.conf."
+    fi
+  fi
+}
+
+execute_command_on_fvote_servers() {
+  local command_name=$1
+  local function_name=$2
+  local module_name=$3
+  if [ $fvote_need_execute -eq 1 ]; then
+    local fvote_node_match_setting=0
+    for fvote_server_ip in ${fvote_group[@]}; do
+      if [ -z $node_host_need_execute ] || [ $fvote_server_ip = "$node_host_need_execute" ]; then
+        if [ $command_name = 'status' ]; then
+          echo ""
+          echo "INFO: Begin display $module_name status on server $fvote_server_ip."
+        else
+          echo "INFO: Begin $command_name $module_name on server $fvote_server_ip."
+        fi
+        $function_name $fvote_server_ip "$module_name" $command_name
+      fi
+      if [ $fvote_server_ip = "$node_host_need_execute" ]; then
+        fvote_node_match_setting=1
+      fi
+    done
+    if ! [ -z $node_host_need_execute ] && [ $fvote_node_match_setting -eq 0 ]; then
+      echo "ERROR: The node $node_host_need_execute not match host in fvote cluster.conf."
     fi
   fi
 }
@@ -732,6 +810,8 @@ install_dependent_libs() {
   execute_command_on_fstore_servers install execute_yum_on_remote "$fstore_programs"
   fauth_programs="FastCFS-auth-server-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth fastDIR-client-$fdir"
   execute_command_on_fauth_servers install execute_yum_on_remote "$fauth_programs"
+  fvote_programs="FastCFS-vote-server-$fvote libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-vote-client-$fvote"
+  execute_command_on_fvote_servers install execute_yum_on_remote "$fvote_programs"
   fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore fastDIR-client-$fdir"
   execute_command_on_fuseclient_servers install execute_yum_on_remote "$fuseclient_programs"
   save_installed_mark
@@ -753,6 +833,8 @@ erase_dependent_libs() {
   execute_command_on_fstore_servers erase execute_yum_on_remote "$fstore_programs"
   fauth_programs="FastCFS-auth-server libfastcommon libserverframe FastCFS-auth-client fastDIR-client"
   execute_command_on_fauth_servers erase execute_yum_on_remote "$fauth_programs"
+  fvote_programs="FastCFS-vote-server libfastcommon libserverframe FastCFS-vote-client"
+  execute_command_on_fvote_servers erase execute_yum_on_remote "$fvote_programs"
   fuseclient_programs="FastCFS-fused libfastcommon libserverframe FastCFS-auth-client FastCFS-api-libs faststore-client fastDIR-client"
   execute_command_on_fuseclient_servers erase execute_yum_on_remote "$fuseclient_programs"
   remove_installed_mark
@@ -766,6 +848,8 @@ reinstall_dependent_libs() {
   execute_command_on_fstore_servers reinstall execute_yum_on_remote "$fstore_programs"
   fauth_programs="FastCFS-auth-server-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth fastDIR-client-$fdir"
   execute_command_on_fauth_servers reinstall execute_yum_on_remote "$fauth_programs"
+  fvote_programs="FastCFS-vote-server-$fauth libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-vote-client-$fauth"
+  execute_command_on_fvote_servers reinstall execute_yum_on_remote "$fvote_programs"
   fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore fastDIR-client-$fdir"
   execute_command_on_fuseclient_servers reinstall execute_yum_on_remote "$fuseclient_programs"
   save_installed_mark
@@ -848,6 +932,11 @@ copy_config_to_remote() {
       src_path="conf/auth/keys"
       dest_path=$AUTH_KEYS_PATH
     ;;
+    'fvote')
+      config_file_array="${VOTE_CONF_FILES[*]}"
+      src_path="conf/vote"
+      dest_path=$VOTE_CONF_PATH
+    ;;
     'fuseclient')
       config_file_array="${FUSE_CONF_FILES[*]}"
       src_path="conf/fcfs"
@@ -897,12 +986,16 @@ deploy_config_files() {
     echo "ERROR: First execute config cannot specify module."
     exit 1
   fi
+  execute_command_on_fvote_servers config copy_config_to_remote fvote
   execute_command_on_fdir_servers config copy_config_to_remote fdir
   execute_command_on_fstore_servers config copy_config_to_remote fstore
   execute_command_on_fauth_servers config copy_config_to_remote fauth
   execute_command_on_fauth_servers config copy_config_to_remote keys
   execute_command_on_fuseclient_servers config copy_config_to_remote fuseclient
 
+  if [ $fuseclient_share_fvote -eq 0 ]; then
+    execute_command_on_fuseclient_servers config copy_config_to_remote fvote
+  fi
   if [ $fuseclient_share_fdir -eq 0 ]; then
     execute_command_on_fuseclient_servers config copy_config_to_remote fdir
   fi
@@ -935,6 +1028,10 @@ service_op() {
   target_module=$2
   operate_mode=$3
   case "$target_module" in
+    'fvote')
+      service_name="fcfs_voted"
+      conf_file="${VOTE_CONF_PATH}server.conf"
+    ;;
     'fdir')
       service_name="fdir_serverd"
       conf_file="${FDIR_CONF_PATH}server.conf"
@@ -967,6 +1064,10 @@ EOF
 
 cluster_service_op() {
   operate_mode=$1
+  execute_command_on_fvote_servers $operate_mode service_op fvote
+  if [ $operate_mode != 'stop' ] && [ $operate_mode != 'status' ]; then
+     sleep 1
+  fi
   execute_command_on_fdir_servers $operate_mode service_op fdir
   execute_command_on_fstore_servers $operate_mode service_op fstore
   if [ $operate_mode != 'stop' ] && [ $operate_mode != 'status' ]; then
@@ -1004,6 +1105,7 @@ tail_log() {
   execute_command_on_fdir_servers tail tail_remote_log "$tail_args $FDIR_LOG_FILE"
   execute_command_on_fstore_servers tail tail_remote_log "$tail_args $STORE_LOG_FILE"
   execute_command_on_fauth_servers tail tail_remote_log "$tail_args $AUTH_LOG_FILE"
+  execute_command_on_fvote_servers tail tail_remote_log "$tail_args $VOTE_LOG_FILE"
   execute_command_on_fuseclient_servers tail tail_remote_log "$tail_args $FUSE_LOG_FILE"
 }
 #---Tail log section end---#

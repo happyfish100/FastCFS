@@ -18,6 +18,7 @@ STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf)
 FDIR_CONF_FILES=(client.conf cluster.conf server.conf storage.conf)
 AUTH_CONF_FILES=(auth.conf client.conf cluster.conf server.conf session.conf)
 AUTH_KEYS_FILES=(session_validate.key)
+VOTE_CONF_FILES=(cluster.conf server.conf client.conf)
 FUSE_CONF_FILES=(fuse.conf)
 TRUNCATE_MARK_LINE="## Important:server group mark, don't modify this line."
 
@@ -43,6 +44,7 @@ print_detail_usage() {
   # Print usage to console.
   print_usage
   echo "Modules:"
+  echo "  fvote        FastCFS vote server"
   echo "  fdir         fastDIR server"
   echo "  fstore       faststore server"
   echo "  fauth        FastCFS auth server"
@@ -107,7 +109,7 @@ create_path_not_exist() {
 #---Tool functions end---#
 
 #---Settings and cluster info section begin---#
-# Load cluster settings from file fcfs.settings
+# Load cluster settings from file fcfs_conf.settings
 load_fcfs_settings() {
   if ! [ -f $fcfs_settings_file ]; then
     echo "ERROR: File $fcfs_settings_file does not exist"
@@ -117,6 +119,7 @@ load_fcfs_settings() {
     eval $fcfs_settings
     split_to_array $auth_ips auth_ip_array
     split_to_array $fdir_ips fdir_ip_array
+    split_to_array $vote_ips vote_ip_array
     split_to_array $fstore_groups fstore_group_array
   fi
 }
@@ -156,6 +159,7 @@ check_conf_template() {
 }
 
 # Get module name from command args, if not specify, will handle all modules.
+fvote_need_execute=0
 fdir_need_execute=0
 fstore_need_execute=0
 fauth_need_execute=0
@@ -166,6 +170,9 @@ check_module_param() {
   if [ $# -gt 1 ]; then
     module_name=$2
     case "$module_name" in
+      'fvote')
+        fvote_need_execute=1
+      ;;
       'fdir')
         fdir_need_execute=1
       ;;
@@ -182,12 +189,13 @@ check_module_param() {
         has_module_param=0
         if ! [[ $module_name =~ ^- ]]; then
           echo "ERROR: Module name invalid, $module_name."
-          echo "       Allowed module names: fdir, fstore, fauth, fuseclient."
+          echo "       Allowed module names: fdir, fstore, fauth, fvote, fuseclient."
           exit 1
         else
           fdir_need_execute=1
           fstore_need_execute=1
           fauth_need_execute=1
+          fvote_need_execute=1
           fuseclient_need_execute=1
         fi
       ;;
@@ -197,6 +205,7 @@ check_module_param() {
     fdir_need_execute=1
     fstore_need_execute=1
     fauth_need_execute=1
+    fvote_need_execute=1
     fuseclient_need_execute=1
   fi
 }
@@ -389,6 +398,36 @@ create_fauth_conf_files() {
   fi
 }
 
+create_fvote_conf_files() {
+  if [ ${#vote_ip_array[@]} -gt 0 ]; then
+    echo "INFO: Begin create vote config files."
+    local vote_path="$LOCAL_CONF_PATH/vote"
+    local vote_tpl_path="$config_file_template_path/vote"
+    create_path_not_exist $vote_path
+    copy_config_from_template "${VOTE_CONF_FILES[*]}" $vote_tpl_path $vote_path
+    local vote_cluster_file="$vote_path/cluster.conf"
+    if ! [ -f $vote_cluster_file ]; then
+      echo "ERROR: vote cluster file not exist, $vote_cluster_file, can't append server to it"
+      exit 1
+    fi
+    
+    # Trancate cluster.conf with mark line
+    sed_replace "/$TRUNCATE_MARK_LINE/,$ d" $vote_cluster_file
+
+    # Replace server ip
+    let server_id=1
+    for vote_server_ip in ${vote_ip_array[@]}; do
+      echo "[server-$server_id]" >> $vote_cluster_file
+      echo "host = $vote_server_ip" >> $vote_cluster_file
+      echo "" >> $vote_cluster_file
+      let server_id=$server_id+1
+    done
+  else
+    echo "ERROR: Param vote_ips in $fcfs_settings_file cannot be empty."
+    exit 1
+  fi
+}
+
 create_fuseclient_conf_files() {
   echo "INFO: Begin create fuseclient config files."
   local fuseclient_path="$LOCAL_CONF_PATH/fcfs"
@@ -408,6 +447,9 @@ create_config_files() {
   fi
   if [ $fauth_need_execute -eq 1 ]; then
     create_fauth_conf_files
+  fi
+  if [ $fvote_need_execute -eq 1 ]; then
+    create_fvote_conf_files
   fi
   if [ $fuseclient_need_execute -eq 1 ]; then
     create_fuseclient_conf_files
