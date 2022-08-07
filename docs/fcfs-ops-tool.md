@@ -56,8 +56,9 @@ fuseclient_ips=10.0.1.14
 
 #### 1.4.2. conf
 
-All config files of FastCFS cluster must be put into working directory beforehand, conf include four subdirectories：
+All config files of FastCFS cluster must be put into working directory beforehand, conf include five subdirectories：
 
+* vote -- config files for fvote server
 * fdir -- config files for fdir server
 * fstore -- config files for fstore server
 * auth -- config files for fauth server
@@ -142,6 +143,7 @@ Usage:
 
 **Modules**:
 
+* fvote -- Vote server
 * fdir -- fastDIR server
 * fstore -- faststore server
 * fauth -- FastCFS auth server
@@ -325,6 +327,7 @@ You must create a independent working directory(exp: ***fastcfs-ops***) for a cl
 fcfs.settings include six fields: ***fastcfs_version*** and ***fuseclient_ips***, fastcfs_version specify FastCFS main version number, fuseclient_ips specify host to deploy fuse client. When upgrade or downgrade FastCFS, you need change fastcfs_version to version you expect.
 
 * fastcfs_version -- The FastCFS version you expect to create config files for.
+* vote_ips -- vote server IP list, multiple hosts separated by comma
 * auth_ips -- FastCFS auth server IP list, multiple hosts separated by comma
 * fdir_ips -- fastDIR server IP list, multiple hosts separated by comma
 * fstore_group_count -- faststore server group count
@@ -337,9 +340,10 @@ fcfs_conf.settings content Example:
 
 ```
 # Version of FastCFS cluster
-fastcfs_version=3.3.0
+fastcfs_version=3.5.0
 
 # Cluster hosts list and group count
+vote_ips=10.0.1.11,10.0.1.12,10.0.1.13
 auth_ips=10.0.1.11,10.0.1.12,10.0.1.13
 fdir_ips=10.0.1.11,10.0.1.12,10.0.1.13
 fstore_group_count=2
@@ -348,7 +352,28 @@ fstore_group_2=10.0.2.11,10.0.2.12,10.0.2.13
 data_group_count=128
 ```
 
-***Tip：Use version 3.3.0 and later for crearte config files.***
+***Tip：Use version 3.5.0 and later for crearte config files, especially for vote server.***
+
+### 2.3. fcfs_conf.sh Tool commands introduction
+
+The fcfs_conf.sh command include two parts: command and module. Command is required, module is optional.
+
+Usage:
+
+> fcfs_conf.sh command [module]
+
+**Commands**:
+
+* create -- Create config files.
+* help -- Show the detail of commands and examples
+
+**Modules**:
+
+* fvote -- Vote server
+* fdir -- fastDIR server
+* fstore -- faststore server
+* fauth -- FastCFS auth server
+* fuseclient -- FastCFS fuse client
 
 ## 3. conf_tpl_tar.sh introduction
 
@@ -369,6 +394,6 @@ conf_tpl_tar.sh <version> [update]
 
 Exmaple:
 
-> ./conf_tpl_tar.sh 3.3.0 update
+> ./conf_tpl_tar.sh 3.5.0 update
 
-It will create tar file **conf.3.3.0.tpl.tar.gz** in current dir.
+It will create tar file **conf.3.5.0.tpl.tar.gz** in current dir.
