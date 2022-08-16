@@ -29,7 +29,7 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Or
 
 ## 2. Current Version
 
-V3.5.0
+V3.5.1
 
 ## 3. Supported Platforms
 
@@ -43,10 +43,10 @@ V3.5.0
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
 * [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.59)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.16)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.17)
 * [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.0.5)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V3.5.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V3.5.0)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V3.5.1)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V3.5.1)
 * [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V3.5.0)
 
 ## 5. Installation
@@ -119,7 +119,8 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fauth & fdir & fstore] import public vote node under 2 copies scene to prevent brain-split (done)
 *  [fdir & fstore] binlog deduplication and historical data deletion (done)
 *  [fdir & fstore] data submission by majority confirmation to ensure data consistency (done)
-*  [fdir & fstore] for two replicas, the data submission majority mechanism is intelligent (doing)
+*  [fdir & fstore] for two replicas, the data submission majority mechanism is intelligent (done)
+*  [fstore] file read & write performance optimization (doing)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [all] cluster online expansion
 
