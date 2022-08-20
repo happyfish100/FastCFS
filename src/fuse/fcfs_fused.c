@@ -143,8 +143,7 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
     }
 
     if (!SF_G_BASE_PATH_INITED) {
-        result = get_base_path_from_conf_file(config_filename,
-                SF_G_BASE_PATH_STR, sizeof(SF_G_BASE_PATH_STR));
+        result = sf_get_base_path_from_conf_file(config_filename);
         if (result != 0) {
             log_destroy();
             return result;
