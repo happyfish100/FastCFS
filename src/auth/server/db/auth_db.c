@@ -111,11 +111,12 @@ static inline int init_name_allocators(
         struct fast_allocator_context *name_acontext)
 {
 #define NAME_REGION_COUNT 1
+    const int obj_size = 0;
     struct fast_region_info regions[NAME_REGION_COUNT];
 
     FAST_ALLOCATOR_INIT_REGION(regions[0], 0, 256, 8, 1024);
-    return fast_allocator_init_ex(name_acontext, "name",
-            regions, NAME_REGION_COUNT, 0, 0.00, 0, false);
+    return fast_allocator_init_ex(name_acontext, "name", obj_size,
+            NULL, regions, NAME_REGION_COUNT, 0, 0.00, 0, false);
 }
 
 static int init_allocators()
