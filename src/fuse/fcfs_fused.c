@@ -327,6 +327,9 @@ static struct fuse_session *create_fuse_session(char *argv0,
     if (g_fuse_global_vars.writeback_cache) {
         argv[argc++] = "-o";
         argv[argc++] = "writeback_cache";
+
+        argv[argc++] = "-o";
+        argv[argc++] = "time_gran=1000000000";
     }
 
     args.argc = argc;
