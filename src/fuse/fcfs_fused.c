@@ -301,7 +301,7 @@ static struct fuse_session *create_fuse_session(char *argv0,
         struct fuse_lowlevel_ops *ops)
 {
 	struct fuse_args args;
-    char *argv[8];
+    char *argv[16];
     int argc;
 
     argc = 0;
@@ -324,9 +324,20 @@ static struct fuse_session *create_fuse_session(char *argv0,
         argv[argc++] = "allow_other";
     }
 
+    if (g_fuse_global_vars.writeback_cache) {
+        argv[argc++] = "-o";
+        argv[argc++] = "writeback_cache";
+    }
+
     args.argc = argc;
     args.argv = argv;
     args.allocated = 0;
+    if ((g_fuse_cinfo_opts=fuse_parse_conn_info_opts(&args)) == NULL) {
+        logError("file: "__FILE__", line: %d, "
+                "fuse_parse_conn_info_opts fail!", __LINE__);
+        return NULL;
+    }
+
     return fuse_session_new(&args, ops, sizeof(*ops), NULL);
 }
 

@@ -28,6 +28,7 @@
 #define FS_READDIR_BUFFER_INIT_NORMAL      1
 #define FS_READDIR_BUFFER_INIT_PLUS        2
 
+struct fuse_conn_info_opts *g_fuse_cinfo_opts;
 static struct fast_mblock_man fh_allocator;
 
 static void fill_stat(const FDIRDEntryInfo *dentry, struct stat *stat)
@@ -1228,6 +1229,11 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
     }
 }
 
+static void fs_do_init(void *userdata, struct fuse_conn_info *conn)
+{
+    fuse_apply_conn_info_opts(g_fuse_cinfo_opts, conn);
+}
+
 int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
 {
     int result;
@@ -1238,6 +1244,7 @@ int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
     }
 
     memset(ops, 0, sizeof(*ops));
+    ops->init = fs_do_init;
     ops->lookup  = fs_do_lookup;
     ops->getattr = fs_do_getattr;
     ops->setattr = fs_do_setattr;

@@ -48,6 +48,8 @@
 extern "C" {
 #endif
 
+    extern struct fuse_conn_info_opts *g_fuse_cinfo_opts;
+
 	int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops);
 
 #ifdef __cplusplus
