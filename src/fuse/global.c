@@ -37,9 +37,13 @@ FUSEGlobalVars g_fuse_global_vars = {{NULL, NULL}};
 
 static int load_fuse_config(IniFullContext *ini_ctx)
 {
+    Version version;
     string_t mountpoint;
+    char *writeback_cache;
     char *allow_others;
     int result;
+
+    get_kernel_version(&version);
 
     ini_ctx->section_name = INI_FUSE_SECTION_NAME;
     if (g_fuse_global_vars.nsmp.mountpoint == NULL) {
@@ -63,8 +67,6 @@ static int load_fuse_config(IniFullContext *ini_ctx)
     g_fuse_global_vars.clone_fd = iniGetBoolValue(ini_ctx->
             section_name, "clone_fd", ini_ctx->context, false);
     if (g_fuse_global_vars.clone_fd) {
-        Version version;
-        get_kernel_version(&version);
         if (version.major < 4 || (version.major == 4 && version.minor < 2)) {
             logWarning("file: "__FILE__", line: %d, "
                     "kernel version %d.%d < 4.2, do NOT support "
@@ -100,8 +102,26 @@ static int load_fuse_config(IniFullContext *ini_ctx)
     g_fuse_global_vars.xattr_enabled = iniGetBoolValue(ini_ctx->
             section_name, "xattr_enabled", ini_ctx->context, false);
 
-    g_fuse_global_vars.writeback_cache = iniGetBoolValue(ini_ctx->
-            section_name, "writeback_cache", ini_ctx->context, true);
+    writeback_cache = iniGetStrValue(ini_ctx->section_name,
+            "writeback_cache", ini_ctx->context);
+    if (writeback_cache == NULL) {
+        g_fuse_global_vars.writeback_cache = (version.major > 3 ||
+                (version.major == 3 && version.minor >= 15));
+    } else {
+        g_fuse_global_vars.writeback_cache = FAST_INI_STRING_IS_TRUE(
+                writeback_cache);
+        if (g_fuse_global_vars.writeback_cache) {
+            if (version.major < 3 || (version.major == 3 &&
+                        version.minor < 15))
+            {
+                logWarning("file: "__FILE__", line: %d, "
+                        "kernel version %d.%d < 3.15, do NOT support "
+                        "FUSE feature writeback_cache", __LINE__,
+                        version.major, version.minor);
+                g_fuse_global_vars.writeback_cache = false;
+            }
+        }
+    }
 
     return fcfs_api_load_owner_config(ini_ctx, &g_fuse_global_vars.owner);
 }
