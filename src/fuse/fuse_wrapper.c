@@ -415,6 +415,14 @@ static int do_open(fuse_req_t req, FDIRDEntryInfo *dentry,
         return ENOMEM;
     }
 
+    if (fi->flags & O_DIRECT) {
+        fi->direct_io = 1;
+    } else {
+        if (g_fuse_global_vars.kernel_cache) {
+            fi->keep_cache = 1;
+        }
+    }
+
     if ((result=fcfs_api_open_by_dentry(fh, dentry, fi->flags, fctx)) != 0) {
         logError("file: "__FILE__", line: %d, func: %s, "
             "ino: %"PRId64", fh: %"PRId64", flags: %d, result: %d\n",

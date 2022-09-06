@@ -123,6 +123,9 @@ static int load_fuse_config(IniFullContext *ini_ctx)
         }
     }
 
+    g_fuse_global_vars.kernel_cache = iniGetBoolValue(ini_ctx->
+            section_name, "kernel_cache", ini_ctx->context, true);
+
     return fcfs_api_load_owner_config(ini_ctx, &g_fuse_global_vars.owner);
 }
 
@@ -198,7 +201,7 @@ int fcfs_fuse_global_init(const char *config_filename)
             "owner_type: %s%s, singlethread: %d, clone_fd: %d, "
             "max_idle_threads: %d, allow_others: %s, auto_unmount: %d, "
             "attribute_timeout: %.1fs, entry_timeout: %.1fs, "
-            "xattr_enabled: %d, writeback_cache: %d",
+            "xattr_enabled: %d, writeback_cache: %d, kernel_cache: %d",
             g_fcfs_global_vars.version.major,
             g_fcfs_global_vars.version.minor,
             g_fcfs_global_vars.version.patch,
@@ -212,7 +215,8 @@ int fcfs_fuse_global_init(const char *config_filename)
             g_fuse_global_vars.attribute_timeout,
             g_fuse_global_vars.entry_timeout,
             g_fuse_global_vars.xattr_enabled,
-            g_fuse_global_vars.writeback_cache);
+            g_fuse_global_vars.writeback_cache,
+            g_fuse_global_vars.kernel_cache);
 
     return 0;
 }
