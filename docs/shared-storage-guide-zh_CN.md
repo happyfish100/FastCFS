@@ -33,15 +33,28 @@ enabled = false
 enabled = false
 
 
-# 禁用Linux对inode和文件属性缓存
 [FUSE]
+# 禁用Linux对inode缓存
+# cache time for file entry in seconds
+# default value is 1.0s
+entry_timeout = 0.0
+
+# 禁用Linux对文件属性缓存
 # cache time for file attribute in seconds
 # default value is 1.0s
 attribute_timeout = 0.0
 
-# cache time for file entry in seconds
-# default value is 1.0s
-entry_timeout = 0.0
+# 禁用内核合并写
+# if enable kernel writeback cache
+# default value is true
+writeback_cache = false
+
+# 禁用内核读缓存
+# if keep kernel cache for read
+# set to true for unshared data scene (private data for single node)
+# should set to false on shared data scene for multi nodes
+# default value is true
+kernel_cache = false
 
 ```
 
