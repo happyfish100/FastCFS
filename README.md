@@ -120,7 +120,7 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fdir & fstore] binlog deduplication and historical data deletion (done)
 *  [fdir & fstore] data submission by majority confirmation to ensure data consistency (done)
 *  [fdir & fstore] for two replicas, the data submission majority mechanism is intelligent (done)
-*  [fstore] file read & write performance optimization (doing)
+*  [fstore] file read & write performance optimization (done)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [all] cluster online expansion
 

@@ -351,21 +351,34 @@ else
 fi
 
 check_install_fastos_repo() {
-  repo=$(rpm -q FastOSrepo 2>/dev/null)
-  if [ $? -ne 0 ]; then
-    if [ $os_major_version -eq 7 ]; then
-      rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
-    else 
-      rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
+  if [ $osname = 'Ubuntu' ] || [ $osname = 'Debian' ]; then
+    repo=$(fgrep -w fastos /etc/apt/sources.list 2>/dev/null)
+    if [ $? -ne 0 ]; then
+      curl http://www.fastken.com/aptrepo/packages.fastos.pub | apt-key add
+      sh -c 'echo "deb http://www.fastken.com/aptrepo/fastos/ fastos main" >> /etc/apt/sources.list'
+      sh -c 'echo "deb http://www.fastken.com/aptrepo/fastos-debug/ fastos-debug main" >> /etc/apt/sources.list'
+    fi
+  else
+    repo=$(rpm -q FastOSrepo 2>/dev/null)
+    if [ $? -ne 0 ]; then
+      if [ $os_major_version -eq 7 ]; then
+        rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
+      else
+        rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
+      fi
     fi
   fi
 }
 
 install_all_softwares() {
-  if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
+  if [ $osname = 'Ubuntu' ] || [ $osname = 'Debian' ]; then
+    check_install_fastos_repo
+    apt update
+    apt install fastcfs-auth-server fastcfs-vote-server fastdir-server faststore-server fastcfs-fused -y
+  elif [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
     check_install_fastos_repo
     rpm -q fuse >/dev/null && yum remove fuse -y
-    yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
+    yum install FastCFS-auth-server FastCFS-vote-server fastDIR-server faststore-server FastCFS-fused -y
   else
     ./libfuse_setup.sh
     pull_source_codes
