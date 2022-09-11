@@ -1,5 +1,5 @@
 
-## 安装基于 Debian 和 Ubuntu 的发行版
+## 安装基于 Debian 10及以上版本 和 Ubuntu 18.04及以上版本
 
 
 ### 1. 配置 apt 存储库

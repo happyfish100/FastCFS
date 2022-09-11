@@ -371,7 +371,7 @@ check_install_fastos_repo() {
 }
 
 install_all_softwares() {
-  if [ $osname = 'Ubuntu' ] || [ $osname = 'Debian' ]; then
+  if [ $osname = 'Ubuntu' -a $os_major_version -ge 18 ] || [ $osname = 'Debian' -a $os_major_version -ge 10 ]; then
     check_install_fastos_repo
     apt update
     apt install fastcfs-auth-server fastcfs-vote-server fastdir-server faststore-server fastcfs-fused -y
