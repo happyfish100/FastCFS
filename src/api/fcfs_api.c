@@ -464,6 +464,8 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
         const char *fs_section_name)
 {
 #define MIN_THREAD_STACK_SIZE  (320 * 1024)
+    const int task_buffer_extra_size = 0;
+    const bool need_set_run_by = true;
     int result;
     SFContextIniConfig config;
 
@@ -475,7 +477,9 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
     SF_SET_CONTEXT_INI_CONFIG(config, ini_ctx->filename,
             ini_ctx->context, FCFS_API_INI_IDEMPOTENCY_SECTION_NAME,
             0, 0, FCFS_API_IDEMPOTENCY_DEFAULT_WORK_THREADS);
-    if ((result=sf_load_config_ex(log_prefix_name, &config, 0)) != 0) {
+    if ((result=sf_load_config_ex(log_prefix_name, &config,
+                    task_buffer_extra_size, need_set_run_by)) != 0)
+    {
         return result;
     }
     if (SF_G_THREAD_STACK_SIZE < MIN_THREAD_STACK_SIZE) {
