@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
         //sched_print_all_entries();
 
         result = sf_service_init_ex(&CLUSTER_SF_CTX, "cluster", NULL,
-                NULL, NULL, sf_proto_set_body_length, cluster_deal_task,
+                NULL, NULL, sf_proto_set_body_length, NULL, cluster_deal_task,
                 cluster_task_finish_cleanup, cluster_recv_timeout_callback,
                 1000, sizeof(FCFSVoteProtoHeader), sizeof(VoteServerTaskArg));
         if (result != 0) {
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
         sf_accept_loop_ex(&CLUSTER_SF_CTX, false);
 
         result = sf_service_init_ex(&g_sf_context, "service", NULL, NULL,
-                NULL, sf_proto_set_body_length, service_deal_task,
+                NULL, sf_proto_set_body_length, NULL, service_deal_task,
                 service_task_finish_cleanup, service_recv_timeout_callback,
                 1000, sizeof(FCFSVoteProtoHeader), sizeof(VoteServerTaskArg));
         if (result != 0) {

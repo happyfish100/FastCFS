@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
         result = sf_service_init_ex(&CLUSTER_SF_CTX, "cluster",
                 cluster_alloc_thread_extra_data,
                 cluster_thread_loop_callback, NULL,
-                sf_proto_set_body_length, cluster_deal_task,
+                sf_proto_set_body_length, NULL, cluster_deal_task,
                 cluster_task_finish_cleanup, cluster_recv_timeout_callback,
                 1000, sizeof(FCFSAuthProtoHeader), sizeof(AuthServerTaskArg));
         if (result != 0) {
@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
         sf_accept_loop_ex(&CLUSTER_SF_CTX, false);
 
         result = sf_service_init_ex(&g_sf_context, "service",
-                service_alloc_thread_extra_data, NULL,
-                NULL, sf_proto_set_body_length, service_deal_task,
+                service_alloc_thread_extra_data, NULL, NULL,
+                sf_proto_set_body_length, NULL, service_deal_task,
                 service_task_finish_cleanup, NULL, 1000,
                 sizeof(FCFSAuthProtoHeader), sizeof(AuthServerTaskArg));
         if (result != 0) {
