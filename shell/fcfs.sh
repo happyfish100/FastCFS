@@ -7,6 +7,10 @@
 # If you set up and tear down FastCFS clusters a lot, and want minimal extra repeating works,
 # this is for you.
 #
+#---1. Config path section begin---#
+declare -ir UBUNTU_MIN_VERSION=18
+declare -ir DEBIAN_MIN_VERSION=10
+declare -ir CENTOS_MIN_VERSION=7
 fcfs_settings_file="fcfs.settings"
 fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
 fcfs_cache_path=".fcfs"
@@ -33,12 +37,15 @@ AUTH_LOG_FILE="/opt/fastcfs/auth/logs/fcfs_authd.log"
 FUSE_CONF_FILES=(fuse.conf)
 FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
 FUSE_LOG_FILE="/opt/fastcfs/fcfs/logs/fcfs_fused.log"
+#---1. Config path section end---#
 
+#---2. Get shell and command section begin---#
 shell_name=$0
 shell_command=$1
-uname=$(uname)
+local_os_uname=$(uname)
+#---2. Get shell and command section end---#
 
-#---Usage info section begin---#
+#---3. Usage info section begin---#
 print_usage() {
   # Print usage to console.
   echo ""
@@ -125,16 +132,18 @@ case "$shell_command" in
     exit 1
   ;;
 esac
-#---Usage info section end---#
+#---3. Usage info section end---#
 
+#---4. Tool functions section begin---#
 sed_replace()
 {
-    sed_cmd=$1
-    filename=$2
-    if [ "$uname" = "FreeBSD" ] || [ "$uname" = "Darwin" ]; then
-       sed -i "" "$sed_cmd" $filename
+    local sed_cmd=$1
+    local file_name=$2
+    local current_uname=$(uname)
+    if [ "$current_uname" = "FreeBSD" ] || [ "$current_uname" = "Darwin" ]; then
+       sed -i "" "$sed_cmd" $file_name
     else
-       sed -i "$sed_cmd" $filename
+       sed -i "$sed_cmd" $file_name
     fi
 }
 
@@ -144,9 +153,64 @@ split_to_array() {
   fi
 }
 
+# Check preceding version less than or equals following.
 function version_le() { test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" == "$1"; }
 
-#---Parse cluster servers section begin---#
+# Execute command on a host over SSH
+execute_remote_command() {
+  local remote_host=$1
+  local remote_command=$2
+  local result=$(ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host $remote_command)
+  echo $result
+}
+
+# Execute command on a host over SSH without return
+execute_remote_command_no_return() {
+  local remote_host=$1
+  local remote_command=$2
+  ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host $remote_command
+}
+
+# Get remote server's uname
+get_remote_uname() {
+  local remote_host=$1
+  local remote_uname=$(execute_remote_command $remote_host "uname")
+  echo $remote_uname
+}
+
+# Get remote server's os name
+get_remote_osname() {
+  local remote_host=$1
+  local osname_command='cat /etc/os-release 
+| grep -w NAME 
+| awk -F '\''='\'' '\''{print $2;}'\'' 
+| awk -F '\''"'\'' '\''{if (NF==3) {print $2} else {print $1}}'\'' 
+| awk '\''{print $1}'\'''
+  local remote_osname=$(execute_remote_command $remote_host "$osname_command")
+  echo "$remote_osname"
+}
+
+# Get remote Ubuntu server's version
+get_ubuntu_version() {
+  local remote_host=$1
+  local ubuntu_version_command='cat /etc/os-release 
+| grep -w VERSION_ID 
+| awk -F '\''='\'' '\''{print $2;}'\'' 
+| awk -F '\''"'\'' '\''{if (NF==3) {print $2} else {print $1}}'\'''
+  local remote_ubuntu_version=$(execute_remote_command $remote_host "$ubuntu_version_command")
+  echo "$remote_ubuntu_version"
+}
+
+# Get remote CentOS server's version
+get_centos_version() {
+  local remote_host=$1
+  local centos_version_command='cat /etc/system-release | awk '\''{print $4}'\'''
+  local remote_centos_version=$(execute_remote_command $remote_host "$centos_version_command")
+  echo "$remote_centos_version"
+}
+#---4. Tool functions section end---#
+
+#---5. Parse cluster servers section begin---#
 INT_REGEXP='^[0-9]+$'
 RANGE_REGEXP='^\[[0-9]*, *[0-9]*\]$'
 
@@ -243,7 +307,7 @@ parse_fdir_servers() {
 
 parse_fauth_servers() {
   local conf_file=$1
-  if ! [ -f $list_config_file ]; then
+  if ! [ -f $conf_file ]; then
     echo "ERROR: fauth cluster config file $conf_file does not exist."
     exit 1
   fi
@@ -296,9 +360,9 @@ parse_fvote_servers() {
     exit 1
   fi
 }
-#---Parse cluster servers section end---#
+#---5. Parse cluster servers section end---#
 
-#---Settings and cluster info section begin---#
+#---6. Settings and cluster info section begin---#
 check_fcfs_cache_path() {
   if ! [ -d $fcfs_cache_path ]; then
     if ! mkdir -p $fcfs_cache_path; then
@@ -442,24 +506,6 @@ check_node_param() {
   fi
 }
 
-list_servers_in_config() {
-  list_program=$1
-  list_config_file=$2
-  cmd_exist=`which $list_program`
-  if [ -z "$cmd_exist" ]; then
-    echo "WARN: Program $list_program not found, install it now."
-    check_remote_osname
-    execute_yum install "FastCFS-utils-$fcfsutils libfastcommon-$libfastcommon libserverframe-$libserverframe"
-  fi
-  if ! [ -f $list_config_file ]; then
-    echo "ERROR: Cluster config file $list_config_file does not exist."
-    exit 1
-  else
-    list_result=$($list_program $list_config_file)
-    eval $list_result
-  fi
-}
-
 # Load cluster groups from cluster config files.
 #   fdir_group=(172.16.168.128)
 #   fstore_group_count=1
@@ -467,20 +513,107 @@ list_servers_in_config() {
 #   fauth_group=(172.16.168.128)
 load_cluster_groups() {
   if [ $fdir_need_execute -eq 1 ]; then
-    # list_servers_in_config fdir_list_servers conf/fdir/cluster.conf
     parse_fdir_servers "conf/fdir/cluster.conf"
   fi
   if [ $fstore_need_execute -eq 1 ]; then
-    # list_servers_in_config fstore_list_servers conf/fstore/cluster.conf
     parse_fstore_servers "conf/fstore/cluster.conf"
   fi
   if [ $fauth_need_execute -eq 1 ]; then
-    # list_servers_in_config fauth_list_servers conf/auth/cluster.conf
     parse_fauth_servers "conf/auth/cluster.conf"
   fi
   if [ $fvote_need_execute -eq 1 ]; then
-    # list_servers_in_config fvote_list_servers conf/vote/cluster.conf
     parse_fvote_servers "conf/vote/cluster.conf"
+  fi
+}
+
+replace_cluster_osname_mark() {
+  local mark_file=$1
+  local remote_osname=$2
+  sed_replace "s#^cluster_host_osname=.*#cluster_host_osname=$remote_osname#g" $mark_file
+}
+
+save_cluster_osname_mark() {
+  check_fcfs_cache_path
+  local remote_osname=$1
+  local installed_mark_file=$fcfs_cache_path/$fcfs_installed_file
+  if [ -f $installed_mark_file ]; then
+    local cluster_osname_marks=`grep cluster_host_osname $installed_mark_file`
+    if [ -z $cluster_osname_marks ]; then
+      echo "cluster_host_osname=$remote_osname" >> $installed_mark_file
+    else
+      # replace old value
+      replace_cluster_osname_mark $installed_mark_file "$remote_osname"
+    fi
+  else
+    echo "cluster_host_osname=$remote_osname" >> $installed_mark_file
+  fi
+}
+
+# Check remote host os and version.
+#   The whole cluster's host must have same os type.
+#   The hosts os version must great than or equal xxx_MIN_VERSION
+check_remote_os_and_version() {
+  cluster_host_osname=""
+  declare -a all_server_ips
+  all_server_ips+=(${fdir_group[@]})
+  all_server_ips+=(${fstore_group[@]})
+  all_server_ips+=(${fauth_group[@]})
+  all_server_ips+=(${fvote_group[@]})
+  all_server_ips+=(${fuseclient_ip_array[@]})
+
+  declare -a distinct_server_ips
+  for server_ip in ${all_server_ips[@]}; do
+    if ! [[ ${distinct_server_ips[*]} =~ (^|[[:space:]])"$server_ip"($|[[:space:]]) ]]; then
+      distinct_server_ips+=("$server_ip")
+      echo "INFO: Begin check os name and version on server $server_ip"
+      local remote_uname=$(get_remote_uname $server_ip)
+      if [ $remote_uname = 'Linux' ]; then
+        local remote_osname=$(get_remote_osname $server_ip)
+        if [ "$cluster_host_osname" != '' ]; then
+          if [ "$cluster_host_osname" != "$remote_osname" ]; then
+            echo "Error: Cluster's servers must have same OS, $cluster_host_osname and $remote_osname cannot be mixed use"
+            exit 1
+          fi
+        else
+          cluster_host_osname=$remote_osname
+        fi
+        local remote_osversion
+        if [ $remote_osname = 'CentOS' ]; then
+          remote_osversion=$(get_centos_version $server_ip)
+        elif [ $remote_osname = 'Ubuntu' ] || [ $remote_osname = 'Debian' ]; then
+          remote_osversion=$(get_ubuntu_version $server_ip)
+        else
+          echo "Error: Unsupport OS, $remote_osname on server $server_ip"
+          exit 1
+        fi
+        declare -i remote_os_major_version=$(echo $remote_osversion | awk -F '.' '{print $1}')
+        if [ $remote_osname = 'CentOS' ]; then
+          if [ $remote_os_major_version -lt $CENTOS_MIN_VERSION ]; then
+            echo "CentOS's version must be great than or equal $CENTOS_MIN_VERSION, but was $remote_os_major_version on server $server_ip"
+            exit 1
+          fi
+        elif [ $remote_osname = 'Ubuntu' ]; then
+          if [ $remote_os_major_version -lt $UBUNTU_MIN_VERSION ]; then
+            echo "Ubuntu's version must be great than or equal $UBUNTU_MIN_VERSION, but was $remote_os_major_version on server $server_ip"
+            exit 1
+          fi
+        elif [ $remote_osname = 'Debian' ]; then
+          if [ $remote_os_major_version -lt $DEBIAN_MIN_VERSION ]; then
+            echo "Debian's version must be great than or equal $DEBIAN_MIN_VERSION, but was $remote_os_major_version on server $server_ip"
+            exit 1
+          fi
+        fi
+      else
+        echo "ERROR: Unsupport OS, $remote_uname on server $server_ip"
+        exit 1
+      fi
+    fi
+  done
+  if [ "$cluster_host_osname" != '' ]; then
+    save_cluster_osname_mark "$cluster_host_osname"
+  else
+    echo "ERROR: Check remote host os failed."
+    exit 1
   fi
 }
 
@@ -515,9 +648,9 @@ check_if_client_share_servers() {
     done
   fi
 }
-#---Settings and cluster info section end---#
+#---6. Settings and cluster info section end---#
 
-#---Iterate hosts for execute command section begin---#
+#---7. Iterate hosts for execute command section begin---#
 execute_command_on_fdir_servers() {
   local command_name=$1
   local function_name=$2
@@ -656,9 +789,9 @@ execute_command_on_fuseclient_servers() {
     fi
   fi
 }
-#---Iterate hosts for execute command section end---#
+#---7. Iterate hosts for execute command section end---#
 
-#---Install section begin---#
+#---8. Install section begin---#
 check_remote_osname() {
   uname=$(uname)
   if [ $uname = 'Linux' ]; then
@@ -678,7 +811,7 @@ check_remote_osname() {
   fi
 }
 
-check_install_fastos_repo() {
+check_yum_install_fastos_repo() {
   repo=$(rpm -q FastOSrepo 2>/dev/null)
   if [ $? -ne 0 ]; then
     if [ $os_major_version -eq 7 ]; then
@@ -693,11 +826,20 @@ check_install_fastos_repo() {
   fi
 }
 
+check_apt_install_fastos_repo() {
+  repo=$(fgrep -w fastos /etc/apt/sources.list 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    sudo curl http://www.fastken.com/aptrepo/packages.fastos.pub | sudo apt-key add
+    sudo sh -c 'echo "deb http://www.fastken.com/aptrepo/fastos/ fastos main" >> /etc/apt/sources.list'
+    sudo sh -c 'echo "deb http://www.fastken.com/aptrepo/fastos-debug/ fastos-debug main" >> /etc/apt/sources.list'
+  fi
+}
+
 execute_yum() {
-  yum_command=$1
-  program_name=$2
-  if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
-    check_install_fastos_repo
+  local yum_command=$1
+  local program_name=$2
+  if [ $os_major_version -ge 7 ]; then
+    check_yum_install_fastos_repo
     if [ $yum_command = 'install' ] && [[ $program_name == *"FastCFS-fused"* ]]; then
       sudo rpm -q fuse >/dev/null
       if [ $? -eq 0 ]; then
@@ -709,7 +851,6 @@ execute_yum() {
         fi
       fi
     fi
-    # yum install FastCFS-auth-server fastDIR-server faststore-server FastCFS-fused -y
     echo "INFO: yum $yum_command $program_name -y."
     sudo yum $yum_command $program_name -y
     if [ $? -ne 0 ]; then
@@ -718,35 +859,62 @@ execute_yum() {
     fi
   else
     echo "ERROR: Unsupport OS, $uname" 1>&2
-    echo "       Command setup and install can only be used for CentOS 7 or 8."
+    echo "       Command setup and install can only be used for CentOS 7 or higher."
+    exit 1
+  fi
+}
+
+execute_apt() {
+  local apt_command=$1
+  local program_name=$2
+  if [ $apt_command = 'install' ]; then
+    check_apt_install_fastos_repo
+    sudo apt-get update
+  fi
+  echo "INFO: apt $apt_command $program_name -y."
+  sudo apt-get $apt_command $program_name -y
+  if [ $? -ne 0 ]; then
+    echo "ERROR: \"apt $apt_command $program_name -y\" execute failed."
     exit 1
   fi
 }
 
 execute_yum_on_remote() {
-  remote_host=$1
-  program_name=$2
-  yum_command=$3
-  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host <<EOF
-$(typeset -f check_remote_osname)
-check_remote_osname
-$(typeset -f check_install_fastos_repo)
-$(typeset -f execute_yum)
-execute_yum $yum_command "$program_name"
-EOF
+  local remote_host=$1
+  local program_name=$2
+  local yum_command=$3
+  execute_remote_command_no_return $remote_host "
+$(declare -f check_remote_osname);
+check_remote_osname;
+$(declare -f check_yum_install_fastos_repo);
+$(declare -f execute_yum);
+execute_yum $yum_command \"$program_name\""
   if [ $? -ne 0 ]; then
     exit 1
   fi
 }
 
-replace_installed_mark() {
+execute_apt_on_remote() {
+  local remote_host=$1
+  local program_name=$2
+  local apt_command=$3
+  execute_remote_command_no_return $remote_host "
+$(declare -f check_apt_install_fastos_repo);
+$(declare -f execute_apt);
+execute_apt $apt_command \"$program_name\""
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+}
+
+replace_installed_version_mark() {
   # Replace host with ip of current host.
   local mark_file=$1
   local installed_version=$2
   sed_replace "s#^fastcfs_version_installed=.*#fastcfs_version_installed=$installed_version#g" $mark_file
 }
 
-save_installed_mark() {
+save_installed_version_mark() {
   check_fcfs_cache_path
   local installed_mark_file=$fcfs_cache_path/$fcfs_installed_file
   if [ -f $installed_mark_file ]; then
@@ -755,7 +923,7 @@ save_installed_mark() {
       echo "fastcfs_version_installed=$fastcfs_version" >> $installed_mark_file
     else
       # replace old value
-      replace_installed_mark $installed_mark_file "$fastcfs_version"
+      replace_installed_version_mark $installed_mark_file "$fastcfs_version"
     fi
   else
     echo "fastcfs_version_installed=$fastcfs_version" >> $installed_mark_file
@@ -772,12 +940,30 @@ remove_installed_mark() {
   fi
 }
 
+save_installed_mark() {
+  check_fcfs_cache_path
+  local installed_mark_file=$fcfs_cache_path/$fcfs_installed_file
+  if [ -f $installed_mark_file ]; then
+    local installed_marks=`grep fastcfs_installed $installed_mark_file`
+    if [ -z $installed_marks ]; then
+      echo "fastcfs_installed=1" >> $installed_mark_file
+    fi
+  else
+    echo "fastcfs_installed=1" >> $installed_mark_file
+  fi
+}
+
 check_installed_version() {
   # First install cannot specify module
   if [ -z $fastcfs_version_installed ] && [ $has_module_param = 1 ]; then
     echo "ERROR: First execute setup or install cannot specify module."
     exit 1
   fi
+  if ! [ -z $fastcfs_version_installed ] && [ $fastcfs_version_installed = $fastcfs_version ]; then
+    echo "ERROR: FastCFS $fastcfs_version have installed."
+    exit 1
+  fi
+  # exit 1
   if ! [ -z $fastcfs_version_installed ] && ! [ $fastcfs_version_installed = $fastcfs_version ]; then
     if version_le $fastcfs_version_installed $fastcfs_version; then
       # Upgrade cannot specify module
@@ -801,8 +987,8 @@ check_installed_version() {
   fi
 }
 
-# Install libs to target nodes.
-install_dependent_libs() {
+# Install packages to target CentOS nodes.
+install_packages_on_CentOS() {
   check_installed_version
   fdir_programs="fastDIR-server-$fdir libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fdir_servers install execute_yum_on_remote "$fdir_programs"
@@ -815,9 +1001,11 @@ install_dependent_libs() {
   fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore fastDIR-client-$fdir"
   execute_command_on_fuseclient_servers install execute_yum_on_remote "$fuseclient_programs"
   save_installed_mark
+  save_installed_version_mark
 }
 
-erase_dependent_libs() {
+# Remove packages from target CentOS nodes.
+erase_packages_from_CentOS() {
   # Before remove programm, need user to reconfirm
   for ((;;)) do
     echo -n "WARN: Delete the installed program confirm[y/N]"
@@ -840,7 +1028,8 @@ erase_dependent_libs() {
   remove_installed_mark
 }
 
-reinstall_dependent_libs() {
+# Reinstall packages to target CentOS nodes.
+reinstall_packages_on_CentOS() {
   check_installed_version
   fdir_programs="fastDIR-server-$fdir libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fdir_servers reinstall execute_yum_on_remote "$fdir_programs"
@@ -853,14 +1042,68 @@ reinstall_dependent_libs() {
   fuseclient_programs="FastCFS-fused-$fuseclient libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth FastCFS-api-libs-$fcfsapi faststore-client-$fstore fastDIR-client-$fdir"
   execute_command_on_fuseclient_servers reinstall execute_yum_on_remote "$fuseclient_programs"
   save_installed_mark
+  save_installed_version_mark
 }
-#---Install section end---#
 
-#---Config section begin---#
+# Install packages to target Ubuntu nodes.
+install_packages_on_Ubuntu() {
+  execute_command_on_fdir_servers install execute_apt_on_remote "fastdir-server"
+  execute_command_on_fstore_servers install execute_apt_on_remote "faststore-server"
+  execute_command_on_fauth_servers install execute_apt_on_remote "fastcfs-auth-server"
+  execute_command_on_fvote_servers install execute_apt_on_remote "fastcfs-vote-server"
+  execute_command_on_fuseclient_servers install execute_apt_on_remote "fastcfs-fused"
+  save_installed_mark
+}
+
+# Remove packages from target Ubuntu nodes.
+erase_packages_from_Ubuntu() {
+  # Before remove programm, need user to reconfirm
+  for ((;;)) do
+    echo -n "WARN: Delete the installed program confirm[y/N]"
+    read var
+    if ! [ "$var" = "y" ] && ! [ "$var" = "Y" ] && ! [ "$var" = "yes" ] && ! [ "$var" = "YES" ]; then
+      exit 1
+    fi
+    break;
+  done
+  execute_command_on_fdir_servers remove execute_apt_on_remote "fastdir-server"
+  execute_command_on_fstore_servers remove execute_apt_on_remote "faststore-server"
+  execute_command_on_fauth_servers remove execute_apt_on_remote "fastcfs-auth-server"
+  execute_command_on_fvote_servers remove execute_apt_on_remote "fastcfs-vote-server"
+  execute_command_on_fuseclient_servers remove execute_apt_on_remote "fastcfs-fused"
+  remove_installed_mark
+}
+
+# Reinstall packages to target Ubuntu nodes.
+reinstall_packages_on_Ubuntu() {
+  execute_command_on_fdir_servers reinstall execute_apt_on_remote "fastdir-server"
+  execute_command_on_fstore_servers reinstall execute_apt_on_remote "faststore-server"
+  execute_command_on_fauth_servers reinstall execute_apt_on_remote "fastcfs-auth-server"
+  execute_command_on_fvote_servers reinstall execute_apt_on_remote "fastcfs-vote-server"
+  execute_command_on_fuseclient_servers reinstall execute_apt_on_remote "fastcfs-fused"
+  save_installed_mark
+}
+
+# Install packages to target Debian nodes.
+install_packages_on_Debian() {
+  install_packages_on_Ubuntu
+}
+
+# Remove packages from target Debian nodes.
+erase_packages_from_Debian() {
+  erase_packages_from_Ubuntu
+}
+# Reinstall packages to target Debian nodes.
+reinstall_packages_on_Debian() {
+  reinstall_packages_on_Ubuntu
+}
+#---8. Install section end---#
+
+#---9. Config section begin---#
 check_remote_path() {
   dest_path=$1
   if ! [ -d $dest_path ]; then
-    if ! mkdir -p $dest_path; then
+    if ! sudo mkdir -p $dest_path; then
       echo "ERROR: Create target conf path failed, $dest_path!"
       exit 1
     fi
@@ -870,10 +1113,9 @@ check_remote_path() {
 check_path_on_remote() {
   remote_host=$1
   remote_target_path=$2
-  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host <<EOF
-$(typeset -f check_remote_path)
-check_remote_path $remote_target_path
-EOF
+  execute_remote_command_no_return $remote_host "
+$(declare -f check_remote_path);
+check_remote_path $remote_target_path"
 }
 
 check_paths_infile_remote() {
@@ -887,7 +1129,7 @@ $check_conf_file|sed 's/\([^=]*\)=\([^=]\)/\2/g'`
 
   for check_path in ${check_result[@]}; do
     if ! [ -d $check_path ]; then
-      if ! mkdir -p $check_path; then
+      if ! sudo mkdir -p $check_path; then
         echo "ERROR: Create target path in file $check_conf_file failed, $check_path!"
         exit 1
       else
@@ -900,10 +1142,9 @@ $check_conf_file|sed 's/\([^=]*\)=\([^=]\)/\2/g'`
 check_paths_infile() {
   remote_host=$1
   remote_target_file=$2$3
-  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host <<EOF
-$(typeset -f check_paths_infile_remote)
-check_paths_infile_remote $remote_target_file
-EOF
+  execute_remote_command_no_return $remote_host "
+$(declare -f check_paths_infile_remote);
+check_paths_infile_remote $remote_target_file"
 }
 
 copy_config_to_remote() {
@@ -953,8 +1194,10 @@ copy_config_to_remote() {
   for CONF_FILE in ${config_file_array[@]}; do
     local tmp_src_file=$src_path/$CONF_FILE
     if [ -f $tmp_src_file ]; then
-      echo "INFO: Copy file $CONF_FILE to $dest_path of server $target_server_ip."
-      scp $tmp_src_file $target_server_ip:$dest_path
+      echo "INFO: Copy file $tmp_src_file to $dest_path of server $target_server_ip."
+      scp $tmp_src_file $target_server_ip:/tmp/
+      execute_remote_command_no_return $target_server_ip "sudo cp /tmp/$CONF_FILE $dest_path"
+      execute_remote_command_no_return $target_server_ip "sudo rm /tmp/$CONF_FILE"
       if [ $? -ne 0 ]; then
         exit 1
       fi
@@ -1009,14 +1252,14 @@ deploy_config_files() {
   # Save configed mark into installed.settings
   save_configed_mark
 }
-#---Config section end---#
+#---9. Config section end---#
 
-#---Service op section begin---#
+#---10. Service op section begin---#
 service_op_on_remote() {
   service_name=$1
   operate_mode=$2
   conf_file=$3
-  $service_name $conf_file $operate_mode
+  sudo $service_name $conf_file $operate_mode
   if [ $? -ne 0 ] && [ $operate_mode != "stop" ] && [ $operate_mode != "status" ]; then
     echo "ERROR: Service $service_name $operate_mode failed."
     exit 1
@@ -1053,10 +1296,9 @@ service_op() {
       exit 1
     ;;
   esac
-  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $target_server_ip <<EOF
-$(typeset -f service_op_on_remote)
-service_op_on_remote $service_name $operate_mode $conf_file
-EOF
+  execute_remote_command_no_return $target_server_ip "
+$(declare -f service_op_on_remote);
+service_op_on_remote $service_name $operate_mode $conf_file"
   if [ $? -ne 0 ] && [ $operate_mode != "stop" ]; then
     exit 1
   fi
@@ -1079,14 +1321,13 @@ cluster_service_op() {
   fi
   execute_command_on_fuseclient_servers $operate_mode service_op fuseclient
 }
-#---Service op section end---#
+#---10. Service op section end---#
 
-#---Tail log section begin---#
+#---11. Tail log section begin---#
 tail_remote_log() {
   local tail_server=$1
   local tail_args=$2
-  # echo "ssh -Tq $remote_host \"tail $tail_args\""
-  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $tail_server "tail $tail_args"
+  execute_remote_command_no_return $tail_server "tail $tail_args"
   echo "========================================================"
   echo "========Log boundary===================================="
   echo "========================================================"
@@ -1108,23 +1349,37 @@ tail_log() {
   execute_command_on_fvote_servers tail tail_remote_log "$tail_args $VOTE_LOG_FILE"
   execute_command_on_fuseclient_servers tail tail_remote_log "$tail_args $FUSE_LOG_FILE"
 }
-#---Tail log section end---#
+#---11. Tail log section end---#
 
+#---12. Command execute section begin---#
 check_module_param $*
 check_node_param $*
 load_fcfs_settings
-if [ -z $fastcfs_version ]; then
-  echo "ERROR: Param fastcfs_version in $fcfs_settings_file cannot be empty."
-  exit 1
-fi
-load_dependency_settings $fastcfs_version
 load_cluster_groups
-check_if_client_share_servers
 load_installed_settings
-if [ -z $fastcfs_version_installed ]; then
+case "$shell_command" in
+  'setup' | 'install' | 'reinstall')
+    check_remote_os_and_version
+    if [ $cluster_host_osname = "CentOS" ]; then
+      if [ -z $fastcfs_version ]; then
+        echo "ERROR: Param fastcfs_version in $fcfs_settings_file cannot be empty."
+        exit 1
+      fi
+      load_dependency_settings $fastcfs_version
+    fi
+  ;;
+esac
+
+case "$shell_command" in
+  'setup' | 'config')
+    check_if_client_share_servers
+  ;;
+esac
+
+if [ -z $fastcfs_installed ]; then
   case "$shell_command" in
     'reinstall' | 'erase' | 'remove' | 'config' | 'start' | 'restart' | 'stop' | 'tail' | 'status')
-      echo "ERROR: The FastCFS softwares has not been installed, you must execute setup or install first."
+      echo "ERROR: The FastCFS softwares have not been installed, you must execute setup or install first."
       exit 1
     ;;
   esac
@@ -1132,7 +1387,7 @@ fi
 if [ -z $fastcfs_configed ]; then
   case "$shell_command" in
     'start' | 'restart' | 'stop' | 'tail' | 'status')
-      echo "ERROR: The FastCFS softwares has not been configed, you must execute config first."
+      echo "ERROR: The FastCFS softwares have not been configed, you must execute config first."
       exit 1
     ;;
   esac
@@ -1140,18 +1395,16 @@ fi
 
 case "$shell_command" in
   'setup')
-    install_dependent_libs
-    deploy_config_files
-    cluster_service_op restart
+    ("install_packages_on_$cluster_host_osname";deploy_config_files;cluster_service_op restart)
   ;;
   'install')
-    install_dependent_libs
+    ("install_packages_on_$cluster_host_osname")
   ;;
   'reinstall')
-    reinstall_dependent_libs
+    ("reinstall_packages_on_$cluster_host_osname")
   ;;
   'erase' | 'remove')
-    erase_dependent_libs
+    ("erase_packages_from_$cluster_host_osname")
   ;;
   'config')
     deploy_config_files
@@ -1178,3 +1431,4 @@ case "$shell_command" in
 esac
 
 exit 0
+#---12. Command execute section end---#
