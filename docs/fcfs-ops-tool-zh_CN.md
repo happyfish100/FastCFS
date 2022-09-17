@@ -9,7 +9,7 @@ fcfs.sh 是一个用于快速部署和管理 FastCFS 集群的脚本工具。它
 
 如果你需要经常搭建、卸载或配置 FastCFS集群，又想节省大量的重复工作，那么它很适合你。
 
-***注： 该脚本工具目前仅适用于 Centos 7, Centos 8, Debian 10以上版本, Ubuntu 18以上版本。***
+***注： 该脚本工具目前仅适用于 Centos 7、Centos 8，Debian 10及以上版本，Ubuntu 18及以上版本。***
 
 <a name="fcfs.sh"></a>
 ### 1.1. 这个工具能做什么？
@@ -51,14 +51,14 @@ fcfs.settings 包括两个字段 ***fastcfs_version*** 和 ***fuseclient_ips***�
 fcfs.settings 配置文件内容举例:
 
 ```
-# 要安装的集群版本号（例如：3.5.1）
-fastcfs_version=3.5.1
+# 要安装的集群版本号（例如：3.6.0）
+fastcfs_version=3.6.0
 
 # 要安装 fuseclient 客户端的IP列表，多个ip以英文逗号分隔
 fuseclient_ips=10.0.1.14
 ```
 
-***注：推荐使用 3.3.0 及以后的版本用于集群部署。***
+***注：推荐使用 3.6.0 及更高版本用于集群部署。***
 
 #### 1.4.2. conf
 

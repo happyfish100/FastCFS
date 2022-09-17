@@ -46,13 +46,13 @@ fcfs.settings content Example:
 
 ```
 # Version of FastCFS cluster
-fastcfs_version=3.3.0
+fastcfs_version=3.6.0
 
 # Hosts which fuseclient will install，multiple hosts separated by comma
 fuseclient_ips=10.0.1.14
 ```
 
-***Tip：Use version 3.3.0 and later for deploy.***
+***Tip：Use version 3.6.0 and later for deploy.***
 
 #### 1.4.2. conf
 
