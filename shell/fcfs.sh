@@ -556,7 +556,10 @@ check_remote_os_and_version() {
   cluster_host_osname=""
   declare -a all_server_ips
   all_server_ips+=(${fdir_group[@]})
-  all_server_ips+=(${fstore_group[@]})
+  for (( i=1 ; i <= $fstore_group_count ; i++ )); do
+    local fstore_group="fstore_group_$i[@]"
+    all_server_ips+=(${!fstore_group})
+  done
   all_server_ips+=(${fauth_group[@]})
   all_server_ips+=(${fvote_group[@]})
   all_server_ips+=(${fuseclient_ip_array[@]})
@@ -630,10 +633,13 @@ check_if_client_share_servers() {
           fuseclient_share_fdir=1
         fi
       done
-      for fstore_server_ip in ${!fstore_group}; do
-        if [ $fstore_server_ip = "$fuseclient_server_ip" ]; then
-          fuseclient_share_fstore=1
-        fi
+      for (( i=1 ; i <= $fstore_group_count ; i++ )); do
+        local fstore_group="fstore_group_$i[@]"
+        for fstore_server_ip in ${!fstore_group}; do
+          if [ $fstore_server_ip = "$fuseclient_server_ip" ]; then
+            fuseclient_share_fstore=1
+          fi
+        done
       done
       for fauth_server_ip in ${fauth_group[@]}; do
         if [ $fauth_server_ip = "$fuseclient_server_ip" ]; then
@@ -828,12 +834,12 @@ check_yum_install_fastos_repo() {
 
 check_apt_install_fastos_repo() {
   if [ ! -f /etc/apt/sources.list.d/fastos.list ]; then
-    apt install curl gpg -y
-    curl http://www.fastken.com/aptrepo/packages.fastos.pub | gpg --dearmor > /tmp/fastos-archive-keyring.gpg
-    install -D -o root -g root -m 644 /tmp/fastos-archive-keyring.gpg /usr/share/keyrings/fastos-archive-keyring.gpg
-    sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo/fastos/ fastos main" > /etc/apt/sources.list.d/fastos.list'
-    sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo/fastos-debug/ fastos-debug main" > /etc/apt/sources.list.d/fastos-debug.list'
-    rm -f /tmp/fastos-archive-keyring.gpg
+    sudo apt-get install curl gpg -y
+    sudo curl http://www.fastken.com/aptrepo/packages.fastos.pub | sudo gpg --dearmor > /tmp/fastos-archive-keyring.gpg
+    sudo install -D -o root -g root -m 644 /tmp/fastos-archive-keyring.gpg /usr/share/keyrings/fastos-archive-keyring.gpg
+    sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo/fastos/ fastos main" > /etc/apt/sources.list.d/fastos.list'
+    sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo/fastos-debug/ fastos-debug main" > /etc/apt/sources.list.d/fastos-debug.list'
+    sudo rm -f /tmp/fastos-archive-keyring.gpg
   fi
 }
 
