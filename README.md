@@ -124,7 +124,11 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [all] cluster online expansion
 
-## 10. Contact us
+## 10. Business Support
+
+We provide technical support service and customized development. Welcome to use WeChat or email for discuss.
+
+## 11. Contact us
 
 email: 384681(at)qq(dot)com
 
