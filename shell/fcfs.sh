@@ -827,11 +827,13 @@ check_yum_install_fastos_repo() {
 }
 
 check_apt_install_fastos_repo() {
-  repo=$(fgrep -w fastos /etc/apt/sources.list 2>/dev/null)
-  if [ $? -ne 0 ]; then
-    sudo curl http://www.fastken.com/aptrepo/packages.fastos.pub | sudo apt-key add
-    sudo sh -c 'echo "deb http://www.fastken.com/aptrepo/fastos/ fastos main" >> /etc/apt/sources.list'
-    sudo sh -c 'echo "deb http://www.fastken.com/aptrepo/fastos-debug/ fastos-debug main" >> /etc/apt/sources.list'
+  if [ ! -f /etc/apt/sources.list.d/fastos.list ]; then
+    apt install curl gpg -y
+    curl http://www.fastken.com/aptrepo/packages.fastos.pub | gpg --dearmor > /tmp/fastos-archive-keyring.gpg
+    install -D -o root -g root -m 644 /tmp/fastos-archive-keyring.gpg /usr/share/keyrings/fastos-archive-keyring.gpg
+    sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo/fastos/ fastos main" > /etc/apt/sources.list.d/fastos.list'
+    sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo/fastos-debug/ fastos-debug main" > /etc/apt/sources.list.d/fastos-debug.list'
+    rm -f /tmp/fastos-archive-keyring.gpg
   fi
 }
 
