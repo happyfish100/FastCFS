@@ -416,7 +416,11 @@ static int do_open(fuse_req_t req, FDIRDEntryInfo *dentry,
     }
 
     if (fi->flags & O_DIRECT) {
-        fi->direct_io = 1;
+        if (OS_KERNEL_VERSION.major > 4 || (OS_KERNEL_VERSION.major == 4 &&
+            OS_KERNEL_VERSION.minor >= 18))
+        {
+             fi->direct_io = 1;
+        }
     } else {
         if (g_fuse_global_vars.kernel_cache) {
             fi->keep_cache = 1;

@@ -42,7 +42,10 @@ typedef struct {
     double entry_timeout;
     FUSEAllowOthersMode allow_others;
     FCFSAPIOwnerInfo owner;
+    Version kernel_version;
 } FUSEGlobalVars;
+
+#define OS_KERNEL_VERSION g_fuse_global_vars.kernel_version
 
 #ifdef __cplusplus
 extern "C" {
