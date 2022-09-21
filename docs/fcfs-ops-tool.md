@@ -340,7 +340,7 @@ fcfs_conf.settings content Example:
 
 ```
 # Version of FastCFS cluster
-fastcfs_version=3.5.0
+fastcfs_version=3.6.0
 
 # Cluster hosts list and group count
 vote_ips=10.0.1.11,10.0.1.12,10.0.1.13
@@ -352,7 +352,7 @@ fstore_group_2=10.0.2.11,10.0.2.12,10.0.2.13
 data_group_count=128
 ```
 
-***Tip：Use version 3.5.0 and later for crearte config files, especially for vote server.***
+***Tip：Use version 3.6.0 and later for crearte config files, especially for vote server.***
 
 ### 2.3. fcfs_conf.sh Tool commands introduction
 
@@ -394,6 +394,6 @@ conf_tpl_tar.sh <version> [update]
 
 Exmaple:
 
-> ./conf_tpl_tar.sh 3.5.0 update
+> ./conf_tpl_tar.sh 3.6.0 update
 
-It will create tar file **conf.3.5.0.tpl.tar.gz** in current dir.
+It will create tar file **conf.3.6.0.tpl.tar.gz** in current dir.

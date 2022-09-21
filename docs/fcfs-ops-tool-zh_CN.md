@@ -353,8 +353,8 @@ fcfs_conf.settings 包括以下六种字段：
 fcfs_conf.settings 配置文件内容举例:
 
 ```
-# 要生成配置的集群版本号（例如：3.5.0）
-fastcfs_version=3.5.0
+# 要生成配置的集群版本号（例如：3.6.0）
+fastcfs_version=3.6.0
 
 # 集群主机列表和分组数
 vote_ips=10.0.1.11,10.0.1.12,10.0.1.13
@@ -366,7 +366,7 @@ fstore_group_2=10.0.2.11,10.0.2.12,10.0.2.13
 data_group_count=128
 ```
 
-***注：推荐使用 3.5.0 及以后的版本用于生成集群配置文件，尤其是vote（投票）模块。***
+***注：推荐使用 3.6.0 及以后的版本用于生成集群配置文件，尤其是vote（投票）模块。***
 
 ### 2.3. fcfs_conf.sh工具命令介绍
 
@@ -408,6 +408,6 @@ conf_tpl_tar.sh <version> [update]
 
 举例:
 
-> ./conf_tpl_tar.sh 3.5.0 update
+> ./conf_tpl_tar.sh 3.6.0 update
 
-将在当前目录创建配置模版压缩包文件 **conf.3.5.0.tpl.tar.gz**。
+将在当前目录创建配置模版压缩包文件 **conf.3.6.0.tpl.tar.gz**。
