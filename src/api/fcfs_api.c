@@ -308,8 +308,13 @@ static int check_create_root_path(FCFSAPIContext *ctx,
             FC_SET_STRING(fullname.path, "/");
             FCFS_API_SET_OMP(omp, *owner, (ACCESSPERMS | S_IFDIR),
                     geteuid(), getegid());
-            result = fdir_client_create_dentry(ctx->contexts.fdir,
-                    &fullname, &omp, &dentry);
+            if ((result=fdir_client_create_dentry(ctx->contexts.fdir,
+                            &fullname, &omp, &dentry)) == EEXIST)
+            {
+                /* check again */
+                result = fcfs_api_lookup_inode_by_path_ex(ctx,
+                        "/", LOG_DEBUG, &inode);
+            }
         }
     }
 
