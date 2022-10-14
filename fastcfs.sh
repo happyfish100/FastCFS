@@ -377,7 +377,7 @@ install_all_softwares() {
     check_install_fastos_repo
     apt update
     apt install fastcfs-auth-server fastcfs-vote-server fastdir-server faststore-server fastcfs-fused -y
-  elif [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
+  elif [ $osname = 'CentOS' -o $osname = 'Rocky' -o $osname = 'Red' -o $osname = 'Oracle' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
     check_install_fastos_repo
     rpm -q fuse >/dev/null && yum remove fuse -y
     yum install FastCFS-auth-server FastCFS-vote-server fastDIR-server faststore-server FastCFS-fused -y
