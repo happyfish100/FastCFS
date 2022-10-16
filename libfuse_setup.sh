@@ -1,5 +1,7 @@
 #!/bin/bash
 
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS)
+
 get_gcc_version() {
   old_lang=$LANG
   LANG=en_US.UTF-8 && gcc -v 2>&1 | grep 'gcc version' | \
@@ -96,12 +98,23 @@ if [ $uname = 'Linux' ]; then
             awk -F '"' '{if (NF==3) {print $2} else {print $1}}')
   fi
   os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
+  if [ $osname = 'Fedora' ]; then
+     if [ $os_major_version -lt 20 ]; then
+       os_major_version=6
+     elif [ $os_major_version -lt 28 ]; then
+       os_major_version=7
+     elif [ $os_major_version -lt 34 ]; then
+       os_major_version=8
+     else
+       os_major_version=9
+     fi
+  fi
 else
   echo "Unsupport OS: $uname" 1>&2
   exit 1
 fi
 
-if [ $osname = 'CentOS' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
+if [[ " ${YUM_OS_ARRAY[@]} " =~ " ${osname} " ]] && [ $os_major_version -ge 7 ]; then
   repo=$(rpm -q FastOSrepo 2>/dev/null)
   if [ $? -ne 0 ]; then
     if [ $os_major_version -eq 7 ]; then
@@ -127,7 +140,7 @@ else
   python_version=$(python3 --version 2>&1 | grep Python | awk '{print $2}')
   pip3_version=$(pip3 --version 2>&1 | awk '{print $2}')
 
-  if [ $osname = 'Ubuntu' ]; then
+  if [ $osname = 'Ubuntu' -o $osname = 'Debian' ]; then
     if [ -z "$git_version" ]; then
       apt install git -y
     fi
@@ -181,12 +194,12 @@ fi
 
 MESON_PRG=$(which meson 2>&1)
 if [ $? -ne 0 ]; then
-  pip3 install meson
+  pip3 install meson || exit
 fi
 
 NINJA_PRG=$(which ninja 2>&1)
 if [ $? -ne 0 ]; then
-  pip3 install ninja
+  pip3 install ninja || exit
 fi
 
 mkdir -p build; cd build

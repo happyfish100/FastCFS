@@ -349,6 +349,17 @@ if [ $uname = 'Linux' ]; then
             awk -F '"' '{if (NF==3) {print $2} else {print $1}}')
   fi
   os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
+  if [ $osname = 'Fedora' ]; then
+     if [ $os_major_version -lt 20 ]; then
+       os_major_version=6
+     elif [ $os_major_version -lt 28 ]; then
+       os_major_version=7
+     elif [ $os_major_version -lt 34 ]; then
+       os_major_version=8
+     else
+       os_major_version=9
+     fi
+  fi
 else
   echo "Unsupport OS: $uname" 1>&2
   exit 1
