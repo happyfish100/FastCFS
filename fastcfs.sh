@@ -56,6 +56,8 @@ AUTH_KEYS_PATH="/etc/fastcfs/auth/keys/"
 FUSE_CONF_FILES=(fuse.conf)
 FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
 
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS)
+
 BUILD_PATH="build"
 this_shell_name=$0
 mode=$1    # setup|install|config|start|restart|stop
@@ -363,7 +365,7 @@ check_install_fastos_repo() {
   else
     repo=$(rpm -q FastOSrepo 2>/dev/null)
     if [ $? -ne 0 ]; then
-      if [ $os_major_version -eq 7 ]; then
+      if [ $osname = 'CentOS' -a $os_major_version = 7 ] || [ $osname = 'Fedora' -a $os_major_version -lt 28 ]; then
         rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
       else
         rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
@@ -377,7 +379,7 @@ install_all_softwares() {
     check_install_fastos_repo
     apt update
     apt install fastcfs-auth-server fastcfs-vote-server fastdir-server faststore-server fastcfs-fused -y
-  elif [ $osname = 'CentOS' -o $osname = 'Rocky' -o $osname = 'Red' -o $osname = 'Oracle' ] && [ $os_major_version -eq 7 -o $os_major_version -eq 8 ]; then
+  elif [[ " ${YUM_OS_ARRAY[@]} " =~ " ${osname} " ]] && [ $os_major_version -ge 7 ]; then
     check_install_fastos_repo
     rpm -q fuse >/dev/null && yum remove fuse -y
     yum install FastCFS-auth-server FastCFS-vote-server fastDIR-server faststore-server FastCFS-fused -y
