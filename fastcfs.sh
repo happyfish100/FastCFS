@@ -40,6 +40,7 @@ FDIR_LIB_URL="https://gitee.com/fastdfs100/fastDIR.git"
 STORE_LIB="faststore"
 STORE_LIB_URL="https://gitee.com/fastdfs100/faststore.git"
 FASTCFS_LIB=".."
+VOTECLIENT_LIB=".."
 AUTHCLIENT_LIB=".."
 
 STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf)
@@ -311,6 +312,7 @@ make_installs() {
   make_install $COMMON_LIB $COMMON_LIB
   make_install $FRAME_LIB $FRAME_LIB
   make_install $DISK_ALLOCATOR_LIB $DISK_ALLOCATOR_LIB
+  make_install vote_client $VOTECLIENT_LIB --module=vote_client
   make_install auth_client $AUTHCLIENT_LIB --module=auth_client
   make_install $FDIR_LIB $FDIR_LIB
   make_install $STORE_LIB $STORE_LIB
