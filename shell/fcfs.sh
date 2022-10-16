@@ -808,6 +808,17 @@ check_remote_osname() {
               awk -F '"' '{if (NF==3) {print $2} else {print $1}}')
     fi
     os_major_version=$(echo $osversion | awk -F '.' '{print $1}')
+    if [ $osname = 'Fedora' ]; then
+      if [ $os_major_version -lt 20 ]; then
+        os_major_version=6
+      elif [ $os_major_version -lt 28 ]; then
+        os_major_version=7
+      elif [ $os_major_version -lt 34 ]; then
+        os_major_version=8
+      else
+        os_major_version=9
+      fi
+    fi
   else
     echo "Error: Unsupport OS, $uname" 1>&2
     exit 1
@@ -817,7 +828,7 @@ check_remote_osname() {
 check_yum_install_fastos_repo() {
   repo=$(rpm -q FastOSrepo 2>/dev/null)
   if [ $? -ne 0 ]; then
-    if [ $osname = 'CentOS' -a $os_major_version = 7 ] || [ $osname = 'Fedora' -a $os_major_version -lt 28 ]; then
+    if [ $os_major_version -eq 7 ]; then
       sudo rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
     else
       sudo rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
