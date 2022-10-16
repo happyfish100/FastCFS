@@ -8,9 +8,16 @@
 # this is for you.
 #
 #---1. Config path section begin---#
-declare -ir UBUNTU_MIN_VERSION=18
-declare -ir DEBIAN_MIN_VERSION=10
-declare -ir CENTOS_MIN_VERSION=7
+declare -ir MIN_VERSION_OF_Ubuntu=18
+declare -ir MIN_VERSION_OF_Debian=10
+declare -ir MIN_VERSION_OF_CentOS=7
+declare -ir MIN_VERSION_OF_Red=8
+declare -ir MIN_VERSION_OF_Rocky=8
+declare -ir MIN_VERSION_OF_Oracle=8
+declare -ir MIN_VERSION_OF_Fedora=20
+SUPPORT_OS_ARRAY=(Ubuntu Debian Red Rocky Oracle Fedora)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS)
+
 fcfs_settings_file="fcfs.settings"
 fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
 fcfs_cache_path=".fcfs"
@@ -191,14 +198,14 @@ get_remote_osname() {
 }
 
 # Get remote Ubuntu server's version
-get_ubuntu_version() {
+get_os_version() {
   local remote_host=$1
-  local ubuntu_version_command='cat /etc/os-release 
+  local os_version_command='cat /etc/os-release 
 | grep -w VERSION_ID 
 | awk -F '\''='\'' '\''{print $2;}'\'' 
 | awk -F '\''"'\'' '\''{if (NF==3) {print $2} else {print $1}}'\'''
-  local remote_ubuntu_version=$(execute_remote_command $remote_host "$ubuntu_version_command")
-  echo "$remote_ubuntu_version"
+  local remote_os_version=$(execute_remote_command $remote_host "$os_version_command")
+  echo "$remote_os_version"
 }
 
 # Get remote CentOS server's version
@@ -583,28 +590,18 @@ check_remote_os_and_version() {
         local remote_osversion
         if [ $remote_osname = 'CentOS' ]; then
           remote_osversion=$(get_centos_version $server_ip)
-        elif [ $remote_osname = 'Ubuntu' ] || [ $remote_osname = 'Debian' ]; then
-          remote_osversion=$(get_ubuntu_version $server_ip)
+        elif [[ " ${SUPPORT_OS_ARRAY[@]} " =~ " ${remote_osname} " ]]; then
+          remote_osversion=$(get_os_version $server_ip)
         else
           echo "Error: Unsupport OS, $remote_osname on server $server_ip"
           exit 1
         fi
         declare -i remote_os_major_version=$(echo $remote_osversion | awk -F '.' '{print $1}')
-        if [ $remote_osname = 'CentOS' ]; then
-          if [ $remote_os_major_version -lt $CENTOS_MIN_VERSION ]; then
-            echo "CentOS's version must be great than or equal $CENTOS_MIN_VERSION, but was $remote_os_major_version on server $server_ip"
-            exit 1
-          fi
-        elif [ $remote_osname = 'Ubuntu' ]; then
-          if [ $remote_os_major_version -lt $UBUNTU_MIN_VERSION ]; then
-            echo "Ubuntu's version must be great than or equal $UBUNTU_MIN_VERSION, but was $remote_os_major_version on server $server_ip"
-            exit 1
-          fi
-        elif [ $remote_osname = 'Debian' ]; then
-          if [ $remote_os_major_version -lt $DEBIAN_MIN_VERSION ]; then
-            echo "Debian's version must be great than or equal $DEBIAN_MIN_VERSION, but was $remote_os_major_version on server $server_ip"
-            exit 1
-          fi
+        local min_version_name="MIN_VERSION_OF_$remote_osname"
+        local min_version=${!min_version_name}
+        if [ $remote_os_major_version -lt $min_version ]; then
+          echo "$remote_osname's version must be great than or equal $min_version, but was $remote_os_major_version on server $server_ip"
+          exit 1
         fi
       else
         echo "ERROR: Unsupport OS, $remote_uname on server $server_ip"
@@ -820,7 +817,7 @@ check_remote_osname() {
 check_yum_install_fastos_repo() {
   repo=$(rpm -q FastOSrepo 2>/dev/null)
   if [ $? -ne 0 ]; then
-    if [ $os_major_version -eq 7 ]; then
+    if [ $osname = 'CentOS' -a $os_major_version = 7 ] || [ $osname = 'Fedora' -a $os_major_version -lt 28 ]; then
       sudo rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
     else
       sudo rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
@@ -1096,7 +1093,6 @@ reinstall_packages_on_Ubuntu() {
 install_packages_on_Debian() {
   install_packages_on_Ubuntu
 }
-
 # Remove packages from target Debian nodes.
 erase_packages_from_Debian() {
   erase_packages_from_Ubuntu
@@ -1104,6 +1100,58 @@ erase_packages_from_Debian() {
 # Reinstall packages to target Debian nodes.
 reinstall_packages_on_Debian() {
   reinstall_packages_on_Ubuntu
+}
+
+# Install packages to target Red Hat nodes.
+install_packages_on_Red() {
+  install_packages_on_CentOS
+}
+# Remove packages from target Red Hat nodes.
+erase_packages_from_Red() {
+  erase_packages_from_CentOS
+}
+# Reinstall packages to target Red Hat nodes.
+reinstall_packages_on_Red() {
+  reinstall_packages_on_CentOS
+}
+
+# Install packages to target Rocky nodes.
+install_packages_on_Rocky() {
+  install_packages_on_CentOS
+}
+# Remove packages from target Rocky nodes.
+erase_packages_from_Rocky() {
+  erase_packages_from_CentOS
+}
+# Reinstall packages to target Rocky nodes.
+reinstall_packages_on_Rocky() {
+  reinstall_packages_on_CentOS
+}
+
+# Install packages to target Oracle nodes.
+install_packages_on_Oracle() {
+  install_packages_on_CentOS
+}
+# Remove packages from target Oracle nodes.
+erase_packages_from_Oracle() {
+  erase_packages_from_CentOS
+}
+# Reinstall packages to target Oracle nodes.
+reinstall_packages_on_Oracle() {
+  reinstall_packages_on_CentOS
+}
+
+# Install packages to target Fedora nodes.
+install_packages_on_Fedora() {
+  install_packages_on_CentOS
+}
+# Remove packages from target Fedora nodes.
+erase_packages_from_Fedora() {
+  erase_packages_from_CentOS
+}
+# Reinstall packages to target Fedora nodes.
+reinstall_packages_on_Fedora() {
+  reinstall_packages_on_CentOS
 }
 #---8. Install section end---#
 
@@ -1368,7 +1416,7 @@ load_installed_settings
 case "$shell_command" in
   'setup' | 'install' | 'reinstall')
     check_remote_os_and_version
-    if [ $cluster_host_osname = "CentOS" ]; then
+    if [[ " ${YUM_OS_ARRAY[@]} " =~ " ${cluster_host_osname} " ]]; then
       if [ -z $fastcfs_version ]; then
         echo "ERROR: Param fastcfs_version in $fcfs_settings_file cannot be empty."
         exit 1
