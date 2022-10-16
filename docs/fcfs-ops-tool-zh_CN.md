@@ -9,7 +9,15 @@ fcfs.sh 是一个用于快速部署和管理 FastCFS 集群的脚本工具。它
 
 如果你需要经常搭建、卸载或配置 FastCFS集群，又想节省大量的重复工作，那么它很适合你。
 
-***注： 该脚本工具目前仅适用于 Centos 7、Centos 8，Debian 10及以上版本，Ubuntu 18及以上版本。***
+***注： 该脚本工具目前适用于以下操作系统：***
+
+* CentOS 7、CentOS 8；
+* Red Hat Linux 8 及以上版本；
+* Rocky Linux 8 及以上版本；
+* Fedora Linux 20 及以上版本；
+* Oracle Linux 8 及以上版本；
+* Debian 10 及以上版本；
+* Ubuntu 18 及以上版本；
 
 <a name="fcfs.sh"></a>
 ### 1.1. 这个工具能做什么？

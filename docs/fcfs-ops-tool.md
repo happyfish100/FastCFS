@@ -9,7 +9,15 @@ fcfs.sh is a ops tool for quickly deploy and manage FastCFS clusters. It only re
 
 If you set up and tear down FastCFS clusters a lot, and want minimal extra repeating works, this is for you.
 
-***Tip： This shell support for Centos 7, Centos 8, Debian 10 or higher, Ubuntu 18 or higher.***
+***Tip： This shell support for the following operating systems:***
+
+* CentOS 7, CentOS 8;
+* Red Hat Linux 8 or higher;
+* Rocky Linux 8 or higher;
+* Fedora Linux 20 or higher;
+* Oracle Linux 8 or higher;
+* Debian 10 or higher;
+* Ubuntu 18 or higher;
 
 <a name="fcfs.sh"></a>
 ### 1.1. What this tool can do?
