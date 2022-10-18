@@ -114,7 +114,21 @@ libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编�
 
 构建libfuse需要先安装meson和ninja。安装meson和ninja需要python3.5及以上版本。
 
-#### 2.9.1. python安装
+#### 2.9.1. gcc 安装
+
+Ubuntu下安装命令：
+
+```
+apt install gcc g++ -y
+```
+
+CentOS下安装命令：
+
+```
+yum install gcc gcc-c++ -y
+```
+
+#### 2.9.2. python安装
 
 需要安装的包名：
 
@@ -133,32 +147,18 @@ CentOS下安装命令：
 yum install python3 python3-pip -y
 ```
 
-#### 2.9.2. meson 和 ninja 安装
+#### 2.9.3. meson 和 ninja 安装
 
 ```
 pip3 install meson
 pip3 install ninja
 ```
 
-#### 2.9.3. gcc 安装
-
-Ubuntu下安装命令：
-
-```
-apt install gcc g++ -y
-```
-
-CentOS下安装命令：
-
-```
-yum install gcc gcc-c++ -y
-```
-
 #### 2.9.4. libfuse 安装
 
 ```
 git clone https://gitee.com/mirrors/libfuse.git; cd libfuse/
-git checkout fuse-3.10.1
+git checkout fuse-3.10.5
 mkdir build/; cd build/
 meson ..
 meson configure -D prefix=/usr
