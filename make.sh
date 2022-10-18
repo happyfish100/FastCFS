@@ -30,6 +30,13 @@ fi
 DEBUG_FLAG=0
 PRELOAD_WITH_CAPI=1
 
+arch=$(uname -r | awk -F '.' '{print $NF;}')
+if [ "$arch" = "x86_64" ]; then
+  PRELOAD_WITH_PAPI=1
+else
+  PRELOAD_WITH_PAPI=0
+fi
+
 export CC=gcc
 CFLAGS='-Wall'
 GCC_VERSION=$(gcc -dM -E -  < /dev/null | grep -w __GNUC__ | awk '{print $NF;}')
@@ -41,6 +48,10 @@ CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE"
 if [ "$PRELOAD_WITH_CAPI" = "1" ]; then
   CFLAGS="$CFLAGS -DFCFS_PRELOAD_WITH_CAPI"
 fi
+if [ "$PRELOAD_WITH_PAPI" = "1" ]; then
+  CFLAGS="$CFLAGS -DFCFS_PRELOAD_WITH_PAPI"
+fi
+
 if [ "$DEBUG_FLAG" = "1" ]; then
   CFLAGS="$CFLAGS -g -DDEBUG_FLAG"
 else

@@ -20,7 +20,10 @@
 #include "global.h"
 #include "api.h"
 
+#ifdef FCFS_PRELOAD_WITH_PAPI
 static int counter = 0;
+#endif
+
 #define FCFS_LOG_DEBUG(format, ...)  \
     if (g_fcfs_preload_global_vars.inited && g_log_context. \
             log_level >= LOG_DEBUG) logDebug(format, ##__VA_ARGS__)
@@ -49,7 +52,7 @@ __attribute__ ((constructor)) static void preload_global_init(void)
     if ((result=fcfs_preload_global_init()) != 0) {
         return;
     }
-    
+
 #ifdef FCFS_PRELOAD_WITH_CAPI
     if ((result=fcfs_capi_init()) != 0) {
         return;
@@ -122,39 +125,7 @@ static inline void *fcfs_dlsym2(const char *fname1, const char *fname2)
     return func;
 }
 
-/*
-long syscall(long number, ...)
-{
-    static long (*syscall_func)(long number, ...) = NULL;
-    va_list ap;
-    long arg1;
-    long arg2;
-    long arg3;
-    long arg4;
-    long arg5;
-    long arg6;
-
-    va_start(ap, number);
-    arg1 = va_arg(ap, long);
-    arg2 = va_arg(ap, long);
-    arg3 = va_arg(ap, long);
-    arg4 = va_arg(ap, long);
-    arg5 = va_arg(ap, long);
-    arg6 = va_arg(ap, long);
-    va_end(ap);
-
-    FCFS_LOG_DEBUG("func: %s, line: %d, number: %ld, "
-            "arg1: %ld, arg2: %ld, arg3: %ld, arg4: %ld, arg5: %ld, arg6: %ld\n",
-            __FUNCTION__, __LINE__, number, arg1, arg2, arg3, arg4, arg5, arg6);
-
-    if (syscall_func == NULL) {
-       syscall_func = fcfs_dlsym1("syscall");
-    }
-
-    return syscall_func(number, arg1, arg2, arg3, arg4, arg5, arg6);
-}
-*/
-
+#ifdef FCFS_PRELOAD_WITH_PAPI
 static inline int do_open(const char *path, int flags, int mode)
 {
     int fd;
@@ -1801,6 +1772,7 @@ int clearenv(void)
     }
     return g_fcfs_preload_global_vars.clearenv();
 }
+#endif
 
 #ifdef FCFS_PRELOAD_WITH_CAPI
 static inline FILE *do_fopen(const char *path, const char *mode)
