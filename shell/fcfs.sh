@@ -829,9 +829,9 @@ check_yum_install_fastos_repo() {
   repo=$(rpm -q FastOSrepo 2>/dev/null)
   if [ $? -ne 0 ]; then
     if [ $os_major_version -eq 7 ]; then
-      sudo rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
+      sudo rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.0-1.el7.centos.noarch.rpm
     else
-      sudo rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
+      sudo rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.0-1.el8.noarch.rpm
     fi
     if [ $? -ne 0 ]; then
       echo "ERROR: FastOSrepo rpm install failed."
