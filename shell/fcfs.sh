@@ -15,8 +15,8 @@ declare -ir MIN_VERSION_OF_Red=8
 declare -ir MIN_VERSION_OF_Rocky=8
 declare -ir MIN_VERSION_OF_Oracle=8
 declare -ir MIN_VERSION_OF_Fedora=20
-SUPPORT_OS_ARRAY=(Ubuntu Debian Red Rocky Oracle Fedora)
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS)
+SUPPORT_OS_ARRAY=(Ubuntu Debian Red Rocky Oracle Fedora Anolis)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS Anolis)
 
 fcfs_settings_file="fcfs.settings"
 fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"

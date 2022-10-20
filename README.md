@@ -38,7 +38,7 @@ V3.6.2
 
 ## 4. Dependencies
 
-* [libfuse](https://github.com/libfuse/libfuse) (version 3.9.4 or newer)
+* [libfuse](https://github.com/libfuse/libfuse) (version 3.9.4 or newer, 3.10.5 is recommended)
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)

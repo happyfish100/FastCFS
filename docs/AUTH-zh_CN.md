@@ -87,6 +87,7 @@ tail /opt/fastcfs/auth/logs/fcfs_authd.log
 ```
 
 * 第一次运行将自动创建 admin 用户，默认生成的密钥文件名为 **/etc/fastcfs/auth/keys/admin.key**
+* 友情提示：只在master上生成该密钥文件，请在master上分发密钥文件。
 
 ### 3.6 创建存储池
 
