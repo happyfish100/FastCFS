@@ -18,7 +18,7 @@
 #define _FCFS_FUSE_WRAPPER_H
 
 #ifndef FUSE_USE_VERSION
-#define FUSE_USE_VERSION 35
+#define FUSE_USE_VERSION 312
 #endif
 
 #include "fastcommon/logger.h"

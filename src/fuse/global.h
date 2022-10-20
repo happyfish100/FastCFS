@@ -38,6 +38,7 @@ typedef struct {
     bool writeback_cache;
     bool kernel_cache;
     int max_idle_threads;
+    int max_threads;      //libfuse >= 3.12
     double attribute_timeout;
     double entry_timeout;
     FUSEAllowOthersMode allow_others;

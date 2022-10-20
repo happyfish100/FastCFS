@@ -219,10 +219,32 @@ int main(int argc, char *argv[])
         if (g_fuse_global_vars.singlethread) {
             result = fuse_session_loop(se);
         } else {
-            struct fuse_loop_config fuse_config;
-            fuse_config.clone_fd = g_fuse_global_vars.clone_fd;
-            fuse_config.max_idle_threads = g_fuse_global_vars.max_idle_threads;
-            result = fuse_session_loop_mt(se, &fuse_config);
+            struct {
+#if FUSE_VERSION < FUSE_MAKE_VERSION(3, 12)
+                struct fuse_loop_config holder;
+#endif
+                struct fuse_loop_config *ptr;
+            } fuse_config;
+
+#if FUSE_VERSION < FUSE_MAKE_VERSION(3, 12)
+            fuse_config.ptr = &fuse_config.holder;
+            fuse_config.holder.clone_fd = g_fuse_global_vars.clone_fd;
+            fuse_config.holder.max_idle_threads =
+                g_fuse_global_vars.max_idle_threads;
+#else
+            fuse_config.ptr = fuse_loop_cfg_create();
+            fuse_loop_cfg_set_clone_fd(fuse_config.ptr,
+                    g_fuse_global_vars.clone_fd);
+            if (g_fuse_global_vars.max_idle_threads <
+                    g_fuse_global_vars.max_threads)
+            {
+                fuse_loop_cfg_set_idle_threads(fuse_config.ptr,
+                        g_fuse_global_vars.max_idle_threads);
+            }
+            fuse_loop_cfg_set_max_threads(fuse_config.ptr,
+                    g_fuse_global_vars.max_threads);
+#endif
+            result = fuse_session_loop_mt(se, fuse_config.ptr);
         }
 
         fuse_session_unmount(se);

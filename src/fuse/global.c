@@ -57,9 +57,10 @@ static int load_fuse_config(IniFullContext *ini_ctx)
         return result;
     }
 
-    g_fuse_global_vars.max_idle_threads = iniGetIntValue(ini_ctx->
-            section_name, "max_idle_threads", ini_ctx->context, 10);
-
+    g_fuse_global_vars.max_threads = iniGetIntCorrectValue(ini_ctx,
+            "max_threads", 10, 1, 1024);
+    g_fuse_global_vars.max_idle_threads = iniGetIntCorrectValue(ini_ctx,
+            "max_idle_threads", g_fuse_global_vars.max_threads, 1, 1024);
     g_fuse_global_vars.singlethread = iniGetBoolValue(ini_ctx->
             section_name, "singlethread", ini_ctx->context, false);
 
@@ -150,6 +151,7 @@ int fcfs_fuse_global_init(const char *config_filename)
     int result;
     char sf_idempotency_config[256];
     char owner_config[2 * NAME_MAX + 64];
+    char max_threads_buff[64];
     IniContext iniContext;
     IniFullContext ini_ctx;
 
@@ -198,10 +200,19 @@ int fcfs_fuse_global_init(const char *config_filename)
             FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
             sf_idempotency_config, owner_config);
 
+#if FUSE_VERSION < FUSE_MAKE_VERSION(3, 12)
+    sprintf(max_threads_buff, "max_idle_threads: %d",
+            g_fuse_global_vars.max_idle_threads);
+#else
+    sprintf(max_threads_buff, "max_threads: %d, max_idle_threads: %d",
+            g_fuse_global_vars.max_threads, g_fuse_global_vars.
+            max_idle_threads);
+#endif
+
     logInfo("FastCFS V%d.%d.%d, FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "owner_type: %s%s, singlethread: %d, clone_fd: %d, "
-            "max_idle_threads: %d, allow_others: %s, auto_unmount: %d, "
+            "%s, allow_others: %s, auto_unmount: %d, "
             "attribute_timeout: %.1fs, entry_timeout: %.1fs, "
             "xattr_enabled: %d, writeback_cache: %d, kernel_cache: %d",
             g_fcfs_global_vars.version.major,
@@ -211,7 +222,7 @@ int fcfs_fuse_global_init(const char *config_filename)
             sf_idempotency_config, g_fuse_global_vars.nsmp.mountpoint,
             fcfs_api_get_owner_type_caption(g_fuse_global_vars.owner.type),
             owner_config, g_fuse_global_vars.singlethread,
-            g_fuse_global_vars.clone_fd, g_fuse_global_vars.max_idle_threads,
+            g_fuse_global_vars.clone_fd, max_threads_buff,
             get_allow_others_caption(g_fuse_global_vars.allow_others),
             g_fuse_global_vars.auto_unmount,
             g_fuse_global_vars.attribute_timeout,
