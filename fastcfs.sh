@@ -57,7 +57,7 @@ AUTH_KEYS_PATH="/etc/fastcfs/auth/keys/"
 FUSE_CONF_FILES=(fuse.conf)
 FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
 
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS Alibaba Anolis)
 
 BUILD_PATH="build"
 this_shell_name=$0
@@ -358,6 +358,12 @@ if [ $uname = 'Linux' ]; then
        os_major_version=8
      else
        os_major_version=9
+     fi
+  elif [ $osname = 'Alibaba' ]; then
+     if [ $os_major_version -lt 3 ]; then
+       os_major_version=7
+     else
+       os_major_version=8
      fi
   fi
 else

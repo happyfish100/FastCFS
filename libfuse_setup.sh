@@ -1,6 +1,6 @@
 #!/bin/bash
 
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS Anolis)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS Alibaba Anolis)
 
 get_gcc_version() {
   old_lang=$LANG
@@ -107,6 +107,12 @@ if [ $uname = 'Linux' ]; then
        os_major_version=8
      else
        os_major_version=9
+     fi
+  elif [ $osname = 'Alibaba' ]; then
+     if [ $os_major_version -lt 3 ]; then
+       os_major_version=7
+     else
+       os_major_version=8
      fi
   fi
 else
