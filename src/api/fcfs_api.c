@@ -195,7 +195,7 @@ int fcfs_api_init_ex(FCFSAPIContext *ctx, const char *ns,
 
     if ((result=iniLoadFromFile(config_filename, &iniContext)) != 0) {
         logError("file: "__FILE__", line: %d, "
-                "load conf file \"%s\" fail, ret code: %d",
+                "load conf file \"%s\" fail, error no: %d",
                 __LINE__, config_filename, result);
         return result;
     }
@@ -220,7 +220,7 @@ int fcfs_api_pooled_init_ex(FCFSAPIContext *ctx, const char *ns,
 
     if ((result=iniLoadFromFile(config_filename, &iniContext)) != 0) {
         logError("file: "__FILE__", line: %d, "
-                "load conf file \"%s\" fail, ret code: %d",
+                "load conf file \"%s\" fail, error no: %d",
                 __LINE__, config_filename, result);
         return result;
     }
@@ -510,6 +510,7 @@ static int load_mountpoint(IniFullContext *ini_ctx,
 {
     struct statfs buf;
     int result;
+    int ret;
 
     if (mountpoint->str == NULL) {
         mountpoint->str = iniGetStrValueEx(ini_ctx->section_name,
@@ -541,15 +542,20 @@ static int load_mountpoint(IniFullContext *ini_ctx,
         result = errno != 0 ? errno : ENOENT;
         if (result == ENOTCONN) {
 #ifdef OS_LINUX
-            result = umount2(mountpoint->str, MNT_FORCE);
+            ret = umount2(mountpoint->str, MNT_FORCE);
 #else
-            result = unmount(mountpoint->str, 0);
+            ret = unmount(mountpoint->str, 0);
 #endif
-            if (result != 0 && errno == EPERM) {
-                logError("file: "__FILE__", line: %d, "
-                        "unmount %s fail, you should run "
-                        "\"sudo umount %s\" manually", __LINE__,
-                        mountpoint->str, mountpoint->str);
+            if (ret == 0) {
+                result = 0;
+            } else {
+                result = errno != 0 ? errno : EBUSY;
+                if (result == EPERM) {
+                    logError("file: "__FILE__", line: %d, "
+                            "unmount %s fail, you should run "
+                            "\"sudo umount %s\" manually", __LINE__,
+                            mountpoint->str, mountpoint->str);
+                }
             }
         }
 
