@@ -553,17 +553,20 @@ static int load_mountpoint(IniFullContext *ini_ctx,
                 if (result == EPERM) {
                     logError("file: "__FILE__", line: %d, "
                             "unmount %s fail, you should run "
-                            "\"sudo umount %s\" manually", __LINE__,
+                            "\"sudo umount -f %s\" manually", __LINE__,
                             mountpoint->str, mountpoint->str);
+                } else {
+                    logError("file: "__FILE__", line: %d, "
+                            "unmount %s fail, errno: %d, error info: %s",
+                            __LINE__, mountpoint->str,
+                            result, STRERROR(result));
                 }
+                return result;
             }
-        }
-
-        if (result != 0) {
+        } else if (result != 0) {
             logError("file: "__FILE__", line: %d, "
-                    "mountpoint: %s can't be accessed, "
-                    "errno: %d, error info: %s",
-                    __LINE__, mountpoint->str,
+                    "mountpoint: %s can't be accessed, errno: %d, "
+                    "error info: %s", __LINE__, mountpoint->str,
                     result, STRERROR(result));
             return result;
         }
