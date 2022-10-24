@@ -15,8 +15,10 @@ declare -ir MIN_VERSION_OF_Red=8
 declare -ir MIN_VERSION_OF_Rocky=8
 declare -ir MIN_VERSION_OF_Oracle=8
 declare -ir MIN_VERSION_OF_Fedora=20
-SUPPORT_OS_ARRAY=(Ubuntu Debian Red Rocky Oracle Fedora Anolis)
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS Anolis)
+declare -ir MIN_VERSION_OF_Alibaba=2
+declare -ir MIN_VERSION_OF_Anolis=7
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS Alibaba Anolis)
+APT_OS_ARRAY=(Ubuntu Debian)
 
 fcfs_settings_file="fcfs.settings"
 fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
@@ -560,6 +562,7 @@ save_cluster_osname_mark() {
 #   The whole cluster's host must have same os type.
 #   The hosts os version must great than or equal xxx_MIN_VERSION
 check_remote_os_and_version() {
+  pkg_manage_tool=""
   cluster_host_osname=""
   declare -a all_server_ips
   all_server_ips+=(${fdir_group[@]})
@@ -586,11 +589,16 @@ check_remote_os_and_version() {
           fi
         else
           cluster_host_osname=$remote_osname
+          if [[ " ${YUM_OS_ARRAY[@]} " =~ " ${remote_osname} " ]]; then
+            pkg_manage_tool="yum"
+          elif [[ " ${APT_OS_ARRAY[@]} " =~ " ${remote_osname} " ]]; then
+            pkg_manage_tool="apt"
+          fi
         fi
         local remote_osversion
         if [ $remote_osname = 'CentOS' ]; then
           remote_osversion=$(get_centos_version $server_ip)
-        elif [[ " ${SUPPORT_OS_ARRAY[@]} " =~ " ${remote_osname} " ]]; then
+        elif [[ " ${YUM_OS_ARRAY[@]} " =~ " ${remote_osname} " ]] || [[ " ${APT_OS_ARRAY[@]} " =~ " ${remote_osname} " ]]; then
           remote_osversion=$(get_os_version $server_ip)
         else
           echo "Error: Unsupport OS, $remote_osname on server $server_ip"
@@ -974,13 +982,22 @@ check_installed_version() {
   if [ -z $fastcfs_version_installed ] && [ $has_module_param = 1 ]; then
     echo "ERROR: First execute setup or install cannot specify module."
     exit 1
-  fi
-  if ! [ -z $fastcfs_version_installed ] && [ $fastcfs_version_installed = $fastcfs_version ]; then
-    echo "ERROR: FastCFS $fastcfs_version have installed."
-    exit 1
-  fi
-  # exit 1
-  if ! [ -z $fastcfs_version_installed ] && ! [ $fastcfs_version_installed = $fastcfs_version ]; then
+  elif ! [ -z $fastcfs_version_installed ] && [ $fastcfs_version_installed = $fastcfs_version ]; then
+    if [ "$shell_command" = "reinstall" ]; then
+      # Before reinstall programm, need user to reconfirm
+      for ((;;)) do
+        echo -n "WARN: Reinstall the installed program confirm[y/N]"
+        read var
+        if ! [ "$var" = "y" ] && ! [ "$var" = "Y" ] && ! [ "$var" = "yes" ] && ! [ "$var" = "YES" ]; then
+          exit 1
+        fi
+        break;
+      done
+    else
+      echo "ERROR: FastCFS $fastcfs_version have installed."
+      exit 1
+    fi
+  elif ! [ -z $fastcfs_version_installed ] && ! [ $fastcfs_version_installed = $fastcfs_version ]; then
     if version_le $fastcfs_version_installed $fastcfs_version; then
       # Upgrade cannot specify module
       if [ $has_module_param = 1 ]; then
@@ -1003,8 +1020,8 @@ check_installed_version() {
   fi
 }
 
-# Install packages to target CentOS nodes.
-install_packages_on_CentOS() {
+# Install packages to target by yum manage nodes.
+install_packages_by_yum() {
   check_installed_version
   fdir_programs="fastDIR-server-$fdir libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fdir_servers install execute_yum_on_remote "$fdir_programs"
@@ -1020,8 +1037,8 @@ install_packages_on_CentOS() {
   save_installed_version_mark
 }
 
-# Remove packages from target CentOS nodes.
-erase_packages_from_CentOS() {
+# Remove packages from target by yum manage nodes.
+erase_packages_by_yum() {
   # Before remove programm, need user to reconfirm
   for ((;;)) do
     echo -n "WARN: Delete the installed program confirm[y/N]"
@@ -1044,8 +1061,8 @@ erase_packages_from_CentOS() {
   remove_installed_mark
 }
 
-# Reinstall packages to target CentOS nodes.
-reinstall_packages_on_CentOS() {
+# Reinstall packages to target by yum manage nodes.
+reinstall_packages_by_yum() {
   check_installed_version
   fdir_programs="fastDIR-server-$fdir libfastcommon-$libfastcommon libserverframe-$libserverframe FastCFS-auth-client-$fauth"
   execute_command_on_fdir_servers reinstall execute_yum_on_remote "$fdir_programs"
@@ -1061,8 +1078,8 @@ reinstall_packages_on_CentOS() {
   save_installed_version_mark
 }
 
-# Install packages to target Ubuntu nodes.
-install_packages_on_Ubuntu() {
+# Install packages to target by apt manage nodes.
+install_packages_by_apt() {
   execute_command_on_fdir_servers install execute_apt_on_remote "fastdir-server"
   execute_command_on_fstore_servers install execute_apt_on_remote "faststore-server"
   execute_command_on_fauth_servers install execute_apt_on_remote "fastcfs-auth-server"
@@ -1071,8 +1088,8 @@ install_packages_on_Ubuntu() {
   save_installed_mark
 }
 
-# Remove packages from target Ubuntu nodes.
-erase_packages_from_Ubuntu() {
+# Remove packages from target by apt manage nodes.
+erase_packages_by_apt() {
   # Before remove programm, need user to reconfirm
   for ((;;)) do
     echo -n "WARN: Delete the installed program confirm[y/N]"
@@ -1090,8 +1107,8 @@ erase_packages_from_Ubuntu() {
   remove_installed_mark
 }
 
-# Reinstall packages to target Ubuntu nodes.
-reinstall_packages_on_Ubuntu() {
+# Reinstall packages to target by apt manage nodes.
+reinstall_packages_by_apt() {
   execute_command_on_fdir_servers reinstall execute_apt_on_remote "fastdir-server"
   execute_command_on_fstore_servers reinstall execute_apt_on_remote "faststore-server"
   execute_command_on_fauth_servers reinstall execute_apt_on_remote "fastcfs-auth-server"
@@ -1100,70 +1117,6 @@ reinstall_packages_on_Ubuntu() {
   save_installed_mark
 }
 
-# Install packages to target Debian nodes.
-install_packages_on_Debian() {
-  install_packages_on_Ubuntu
-}
-# Remove packages from target Debian nodes.
-erase_packages_from_Debian() {
-  erase_packages_from_Ubuntu
-}
-# Reinstall packages to target Debian nodes.
-reinstall_packages_on_Debian() {
-  reinstall_packages_on_Ubuntu
-}
-
-# Install packages to target Red Hat nodes.
-install_packages_on_Red() {
-  install_packages_on_CentOS
-}
-# Remove packages from target Red Hat nodes.
-erase_packages_from_Red() {
-  erase_packages_from_CentOS
-}
-# Reinstall packages to target Red Hat nodes.
-reinstall_packages_on_Red() {
-  reinstall_packages_on_CentOS
-}
-
-# Install packages to target Rocky nodes.
-install_packages_on_Rocky() {
-  install_packages_on_CentOS
-}
-# Remove packages from target Rocky nodes.
-erase_packages_from_Rocky() {
-  erase_packages_from_CentOS
-}
-# Reinstall packages to target Rocky nodes.
-reinstall_packages_on_Rocky() {
-  reinstall_packages_on_CentOS
-}
-
-# Install packages to target Oracle nodes.
-install_packages_on_Oracle() {
-  install_packages_on_CentOS
-}
-# Remove packages from target Oracle nodes.
-erase_packages_from_Oracle() {
-  erase_packages_from_CentOS
-}
-# Reinstall packages to target Oracle nodes.
-reinstall_packages_on_Oracle() {
-  reinstall_packages_on_CentOS
-}
-
-# Install packages to target Fedora nodes.
-install_packages_on_Fedora() {
-  install_packages_on_CentOS
-}
-# Remove packages from target Fedora nodes.
-erase_packages_from_Fedora() {
-  erase_packages_from_CentOS
-}
-# Reinstall packages to target Fedora nodes.
-reinstall_packages_on_Fedora() {
-  reinstall_packages_on_CentOS
-}
 #---8. Install section end---#
 
 #---9. Config section begin---#
@@ -1435,6 +1388,13 @@ case "$shell_command" in
       load_dependency_settings $fastcfs_version
     fi
   ;;
+  'erase' | 'remove')
+    if [[ " ${YUM_OS_ARRAY[@]} " =~ " ${cluster_host_osname} " ]]; then
+      pkg_manage_tool="yum"
+    elif [[ " ${APT_OS_ARRAY[@]} " =~ " ${cluster_host_osname} " ]]; then
+      pkg_manage_tool="apt"
+    fi
+  ;;
 esac
 
 case "$shell_command" in
@@ -1462,16 +1422,22 @@ fi
 
 case "$shell_command" in
   'setup')
-    ("install_packages_on_$cluster_host_osname";deploy_config_files;cluster_service_op restart)
+    ("install_packages_by_$pkg_manage_tool";deploy_config_files;cluster_service_op restart)
   ;;
   'install')
-    ("install_packages_on_$cluster_host_osname")
+    ("install_packages_by_$pkg_manage_tool")
   ;;
   'reinstall')
-    ("reinstall_packages_on_$cluster_host_osname")
+    if [ "$pkg_manage_tool" = "yum" ]; then
+      ("reinstall_packages_by_$pkg_manage_tool")
+    else
+      echo "ERROR: The reinstall command can only be used for yum."
+      exit 1
+    fi
   ;;
   'erase' | 'remove')
-    ("erase_packages_from_$cluster_host_osname")
+    echo "pkg_manage_tool=$pkg_manage_tool,cluster_host_osname=$cluster_host_osname"
+    ("erase_packages_by_$pkg_manage_tool")
   ;;
   'config')
     deploy_config_files
