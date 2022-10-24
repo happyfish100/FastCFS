@@ -65,7 +65,7 @@ print_usage() {
   echo "Commands:"
   echo "  setup      Setup FastCFS softwares, a shortcut command combines install, config, and restart"
   echo "  install    Install FastCFS softwares"
-  echo "  reinstall  Reinstall FastCFS softwares"
+  echo "  reinstall  Reinstall FastCFS softwares, only used for yum"
   echo "  erase      Erase FastCFS softwares"
   echo "  remove     Remove FastCFS softwares, same as erase"
   echo "  config     Copy cluster config files to target host path"
@@ -826,6 +826,12 @@ check_remote_osname() {
       else
         os_major_version=9
       fi
+    elif [ $osname = 'Alibaba' ]; then
+      if [ $os_major_version -lt 3 ]; then
+        os_major_version=7
+      else
+        os_major_version=8
+      fi
     fi
   else
     echo "Error: Unsupport OS, $uname" 1>&2
@@ -1106,17 +1112,6 @@ erase_packages_by_apt() {
   execute_command_on_fuseclient_servers remove execute_apt_on_remote "fastcfs-fused"
   remove_installed_mark
 }
-
-# Reinstall packages to target by apt manage nodes.
-reinstall_packages_by_apt() {
-  execute_command_on_fdir_servers reinstall execute_apt_on_remote "fastdir-server"
-  execute_command_on_fstore_servers reinstall execute_apt_on_remote "faststore-server"
-  execute_command_on_fauth_servers reinstall execute_apt_on_remote "fastcfs-auth-server"
-  execute_command_on_fvote_servers reinstall execute_apt_on_remote "fastcfs-vote-server"
-  execute_command_on_fuseclient_servers reinstall execute_apt_on_remote "fastcfs-fused"
-  save_installed_mark
-}
-
 #---8. Install section end---#
 
 #---9. Config section begin---#
@@ -1436,7 +1431,6 @@ case "$shell_command" in
     fi
   ;;
   'erase' | 'remove')
-    echo "pkg_manage_tool=$pkg_manage_tool,cluster_host_osname=$cluster_host_osname"
     ("erase_packages_by_$pkg_manage_tool")
   ;;
   'config')
