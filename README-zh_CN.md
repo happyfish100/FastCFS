@@ -74,7 +74,7 @@ df -h /opt/fastcfs/fuse | grep fuse
 
 如果你要自己搭建FastCFS环境，可以采用如下三种安装方式之一：
 
-* yum安装（针对CentOS、Rocky、Fedora、RHEL、Oracle Linux），参阅 [YUM安装文档](docs/YUMINSTALL-zh_CN.md)
+* yum安装（针对CentOS、Rocky、Fedora、RHEL等），参阅 [YUM安装文档](docs/YUMINSTALL-zh_CN.md)
 * apt安装（针对Ubuntu 和 Debian），参阅 [apt 安装文档](docs/APT-INSTALL-zh_CN.md)
 * 源码编译安装，参阅 [安装文档](docs/INSTALL-zh_CN.md)
 
