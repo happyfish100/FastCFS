@@ -1,6 +1,6 @@
 #!/bin/bash
 
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS Alibaba Anolis)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis)
 
 get_gcc_version() {
   old_lang=$LANG

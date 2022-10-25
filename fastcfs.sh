@@ -57,7 +57,7 @@ AUTH_KEYS_PATH="/etc/fastcfs/auth/keys/"
 FUSE_CONF_FILES=(fuse.conf)
 FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
 
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS Alibaba Anolis)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis)
 
 BUILD_PATH="build"
 this_shell_name=$0
