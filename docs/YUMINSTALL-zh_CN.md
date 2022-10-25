@@ -1,18 +1,26 @@
 
 ## yum安装方式
 
-yum 安装方式主要用于测试和生产环境搭建。
+yum 安装方式支持intel的x86_64和ARM的aarch64架构，主要用于测试和生产环境搭建。
+支持的Linux发行版如下：
+* CentOS & CentOS Stream
+* Fedora
+* Rocky
+* Anolis
+* RHEL (Red Hat Enterprise Linux)
+* Oracle Linux
+* Alibaba Cloud Linux
 
 ### 1. 安装FastOS.repo
 
 先安装FastOS.repo yum源，然后就可以安装FastCFS相关软件包了。
 
-CentOS 7、RHEL 7、Oracle Linux 7、Fedora 27及以下版本：
+CentOS 7、RHEL 7、Oracle Linux 7、Alibaba Cloud Linux 2、Anolis 7、Fedora 27及以下版本：
 ```
 rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.0-1.el7.centos.noarch.rpm
 ```
 
-CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Fedora 28及以上版本：
+CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis 8、Fedora 28及以上版本：
 ```
 rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.0-1.el8.noarch.rpm
 ```
