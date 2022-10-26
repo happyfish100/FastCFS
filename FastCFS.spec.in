@@ -8,7 +8,7 @@
 %define CommitVersion %(echo $COMMIT_VERSION)
 
 Name: FastCFS
-Version: 3.6.2
+Version: 3.6.3
 Release: 1%{?dist}
 Summary: a high performance cloud native distributed file system for databases, KVM and K8s
 License: AGPL v3.0
@@ -18,9 +18,9 @@ Source: http://github.com/happyfish100/FastCFS/%{name}-%{version}.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires: fastDIR-devel >= 3.6.2
-BuildRequires: faststore-devel >= 3.6.2
-BuildRequires: fuse3-devel >= 3.10.1
+BuildRequires: fastDIR-devel >= 3.6.3
+BuildRequires: faststore-devel >= 3.6.3
+BuildRequires: fuse3-devel >= 3.10.5
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
 Requires: %{FastCFSFused} = %{version}-%{release}
 Requires: %{FastCFSUtils} = %{version}-%{release}
@@ -31,7 +31,7 @@ commit version: %{CommitVersion}
 
 %package -n %{FastCFSFused}
 Requires: %{FastCFSAPI} = %{version}-%{release}
-Requires: fuse3 >= 3.10.1
+Requires: fuse3 >= 3.10.5
 Requires: %{FastCFSFuseConfig} >= 1.0.0
 Summary: FastCFS fuse
 
@@ -40,8 +40,8 @@ Requires: libserverframe >= 1.1.21
 Summary: FastCFS utils 
 
 %package -n %{FastCFSAPI}
-Requires: fastDIR-client >= 3.6.2
-Requires: faststore-client >= 3.6.2
+Requires: fastDIR-client >= 3.6.3
+Requires: faststore-client >= 3.6.3
 Summary: FastCFS api library
 
 %package -n %{FastCFSAPIDevel}
@@ -49,7 +49,7 @@ Requires: %{FastCFSAPI} = %{version}-%{release}
 Summary: header files of FastCFS api library
 
 %package -n %{FastCFSAuthServer}
-Requires: fastDIR-client >= 3.6.2
+Requires: fastDIR-client >= 3.6.3
 Requires: FastCFS-auth-config >= 2.0.0
 Summary: FastCFS auth server
 
