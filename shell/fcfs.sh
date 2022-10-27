@@ -15,9 +15,11 @@ declare -ir MIN_VERSION_OF_Red=8
 declare -ir MIN_VERSION_OF_Rocky=8
 declare -ir MIN_VERSION_OF_Oracle=8
 declare -ir MIN_VERSION_OF_Fedora=20
+declare -ir MIN_VERSION_OF_AlmaLinux=7
 declare -ir MIN_VERSION_OF_Alibaba=2
 declare -ir MIN_VERSION_OF_Anolis=7
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS Alibaba Anolis)
+declare -ir MIN_VERSION_OF_Amazon=2
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon)
 APT_OS_ARRAY=(Ubuntu Debian)
 
 fcfs_settings_file="fcfs.settings"
@@ -828,6 +830,12 @@ check_remote_osname() {
       fi
     elif [ $osname = 'Alibaba' ]; then
       if [ $os_major_version -lt 3 ]; then
+        os_major_version=7
+      else
+        os_major_version=8
+      fi
+    elif [ $osname = 'Amazon' ]; then
+      if [ $os_major_version -le 2 ]; then
         os_major_version=7
       else
         os_major_version=8

@@ -57,7 +57,7 @@ AUTH_KEYS_PATH="/etc/fastcfs/auth/keys/"
 FUSE_CONF_FILES=(fuse.conf)
 FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
 
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon)
 
 BUILD_PATH="build"
 this_shell_name=$0
@@ -365,6 +365,12 @@ if [ $uname = 'Linux' ]; then
      else
        os_major_version=8
      fi
+  elif [ $osname = 'Amazon' ]; then
+    if [ $os_major_version -le 2 ]; then
+      os_major_version=7
+    else
+      os_major_version=8
+    fi
   fi
 else
   echo "Unsupport OS: $uname" 1>&2
