@@ -22,7 +22,7 @@ CentOS 7、RHEL 7、Oracle Linux 7、Alibaba Cloud Linux 2、Anolis 7、AlmaLinu
 rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.0-1.el7.centos.noarch.rpm
 ```
 
-CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis 8、AlmaLinux 7、Amazon Linux 2、Fedora 28及以上版本：
+CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis 8、AlmaLinux 8、Amazon Linux 3、Fedora 28及以上版本：
 ```
 rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.0-1.el8.noarch.rpm
 ```
