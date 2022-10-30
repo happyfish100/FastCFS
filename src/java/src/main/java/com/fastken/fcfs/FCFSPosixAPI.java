@@ -6,7 +6,41 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.UnsupportedEncodingException;
 
-public class PosixAPI {
+public class FCFSPosixAPI {
+    public static class Buffer {
+        private byte[] buff;
+        private int offset;  //offset of the buff
+        private int length;  //data length
+
+        public Buffer(byte[] buff, int offset, int length) {
+            this.buff = buff;
+            this.offset = offset;
+            this.length = length;
+        }
+
+        public Buffer(byte[] buff) {
+            this.buff = buff;
+            this.offset = 0;
+            this.length = buff.length;
+        }
+
+        public void setLength(int length) {
+            this.length = length;
+        }
+
+        public byte[] getBuff() {
+            return this.buff;
+        }
+
+        public int getOffset() {
+            return this.offset;
+        }
+
+        public int getLength() {
+            return this.length;
+        }
+    }
+
     public static class DIR {
         private long handler;
 
@@ -32,7 +66,7 @@ public class PosixAPI {
             return this.inode;
         }
 
-        public long getName() {
+        public String getName() {
             return this.name;
         }
     }
@@ -105,7 +139,51 @@ public class PosixAPI {
         }
     }
 
-    private static HashMap<String, PosixAPI> instances = new HashMap<String, PosixAPI>();
+    public static class Stat {
+        private long total;
+        private long avail;
+        private long used;
+
+        public Stat(long total, long avail, long used) {
+            this.total = total;
+            this.avail = avail;
+            this.used = used;
+        }
+
+        public long getTotal() {
+            return this.total;
+        }
+
+        public long getAvail() {
+            return this.avail;
+        }
+
+        public long getUsed() {
+            return this.used;
+        }
+    }
+
+    public static class VFSStat {
+        private Stat space;
+        private Stat inode;
+
+        public VFSStat(long spaceTotal, long spaceAvail, long spaceUsed,
+                long inodeTotal, long inodeAvail, long inodeUsed)
+        {
+            this.space = new Stat(spaceTotal, spaceAvail, spaceUsed);
+            this.inode = new Stat(inodeTotal, inodeAvail, inodeUsed);
+        }
+
+        public Stat getSpaceStat() {
+            return this.space;
+        }
+
+        public Stat getInodeStat() {
+            return this.inode;
+        }
+    }
+
+    private static HashMap<String, FCFSPosixAPI> instances = new HashMap<String, FCFSPosixAPI>();
     private static String charset = "UTF-8";
     private static String libraryFilename = null;
 
@@ -144,7 +222,7 @@ public class PosixAPI {
     }
 
     // private for singleton
-    private PosixAPI(String configFilename) {
+    private FCFSPosixAPI(String configFilename) {
         this.handler = doInit(configFilename);
     }
 
@@ -160,14 +238,14 @@ public class PosixAPI {
 
 
     /**
-      * get PosixAPI instance
+      * get FCFSPosixAPI instance
       * @param configFilename the config filename such as /usr/local/etc/libshmcache.conf
-      * @return PosixAPI object
+      * @return FCFSPosixAPI object
      */
-    public synchronized static PosixAPI getInstance(String configFilename) {
-        PosixAPI obj = instances.get(configFilename);
+    public synchronized static FCFSPosixAPI getInstance(String configFilename) {
+        FCFSPosixAPI obj = instances.get(configFilename);
         if (obj == null) {
-            obj = new PosixAPI(configFilename);
+            obj = new FCFSPosixAPI(configFilename);
             instances.put(configFilename, obj);
         }
 
@@ -175,7 +253,7 @@ public class PosixAPI {
     }
 
     /**
-      * clear PosixAPI instances
+      * clear FCFSPosixAPI instances
       * @return none
      */
     public synchronized static void clearInstances() {
