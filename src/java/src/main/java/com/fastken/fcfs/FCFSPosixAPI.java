@@ -309,17 +309,13 @@ public class FCFSPosixAPI {
         }
     }
 
-    static {
-        doInit();
-    }
-
     private static HashMap<String, FCFSPosixAPI> instances = new HashMap<String, FCFSPosixAPI>();
     private static final String charset = "UTF-8";
     private static String libraryFilename = null;
 
     private long handler;
 
-    private static native long doInit();
+    private static native void doInit();
 
     private native void init(String configFilename);
     private native void destroy();
@@ -337,6 +333,7 @@ public class FCFSPosixAPI {
         if (libraryFilename == null) {
             System.load(filename);  //load the library
             libraryFilename = filename;
+            doInit();
         } else if (libraryFilename.equals(filename)) {
             System.err.println("[WARNING] library " + libraryFilename + " already loaded");
         } else {
@@ -371,7 +368,7 @@ public class FCFSPosixAPI {
 
     /**
       * get FCFSPosixAPI instance
-      * @param configFilename the config filename such as /usr/local/etc/libshmcache.conf
+      * @param configFilename the config filename such as /etc/fastcfs/fcfs/fuse.conf
       * @return FCFSPosixAPI object
      */
     public synchronized static FCFSPosixAPI getInstance(String configFilename) {
@@ -392,4 +389,9 @@ public class FCFSPosixAPI {
         instances.clear();
     }
 
+    public static void main(String[] args) {
+        FCFSPosixAPI papi;
+        FCFSPosixAPI.setLibraryFilename("/usr/local/lib/libfcfsjni.so");
+        papi = FCFSPosixAPI.getInstance("/etc/fastcfs/fcfs/fuse.conf");
+    }
 }

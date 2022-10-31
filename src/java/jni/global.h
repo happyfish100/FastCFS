@@ -14,8 +14,8 @@
  */
 
 
-#ifndef _FCFS_JNI__GLOBAL_H
-#define _FCFS_JNI__GLOBAL_H
+#ifndef _FCFS_JNI_GLOBAL_H
+#define _FCFS_JNI_GLOBAL_H
 
 #include <jni.h>
 
@@ -51,7 +51,7 @@ typedef struct {
 
     FCFSJNIResultMethods sresult;
     FCFSJNIResultMethods iresult;
-    FCFSJNIResultMethods lsresult;
+    FCFSJNIResultMethods lresult;
 
     struct {
         jclass clazz;
@@ -74,7 +74,79 @@ typedef struct {
 extern "C" {
 #endif
 
-    extern FCFSJNIGlobalVars g_fcfs_jni_global_vars;
+extern FCFSJNIGlobalVars g_fcfs_jni_global_vars;
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    doInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_doInit
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI_DIR
+ * Method:    doInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024DIR_doInit
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI_DIREntry
+ * Method:    doInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024DIREntry_doInit
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI_Buffer
+ * Method:    doInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024Buffer_doInit
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI_IntResult
+ * Method:    doInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024IntResult_doInit
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI_LongResult
+ * Method:    doInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024LongResult_doInit
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI_StringResult
+ * Method:    doInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024StringResult_doInit
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI_FileStat
+ * Method:    doInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024FileStat_doInit
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI_VFSStat
+ * Method:    doInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024VFSStat_doInit
+  (JNIEnv *, jclass);
 
 #ifdef __cplusplus
 }
