@@ -1,0 +1,30 @@
+.SUFFIXES: .c .o .lo
+
+COMPILE = $(CC) $(CFLAGS)
+PREFIX = $(TARGET_PREFIX)
+INC_PATH = -I/usr/local/include $(INCLUDES)
+LIB_PATH = -lfcfsapi -lfdirclient -lfsapi -lfsclient \
+           -lfcfsauthclient -lfastcommon -lserverframe
+
+SHARED_OBJS = global.lo
+
+ALL_OBJS = $(SHARED_OBJS)
+
+ALL_PRGS =
+SHARED_LIBS = libfcfsjni.so
+ALL_LIBS = $(SHARED_LIBS)
+
+all: $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
+libfcfsjni.so:
+	$(COMPILE) -o $@ $< -shared $(SHARED_OBJS) $(LIB_PATH)
+.c.o:
+	$(COMPILE) -c -o $@ $<  $(INC_PATH)
+.c.lo:
+	$(COMPILE) -c -fPIC -o $@ $<  $(INC_PATH)
+install:
+	mkdir -p $(PREFIX)/lib64
+	mkdir -p $(PREFIX)/lib
+	install -m 755 $(SHARED_LIBS) $(PREFIX)/lib64
+	install -m 755 $(SHARED_LIBS) $(PREFIX)/lib
+clean:
+	rm -f $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)

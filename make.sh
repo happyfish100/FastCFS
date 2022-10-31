@@ -253,3 +253,42 @@ if [ -z $module ] || [ "$module" = 'fuse' ]; then
   fi
 fi
 fi
+
+if [ "$module" = 'jni' ]; then
+  files=$(locate jni.h)
+  if [ -z "$files" ]; then
+    echo "can't locate jni.h, please install java SDK first."
+    exit 2
+  fi
+
+  count=$(echo "$files" | wc -l)
+  if [ $count -eq 1 ]; then
+    filename=$files
+  else
+    i=0
+    for file in $files; do
+       i=$(expr $i + 1)
+       echo "$i. $file"
+    done
+
+    printf "please input the correct file no.: "
+    read n
+    if [ -z "$n" ]; then
+      echo "invalid file no."
+      exit 2
+    fi
+
+    filename=$(echo "$files" | head -n $n | tail -n 1)
+  fi
+
+  INCLUDES=
+  path=$(dirname $filename)
+  for d in $(find $path -type d); do
+    INCLUDES="$INCLUDES -I$d"
+  done
+
+  cd $base_path/src/java/jni
+  replace_makefile
+  sed_replace "s#\\\$(INCLUDES)#$INCLUDES#g" Makefile
+  make $param1 $param2
+fi

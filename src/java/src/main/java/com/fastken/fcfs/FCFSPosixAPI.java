@@ -12,6 +12,12 @@ public class FCFSPosixAPI {
         private int offset;  //offset of the buff
         private int length;  //data length
 
+        static {
+            doInit();
+        }
+
+        private static native void doInit();
+
         public Buffer(byte[] buff, int offset, int length) {
             this.buff = buff;
             this.offset = offset;
@@ -41,8 +47,110 @@ public class FCFSPosixAPI {
         }
     }
 
+    public static class StringResult {
+        private String value;
+        private int errno;
+
+        static {
+            doInit();
+        }
+
+        private static native void doInit();
+
+        public StringResult(String value, int errno) {
+            this.value = value;
+            this.errno = errno;
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public int getErrno() {
+            return this.errno;
+        }
+
+        public void setErrno(int errno) {
+            this.errno = errno;
+        }
+    }
+
+    public static class IntResult {
+        private int value;
+        private int errno;
+
+        static {
+            doInit();
+        }
+
+        private static native void doInit();
+
+        public IntResult(int value, int errno) {
+            this.value = value;
+            this.errno = errno;
+        }
+
+        public int getValue() {
+            return this.value;
+        }
+
+        public void setValue(int value) {
+            this.value = value;
+        }
+
+        public int getErrno() {
+            return this.errno;
+        }
+
+        public void setErrno(int errno) {
+            this.errno = errno;
+        }
+    }
+
+    public static class LongResult {
+        private long value;
+        private int errno;
+
+        static {
+            doInit();
+        }
+
+        private static native void doInit();
+
+        public LongResult(long value, int errno) {
+            this.value = value;
+            this.errno = errno;
+        }
+
+        public long getValue() {
+            return this.value;
+        }
+
+        public void setValue(long value) {
+            this.value = value;
+        }
+
+        public int getErrno() {
+            return this.errno;
+        }
+
+        public void setErrno(int errno) {
+            this.errno = errno;
+        }
+    }
+
     public static class DIR {
         private long handler;
+
+        static {
+            doInit();
+        }
+
+        private static native void doInit();
 
         public DIR(long handler) {
             this.handler = handler;
@@ -56,6 +164,12 @@ public class FCFSPosixAPI {
     public static class DIREntry {
         private long inode;
         private String name;
+
+        static {
+            doInit();
+        }
+
+        private static native void doInit();
 
         public DIREntry(long inode, String name) {
             this.inode = inode;
@@ -82,6 +196,12 @@ public class FCFSPosixAPI {
         private long atime;  /* Time of last access */
         private long mtime;  /* Time of last modification */
         private long ctime;  /* Time of last status change */
+
+        static {
+            doInit();
+        }
+
+        private static native void doInit();
 
         public FileStat(long inode, int mode, int links, int uid, int gid,
                 int rdev, long size, long atime, long mtime, long ctime)
@@ -167,6 +287,12 @@ public class FCFSPosixAPI {
         private Stat space;
         private Stat inode;
 
+        static {
+            doInit();
+        }
+
+        private static native void doInit();
+
         public VFSStat(long spaceTotal, long spaceAvail, long spaceUsed,
                 long inodeTotal, long inodeAvail, long inodeUsed)
         {
@@ -183,14 +309,20 @@ public class FCFSPosixAPI {
         }
     }
 
+    static {
+        doInit();
+    }
+
     private static HashMap<String, FCFSPosixAPI> instances = new HashMap<String, FCFSPosixAPI>();
-    private static String charset = "UTF-8";
+    private static final String charset = "UTF-8";
     private static String libraryFilename = null;
 
     private long handler;
 
-    private native long doInit(String configFilename);
-    private native void doDestroy(long handler);
+    private static native long doInit();
+
+    private native void init(String configFilename);
+    private native void destroy();
 
     public static String getLibraryFilename() {
         return libraryFilename;
@@ -213,17 +345,17 @@ public class FCFSPosixAPI {
         }
     }
 
-    public static String getCharset() {
-        return charset;
-    }
-
-    public static void setCharset(String value) {
-        charset = value;
-    }
-
     // private for singleton
     private FCFSPosixAPI(String configFilename) {
-        this.handler = doInit(configFilename);
+        init(configFilename);
+    }
+
+    public void setHandler(long handler) {
+        this.handler = handler;
+    }
+
+    public long getHandler() {
+        return this.handler;
     }
 
     protected void finalize() throws Throwable {
@@ -233,7 +365,7 @@ public class FCFSPosixAPI {
 
     private void close() {
         System.out.println("close");
-        doDestroy(this.handler);
+        destroy();
     }
 
 
