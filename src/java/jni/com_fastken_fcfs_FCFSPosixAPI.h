@@ -22,7 +22,7 @@ JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_doInit
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *env, jobject obj, jstring poolname, jstring filename);
 
 /*
  * Class:     com_fastken_fcfs_FCFSPosixAPI

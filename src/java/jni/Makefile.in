@@ -15,8 +15,8 @@ SHARED_LIBS = libfcfsjni.so
 ALL_LIBS = $(SHARED_LIBS)
 
 all: $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
-libfcfsjni.so:
-	$(COMPILE) -o $@ $< -shared $(SHARED_OBJS) $(LIB_PATH)
+libfcfsjni.so: $(SHARED_OBJS)
+	$(COMPILE) -o $@ -shared $(SHARED_OBJS) $(LIB_PATH)
 .c.o:
 	$(COMPILE) -c -o $@ $<  $(INC_PATH)
 .c.lo:

@@ -317,7 +317,7 @@ public class FCFSPosixAPI {
 
     private static native void doInit();
 
-    private native void init(String configFilename);
+    private native void init(String ns, String configFilename);
     private native void destroy();
 
     public static String getLibraryFilename() {
@@ -343,8 +343,8 @@ public class FCFSPosixAPI {
     }
 
     // private for singleton
-    private FCFSPosixAPI(String configFilename) {
-        init(configFilename);
+    private FCFSPosixAPI(String ns, String configFilename) {
+        init(ns, configFilename);
     }
 
     public void setHandler(long handler) {
@@ -368,14 +368,16 @@ public class FCFSPosixAPI {
 
     /**
       * get FCFSPosixAPI instance
+      * @param ns the namespace / poolname
       * @param configFilename the config filename such as /etc/fastcfs/fcfs/fuse.conf
       * @return FCFSPosixAPI object
      */
-    public synchronized static FCFSPosixAPI getInstance(String configFilename) {
-        FCFSPosixAPI obj = instances.get(configFilename);
+    public synchronized static FCFSPosixAPI getInstance(String ns, String configFilename) {
+        String key = ns + "@" + configFilename;
+        FCFSPosixAPI obj = instances.get(key);
         if (obj == null) {
-            obj = new FCFSPosixAPI(configFilename);
-            instances.put(configFilename, obj);
+            obj = new FCFSPosixAPI(ns, configFilename);
+            instances.put(key, obj);
         }
 
         return obj;
@@ -390,8 +392,11 @@ public class FCFSPosixAPI {
     }
 
     public static void main(String[] args) {
+        final String ns = "fs";
+        final String configFilename = "/etc/fastcfs/fcfs/fuse.conf";
         FCFSPosixAPI papi;
         FCFSPosixAPI.setLibraryFilename("/usr/local/lib/libfcfsjni.so");
-        papi = FCFSPosixAPI.getInstance("/etc/fastcfs/fcfs/fuse.conf");
+        papi = FCFSPosixAPI.getInstance(ns, configFilename);
+        papi.close();
     }
 }

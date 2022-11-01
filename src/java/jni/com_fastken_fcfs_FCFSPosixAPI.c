@@ -1,28 +1,74 @@
 
-#include "fastcfs/api/fcfs_api.h"
+#include "fastcfs/api/std/posix_api.h"
 #include "global.h"
 #include "com_fastken_fcfs_FCFSPosixAPI.h"
 
-void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
-  (JNIEnv *env, jobject obj, jstring filename)
+static void throws_exception(JNIEnv *env, const char *message)
 {
+    jclass exClass;
+    exClass = (*env)->FindClass(env, "java/lang/Exception");
+    if (exClass == NULL) {
+        return;
+    }
+
+    (*env)->ThrowNew(env, exClass, message);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
+  (JNIEnv *env, jobject obj, jstring poolname, jstring filename)
+{
+    const char *log_prefix_name = "papi";
     jboolean *isCopy = NULL;
+    char *ns;
     char *config_filename;
-    long handler = 123456;
+    FCFSPosixAPIContext *ctx;
+    int result;
 
-    config_filename = (char *)((*env)->GetStringUTFChars(env, filename, isCopy));
+    ctx = malloc(sizeof(FCFSPosixAPIContext));
+    if (ctx == NULL) {
+        throws_exception(env, "Out of Memory");
+        return;
+    }
 
-    (*env)->CallVoidMethod(env, obj, g_fcfs_jni_global_vars.papi.setHandler, handler);
-
-    fprintf(stderr, "config_filename: %s(%d)\n", config_filename, (int)strlen(config_filename));
-
+    ns = (char *)((*env)->GetStringUTFChars(env, poolname, isCopy));
+    config_filename = (char *)((*env)->GetStringUTFChars(
+                env, filename, isCopy));
+    result = fcfs_posix_api_init_start_ex(ctx,
+            log_prefix_name, ns, config_filename);
+    (*env)->ReleaseStringUTFChars(env, poolname, ns);
     (*env)->ReleaseStringUTFChars(env, filename, config_filename);
+
+    if (result != 0) {
+        free(ctx);
+        throws_exception(env, strerror(result));
+        return;
+    }
+
+    fprintf(stderr, "line: %d, ctx: %p\n", __LINE__, ctx);
+
+    (*env)->CallVoidMethod(env, obj, g_fcfs_jni_global_vars.
+            papi.setHandler, (long)ctx);
 }
 
 void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_destroy
   (JNIEnv *env, jobject obj)
 {
     long handler;
-    handler = (*env)->CallLongMethod(env, obj, g_fcfs_jni_global_vars.papi.getHandler);
-    fprintf(stderr, "line: %d, handler: %ld\n", __LINE__, handler);
+    FCFSPosixAPIContext *ctx;
+
+    handler = (*env)->CallLongMethod(env, obj,
+            g_fcfs_jni_global_vars.papi.getHandler);
+    if (handler == 0) {
+        return;
+    }
+
+    ctx = (FCFSPosixAPIContext *)handler;
+    fprintf(stderr, "line: %d, ctx: %p\n", __LINE__, ctx);
+
+    fcfs_posix_api_stop_ex(ctx);
+    fcfs_posix_api_destroy_ex(ctx);
+    free(ctx);
+
+    (*env)->CallVoidMethod(env, obj, g_fcfs_jni_global_vars.
+            papi.setHandler, 0);
 }
