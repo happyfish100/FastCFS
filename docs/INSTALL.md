@@ -85,16 +85,16 @@ libfuse requires meson and ninja which require python3.5 or higher version
 
 ##### python
 
-packages: python3  python3-pip
+packages: pkg-config  python3  python3-pip
 
 Ubuntu:
 ```
-apt install python3 python3-pip -y
+apt install pkg-config python3 python3-pip -y
 ```
 
 CentOS:
 ```
-yum install python3 python3-pip -y
+yum install pkgconfig python3 python3-pip -y
 ```
 
 ##### meson and ninja

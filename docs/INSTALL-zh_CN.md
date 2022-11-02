@@ -131,20 +131,20 @@ yum install gcc gcc-c++ -y
 #### 2.9.2. python安装
 
 需要安装的包名：
-
+* pkg-config
 * python3
 * python3-pip
 
 Ubuntu下安装命令：
 
 ```
-apt install python3 python3-pip -y
+apt install pkg-config python3 python3-pip -y
 ```
 
 CentOS下安装命令：
 
 ```
-yum install python3 python3-pip -y
+yum install pkgconfig python3 python3-pip -y
 ```
 
 #### 2.9.3. meson 和 ninja 安装
