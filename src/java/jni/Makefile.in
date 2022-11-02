@@ -6,7 +6,9 @@ INC_PATH = -I/usr/local/include $(INCLUDES)
 LIB_PATH = -lfcfsapi -lfdirclient -lfsapi -lfsclient \
            -lfcfsauthclient -lfastcommon -lserverframe
 
-SHARED_OBJS = com_fastken_fcfs_FCFSPosixAPI.lo global.lo
+SHARED_OBJS = com_fastken_fcfs_FCFSPosixAPI.lo  \
+              com_fastken_fcfs_FCFSDirectory.lo \
+              global.lo
 
 ALL_OBJS = $(SHARED_OBJS)
 

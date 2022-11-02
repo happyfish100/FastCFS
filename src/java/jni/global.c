@@ -17,6 +17,28 @@
 
 FCFSJNIGlobalVars g_fcfs_jni_global_vars = {{NULL, NULL}};
 
+void fcfs_jni_throw_exception(JNIEnv *env, const char *message)
+{
+    jclass clazz;
+    clazz = (*env)->FindClass(env, "java/lang/Exception");
+    if (clazz == NULL) {
+        return;
+    }
+
+    (*env)->ThrowNew(env, clazz, message);
+}
+
+void fcfs_jni_throw_null_pointer_exception(JNIEnv *env)
+{
+    jclass clazz;
+    clazz = (*env)->FindClass(env, "java/lang/NullPointerException");
+    if (clazz == NULL) {
+        return;
+    }
+
+    (*env)->ThrowNew(env, clazz, "null pointer");
+}
+
 void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_doInit
   (JNIEnv *env, jclass clazz)
 {
@@ -24,95 +46,71 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_doInit
             env, clazz, "setHandler", "(J)V");
     g_fcfs_jni_global_vars.papi.getHandler = (*env)->GetMethodID(
             env, clazz, "getHandler", "()J");
+
+    g_fcfs_jni_global_vars.dir.clazz = (*env)->FindClass(env,
+            "com/fastken/fcfs/FCFSDirectory");
+    fprintf(stderr, "line: %d, Directory clazz: %p\n", __LINE__,
+            g_fcfs_jni_global_vars.dir.clazz);
+
+    g_fcfs_jni_global_vars.dir.clazz = (*env)->NewGlobalRef(env,
+            g_fcfs_jni_global_vars.dir.clazz);
+
+    fprintf(stderr, "line: %d, Directory clazz: %p\n", __LINE__,
+            g_fcfs_jni_global_vars.dir.clazz);
 }
 
-void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024DIR_doInit
+void JNICALL Java_com_fastken_fcfs_FCFSDirectory_doInit
   (JNIEnv *env, jclass clazz)
 {
+    g_fcfs_jni_global_vars.dir.constructor1 = (*env)->GetMethodID(
+            env, clazz, "<init>", "(J)V");
     g_fcfs_jni_global_vars.dir.setHandler = (*env)->GetMethodID(
             env, clazz, "setHandler", "(J)V");
     g_fcfs_jni_global_vars.dir.getHandler = (*env)->GetMethodID(
             env, clazz, "getHandler", "()J");
 
-    fprintf(stderr, "setHandler: %p\n", g_fcfs_jni_global_vars.dir.setHandler);
-    fprintf(stderr, "getHandler: %p\n", g_fcfs_jni_global_vars.dir.getHandler);
+    fprintf(stderr, "line: %d, constructor1: %p\n", __LINE__,
+            g_fcfs_jni_global_vars.dir.constructor1);
+    fprintf(stderr, "setHandler: %p, getHandler: %p\n",
+            g_fcfs_jni_global_vars.dir.setHandler,
+            g_fcfs_jni_global_vars.dir.getHandler);
+
+    g_fcfs_jni_global_vars.dirent.clazz = (*env)->FindClass(env,
+            "com/fastken/fcfs/FCFSDirectory$Entry");
+    g_fcfs_jni_global_vars.dirent.clazz = (*env)->NewGlobalRef(env,
+            g_fcfs_jni_global_vars.dirent.clazz);
+
+    fprintf(stderr, "line: %d, Directory.Entry clazz: %p\n", __LINE__, g_fcfs_jni_global_vars.dirent.clazz);
 }
 
-void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024DIREntry_doInit
+void JNICALL Java_com_fastken_fcfs_FCFSDirectory_00024Entry_doInit
   (JNIEnv *env, jclass clazz)
 {
-    g_fcfs_jni_global_vars.dirent.clazz = clazz;
     g_fcfs_jni_global_vars.dirent.constructor2 = (*env)->GetMethodID(
             env, clazz, "<init>", "(JLjava/lang/String;)V");
 
-    fprintf(stderr, "line: %d, clazz: %p\n", __LINE__, g_fcfs_jni_global_vars.dirent.clazz);
-    fprintf(stderr, "constructor2: %p\n", g_fcfs_jni_global_vars.dirent.constructor2);
+    fprintf(stderr, "Directory.Entry clazz: %p, constructor2: %p\n",
+            clazz, g_fcfs_jni_global_vars.dirent.constructor2);
 }
 
-void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024Buffer_doInit
+void JNICALL Java_com_fastken_fcfs_FCFSFile_doInit
   (JNIEnv *env, jclass clazz)
 {
-    g_fcfs_jni_global_vars.buffer.clazz = clazz;
-    g_fcfs_jni_global_vars.buffer.constructor1 = (*env)->GetMethodID(
-            env, clazz, "<init>", "([B)V");
-    g_fcfs_jni_global_vars.buffer.constructor3 = (*env)->GetMethodID(
-            env, clazz, "<init>", "([BII)V");
-    g_fcfs_jni_global_vars.buffer.setLength = (*env)->GetMethodID(
-            env, clazz, "setLength", "(I)V");
-    g_fcfs_jni_global_vars.buffer.getBuff = (*env)->GetMethodID(
-            env, clazz, "getBuff", "()[B");
-    g_fcfs_jni_global_vars.buffer.getOffset = (*env)->GetMethodID(
-            env, clazz, "getOffset", "()I");
-    g_fcfs_jni_global_vars.buffer.getLength = (*env)->GetMethodID(
-            env, clazz, "getLength", "()I");
+    g_fcfs_jni_global_vars.file.clazz = clazz;
+    g_fcfs_jni_global_vars.file.constructor1 = (*env)->GetMethodID(
+            env, clazz, "<init>", "(I)V");
+    g_fcfs_jni_global_vars.file.setFD = (*env)->GetMethodID(
+            env, clazz, "setFD", "(I)V");
+    g_fcfs_jni_global_vars.file.getFD = (*env)->GetMethodID(
+            env, clazz, "getFD", "()I");
 
-    fprintf(stderr, "line: %d, clazz: %p\n", __LINE__, g_fcfs_jni_global_vars.buffer.clazz);
-    fprintf(stderr, "constructor1: %p, constructor3: %p, "
-            "setLength: %p, getBuff: %p, getOffset: %p, getLength: %p\n",
-            g_fcfs_jni_global_vars.buffer.constructor1,
-            g_fcfs_jni_global_vars.buffer.constructor3,
-            g_fcfs_jni_global_vars.buffer.setLength,
-            g_fcfs_jni_global_vars.buffer.getBuff,
-            g_fcfs_jni_global_vars.buffer.getOffset,
-            g_fcfs_jni_global_vars.buffer.getLength);
+    fprintf(stderr, "constructor1: %p\n", g_fcfs_jni_global_vars.file.constructor1);
+    fprintf(stderr, "setFD: %p, getFD: %p\n",
+            g_fcfs_jni_global_vars.file.setFD,
+            g_fcfs_jni_global_vars.file.getFD);
 }
 
-#define INIT_RESULT_METHODS(env, clazz, type, methods) \
-    do { \
-        methods.clazz = clazz;  \
-        methods.constructor2 = (*env)->GetMethodID(  \
-                env, clazz, "<init>", "("type"I)V"); \
-        methods.getValue = (*env)->GetMethodID(      \
-                env, clazz, "getValue", "()"type""); \
-        methods.setValue = (*env)->GetMethodID(      \
-                env, clazz, "setValue", "("type")V");\
-        methods.getErrno = (*env)->GetMethodID(  \
-                env, clazz, "getErrno", "()I");  \
-        methods.setErrno = (*env)->GetMethodID(  \
-                env, clazz, "setErrno", "(I)V"); \
-    } while (0)
-
-
-void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024StringResult_doInit
-  (JNIEnv *env, jclass clazz)
-{
-    INIT_RESULT_METHODS(env, clazz, "Ljava/lang/String;",
-            g_fcfs_jni_global_vars.sresult);
-}
-
-void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024IntResult_doInit
-  (JNIEnv *env, jclass clazz)
-{
-    INIT_RESULT_METHODS(env, clazz, "I", g_fcfs_jni_global_vars.iresult);
-}
-
-void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024LongResult_doInit
-  (JNIEnv *env, jclass clazz)
-{
-    INIT_RESULT_METHODS(env, clazz, "J", g_fcfs_jni_global_vars.lresult);
-}
-
-void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024FileStat_doInit
+void JNICALL Java_com_fastken_fcfs_FCFSFileStat_doInit
   (JNIEnv *env, jclass clazz)
 {
     g_fcfs_jni_global_vars.fstat.clazz = clazz;
@@ -123,7 +121,7 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024FileStat_doInit
     fprintf(stderr, "constructor10: %p\n", g_fcfs_jni_global_vars.fstat.constructor10);
 }
 
-void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_00024VFSStat_doInit
+void JNICALL Java_com_fastken_fcfs_FCFSVFSStat_doInit
   (JNIEnv *env, jclass clazz)
 {
     g_fcfs_jni_global_vars.vfsstat.clazz = clazz;

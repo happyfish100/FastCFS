@@ -4,7 +4,6 @@
 
 #ifndef _Included_com_fastken_fcfs_FCFSPosixAPI
 #define _Included_com_fastken_fcfs_FCFSPosixAPI
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,17 +11,17 @@ extern "C" {
  * Class:     com_fastken_fcfs_FCFSPosixAPI
  * Method:    doInit
  * Signature: ()V
+ */
 JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_doInit
   (JNIEnv *, jclass);
- */
 
 /*
  * Class:     com_fastken_fcfs_FCFSPosixAPI
  * Method:    init
- * Signature: (Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
-  (JNIEnv *env, jobject obj, jstring poolname, jstring filename);
+  (JNIEnv *, jobject, jstring, jstring);
 
 /*
  * Class:     com_fastken_fcfs_FCFSPosixAPI
@@ -31,6 +30,206 @@ JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
  */
 JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_destroy
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    opendir
+ * Signature: (Ljava/lang/String;)Lcom/fastken/fcfs/FCFSDirectory;
+ */
+JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_opendir
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    open
+ * Signature: (Ljava/lang/String;II)Lcom/fastken/fcfs/FCFSFile;
+ */
+JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_open
+  (JNIEnv *, jobject, jstring, jint, jint);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    create
+ * Signature: (Ljava/lang/String;I)Lcom/fastken/fcfs/FCFSFile;
+ */
+JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_create
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    getcwd
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_getcwd
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    truncate
+ * Signature: (Ljava/lang/String;J)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_truncate
+  (JNIEnv *, jobject, jstring, jlong);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    stat
+ * Signature: (Ljava/lang/String;Z)Lcom/fastken/fcfs/FCFSFileStat;
+ */
+JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_stat
+  (JNIEnv *, jobject, jstring, jboolean);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    link
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_link
+  (JNIEnv *, jobject, jstring, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    symlink
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_symlink
+  (JNIEnv *, jobject, jstring, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    readlink
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_readlink
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    mknod
+ * Signature: (Ljava/lang/String;II)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_mknod
+  (JNIEnv *, jobject, jstring, jint, jint);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    mkfifo
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_mkfifo
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    access
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_access
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    utimes
+ * Signature: (Ljava/lang/String;[J)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_utimes
+  (JNIEnv *, jobject, jstring, jlongArray);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    unlink
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_unlink
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    rename
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_rename
+  (JNIEnv *, jobject, jstring, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    mkdir
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_mkdir
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    rmdir
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_rmdir
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    chown
+ * Signature: (Ljava/lang/String;IIZ)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_chown
+  (JNIEnv *, jobject, jstring, jint, jint, jboolean);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    chmod
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_chmod
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    statvfs
+ * Signature: (Ljava/lang/String;)Lcom/fastken/fcfs/FCFSVFSStat;
+ */
+JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_statvfs
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    chdir
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_chdir
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    setxattr
+ * Signature: (Ljava/lang/String;Ljava/lang/String;[BIIIZ)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_setxattr
+  (JNIEnv *, jobject, jstring, jstring, jbyteArray, jint, jint, jint, jboolean);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    removexattr
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Z)V
+ */
+JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_removexattr
+  (JNIEnv *, jobject, jstring, jstring, jboolean);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    getxattr
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Z)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_getxattr
+  (JNIEnv *, jobject, jstring, jstring, jboolean);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    listxattr
+ * Signature: (Ljava/lang/String;Z)Ljava/util/Map;
+ */
+JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_listxattr
+  (JNIEnv *, jobject, jstring, jboolean);
 
 #ifdef __cplusplus
 }

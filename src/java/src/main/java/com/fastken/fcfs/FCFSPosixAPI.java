@@ -121,6 +121,17 @@ public class FCFSPosixAPI {
         FCFSPosixAPI papi;
         FCFSPosixAPI.setLibraryFilename("/usr/local/lib/libfcfsjni.so");
         papi = FCFSPosixAPI.getInstance(ns, configFilename);
+
+        FCFSDirectory dir = papi.opendir("/opt/fastcfs/fuse/");
+        FCFSDirectory.Entry dirent;
+
+        System.out.println("dir: " + dir.toString());
+
+        while ((dirent=dir.next()) != null) {
+            System.out.println("inode: " + dirent.getInode() + ", name: " + dirent.getName());
+        }
+
+        dir.close();
         papi.close();
     }
 }

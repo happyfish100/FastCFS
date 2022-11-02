@@ -3,17 +3,6 @@
 #include "global.h"
 #include "com_fastken_fcfs_FCFSPosixAPI.h"
 
-static void throws_exception(JNIEnv *env, const char *message)
-{
-    jclass exClass;
-    exClass = (*env)->FindClass(env, "java/lang/Exception");
-    if (exClass == NULL) {
-        return;
-    }
-
-    (*env)->ThrowNew(env, exClass, message);
-}
-
 void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
   (JNIEnv *env, jobject obj, jstring poolname, jstring filename)
 {
@@ -26,7 +15,7 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
 
     ctx = malloc(sizeof(FCFSPosixAPIContext));
     if (ctx == NULL) {
-        throws_exception(env, "Out of Memory");
+        fcfs_jni_throw_exception(env, "Out of Memory");
         return;
     }
 
@@ -40,7 +29,7 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
 
     if (result != 0) {
         free(ctx);
-        throws_exception(env, strerror(result));
+        fcfs_jni_throw_exception(env, strerror(result));
         return;
     }
 
@@ -71,4 +60,41 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_destroy
 
     (*env)->CallVoidMethod(env, obj, g_fcfs_jni_global_vars.
             papi.setHandler, 0);
+}
+
+JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_opendir
+  (JNIEnv *env, jobject obj, jstring jpath)
+{
+    long handler;
+    jboolean *isCopy = NULL;
+    const char *path;
+    FCFSPosixAPIContext *ctx;
+    DIR *dir;
+    char error[256];
+
+    handler = (*env)->CallLongMethod(env, obj,
+            g_fcfs_jni_global_vars.papi.getHandler);
+    if (handler == 0) {
+        fcfs_jni_throw_null_pointer_exception(env);
+        return NULL;
+    }
+
+    ctx = (FCFSPosixAPIContext *)handler;
+
+    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
+    dir = fcfs_opendir_ex(ctx, path);
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+
+    if (dir == NULL) {
+        snprintf(error, sizeof(error), "%s", strerror(errno));
+        fcfs_jni_throw_exception(env, error);
+        return NULL;
+    }
+
+    fprintf(stderr, "line: %d, dir clazz: %p, constructor1: %p, dir: %p\n",
+            __LINE__, g_fcfs_jni_global_vars.dir.clazz,
+            g_fcfs_jni_global_vars.dir.constructor1, dir);
+
+    return (*env)->NewObject(env, g_fcfs_jni_global_vars.dir.clazz,
+            g_fcfs_jni_global_vars.dir.constructor1, (long)dir);
 }

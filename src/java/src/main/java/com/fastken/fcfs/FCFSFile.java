@@ -7,6 +7,10 @@ public class FCFSFile {
 
     private static native void doInit();
 
+    static {
+        doInit();
+    }
+
     public native void close();
     public native void sync();
     public native void datasync();
@@ -28,14 +32,18 @@ public class FCFSFile {
     public native void chdir();
     public native FCFSVFSStat statvfs();
 
-    private long handler;
+    private int fd;
 
-    public FCFSFile(long handler) {
-        this.handler = handler;
+    public FCFSFile(int fd) {
+        this.fd = fd;
     }
 
-    public long getHandler() {
-        return this.handler;
+    public void setFD(int fd) {
+        this.fd = fd;
+    }
+
+    public long getFD() {
+        return this.fd;
     }
 
     public void write(byte[] bs) {

@@ -7,6 +7,11 @@ public class FCFSDirectory {
         private long inode;
         private String name;
 
+        private static native void doInit();
+        static {
+            doInit();
+        }
+
         public Entry(long inode, String name) {
             this.inode = inode;
             this.name = name;
@@ -23,7 +28,11 @@ public class FCFSDirectory {
 
     private static native void doInit();
 
-    public native Entry next() throws FileSystemException;
+    static {
+        doInit();
+    }
+
+    public native Entry next();
     public native void seek(long loc);
     public native long tell();
     public native void rewind();
@@ -32,6 +41,10 @@ public class FCFSDirectory {
     private long handler;
 
     public FCFSDirectory(long handler) {
+        this.handler = handler;
+    }
+
+    public void setHandler(long handler) {
         this.handler = handler;
     }
 
