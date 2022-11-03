@@ -1,5 +1,6 @@
 package com.fastken.fcfs;
   
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.io.UnsupportedEncodingException;
@@ -40,7 +41,7 @@ public class FCFSPosixAPI {
     public native void setxattr(String path, String name, byte[] b, int off, int len, int flags, boolean followlink);
     public native void removexattr(String path, String name, boolean followlink);
     public native byte[] getxattr(String path, String name, boolean followlink);
-    public native Map<String, byte[]> listxattr(String path, boolean followlink);
+    public native List<String> listxattr(String path, boolean followlink);
 
     private long handler;
 
@@ -123,14 +124,17 @@ public class FCFSPosixAPI {
         return this.stat(path, false);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         final String ns = "fs";
         final String configFilename = "/etc/fastcfs/fcfs/fuse.conf";
+        final boolean followlink = false;
+        String path;
         FCFSPosixAPI papi;
         FCFSPosixAPI.setLibraryFilename("/usr/local/lib/libfcfsjni.so");
         papi = FCFSPosixAPI.getInstance(ns, configFilename);
 
-        FCFSDirectory dir = papi.opendir("/opt/fastcfs/fuse/");
+        path = "/opt/fastcfs/fuse/";
+        FCFSDirectory dir = papi.opendir(path);
         FCFSDirectory.Entry dirent;
 
         System.out.println("cwd: " + papi.getcwd());
@@ -138,8 +142,15 @@ public class FCFSPosixAPI {
             System.out.println("inode: " + dirent.getInode() + ", name: " + dirent.getName());
         }
 
-        System.out.println("cwd: " + papi.stat("/opt/fastcfs/fuse/"));
-        System.out.println("readlink: " + papi.readlink("/opt/fastcfs/fuse/"));
+        System.out.println("fstat: " + papi.stat(path));
+        //System.out.println("readlink: " + papi.readlink("/opt/fastcfs/fuse/"));
+        //System.out.println("statvfs: " + papi.statvfs(path));
+
+        List<String> list = papi.listxattr(path, followlink);
+        for (String name : list) {
+            System.out.println("name: " + name + ", value: "
+                    + new String(papi.getxattr(path, name, followlink), charset));
+        }
 
         dir.close();
         papi.close();

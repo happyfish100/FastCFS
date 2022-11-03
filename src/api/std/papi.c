@@ -1750,7 +1750,7 @@ int fcfs_statvfs_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    if ((result=fcfs_api_statvfs(path, buf)) != 0) {
+    if ((result=fcfs_api_statvfs_ex(&ctx->api_ctx, path, buf)) != 0) {
         errno = result;
         return -1;
     } else {
@@ -1769,7 +1769,9 @@ int fcfs_fstatvfs_ex(FCFSPosixAPIContext *ctx, int fd,
         return -1;
     }
 
-    if ((result=fcfs_api_statvfs(file->filename.str, buf)) != 0) {
+    if ((result=fcfs_api_statvfs_ex(&ctx->api_ctx,
+                    file->filename.str, buf)) != 0)
+    {
         errno = result;
         return -1;
     } else {

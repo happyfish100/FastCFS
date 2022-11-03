@@ -172,6 +172,15 @@ replace_makefile()
 
 base_path=$(pwd)
 
+cd src/include/fastcfs/
+for subdir in api vote; do
+  link=$(readlink $subdir)
+  if [ $? -ne 0 ] || [ "$link" != "../../$subdir" -a "$link" != "../../$subdir/" ]; then
+    ln -sf ../../$subdir $subdir
+  fi
+done
+cd $base_path
+
 if [ -z $module ] || [ "$module" = 'auth_server' ]; then
   if [ "x$exclude" != 'xauth_server' ]; then
     cd $base_path/src/auth/server

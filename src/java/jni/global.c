@@ -121,10 +121,10 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_doInit
     g_fcfs_jni_global_vars.file.clazz = (*env)->NewGlobalRef(env,
             g_fcfs_jni_global_vars.file.clazz);
 
-    g_fcfs_jni_global_vars.vfsstat.clazz = (*env)->FindClass(env,
+    g_fcfs_jni_global_vars.statvfs.clazz = (*env)->FindClass(env,
             "com/fastken/fcfs/FCFSVFSStat");
-    g_fcfs_jni_global_vars.vfsstat.clazz = (*env)->NewGlobalRef(env,
-            g_fcfs_jni_global_vars.vfsstat.clazz);
+    g_fcfs_jni_global_vars.statvfs.clazz = (*env)->NewGlobalRef(env,
+            g_fcfs_jni_global_vars.statvfs.clazz);
 }
 
 void JNICALL Java_com_fastken_fcfs_FCFSDirectory_doInit
@@ -176,6 +176,6 @@ void JNICALL Java_com_fastken_fcfs_FCFSFileStat_doInit
 void JNICALL Java_com_fastken_fcfs_FCFSVFSStat_doInit
   (JNIEnv *env, jclass clazz)
 {
-    g_fcfs_jni_global_vars.vfsstat.constructor6 = (*env)->GetMethodID(
+    g_fcfs_jni_global_vars.statvfs.constructor6 = (*env)->GetMethodID(
             env, clazz, "<init>", "(JJJJJJ)V");
 }

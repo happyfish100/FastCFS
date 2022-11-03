@@ -23,6 +23,12 @@ public class FCFSVFSStat {
         public long getUsed() {
             return this.used;
         }
+
+        public String toString() {
+            return "total: " + this.total
+                + ", avail: " + this.avail
+                + ", used: " + this.used;
+        }
     }
 
 
@@ -48,5 +54,10 @@ public class FCFSVFSStat {
 
     public Stat getInodeStat() {
         return this.inode;
+    }
+
+    public String toString() {
+        return "space { " + this.space.toString() + " }"
+            + ", inode { " + this.inode.toString() + " }";
     }
 }

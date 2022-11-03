@@ -52,7 +52,7 @@ typedef struct {
     struct {
         jclass clazz;
         jmethodID constructor6;
-    } vfsstat;
+    } statvfs;
 
 } FCFSJNIGlobalVars;
 
