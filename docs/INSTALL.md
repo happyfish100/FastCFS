@@ -83,7 +83,7 @@ cp conf/*.conf /etc/fastcfs/fstore/
 
 libfuse requires meson and ninja which require python3.5 or higher version
 
-##### python
+##### pkg-config and python
 
 packages: pkg-config  python3  python3-pip
 

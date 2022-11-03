@@ -42,7 +42,7 @@ public class FCFSFile {
         this.fd = fd;
     }
 
-    public long getFD() {
+    public int getFD() {
         return this.fd;
     }
 

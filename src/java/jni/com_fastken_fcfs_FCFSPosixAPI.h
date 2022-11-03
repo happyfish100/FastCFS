@@ -49,14 +49,6 @@ JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_open
 
 /*
  * Class:     com_fastken_fcfs_FCFSPosixAPI
- * Method:    create
- * Signature: (Ljava/lang/String;I)Lcom/fastken/fcfs/FCFSFile;
- */
-JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_create
-  (JNIEnv *, jobject, jstring, jint);
-
-/*
- * Class:     com_fastken_fcfs_FCFSPosixAPI
  * Method:    getcwd
  * Signature: ()Ljava/lang/String;
  */

@@ -128,7 +128,7 @@ CentOS下安装命令：
 yum install gcc gcc-c++ -y
 ```
 
-#### 2.9.2. python安装
+#### 2.9.2. pkg-config 和 python安装
 
 需要安装的包名：
 * pkg-config

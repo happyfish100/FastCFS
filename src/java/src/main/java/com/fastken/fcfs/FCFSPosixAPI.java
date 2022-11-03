@@ -115,6 +115,14 @@ public class FCFSPosixAPI {
         instances.clear();
     }
 
+    public FCFSFileStat stat(String path) {
+        return this.stat(path, true);
+    }
+
+    public FCFSFileStat lstat(String path) {
+        return this.stat(path, false);
+    }
+
     public static void main(String[] args) {
         final String ns = "fs";
         final String configFilename = "/etc/fastcfs/fcfs/fuse.conf";
@@ -125,11 +133,13 @@ public class FCFSPosixAPI {
         FCFSDirectory dir = papi.opendir("/opt/fastcfs/fuse/");
         FCFSDirectory.Entry dirent;
 
-        System.out.println("dir: " + dir.toString());
-
+        System.out.println("cwd: " + papi.getcwd());
         while ((dirent=dir.next()) != null) {
             System.out.println("inode: " + dirent.getInode() + ", name: " + dirent.getName());
         }
+
+        System.out.println("cwd: " + papi.stat("/opt/fastcfs/fuse/"));
+        System.out.println("readlink: " + papi.readlink("/opt/fastcfs/fuse/"));
 
         dir.close();
         papi.close();

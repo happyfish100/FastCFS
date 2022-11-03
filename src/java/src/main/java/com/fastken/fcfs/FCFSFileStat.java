@@ -72,4 +72,17 @@ public class FCFSFileStat {
     public long getCtime() {
         return this.ctime;
     }
+
+    public String toString() {
+        return "inode: " + this.inode
+            + ", mode: " + this.mode
+            + ", links: " + this.links
+            + ", uid: " + this.uid
+            + ", gid: " + this.gid
+            + ", rdev: " + this.rdev
+            + ", size: " + this.size
+            + ", atime: " + this.atime
+            + ", mtime: " + this.mtime
+            + ", ctime: " + this.ctime;
+    }
 }

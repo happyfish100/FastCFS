@@ -92,8 +92,6 @@ void JNICALL Java_com_fastken_fcfs_FCFSDirectory_close
     }
 
     dir = (DIR *)handler;
-    fprintf(stderr, "line: %d, dir: %p\n", __LINE__, dir);
-
     fcfs_closedir(dir);
     (*env)->CallVoidMethod(env, obj, g_fcfs_jni_global_vars.
             dir.setHandler, 0);
