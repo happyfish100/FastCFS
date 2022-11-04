@@ -1,7 +1,6 @@
 package com.fastken.fcfs;
 
-import java.util.Map;
-import java.nio.file.FileSystemException;
+import java.util.List;
 
 public class FCFSFile {
 
@@ -28,7 +27,7 @@ public class FCFSFile {
     public native void setxattr(String name, byte[] bs, int off, int len, int flags);
     public native void removexattr(String name);
     public native byte[] getxattr(String name);
-    public native Map<String, byte[]> listxattr();
+    public native List<String> listxattr();
     public native void chdir();
     public native FCFSVFSStat statvfs();
 

@@ -8,7 +8,8 @@ LIB_PATH = -lfcfsapi -lfdirclient -lfsapi -lfsclient \
 
 SHARED_OBJS = com_fastken_fcfs_FCFSPosixAPI.lo  \
               com_fastken_fcfs_FCFSDirectory.lo \
-              global.lo
+              com_fastken_fcfs_FCFSFile.lo      \
+              global.lo common.lo
 
 ALL_OBJS = $(SHARED_OBJS)
 

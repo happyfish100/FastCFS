@@ -1625,8 +1625,7 @@ int fcfs_lchown_ex(FCFSPosixAPIContext *ctx, const char *path,
     }
 }
 
-int fcfs_fchown_ex(FCFSPosixAPIContext *ctx, int fd,
-        uid_t owner, gid_t group)
+int fcfs_fchown(int fd, uid_t owner, gid_t group)
 {
     const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FCFSPosixAPIFileInfo *file;
@@ -1637,7 +1636,7 @@ int fcfs_fchown_ex(FCFSPosixAPIContext *ctx, int fd,
         return -1;
     }
 
-    if ((result=fcfs_api_chown_by_inode_ex(&ctx->api_ctx, file->
+    if ((result=fcfs_api_chown_by_inode_ex(file->fi.ctx, file->
                     fi.dentry.inode, owner, group, flags)) != 0)
     {
         errno = result;
@@ -1693,8 +1692,7 @@ int fcfs_chmod_ex(FCFSPosixAPIContext *ctx,
     }
 }
 
-int fcfs_fchmod_ex(FCFSPosixAPIContext *ctx,
-        int fd, mode_t mode)
+int fcfs_fchmod(int fd, mode_t mode)
 {
     const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FCFSPosixAPIFileInfo *file;
@@ -1705,7 +1703,7 @@ int fcfs_fchmod_ex(FCFSPosixAPIContext *ctx,
         return -1;
     }
 
-    if ((result=fcfs_api_chmod_by_inode_ex(&ctx->api_ctx, file->
+    if ((result=fcfs_api_chmod_by_inode_ex(file->fi.ctx, file->
                     fi.dentry.inode, mode, flags)) != 0)
     {
         errno = result;
@@ -1758,8 +1756,7 @@ int fcfs_statvfs_ex(FCFSPosixAPIContext *ctx,
     }
 }
 
-int fcfs_fstatvfs_ex(FCFSPosixAPIContext *ctx, int fd,
-        struct statvfs *buf)
+int fcfs_fstatvfs(int fd, struct statvfs *buf)
 {
     FCFSPosixAPIFileInfo *file;
     int result;
@@ -1769,7 +1766,7 @@ int fcfs_fstatvfs_ex(FCFSPosixAPIContext *ctx, int fd,
         return -1;
     }
 
-    if ((result=fcfs_api_statvfs_ex(&ctx->api_ctx,
+    if ((result=fcfs_api_statvfs_ex(file->fi.ctx,
                     file->filename.str, buf)) != 0)
     {
         errno = result;
@@ -1819,8 +1816,8 @@ int fcfs_lsetxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
             (flags & (~FDIR_FLAGS_FOLLOW_SYMLINK)));
 }
 
-int fcfs_fsetxattr_ex(FCFSPosixAPIContext *ctx, int fd, const char *name,
-        const void *value, size_t size, int flags)
+int fcfs_fsetxattr(int fd, const char *name, const void *value,
+        size_t size, int flags)
 {
     key_value_pair_t xattr;
     FCFSPosixAPIFileInfo *file;
@@ -1833,7 +1830,7 @@ int fcfs_fsetxattr_ex(FCFSPosixAPIContext *ctx, int fd, const char *name,
 
     FC_SET_STRING(xattr.key, (char *)name);
     FC_SET_STRING_EX(xattr.value, (char *)value, size);
-    if ((result=fcfs_api_set_xattr_by_inode_ex(&ctx->api_ctx,
+    if ((result=fcfs_api_set_xattr_by_inode_ex(file->fi.ctx,
                     file->fi.dentry.inode, &xattr, (flags |
                         FDIR_FLAGS_FOLLOW_SYMLINK))) != 0)
     {
@@ -1889,8 +1886,8 @@ ssize_t fcfs_lgetxattr_ex(FCFSPosixAPIContext *ctx, const char *path,
     return do_getxattr(ctx, "lgetxattr", path, name, value, size, flags);
 }
 
-ssize_t fcfs_fgetxattr_ex(FCFSPosixAPIContext *ctx, int fd,
-        const char *name, void *value, size_t size)
+ssize_t fcfs_fgetxattr(int fd, const char *name,
+        void *value, size_t size)
 {
     const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FCFSPosixAPIFileInfo *file;
@@ -1906,7 +1903,7 @@ ssize_t fcfs_fgetxattr_ex(FCFSPosixAPIContext *ctx, int fd,
 
     FC_SET_STRING(nm, (char *)name);
     FC_SET_STRING_EX(vl, (char *)value, 0);
-    if ((result=fcfs_api_get_xattr_by_inode_ex(&ctx->api_ctx, file->
+    if ((result=fcfs_api_get_xattr_by_inode_ex(file->fi.ctx, file->
                     fi.dentry.inode, &nm, LOG_DEBUG, &vl, size,
                     GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
     {
@@ -1956,8 +1953,7 @@ ssize_t fcfs_llistxattr_ex(FCFSPosixAPIContext *ctx,
     return do_listxattr(ctx, "llistattr", path, list, size, flags);
 }
 
-ssize_t fcfs_flistxattr_ex(FCFSPosixAPIContext *ctx,
-        int fd, char *list, size_t size)
+ssize_t fcfs_flistxattr(int fd, char *list, size_t size)
 {
     const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FCFSPosixAPIFileInfo *file;
@@ -1970,7 +1966,7 @@ ssize_t fcfs_flistxattr_ex(FCFSPosixAPIContext *ctx,
     }
 
     ls.str = list;
-    if ((result=fcfs_api_list_xattr_by_inode_ex(&ctx->api_ctx,
+    if ((result=fcfs_api_list_xattr_by_inode_ex(file->fi.ctx,
                     file->fi.dentry.inode, &ls, size,
                     GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
     {
@@ -2019,8 +2015,7 @@ int fcfs_lremovexattr_ex(FCFSPosixAPIContext *ctx,
     return do_removexattr(ctx, "lremovexattr", path, name, flags);
 }
 
-int fcfs_fremovexattr_ex(FCFSPosixAPIContext *ctx,
-        int fd, const char *name)
+int fcfs_fremovexattr(int fd, const char *name)
 {
     const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FCFSPosixAPIFileInfo *file;
@@ -2033,7 +2028,7 @@ int fcfs_fremovexattr_ex(FCFSPosixAPIContext *ctx,
     }
 
     FC_SET_STRING(nm, (char *)name);
-    if ((result=fcfs_api_remove_xattr_by_inode_ex(&ctx->api_ctx,
+    if ((result=fcfs_api_remove_xattr_by_inode_ex(file->fi.ctx,
                     file->fi.dentry.inode, &nm, flags)) != 0)
     {
         errno = result;

@@ -1,6 +1,7 @@
 
 #include "fastcfs/api/std/posix_api.h"
 #include "global.h"
+#include "common.h"
 #include "com_fastken_fcfs_FCFSPosixAPI.h"
 
 void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
@@ -58,24 +59,28 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_destroy
             papi.setHandler, 0);
 }
 
+#define PAPI_SET_CTX_AND_PATH(retval)  \
+    long handler;  \
+    jboolean *isCopy = NULL; \
+    const char *path; \
+    FCFSPosixAPIContext *ctx; \
+    \
+    handler = (*env)->CallLongMethod(env, obj,       \
+            g_fcfs_jni_global_vars.papi.getHandler); \
+    if (handler == 0) {  \
+        fcfs_jni_throw_null_pointer_exception(env); \
+        return retval; \
+    } \
+    \
+    ctx = (FCFSPosixAPIContext *)handler; \
+    path = (*env)->GetStringUTFChars(env, jpath, isCopy)
+
 jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_opendir
   (JNIEnv *env, jobject obj, jstring jpath)
 {
-    long handler;
-    jboolean *isCopy = NULL;
-    const char *path;
-    FCFSPosixAPIContext *ctx;
     DIR *dir;
 
-    handler = (*env)->CallLongMethod(env, obj,
-            g_fcfs_jni_global_vars.papi.getHandler);
-    if (handler == 0) {
-        fcfs_jni_throw_null_pointer_exception(env);
-        return NULL;
-    }
-
-    ctx = (FCFSPosixAPIContext *)handler;
-    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
+    PAPI_SET_CTX_AND_PATH(NULL);
     if ((dir=fcfs_opendir_ex(ctx, path)) == NULL) {
         fcfs_jni_throw_filesystem_exception(env, path,
                 errno != 0 ? errno : ENOENT);
@@ -91,21 +96,9 @@ jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_opendir
 jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_open
   (JNIEnv *env, jobject obj, jstring jpath, jint flags, jint mode)
 {
-    long handler;
     int fd;
-    jboolean *isCopy = NULL;
-    const char *path;
-    FCFSPosixAPIContext *ctx;
 
-    handler = (*env)->CallLongMethod(env, obj,
-            g_fcfs_jni_global_vars.papi.getHandler);
-    if (handler == 0) {
-        fcfs_jni_throw_null_pointer_exception(env);
-        return NULL;
-    }
-
-    ctx = (FCFSPosixAPIContext *)handler;
-    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
+    PAPI_SET_CTX_AND_PATH(NULL);
     if ((fd=fcfs_open_ex(ctx, path, flags, mode,
                     fcfs_papi_tpid_type_tid)) < 0)
     {
@@ -147,22 +140,10 @@ jstring JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_getcwd
 jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_stat
     (JNIEnv *env, jobject obj, jstring jpath, jboolean followlink)
 {
-    long handler;
     int ret;
-    jboolean *isCopy = NULL;
-    const char *path;
-    FCFSPosixAPIContext *ctx;
     struct stat stat;
 
-    handler = (*env)->CallLongMethod(env, obj,
-            g_fcfs_jni_global_vars.papi.getHandler);
-    if (handler == 0) {
-        fcfs_jni_throw_null_pointer_exception(env);
-        return NULL;
-    }
-
-    ctx = (FCFSPosixAPIContext *)handler;
-    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
+    PAPI_SET_CTX_AND_PATH(NULL);
     if (followlink) {
         ret = fcfs_stat_ex(ctx, path, &stat);
     }  else {
@@ -186,21 +167,9 @@ jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_stat
 jstring JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_readlink
   (JNIEnv *env, jobject obj, jstring jpath)
 {
-    long handler;
-    jboolean *isCopy = NULL;
-    const char *path;
     char buff[PATH_MAX];
-    FCFSPosixAPIContext *ctx;
 
-    handler = (*env)->CallLongMethod(env, obj,
-            g_fcfs_jni_global_vars.papi.getHandler);
-    if (handler == 0) {
-        fcfs_jni_throw_null_pointer_exception(env);
-        return NULL;
-    }
-
-    ctx = (FCFSPosixAPIContext *)handler;
-    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
+    PAPI_SET_CTX_AND_PATH(NULL);
     if (fcfs_readlink_ex(ctx, path, buff, sizeof(buff)) < 0) {
         fcfs_jni_throw_filesystem_exception(env, path,
                 errno != 0 ? errno : ENOENT);
@@ -215,22 +184,10 @@ jstring JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_readlink
 jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_statvfs
   (JNIEnv *env, jobject obj, jstring jpath)
 {
-    long handler;
-    jboolean *isCopy = NULL;
-    const char *path;
-    FCFSPosixAPIContext *ctx;
     struct statvfs stat;
     SFSpaceStat space;
 
-    handler = (*env)->CallLongMethod(env, obj,
-            g_fcfs_jni_global_vars.papi.getHandler);
-    if (handler == 0) {
-        fcfs_jni_throw_null_pointer_exception(env);
-        return NULL;
-    }
-
-    ctx = (FCFSPosixAPIContext *)handler;
-    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
+    PAPI_SET_CTX_AND_PATH(NULL);
     if (fcfs_statvfs_ex(ctx, path, &stat) != 0) {
         fcfs_jni_throw_filesystem_exception(env, path,
                 errno != 0 ? errno : ENOENT);
@@ -251,27 +208,15 @@ jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_statvfs
 jbyteArray JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_getxattr
   (JNIEnv *env, jobject obj, jstring jpath, jstring jname, jboolean followlink)
 {
-    long handler;
-    jboolean *isCopy = NULL;
-    const char *path;
     const char *name;
-    FCFSPosixAPIContext *ctx;
-    char holder[4096];
+    char holder[4 * 1024];
     char *buff;
     int result;
     int size;
     int length;
     jbyteArray value;
 
-    handler = (*env)->CallLongMethod(env, obj,
-            g_fcfs_jni_global_vars.papi.getHandler);
-    if (handler == 0) {
-        fcfs_jni_throw_null_pointer_exception(env);
-        return NULL;
-    }
-
-    ctx = (FCFSPosixAPIContext *)handler;
-    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
+    PAPI_SET_CTX_AND_PATH(NULL);
     name = (*env)->GetStringUTFChars(env, jname, isCopy);
 
     buff = holder;
@@ -332,32 +277,14 @@ jbyteArray JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_getxattr
 jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_listxattr
   (JNIEnv *env, jobject obj, jstring jpath, jboolean followlink)
 {
-    long handler;
-    jboolean *isCopy = NULL;
-    const char *path;
-    FCFSPosixAPIContext *ctx;
     char holder[4 * 1024];
     char *buff;
     int result;
     int size;
     int length;
-    jclass list_clazz;
     jobject list_obj;
-    jmethodID list_constructor;
-    jmethodID list_add;
-    const char *name;
-    const char *end;
 
-    handler = (*env)->CallLongMethod(env, obj,
-            g_fcfs_jni_global_vars.papi.getHandler);
-    if (handler == 0) {
-        fcfs_jni_throw_null_pointer_exception(env);
-        return NULL;
-    }
-
-    ctx = (FCFSPosixAPIContext *)handler;
-    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
-
+    PAPI_SET_CTX_AND_PATH(NULL);
     buff = holder;
     size = sizeof(holder);
     if (followlink) {
@@ -400,24 +327,7 @@ jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_listxattr
         }
     }
     (*env)->ReleaseStringUTFChars(env, jpath, path);
-
-    list_clazz = (*env)->FindClass(env, "java/util/ArrayList");
-    list_constructor = (*env)->GetMethodID(env, list_clazz, "<init>", "()V");
-    list_obj = (*env)->NewObject(env, list_clazz, list_constructor);
-    if (length == 0) {
-        return list_obj;
-    }
-
-    list_add = (*env)->GetMethodID(env, list_clazz,
-            "add", "(Ljava/lang/Object;)Z");
-    name = buff;
-    end = buff + length;
-    do {
-        (*env)->CallBooleanMethod(env, list_obj, list_add,
-                (*env)->NewStringUTF(env, name));
-        name += strlen(name) + 1;
-    } while (name < end);
-
+    list_obj = fcfs_jni_convert_to_list(env, buff, length);
     if (buff != holder) {
         free(buff);
     }

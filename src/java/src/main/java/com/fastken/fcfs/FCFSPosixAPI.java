@@ -18,7 +18,6 @@ public class FCFSPosixAPI {
 
     public native FCFSDirectory opendir(String path);
     public native FCFSFile open(String path, int flags, int mode);
-    public native FCFSFile create(String path, int mode);
 
     public native String getcwd();
     public native void truncate(String path, long length);
@@ -38,7 +37,8 @@ public class FCFSPosixAPI {
     public native void chmod(String path, int mode);
     public native FCFSVFSStat statvfs(String path);
     public native void chdir(String path);
-    public native void setxattr(String path, String name, byte[] b, int off, int len, int flags, boolean followlink);
+    public native void setxattr(String path, String name, byte[] b,
+            int off, int len, int flags, boolean followlink);
     public native void removexattr(String path, String name, boolean followlink);
     public native byte[] getxattr(String path, String name, boolean followlink);
     public native List<String> listxattr(String path, boolean followlink);
@@ -141,18 +141,33 @@ public class FCFSPosixAPI {
         while ((dirent=dir.next()) != null) {
             System.out.println("inode: " + dirent.getInode() + ", name: " + dirent.getName());
         }
+        dir.close();
 
         System.out.println("fstat: " + papi.stat(path));
         //System.out.println("readlink: " + papi.readlink("/opt/fastcfs/fuse/"));
-        //System.out.println("statvfs: " + papi.statvfs(path));
+        System.out.println("statvfs: " + papi.statvfs(path));
 
-        List<String> list = papi.listxattr(path, followlink);
+        List<String> list;
+        list = papi.listxattr(path, followlink);
         for (String name : list) {
             System.out.println("name: " + name + ", value: "
                     + new String(papi.getxattr(path, name, followlink), charset));
         }
 
-        dir.close();
+
+        String filename = path + "/test.txt";
+        FCFSFile file = papi.open(filename, 0, 0755);
+        System.out.println("fstat: " + file.stat());
+        System.out.println("fstatvfs: " + file.statvfs());
+
+        list = file.listxattr();
+        for (String name : list) {
+            System.out.println("name: " + name + ", value: "
+                    + new String(file.getxattr(name), charset));
+        }
+
+        file.close();
+
         papi.close();
     }
 }

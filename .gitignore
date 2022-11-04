@@ -10,6 +10,7 @@ src/auth/client/tools/Makefile
 src/vote/server/Makefile
 src/vote/client/Makefile
 src/vote/client/tools/Makefile
+src/java/jni/Makefile
 
 # Prerequisites
 *.d
