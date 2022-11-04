@@ -134,6 +134,10 @@ public class FCFSPosixAPI {
         papi = FCFSPosixAPI.getInstance(ns, configFilename);
 
         path = "/opt/fastcfs/fuse/";
+        String filename = path + "/test.txt";
+        String filename1 = filename;
+        String filename2 = path + "/test2.txt";
+
         FCFSDirectory dir = papi.opendir(path);
         FCFSDirectory.Entry dirent;
 
@@ -143,9 +147,13 @@ public class FCFSPosixAPI {
         }
         dir.close();
 
-        System.out.println("fstat: " + papi.stat(path));
-        //System.out.println("readlink: " + papi.readlink("/opt/fastcfs/fuse/"));
-        System.out.println("statvfs: " + papi.statvfs(path));
+        papi.link(filename1, filename2);
+        System.out.println("fstat: " + papi.stat(filename));
+        papi.truncate(filename1, 4 * 1024);
+        System.out.println("fstat: " + papi.stat(filename2));
+
+        //System.out.println("readlink: " + papi.readlink(filename));
+        //System.out.println("statvfs: " + papi.statvfs(path));
 
         List<String> list;
         list = papi.listxattr(path, followlink);
@@ -155,10 +163,9 @@ public class FCFSPosixAPI {
         }
 
 
-        String filename = path + "/test.txt";
         FCFSFile file = papi.open(filename, 0, 0755);
         System.out.println("fstat: " + file.stat());
-        System.out.println("fstatvfs: " + file.statvfs());
+        //System.out.println("fstatvfs: " + file.statvfs());
 
         list = file.listxattr();
         for (String name : list) {

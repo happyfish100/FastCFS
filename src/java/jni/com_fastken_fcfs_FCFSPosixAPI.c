@@ -59,7 +59,7 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_destroy
             papi.setHandler, 0);
 }
 
-#define PAPI_SET_CTX_AND_PATH(retval)  \
+#define PAPI_SET_CTX_AND_PATH_EX(retval, path)  \
     long handler;  \
     jboolean *isCopy = NULL; \
     const char *path; \
@@ -73,7 +73,10 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_destroy
     } \
     \
     ctx = (FCFSPosixAPIContext *)handler; \
-    path = (*env)->GetStringUTFChars(env, jpath, isCopy)
+    path = (*env)->GetStringUTFChars(env, j##path, isCopy)
+
+#define PAPI_SET_CTX_AND_PATH(retval)  \
+    PAPI_SET_CTX_AND_PATH_EX(retval, path)
 
 jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_opendir
   (JNIEnv *env, jobject obj, jstring jpath)
@@ -333,4 +336,61 @@ jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_listxattr
     }
 
     return list_obj;
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_truncate
+  (JNIEnv *env, jobject obj, jstring jpath, jlong length)
+{
+    PAPI_SET_CTX_AND_PATH();
+
+    if (fcfs_truncate_ex(ctx, path, length) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_link
+  (JNIEnv *env, jobject obj, jstring jpath1, jstring jpath2)
+{
+    const char *path2;
+
+    PAPI_SET_CTX_AND_PATH_EX(, path1);
+    path2 = (*env)->GetStringUTFChars(env, jpath2, isCopy);
+    if (fcfs_link_ex(ctx, path1, path2) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path1, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath1, path1);
+    (*env)->ReleaseStringUTFChars(env, jpath2, path2);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_symlink
+  (JNIEnv *env, jobject obj, jstring jlink, jstring jpath)
+{
+    const char *path;
+
+    PAPI_SET_CTX_AND_PATH_EX(, link);
+    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
+    if (fcfs_symlink_ex(ctx, link, path) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                link, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jlink, link);
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_rename
+  (JNIEnv *env, jobject obj, jstring jpath1, jstring jpath2)
+{
+    const char *path2;
+
+    PAPI_SET_CTX_AND_PATH_EX(, path1);
+    path2 = (*env)->GetStringUTFChars(env, jpath2, isCopy);
+    if (fcfs_rename_ex(ctx, path1, path2) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path1, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath1, path1);
+    (*env)->ReleaseStringUTFChars(env, jpath2, path2);
 }
