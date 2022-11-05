@@ -352,12 +352,18 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_link
   (JNIEnv *env, jobject obj, jstring jpath1, jstring jpath2)
 {
     const char *path2;
+    const char *path;
 
     PAPI_SET_CTX_AND_PATH_EX(, path1);
     path2 = (*env)->GetStringUTFChars(env, jpath2, NULL);
     if (fcfs_link_ex(ctx, path1, path2) < 0) {
+        if (errno == ENOENT) {
+            path = path1;
+        } else {
+            path = path2;
+        }
         fcfs_jni_throw_filesystem_exception(env,
-                path1, errno != 0 ? errno : EIO);
+                path, errno != 0 ? errno : EIO);
     }
     (*env)->ReleaseStringUTFChars(env, jpath1, path1);
     (*env)->ReleaseStringUTFChars(env, jpath2, path2);
@@ -372,7 +378,7 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_symlink
     path = (*env)->GetStringUTFChars(env, jpath, NULL);
     if (fcfs_symlink_ex(ctx, link, path) < 0) {
         fcfs_jni_throw_filesystem_exception(env,
-                link, errno != 0 ? errno : EIO);
+                path, errno != 0 ? errno : EIO);
     }
     (*env)->ReleaseStringUTFChars(env, jlink, link);
     (*env)->ReleaseStringUTFChars(env, jpath, path);
@@ -382,12 +388,18 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_rename
   (JNIEnv *env, jobject obj, jstring jpath1, jstring jpath2)
 {
     const char *path2;
+    const char *path;
 
     PAPI_SET_CTX_AND_PATH_EX(, path1);
     path2 = (*env)->GetStringUTFChars(env, jpath2, NULL);
     if (fcfs_rename_ex(ctx, path1, path2) < 0) {
+        if (errno == ENOENT) {
+            path = path1;
+        } else {
+            path = path2;
+        }
         fcfs_jni_throw_filesystem_exception(env,
-                path1, errno != 0 ? errno : EIO);
+                path, errno != 0 ? errno : EIO);
     }
     (*env)->ReleaseStringUTFChars(env, jpath1, path1);
     (*env)->ReleaseStringUTFChars(env, jpath2, path2);
