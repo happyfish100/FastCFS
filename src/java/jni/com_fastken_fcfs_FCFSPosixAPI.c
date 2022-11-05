@@ -8,7 +8,6 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
   (JNIEnv *env, jobject obj, jstring poolname, jstring filename)
 {
     const char *log_prefix_name = "papi";
-    jboolean *isCopy = NULL;
     char *ns;
     char *config_filename;
     FCFSPosixAPIContext *ctx;
@@ -20,9 +19,9 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_init
         return;
     }
 
-    ns = (char *)((*env)->GetStringUTFChars(env, poolname, isCopy));
+    ns = (char *)((*env)->GetStringUTFChars(env, poolname, NULL));
     config_filename = (char *)((*env)->GetStringUTFChars(
-                env, filename, isCopy));
+                env, filename, NULL));
     result = fcfs_posix_api_init_start_ex(ctx,
             log_prefix_name, ns, config_filename);
     (*env)->ReleaseStringUTFChars(env, poolname, ns);
@@ -61,7 +60,6 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_destroy
 
 #define PAPI_SET_CTX_AND_PATH_EX(retval, path)  \
     long handler;  \
-    jboolean *isCopy = NULL; \
     const char *path; \
     FCFSPosixAPIContext *ctx; \
     \
@@ -73,7 +71,7 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_destroy
     } \
     \
     ctx = (FCFSPosixAPIContext *)handler; \
-    path = (*env)->GetStringUTFChars(env, j##path, isCopy)
+    path = (*env)->GetStringUTFChars(env, j##path, NULL)
 
 #define PAPI_SET_CTX_AND_PATH(retval)  \
     PAPI_SET_CTX_AND_PATH_EX(retval, path)
@@ -220,7 +218,7 @@ jbyteArray JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_getxattr
     jbyteArray value;
 
     PAPI_SET_CTX_AND_PATH(NULL);
-    name = (*env)->GetStringUTFChars(env, jname, isCopy);
+    name = (*env)->GetStringUTFChars(env, jname, NULL);
 
     buff = holder;
     size = sizeof(holder);
@@ -356,7 +354,7 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_link
     const char *path2;
 
     PAPI_SET_CTX_AND_PATH_EX(, path1);
-    path2 = (*env)->GetStringUTFChars(env, jpath2, isCopy);
+    path2 = (*env)->GetStringUTFChars(env, jpath2, NULL);
     if (fcfs_link_ex(ctx, path1, path2) < 0) {
         fcfs_jni_throw_filesystem_exception(env,
                 path1, errno != 0 ? errno : EIO);
@@ -371,7 +369,7 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_symlink
     const char *path;
 
     PAPI_SET_CTX_AND_PATH_EX(, link);
-    path = (*env)->GetStringUTFChars(env, jpath, isCopy);
+    path = (*env)->GetStringUTFChars(env, jpath, NULL);
     if (fcfs_symlink_ex(ctx, link, path) < 0) {
         fcfs_jni_throw_filesystem_exception(env,
                 link, errno != 0 ? errno : EIO);
@@ -386,11 +384,204 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_rename
     const char *path2;
 
     PAPI_SET_CTX_AND_PATH_EX(, path1);
-    path2 = (*env)->GetStringUTFChars(env, jpath2, isCopy);
+    path2 = (*env)->GetStringUTFChars(env, jpath2, NULL);
     if (fcfs_rename_ex(ctx, path1, path2) < 0) {
         fcfs_jni_throw_filesystem_exception(env,
                 path1, errno != 0 ? errno : EIO);
     }
     (*env)->ReleaseStringUTFChars(env, jpath1, path1);
     (*env)->ReleaseStringUTFChars(env, jpath2, path2);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_mknod
+  (JNIEnv *env, jobject obj, jstring jpath, jint mode, jint dev)
+{
+    PAPI_SET_CTX_AND_PATH();
+
+    if (fcfs_mknod_ex(ctx, path, mode, dev) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_mkfifo
+  (JNIEnv *env, jobject obj, jstring jpath, jint mode)
+{
+    PAPI_SET_CTX_AND_PATH();
+
+    if (fcfs_mkfifo_ex(ctx, path, mode) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_access
+  (JNIEnv *env, jobject obj, jstring jpath, jint mode)
+{
+    PAPI_SET_CTX_AND_PATH();
+
+    if (fcfs_access_ex(ctx, path, mode) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_utimes
+  (JNIEnv *env, jobject obj, jstring jpath, jlong atime, jlong mtime)
+{
+    struct timeval times[2];
+
+    PAPI_SET_CTX_AND_PATH();
+    times[0].tv_sec = atime / 1000;
+    times[0].tv_usec = (atime % 1000) * 1000;
+    times[1].tv_sec = mtime / 1000;
+    times[1].tv_usec = (mtime % 1000) * 1000;
+    if (fcfs_utimes_ex(ctx, path, times) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_unlink
+  (JNIEnv *env, jobject obj, jstring jpath)
+{
+    PAPI_SET_CTX_AND_PATH();
+
+    if (fcfs_unlink_ex(ctx, path) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_mkdir
+  (JNIEnv *env, jobject obj, jstring jpath, jint mode)
+{
+    PAPI_SET_CTX_AND_PATH();
+
+    if (fcfs_mkdir_ex(ctx, path, mode) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_rmdir
+  (JNIEnv *env, jobject obj, jstring jpath)
+{
+    PAPI_SET_CTX_AND_PATH();
+
+    if (fcfs_rmdir_ex(ctx, path) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_chown
+  (JNIEnv *env, jobject obj, jstring jpath, jint owner,
+   jint group, jboolean followlink)
+{
+    int ret;
+    PAPI_SET_CTX_AND_PATH();
+
+    if (followlink) {
+        ret = fcfs_chown_ex(ctx, path, owner, group);
+    }  else {
+        ret = fcfs_lchown_ex(ctx, path, owner, group);
+    }
+    if (ret != 0) {
+        fcfs_jni_throw_filesystem_exception(env, path,
+                errno != 0 ? errno : ENOENT);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_chmod
+  (JNIEnv *env, jobject obj, jstring jpath, jint mode)
+{
+    PAPI_SET_CTX_AND_PATH();
+
+    if (fcfs_chmod_ex(ctx, path, mode) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_chdir
+  (JNIEnv *env, jobject obj, jstring jpath)
+{
+    PAPI_SET_CTX_AND_PATH();
+
+    if (fcfs_chdir_ex(ctx, path) < 0) {
+        fcfs_jni_throw_filesystem_exception(env,
+                path, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_setxattr
+  (JNIEnv *env, jobject obj, jstring jpath, jstring jname,
+   jbyteArray b, jint off, jint len,
+   jint flags, jboolean followlink)
+{
+    const char *name;
+    int ret;
+    jbyte *ba;
+    jsize size;
+
+    PAPI_SET_CTX_AND_PATH();
+    size = (*env)->GetArrayLength(env, b);
+    if (off < 0 || off >= size) {
+        fcfs_jni_throw_out_of_bounds_exception(env, off);
+        (*env)->ReleaseStringUTFChars(env, jpath, path);
+        return;
+    }
+    if (off + len > size) {
+        fcfs_jni_throw_out_of_bounds_exception(env, off + len);
+        (*env)->ReleaseStringUTFChars(env, jpath, path);
+        return;
+    }
+
+    name = (*env)->GetStringUTFChars(env, jname, NULL);
+    ba = (*env)->GetByteArrayElements(env, b, NULL);
+    if (followlink) {
+        ret = fcfs_setxattr_ex(ctx, path, name, ba + off, len, flags);
+    }  else {
+        ret = fcfs_lsetxattr_ex(ctx, path, name, ba + off, len, flags);
+    }
+    if (ret != 0) {
+        fcfs_jni_throw_filesystem_exception(env, path,
+                errno != 0 ? errno : ENOENT);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+    (*env)->ReleaseStringUTFChars(env, jname, name);
+    (*env)->ReleaseByteArrayElements(env, b, ba, 0);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_removexattr
+  (JNIEnv *env, jobject obj, jstring jpath,
+   jstring jname, jboolean followlink)
+{
+    const char *name;
+    int ret;
+    PAPI_SET_CTX_AND_PATH();
+
+    name = (*env)->GetStringUTFChars(env, jname, NULL);
+    if (followlink) {
+        ret = fcfs_removexattr_ex(ctx, path, name);
+    }  else {
+        ret = fcfs_lremovexattr_ex(ctx, path, name);
+    }
+    if (ret != 0) {
+        fcfs_jni_throw_filesystem_exception(env, path,
+                errno != 0 ? errno : ENOENT);
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+    (*env)->ReleaseStringUTFChars(env, jname, name);
 }

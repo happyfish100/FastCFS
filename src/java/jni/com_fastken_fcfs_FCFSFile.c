@@ -176,3 +176,214 @@ jobject JNICALL Java_com_fastken_fcfs_FCFSFile_listxattr
 
     return list_obj;
 }
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_sync
+  (JNIEnv *env, jobject obj)
+{
+    FILE_OBJ_FETCH_FD();
+
+    if (fcfs_fsync(fd) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_datasync
+  (JNIEnv *env, jobject obj)
+{
+    FILE_OBJ_FETCH_FD();
+
+    if (fcfs_fdatasync(fd) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+}
+
+#define FILE_CHECK_ARRAY_BOUNDS_EX(b, off, len, size, retval) \
+    do { \
+        size = (*env)->GetArrayLength(env, b); \
+        if (off < 0 || off >= size) { \
+            fcfs_jni_throw_out_of_bounds_exception(env, off); \
+            return retval; \
+        } \
+        if (off + len > size) { \
+            fcfs_jni_throw_out_of_bounds_exception(env, off + len); \
+            return retval; \
+        } \
+    } while (0)
+
+#define FILE_CHECK_ARRAY_BOUNDS(b, off, len, size)   \
+        FILE_CHECK_ARRAY_BOUNDS_EX(b, off, len, size, )
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_write
+  (JNIEnv *env, jobject obj, jbyteArray bs, jint off, jint len)
+{
+    jbyte *ba;
+    jsize size;
+
+    FILE_OBJ_FETCH_FD();
+    FILE_CHECK_ARRAY_BOUNDS(bs, off, len, size);
+    ba = (*env)->GetByteArrayElements(env, bs, NULL);
+    if (fcfs_write(fd, ba + off, len) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseByteArrayElements(env, bs, ba, 0);
+}
+
+jint JNICALL Java_com_fastken_fcfs_FCFSFile_read
+  (JNIEnv *env, jobject obj, jbyteArray bs, jint off, jint len)
+{
+    jbyte *ba;
+    jsize size;
+    int bytes;
+
+    FILE_OBJ_FETCH_FD(-1);
+    FILE_CHECK_ARRAY_BOUNDS_EX(bs, off, len, size, -1);
+    ba = (*env)->GetByteArrayElements(env, bs, NULL);
+    if ((bytes=fcfs_read(fd, ba + off, len)) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseByteArrayElements(env, bs, ba, 0);
+    return bytes;
+}
+
+jlong JNICALL Java_com_fastken_fcfs_FCFSFile_lseek
+  (JNIEnv *env, jobject obj, jlong offset, jint whence)
+{
+    jlong position;
+
+    FILE_OBJ_FETCH_FD(-1);
+    if ((position=fcfs_lseek(fd, offset, whence)) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+    return position;
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_allocate
+  (JNIEnv *env, jobject obj, jint mode, jlong offset, jlong length)
+{
+    FILE_OBJ_FETCH_FD();
+    if (fcfs_fallocate(fd, mode, offset, length) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_truncate
+  (JNIEnv *env, jobject obj, jlong length)
+{
+    FILE_OBJ_FETCH_FD();
+    if (fcfs_ftruncate(fd, length) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+}
+
+jboolean JNICALL Java_com_fastken_fcfs_FCFSFile_lock
+  (JNIEnv *env, jobject obj, jlong position, jlong length,
+   jboolean shared, jboolean blocked)
+{
+    struct flock lock;
+    int result;
+
+    FILE_OBJ_FETCH_FD(false);
+    lock.l_type = (shared ? F_RDLCK : F_WRLCK);
+    lock.l_whence = SEEK_SET;
+    lock.l_start = position;
+    lock.l_len = length;
+    lock.l_pid = getpid();
+    if (fcfs_fcntl(fd, (blocked ? F_SETLKW : F_SETLK), &lock) < 0) {
+        result = errno != 0 ? errno : EIO;
+        if (blocked || result != EWOULDBLOCK) {
+            throw_file_exception(env, fd, result);
+        }
+        return false;
+    }
+    return true;
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_unlock
+  (JNIEnv *env, jobject obj, jlong position, jlong length)
+{
+    struct flock lock;
+
+    FILE_OBJ_FETCH_FD();
+    lock.l_type = F_UNLCK;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = position;
+    lock.l_len = length;
+    lock.l_pid = getpid();
+    if (fcfs_fcntl(fd, F_SETLK, &lock) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_utimes
+  (JNIEnv *env, jobject obj, jlong atime, jlong mtime)
+{
+    struct timeval times[2];
+
+    FILE_OBJ_FETCH_FD();
+    times[0].tv_sec = atime / 1000;
+    times[0].tv_usec = (atime % 1000) * 1000;
+    times[1].tv_sec = mtime / 1000;
+    times[1].tv_usec = (mtime % 1000) * 1000;
+    if (fcfs_futimes(fd, times) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_chown
+  (JNIEnv *env, jobject obj, jint owner, jint group)
+{
+    FILE_OBJ_FETCH_FD();
+    if (fcfs_fchown(fd, owner, group) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_chmod
+  (JNIEnv *env, jobject obj, jint mode)
+{
+    FILE_OBJ_FETCH_FD();
+    if (fcfs_fchmod(fd, mode) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_setxattr
+  (JNIEnv *env, jobject obj, jstring jname, jbyteArray bs,
+   jint off, jint len, jint flags)
+{
+    const char *name;
+    jbyte *ba;
+    jsize size;
+
+    FILE_OBJ_FETCH_FD();
+    FILE_CHECK_ARRAY_BOUNDS(bs, off, len, size);
+    ba = (*env)->GetByteArrayElements(env, bs, NULL);
+    name = (*env)->GetStringUTFChars(env, jname, NULL);
+    if (fcfs_fsetxattr(fd, name, ba + off, len, flags) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jname, name);
+    (*env)->ReleaseByteArrayElements(env, bs, ba, 0);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_removexattr
+  (JNIEnv *env, jobject obj, jstring jname)
+{
+    const char *name;
+
+    FILE_OBJ_FETCH_FD();
+    name = (*env)->GetStringUTFChars(env, jname, NULL);
+    if (fcfs_fremovexattr(fd, name) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+    (*env)->ReleaseStringUTFChars(env, jname, name);
+}
+
+void JNICALL Java_com_fastken_fcfs_FCFSFile_chdir
+  (JNIEnv *env, jobject obj)
+{
+    FILE_OBJ_FETCH_FD();
+    if (fcfs_fchdir(fd) < 0) {
+        throw_file_exception(env, fd, errno != 0 ? errno : EIO);
+    }
+}

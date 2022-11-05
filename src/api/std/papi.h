@@ -217,9 +217,6 @@
 #define fcfs_chdir(path) \
     fcfs_chdir_ex(&G_FCFS_PAPI_CTX, path)
 
-#define fcfs_fchdir(fd) \
-    fcfs_fchdir_ex(&G_FCFS_PAPI_CTX, fd)
-
 #define fcfs_getcwd(buf, size) \
     fcfs_getcwd_ex(&G_FCFS_PAPI_CTX, buf, size)
 
@@ -495,7 +492,7 @@ extern "C" {
 
     int fcfs_chdir_ex(FCFSPosixAPIContext *ctx, const char *path);
 
-    int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd);
+    int fcfs_fchdir(int fd);
 
     char *fcfs_getcwd_ex(FCFSPosixAPIContext *ctx, char *buf, size_t size);
 

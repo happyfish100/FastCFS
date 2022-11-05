@@ -122,10 +122,10 @@ JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_access
 /*
  * Class:     com_fastken_fcfs_FCFSPosixAPI
  * Method:    utimes
- * Signature: (Ljava/lang/String;[J)V
+ * Signature: (Ljava/lang/String;JJ)V
  */
 JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_utimes
-  (JNIEnv *, jobject, jstring, jlongArray);
+  (JNIEnv *, jobject, jstring, jlong, jlong);
 
 /*
  * Class:     com_fastken_fcfs_FCFSPosixAPI
@@ -218,7 +218,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_getxattr
 /*
  * Class:     com_fastken_fcfs_FCFSPosixAPI
  * Method:    listxattr
- * Signature: (Ljava/lang/String;Z)Ljava/util/Map;
+ * Signature: (Ljava/lang/String;Z)Ljava/util/List;
  */
 JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_listxattr
   (JNIEnv *, jobject, jstring, jboolean);

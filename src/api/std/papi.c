@@ -2335,7 +2335,7 @@ int fcfs_chdir_ex(FCFSPosixAPIContext *ctx, const char *path)
     return do_chdir(&cwd);
 }
 
-int fcfs_fchdir_ex(FCFSPosixAPIContext *ctx, int fd)
+int fcfs_fchdir(int fd)
 {
     FCFSPosixAPIFileInfo *file;
     char full_path[PATH_MAX];

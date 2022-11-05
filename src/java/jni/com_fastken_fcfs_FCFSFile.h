@@ -90,9 +90,9 @@ JNIEXPORT jobject JNICALL Java_com_fastken_fcfs_FCFSFile_stat
 /*
  * Class:     com_fastken_fcfs_FCFSFile
  * Method:    lock
- * Signature: (JJZZ)V
+ * Signature: (JJZZ)Z
  */
-JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSFile_lock
+JNIEXPORT jboolean JNICALL Java_com_fastken_fcfs_FCFSFile_lock
   (JNIEnv *, jobject, jlong, jlong, jboolean, jboolean);
 
 /*
@@ -106,10 +106,10 @@ JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSFile_unlock
 /*
  * Class:     com_fastken_fcfs_FCFSFile
  * Method:    utimes
- * Signature: ([J)V
+ * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSFile_utimes
-  (JNIEnv *, jobject, jlongArray);
+  (JNIEnv *, jobject, jlong, jlong);
 
 /*
  * Class:     com_fastken_fcfs_FCFSFile

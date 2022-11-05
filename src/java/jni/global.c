@@ -41,6 +41,20 @@ void fcfs_jni_throw_null_pointer_exception(JNIEnv *env)
     (*env)->ThrowNew(env, clazz, "null pointer");
 }
 
+void fcfs_jni_throw_out_of_bounds_exception(JNIEnv *env, const int index)
+{
+    jclass clazz;
+    jmethodID constructor1;
+
+    clazz = (*env)->FindClass(env, "java/lang/ArrayIndexOutOfBoundsException");
+    if (clazz == NULL) {
+        return;
+    }
+
+    constructor1 = (*env)->GetMethodID(env, clazz, "<init>", "(I)V");
+    (*env)->Throw(env, (*env)->NewObject(env, clazz, constructor1, index));
+}
+
 void fcfs_jni_throw_filesystem_exception(JNIEnv *env,
         const char *file, const int err_no)
 {

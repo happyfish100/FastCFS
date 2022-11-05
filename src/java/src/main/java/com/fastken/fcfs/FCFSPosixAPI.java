@@ -28,7 +28,7 @@ public class FCFSPosixAPI {
     public native void mknod(String path, int mode, int dev);
     public native void mkfifo(String path, int mode);
     public native void access(String path, int mode);
-    public native void utimes(String path, long[] times);
+    public native void utimes(String path, long atime, long mtime);
     public native void unlink(String path);
     public native void rename(String path1, String path2);
     public native void mkdir(String path, int mode);
@@ -147,7 +147,7 @@ public class FCFSPosixAPI {
         }
         dir.close();
 
-        papi.link(filename1, filename2);
+        //papi.link(filename1, filename2);
         System.out.println("fstat: " + papi.stat(filename));
         papi.truncate(filename1, 4 * 1024);
         System.out.println("fstat: " + papi.stat(filename2));

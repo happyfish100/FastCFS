@@ -19,12 +19,14 @@ public class FCFSFile {
     public native void allocate(int mode, long offset, long length);
     public native void truncate(long length);
     public native FCFSFileStat stat();
-    public native void lock(long position, long length, boolean shared, boolean blocked);
+    public native boolean lock(long position, long length,
+            boolean shared, boolean blocked);
     public native void unlock(long position, long length);
-    public native void utimes(long[] times);
+    public native void utimes(long atime, long mtime);
     public native void chown(int owner, int group);
     public native void chmod(int mode);
-    public native void setxattr(String name, byte[] bs, int off, int len, int flags);
+    public native void setxattr(String name, byte[] bs,
+            int off, int len, int flags);
     public native void removexattr(String name);
     public native byte[] getxattr(String name);
     public native List<String> listxattr();
@@ -52,4 +54,21 @@ public class FCFSFile {
     public int read(byte[] bs) {
         return this.read(bs, 0, bs.length);
     }
+
+    public boolean lock(long position, long length, boolean shared)
+    {
+        final boolean blocked = true;
+        return this.lock(position, length, shared, blocked);
+    }
+
+    public boolean tryLock(long position, long length, boolean shared)
+    {
+        final boolean blocked = false;
+        return this.lock(position, length, shared, blocked);
+    }
+
+     public void setxattr(String name, byte[] bs, int flags)
+     {
+         this.setxattr(name, bs, 0, bs.length, flags);
+     }
 }
