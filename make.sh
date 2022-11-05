@@ -5,27 +5,29 @@ TARGET_CONF_PATH=$DESTDIR/etc/fdir
 
 module=''
 exclude=''
+jni_file=''
+start=1
 for arg do
   case "$arg" in
     --module=*)
       module=${arg#--module=}
+      start=$(expr $start + 1)
     ;;
     --exclude=*)
       exclude=${arg#--exclude=}
+      start=$(expr $start + 1)
+    ;;
+    --jni=*)
+      jni_file=${arg#--jni=}
+      start=$(expr $start + 1)
     ;;
   esac
 done
 
-if [ -z $module ] && [ -z $exclude ]; then
-  param1=$1
-  param2=$2
-else
-  if [ "x$module" = 'xall' ]; then
-     module=''
-  fi
-  param1=$2
-  param2=$3
-fi
+index=$start
+eval param1="\$$index"
+index=$(expr $index + 1)
+eval param2="\$$index"
 
 DEBUG_FLAG=0
 PRELOAD_WITH_CAPI=1
@@ -264,10 +266,25 @@ fi
 fi
 
 if [ "$module" = 'jni' ]; then
-  files=$(locate jni.h)
+  if [ ! -z $JAVA_HOME ]; then
+    path=$JAVA_HOME
+  elif [ ! -z $jni_file ]; then
+    if [ -d $jni_file ]; then
+      path=$jni_file
+    else
+      path=$(dirname $jni_file)
+    fi
+  else
+    path=/usr/lib
+  fi
+
+  files=$(find $path -name jni.h)
   if [ -z "$files" ]; then
-    echo "can't locate jni.h, please install java SDK first."
-    exit 2
+    files=$(locate jni.h)
+    if [ -z "$files" ]; then
+      echo "can't locate jni.h, please install java SDK first."
+      exit 2
+    fi
   fi
 
   count=$(echo "$files" | wc -l)
