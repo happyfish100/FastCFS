@@ -359,7 +359,9 @@ void JNICALL Java_com_fastken_fcfs_FCFSFile_setxattr
     FILE_CHECK_ARRAY_BOUNDS(bs, off, len, size);
     ba = (*env)->GetByteArrayElements(env, bs, NULL);
     name = (*env)->GetStringUTFChars(env, jname, NULL);
-    if (fcfs_fsetxattr(fd, name, ba + off, len, flags) < 0) {
+    if (fcfs_fsetxattr(fd, name, ba + off, len,
+                fcfs_jni_convert_setxattr_flags(flags)) < 0)
+    {
         throw_file_exception(env, fd, errno != 0 ? errno : EIO);
     }
     (*env)->ReleaseStringUTFChars(env, jname, name);

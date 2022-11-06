@@ -53,7 +53,6 @@ typedef struct {
         jclass clazz;
         jmethodID constructor6;
     } statvfs;
-
 } FCFSJNIGlobalVars;
 
 #ifdef __cplusplus
@@ -61,15 +60,6 @@ extern "C" {
 #endif
 
 extern FCFSJNIGlobalVars g_fcfs_jni_global_vars;
-
-void fcfs_jni_throw_exception(JNIEnv *env, const char *message);
-
-void fcfs_jni_throw_null_pointer_exception(JNIEnv *env);
-
-void fcfs_jni_throw_out_of_bounds_exception(JNIEnv *env, const int index);
-
-void fcfs_jni_throw_filesystem_exception(JNIEnv *env,
-        const char *file, const int err_no);
 
 /*
  * Class:     com_fastken_fcfs_FCFSPosixAPI

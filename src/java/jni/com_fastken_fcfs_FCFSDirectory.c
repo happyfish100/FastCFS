@@ -1,5 +1,6 @@
 #include "fastcfs/api/std/posix_api.h"
 #include "global.h"
+#include "common.h"
 #include "com_fastken_fcfs_FCFSDirectory.h"
 
 jobject JNICALL Java_com_fastken_fcfs_FCFSDirectory_next

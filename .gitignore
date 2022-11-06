@@ -20,6 +20,7 @@ src/java/jni/Makefile
 *.lo
 *.o
 *.obj
+*.class
 
 # Precompiled Headers
 *.gch

@@ -100,8 +100,8 @@ jobject JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_open
     int fd;
 
     PAPI_SET_CTX_AND_PATH(NULL);
-    if ((fd=fcfs_open_ex(ctx, path, flags, mode,
-                    fcfs_papi_tpid_type_tid)) < 0)
+    if ((fd=fcfs_open_ex(ctx, path, fcfs_jni_convert_open_flags(flags),
+                    mode, fcfs_papi_tpid_type_tid)) < 0)
     {
         fcfs_jni_throw_filesystem_exception(env, path,
                 errno != 0 ? errno : ENOENT);
@@ -563,9 +563,11 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_setxattr
     name = (*env)->GetStringUTFChars(env, jname, NULL);
     ba = (*env)->GetByteArrayElements(env, b, NULL);
     if (followlink) {
-        ret = fcfs_setxattr_ex(ctx, path, name, ba + off, len, flags);
+        ret = fcfs_setxattr_ex(ctx, path, name, ba + off, len,
+                fcfs_jni_convert_setxattr_flags(flags));
     }  else {
-        ret = fcfs_lsetxattr_ex(ctx, path, name, ba + off, len, flags);
+        ret = fcfs_lsetxattr_ex(ctx, path, name, ba + off, len,
+                fcfs_jni_convert_setxattr_flags(flags));
     }
     if (ret != 0) {
         fcfs_jni_throw_filesystem_exception(env, path,

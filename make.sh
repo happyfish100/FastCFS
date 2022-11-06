@@ -275,12 +275,16 @@ if [ "$module" = 'jni' ]; then
       path=$(dirname $jni_file)
     fi
   else
-    path=/usr/lib
+    if [ -d /Library ]; then
+      path=/Library
+    else
+      path=/usr/lib
+    fi
   fi
 
-  files=$(find $path -name jni.h)
+  files=$(find $path -name jni.h 2>/dev/null | grep '/include/jni.h$')
   if [ -z "$files" ]; then
-    files=$(locate jni.h)
+    files=$(locate jni.h | grep '/include/jni.h$')
     if [ -z "$files" ]; then
       echo "can't locate jni.h, please install java SDK first."
       exit 2

@@ -130,6 +130,7 @@ public class FCFSPosixAPI {
         final boolean followlink = false;
         String path;
         FCFSPosixAPI papi;
+
         FCFSPosixAPI.setLibraryFilename("/usr/local/lib/libfcfsjni.so");
         papi = FCFSPosixAPI.getInstance(ns, configFilename);
 
