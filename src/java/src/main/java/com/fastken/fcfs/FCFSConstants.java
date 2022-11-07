@@ -2,9 +2,10 @@ package com.fastken.fcfs;
 
 public class FCFSConstants {
     //for access mode
-    public static final int X_OK = 1;  //execute
-    public static final int W_OK = 2;  //write
-    public static final int R_OK = 4;  //read
+    public static final int F_OK = 0;  //check file existence
+    public static final int X_OK = 1;  //execute permission
+    public static final int W_OK = 2;  //write permission
+    public static final int R_OK = 4;  //read permission
 
 
     //for setxattr flags

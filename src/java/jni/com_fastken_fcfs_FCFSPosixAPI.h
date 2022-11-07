@@ -121,6 +121,14 @@ JNIEXPORT void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_access
 
 /*
  * Class:     com_fastken_fcfs_FCFSPosixAPI
+ * Method:    exists
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_exists
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_fastken_fcfs_FCFSPosixAPI
  * Method:    utimes
  * Signature: (Ljava/lang/String;JJ)V
  */

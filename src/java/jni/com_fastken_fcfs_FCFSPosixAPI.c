@@ -441,6 +441,25 @@ void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_access
     (*env)->ReleaseStringUTFChars(env, jpath, path);
 }
 
+jboolean JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_exists
+  (JNIEnv *env, jobject obj, jstring jpath)
+{
+    jboolean ret;
+
+    PAPI_SET_CTX_AND_PATH(false);
+    if (fcfs_access_ex(ctx, path, F_OK) == 0) {
+        ret = true;
+    } else {
+        if (errno != ENOENT) {
+            fcfs_jni_throw_filesystem_exception(env,
+                    path, errno != 0 ? errno : EIO);
+        }
+        ret = false;
+    }
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+    return ret;
+}
+
 void JNICALL Java_com_fastken_fcfs_FCFSPosixAPI_utimes
   (JNIEnv *env, jobject obj, jstring jpath, jlong atime, jlong mtime)
 {

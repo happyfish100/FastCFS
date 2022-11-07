@@ -29,6 +29,7 @@ public class FCFSPosixAPI {
     public native void mknod(String path, int mode, int dev);
     public native void mkfifo(String path, int mode);
     public native void access(String path, int mode);
+    public native boolean exists(String path);
     public native void utimes(String path, long atime, long mtime);
     public native void unlink(String path);
     public native void rename(String path1, String path2);
@@ -117,27 +118,34 @@ public class FCFSPosixAPI {
         instances.clear();
     }
 
-    public void setxattr(String path, String name, byte[] b, int flags)
+    /**
+      * open file for read
+      * @param path the filename to open
+      * @return FCFSFile instance
+     */
+    public FCFSFile open(String path)
     {
+        final int mode = 0;
+        return this.open(path, FCFSConstants.O_RDONLY, mode);
+    }
+
+    public void setxattr(String path, String name, byte[] b, int flags) {
         final boolean followlink = true;
         this.setxattr(path, name, b, 0, b.length, flags, followlink);
     }
 
-    public void setxattr(String path, String name, byte[] b)
-    {
+    public void setxattr(String path, String name, byte[] b) {
         final int flags = 0;
         final boolean followlink = true;
         this.setxattr(path, name, b, 0, b.length, flags, followlink);
     }
 
-    public void lsetxattr(String path, String name, byte[] b, int flags)
-    {
+    public void lsetxattr(String path, String name, byte[] b, int flags) {
         final boolean followlink = false;
         this.setxattr(path, name, b, 0, b.length, flags, followlink);
     }
 
-    public void lsetxattr(String path, String name, byte[] b)
-    {
+    public void lsetxattr(String path, String name, byte[] b) {
         final int flags = 0;
         final boolean followlink = false;
         this.setxattr(path, name, b, 0, b.length, flags, followlink);
@@ -170,28 +178,47 @@ public class FCFSPosixAPI {
         papi = FCFSPosixAPI.getInstance(ns, configFilename);
 
         path = "/opt/fastcfs/fuse/";
-        String filename = "./test.txt";
+        String filename = path + "test.txt";
         String filename1 = filename;
-        String filename2 = "./test2.txt";
+        String filename2 = path + "test2.txt";
 
         FCFSDirectory dir = papi.opendir(path);
         FCFSDirectory.Entry dirent;
+        FCFSFile file;
 
         System.out.println("cwd: " + papi.getcwd());
         while ((dirent=dir.next()) != null) {
-            System.out.println("inode: " + dirent.getInode() + ", name: " + dirent.getName());
+            //System.out.println("inode: " + dirent.getInode() + ", name: " + dirent.getName());
         }
         dir.close();
+
+        try {
+            papi.unlink(filename1);
+        } catch(Exception ex) {
+        }
+
+        if (!papi.exists(filename1)) {
+            file = papi.open(filename1, FCFSConstants.O_WRONLY |
+                    FCFSConstants.O_CREAT, 0755);
+            file.write(new String("hello world!").getBytes(charset));
+            file.close();
+
+            System.out.println(filename1 + " created");
+        }
 
         try {
             papi.unlink(filename2);
         } catch(Exception ex) {
         }
-        System.out.println("heihei");
-
-        //papi.symlink("./test.txt", filename2);
-        papi.symlink(filename1, filename2);
+        papi.symlink("./test.txt", filename2);
+        //papi.symlink(filename1, filename2);
         System.out.println("readlink: " + papi.readlink(filename2));
+
+        byte[] bs = new byte[1024];
+        file = papi.open(filename2);
+        int length = file.read(bs);
+        file.close();
+        System.out.println("content: " + new String(bs, 0, length, charset));
 
         System.out.println("fstat: " + papi.stat(filename));
         papi.truncate(filename1, 4 * 1024);
@@ -209,7 +236,7 @@ public class FCFSPosixAPI {
         }
 
 
-        FCFSFile file = papi.open(filename, 0, 0755);
+        file = papi.open(filename);
         System.out.println("fstat: " + file.stat());
         //System.out.println("fstatvfs: " + file.statvfs());
 
