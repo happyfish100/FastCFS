@@ -170,9 +170,9 @@ public class FCFSPosixAPI {
         papi = FCFSPosixAPI.getInstance(ns, configFilename);
 
         path = "/opt/fastcfs/fuse/";
-        String filename = path + "/test.txt";
+        String filename = "./test.txt";
         String filename1 = filename;
-        String filename2 = path + "/test2.txt";
+        String filename2 = "./test2.txt";
 
         FCFSDirectory dir = papi.opendir(path);
         FCFSDirectory.Entry dirent;
@@ -183,13 +183,20 @@ public class FCFSPosixAPI {
         }
         dir.close();
 
-        papi.unlink(filename2);
-        papi.symlink("./test.txt", filename2);
+        try {
+            papi.unlink(filename2);
+        } catch(Exception ex) {
+        }
+        System.out.println("heihei");
+
+        //papi.symlink("./test.txt", filename2);
+        papi.symlink(filename1, filename2);
+        System.out.println("readlink: " + papi.readlink(filename2));
+
         System.out.println("fstat: " + papi.stat(filename));
         papi.truncate(filename1, 4 * 1024);
         System.out.println("fstat: " + papi.stat(filename2));
 
-        //System.out.println("readlink: " + papi.readlink(filename));
         //System.out.println("statvfs: " + papi.statvfs(path));
 
         papi.setxattr(path, "myxattr", new String("myvalue").getBytes(charset));

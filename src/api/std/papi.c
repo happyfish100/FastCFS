@@ -67,26 +67,43 @@ static inline int do_open(FCFSPosixAPIContext *ctx, const char *path,
 }
 
 static inline char *do_getcwd(FCFSPosixAPIContext *ctx,
-        char *buf, size_t size, const int overflow_errno)
+        string_t *cwd, size_t size, const int overflow_errno)
 {
     if (G_FCFS_PAPI_CWD == NULL) {
         if (ctx->mountpoint.len >= size) {
             errno = overflow_errno;
+            cwd->len = 0;
             return NULL;
         }
 
-        sprintf(buf, "%.*s", ctx->mountpoint.len, ctx->mountpoint.str);
-        return buf;
+        cwd->len = sprintf(cwd->str, "%.*s", ctx->mountpoint.len,
+                ctx->mountpoint.str);
+        return cwd->str;
     }
 
     if (ctx->mountpoint.len + G_FCFS_PAPI_CWD->len >= size) {
         errno = overflow_errno;
+        cwd->len = 0;
         return NULL;
     }
 
-    sprintf(buf, "%.*s%.*s", ctx->mountpoint.len, ctx->mountpoint.str,
-            G_FCFS_PAPI_CWD->len, G_FCFS_PAPI_CWD->str);
-    return buf;
+    cwd->len = sprintf(cwd->str, "%.*s%.*s", ctx->mountpoint.len,
+            ctx->mountpoint.str, G_FCFS_PAPI_CWD->len,
+            G_FCFS_PAPI_CWD->str);
+    return cwd->str;
+}
+
+static inline int do_getcwd1(FCFSPosixAPIContext *ctx,
+        string_t *cwd, size_t size)
+{
+    if (do_getcwd(ctx, cwd, size, EOVERFLOW) == NULL) {
+        return -1;
+    }
+
+    if (cwd->len == 0 || cwd->str[cwd->len - 1] != '/') {
+        cwd->str[cwd->len++] = '/';
+    }
+    return 0;
 }
 
 static inline int papi_resolve_path(FCFSPosixAPIContext *ctx,
@@ -94,10 +111,16 @@ static inline int papi_resolve_path(FCFSPosixAPIContext *ctx,
         char *full_filename, const int size)
 {
     char cwd[PATH_MAX];
+    string_t from_string;
+    string_t path_string;
 
     if (**path != '/') {
-        normalize_path1(do_getcwd(ctx, cwd, sizeof(cwd), EOVERFLOW),
-                *path, full_filename, sizeof(full_filename));
+        from_string.str = cwd;
+        if (do_getcwd1(ctx, &from_string, sizeof(cwd)) != 0) {
+            return -1;
+        }
+        FC_SET_STRING(path_string, (char *)*path);
+        normalize_path(&from_string, &path_string, full_filename, size);
         *path = full_filename;
     }
 
@@ -111,10 +134,16 @@ static int papi_resolve_pathat(FCFSPosixAPIContext *ctx, const char *func,
 {
     FCFSPosixAPIFileInfo *file;
     char cwd[PATH_MAX];
+    string_t from_string;
+    string_t path_string;
 
     if (fd == AT_FDCWD) {
-        normalize_path1(do_getcwd(ctx, cwd, sizeof(cwd), EOVERFLOW),
-                *path, full_filename, size);
+        from_string.str = cwd;
+        if (do_getcwd1(ctx, &from_string, sizeof(cwd)) != 0) {
+            return -1;
+        }
+        FC_SET_STRING(path_string, (char *)*path);
+        normalize_path(&from_string, &path_string, full_filename, size);
         FCFS_API_CHECK_PATH_MOUNTPOINT(ctx, full_filename, func);
         *path = full_filename + ctx->mountpoint.len;
         return 0;
@@ -2363,12 +2392,18 @@ int fcfs_fchdir(int fd)
 
 char *fcfs_getcwd_ex(FCFSPosixAPIContext *ctx, char *buf, size_t size)
 {
-    return do_getcwd(ctx, buf, size, ERANGE);
+    string_t cwd;
+
+    cwd.str = buf;
+    return do_getcwd(ctx, &cwd, size, ERANGE);
 }
 
 char *fcfs_getwd_ex(FCFSPosixAPIContext *ctx, char *buf)
 {
-    return do_getcwd(ctx, buf, PATH_MAX, ENAMETOOLONG);
+    string_t cwd;
+
+    cwd.str = buf;
+    return do_getcwd(ctx, &cwd, PATH_MAX, ENAMETOOLONG);
 }
 
 #define FCFS_API_NOT_IMPLEMENTED(api_name, retval)  \
