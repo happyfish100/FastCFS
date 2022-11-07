@@ -71,4 +71,10 @@ public class FCFSFile {
      {
          this.setxattr(name, bs, 0, bs.length, flags);
      }
+
+     public void setxattr(String name, byte[] bs)
+     {
+         final int flags = 0;
+         this.setxattr(name, bs, 0, bs.length, flags);
+     }
 }

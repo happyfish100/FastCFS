@@ -3,6 +3,7 @@ package com.fastken.fcfs;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.FileSystemException;
 
@@ -116,12 +117,40 @@ public class FCFSPosixAPI {
         instances.clear();
     }
 
+    public void setxattr(String path, String name, byte[] b, int flags)
+    {
+        final boolean followlink = true;
+        this.setxattr(path, name, b, 0, b.length, flags, followlink);
+    }
+
+    public void setxattr(String path, String name, byte[] b)
+    {
+        final int flags = 0;
+        final boolean followlink = true;
+        this.setxattr(path, name, b, 0, b.length, flags, followlink);
+    }
+
+    public void lsetxattr(String path, String name, byte[] b, int flags)
+    {
+        final boolean followlink = false;
+        this.setxattr(path, name, b, 0, b.length, flags, followlink);
+    }
+
+    public void lsetxattr(String path, String name, byte[] b)
+    {
+        final int flags = 0;
+        final boolean followlink = false;
+        this.setxattr(path, name, b, 0, b.length, flags, followlink);
+    }
+
     public FCFSFileStat stat(String path) {
-        return this.stat(path, true);
+        final boolean followlink = true;
+        return this.stat(path, followlink);
     }
 
     public FCFSFileStat lstat(String path) {
-        return this.stat(path, false);
+        final boolean followlink = false;
+        return this.stat(path, followlink);
     }
 
     public static void main(String[] args) throws Exception {
@@ -131,7 +160,13 @@ public class FCFSPosixAPI {
         String path;
         FCFSPosixAPI papi;
 
-        FCFSPosixAPI.setLibraryFilename("/usr/local/lib/libfcfsjni.so");
+        File f = new File("/usr/lib/libfcfsjni.so");
+        if (f.exists()) {
+            FCFSPosixAPI.setLibraryFilename(f.getAbsolutePath());
+        } else {
+            FCFSPosixAPI.setLibraryFilename("/usr/local/lib/libfcfsjni.so");
+        }
+
         papi = FCFSPosixAPI.getInstance(ns, configFilename);
 
         path = "/opt/fastcfs/fuse/";
@@ -148,13 +183,16 @@ public class FCFSPosixAPI {
         }
         dir.close();
 
-        //papi.link(filename1, filename2);
+        papi.unlink(filename2);
+        papi.symlink("./test.txt", filename2);
         System.out.println("fstat: " + papi.stat(filename));
         papi.truncate(filename1, 4 * 1024);
         System.out.println("fstat: " + papi.stat(filename2));
 
         //System.out.println("readlink: " + papi.readlink(filename));
         //System.out.println("statvfs: " + papi.statvfs(path));
+
+        papi.setxattr(path, "myxattr", new String("myvalue").getBytes(charset));
 
         List<String> list;
         list = papi.listxattr(path, followlink);

@@ -96,7 +96,7 @@ static inline int papi_resolve_path(FCFSPosixAPIContext *ctx,
     char cwd[PATH_MAX];
 
     if (**path != '/') {
-        normalize_path(do_getcwd(ctx, cwd, sizeof(cwd), EOVERFLOW),
+        normalize_path1(do_getcwd(ctx, cwd, sizeof(cwd), EOVERFLOW),
                 *path, full_filename, sizeof(full_filename));
         *path = full_filename;
     }
@@ -113,7 +113,7 @@ static int papi_resolve_pathat(FCFSPosixAPIContext *ctx, const char *func,
     char cwd[PATH_MAX];
 
     if (fd == AT_FDCWD) {
-        normalize_path(do_getcwd(ctx, cwd, sizeof(cwd), EOVERFLOW),
+        normalize_path1(do_getcwd(ctx, cwd, sizeof(cwd), EOVERFLOW),
                 *path, full_filename, size);
         FCFS_API_CHECK_PATH_MOUNTPOINT(ctx, full_filename, func);
         *path = full_filename + ctx->mountpoint.len;
@@ -131,7 +131,7 @@ static int papi_resolve_pathat(FCFSPosixAPIContext *ctx, const char *func,
         return -1;
     }
 
-    normalize_path(file->filename.str, *path, full_filename, size);
+    normalize_path1(file->filename.str, *path, full_filename, size);
     *path = full_filename;
     return 0;
 }
