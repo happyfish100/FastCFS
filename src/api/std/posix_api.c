@@ -39,7 +39,7 @@ static int load_posix_api_config(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    return fcfs_api_load_owner_config(ini_ctx, &ctx->owner);
+    return 0;
 }
 
 int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
@@ -48,6 +48,8 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
         const bool publish)
 {
     int result;
+    bool fdir_idempotency_enabled;
+    bool fs_idempotency_enabled;
     IniContext iniContext;
     IniFullContext ini_ctx;
 
@@ -62,6 +64,18 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename,
             NULL, &iniContext);
     do {
+        if ((result=fcfs_api_load_idempotency_config_ex(log_prefix_name,
+                        &ini_ctx, fdir_section_name, fs_section_name)) != 0)
+        {
+            break;
+        }
+
+        //save
+        fdir_idempotency_enabled = g_fdir_client_vars.
+            client_ctx.idempotency_enabled;
+        fs_idempotency_enabled = g_fs_client_vars.
+            client_ctx.idempotency_enabled;
+
         if ((result=load_posix_api_config(ctx, ns, &ini_ctx,
                         fdir_section_name)) != 0)
         {
@@ -75,17 +89,17 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
             break;
         }
 
-        if ((result=fcfs_api_load_idempotency_config_ex(log_prefix_name,
-                        &ini_ctx, fdir_section_name, fs_section_name)) != 0)
-        {
-            break;
-        }
-
         if ((result=fcfs_api_check_mountpoint(config_filename,
                         &ctx->mountpoint)) != 0)
         {
             break;
         }
+
+        //restore
+        g_fdir_client_vars.client_ctx.idempotency_enabled =
+            fdir_idempotency_enabled;
+        g_fs_client_vars.client_ctx.idempotency_enabled =
+            fs_idempotency_enabled;
     } while (0);
 
     iniFreeContext(&iniContext);
@@ -104,18 +118,19 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
 void fcfs_posix_api_log_configs_ex(FCFSPosixAPIContext *ctx,
         const char *fdir_section_name, const char *fs_section_name)
 {
-    char sf_idempotency_config[256];
+    BufferInfo sf_idempotency_config;
+    char buff[256];
     char owner_config[2 * NAME_MAX + 64];
 
+    sf_idempotency_config.buff = buff;
+    sf_idempotency_config.alloc_size = sizeof(buff);
     fcfs_api_log_client_common_configs(&ctx->api_ctx,
-            &ctx->owner, fdir_section_name, fs_section_name,
-            sf_idempotency_config, owner_config);
+            fdir_section_name, fs_section_name,
+            &sf_idempotency_config, owner_config);
 
     logInfo("FastDIR namespace: %s, %smountpoint: %s, "
-            "owner_type: %s%s", ctx->nsmp.ns,
-            sf_idempotency_config, ctx->nsmp.mountpoint,
-            fcfs_api_get_owner_type_caption(ctx->owner.type),
-            owner_config);
+            "%s", ctx->nsmp.ns, sf_idempotency_config.buff,
+            ctx->nsmp.mountpoint, owner_config);
 }
 
 void fcfs_posix_api_destroy_ex(FCFSPosixAPIContext *ctx)

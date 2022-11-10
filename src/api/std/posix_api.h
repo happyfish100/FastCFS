@@ -108,7 +108,7 @@ extern "C" {
     */
     static inline int fcfs_posix_api_start_ex(FCFSPosixAPIContext *ctx)
     {
-        return fcfs_api_start_ex(&ctx->api_ctx, &ctx->owner);
+        return fcfs_api_start_ex(&ctx->api_ctx);
     }
 
     /** FastCFS POSIX API init and start
@@ -130,7 +130,7 @@ extern "C" {
         {
             return result;
         }
-        return fcfs_api_start_ex(&ctx->api_ctx, &ctx->owner);
+        return fcfs_api_start_ex(&ctx->api_ctx);
     }
 
     /** FastCFS POSIX API stop the background threads
@@ -212,9 +212,9 @@ extern "C" {
             const FCFSPosixAPIContext *pctx, const mode_t mode)
     {
         omp->mode = (mode & (~fc_get_umask()));
-        if (pctx->owner.type == fcfs_api_owner_type_fixed) {
-            omp->uid = pctx->owner.uid;
-            omp->gid = pctx->owner.gid;
+        if (pctx->api_ctx.owner.type == fcfs_api_owner_type_fixed) {
+            omp->uid = pctx->api_ctx.owner.uid;
+            omp->gid = pctx->api_ctx.owner.gid;
         } else {
             omp->uid = geteuid();
             omp->gid = getegid();

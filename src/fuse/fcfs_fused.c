@@ -315,8 +315,7 @@ static int setup_server_env(const char *config_filename)
 
     log_set_cache(true);
     need_delete_pid_file = true;
-    return fcfs_api_start_ex(&g_fcfs_api_ctx,
-            &g_fuse_global_vars.owner);
+    return fcfs_api_start_ex(&g_fcfs_api_ctx);
 }
 
 static struct fuse_session *create_fuse_session(char *argv0,

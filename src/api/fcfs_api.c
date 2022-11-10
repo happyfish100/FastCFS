@@ -153,7 +153,9 @@ static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     fcfs_api_set_contexts_ex1(ctx, fdir, fsapi, ns);
-    return 0;
+
+    ini_ctx->section_name = fdir_section_name;
+    return fcfs_api_load_owner_config(ini_ctx, &ctx->owner);
 }
 
 int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
@@ -290,8 +292,7 @@ void fcfs_api_destroy_ex(FCFSAPIContext *ctx)
     }
 }
 
-static int check_create_root_path(FCFSAPIContext *ctx,
-        const FCFSAPIOwnerInfo *owner)
+static int check_create_root_path(FCFSAPIContext *ctx)
 {
     int result;
     int64_t inode;
@@ -306,7 +307,7 @@ static int check_create_root_path(FCFSAPIContext *ctx,
 
             fullname.ns = ctx->ns;
             FC_SET_STRING(fullname.path, "/");
-            FCFS_API_SET_OMP(omp, *owner, (ACCESSPERMS | S_IFDIR),
+            FCFS_API_SET_OMP(omp, ctx->owner, (ACCESSPERMS | S_IFDIR),
                     geteuid(), getegid());
             if ((result=fdir_client_create_dentry(ctx->contexts.fdir,
                             &fullname, &omp, &dentry)) == EEXIST)
@@ -321,7 +322,7 @@ static int check_create_root_path(FCFSAPIContext *ctx,
     return result;
 }
 
-int fcfs_api_start_ex(FCFSAPIContext *ctx, const FCFSAPIOwnerInfo *owner)
+int fcfs_api_start_ex(FCFSAPIContext *ctx)
 {
     int result;
 
@@ -349,10 +350,8 @@ int fcfs_api_start_ex(FCFSAPIContext *ctx, const FCFSAPIOwnerInfo *owner)
         }
     }
 
-    if (owner != NULL) {
-        if ((result=check_create_root_path(ctx, owner)) != 0) {
-            return result;
-        }
+    if ((result=check_create_root_path(ctx)) != 0) {
+        return result;
     }
 
     if ((result=fdir_client_init_node_id(ctx->contexts.fdir)) != 0) {
@@ -668,20 +667,19 @@ void fcfs_api_free_ns_mountpoint(FCFSAPINSMountpointHolder *nsmp)
 }
 
 void fcfs_api_log_client_common_configs(FCFSAPIContext *ctx,
-        const FCFSAPIOwnerInfo *owner, const char *fdir_section_name,
-        const char *fs_section_name, char *sf_idempotency_config,
-        char *owner_config)
+        const char *fdir_section_name, const char *fs_section_name,
+        BufferInfo *sf_idempotency_config, char *owner_config)
 {
     char auth_config[512];
     char fsapi_config[1024];
     char async_report_config[512];
+    int len;
 
     if (ctx->contexts.fdir->idempotency_enabled ||
             ctx->contexts.fsapi->fs->idempotency_enabled)
     {
-        int len;
-
-        len = sprintf(sf_idempotency_config,
+        len = snprintf(sf_idempotency_config->buff,
+                sf_idempotency_config->alloc_size,
                 "%s idempotency_enabled=%d, "
                 "%s idempotency_enabled=%d, ",
                 fdir_section_name, ctx->contexts.
@@ -690,23 +688,25 @@ void fcfs_api_log_client_common_configs(FCFSAPIContext *ctx,
                 fsapi->fs->idempotency_enabled);
 
         idempotency_client_channel_config_to_string_ex(
-                sf_idempotency_config + len,
-                sizeof(sf_idempotency_config) - len, true);
-        sf_log_config();
+                sf_idempotency_config->buff + len,
+                sf_idempotency_config->alloc_size - len, true);
+        sf_idempotency_config->length = strlen(sf_idempotency_config->buff);
     } else {
-        *sf_idempotency_config = '\0';
+        *sf_idempotency_config->buff = '\0';
+        sf_idempotency_config->length = 0;
     }
+    sf_log_config();
 
-    if (owner->type == fcfs_api_owner_type_fixed) {
+    len = sprintf(owner_config, "owner_type: %s",
+            fcfs_api_get_owner_type_caption(ctx->owner.type));
+    if (ctx->owner.type == fcfs_api_owner_type_fixed) {
         struct passwd *user;
         struct group *group;
 
-        user = getpwuid(owner->uid);
-        group = getgrgid(owner->gid);
-        sprintf(owner_config, ", owner_user: %s, owner_group: %s",
+        user = getpwuid(ctx->owner.uid);
+        group = getgrgid(ctx->owner.gid);
+        sprintf(owner_config + len, ", owner_user: %s, owner_group: %s",
                 user->pw_name, group->gr_name);
-    } else {
-        *owner_config = '\0';
     }
 
     fcfs_api_async_report_config_to_string_ex(ctx, async_report_config,

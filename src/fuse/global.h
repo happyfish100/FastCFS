@@ -42,7 +42,6 @@ typedef struct {
     double attribute_timeout;
     double entry_timeout;
     FUSEAllowOthersMode allow_others;
-    FCFSAPIOwnerInfo owner;
     Version kernel_version;
 } FUSEGlobalVars;
 

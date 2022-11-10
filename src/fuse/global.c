@@ -128,8 +128,7 @@ static int load_fuse_config(IniFullContext *ini_ctx)
 
     g_fuse_global_vars.kernel_cache = iniGetBoolValue(ini_ctx->
             section_name, "kernel_cache", ini_ctx->context, true);
-
-    return fcfs_api_load_owner_config(ini_ctx, &g_fuse_global_vars.owner);
+    return 0;
 }
 
 static const char *get_allow_others_caption(
@@ -148,8 +147,11 @@ static const char *get_allow_others_caption(
 int fcfs_fuse_global_init(const char *config_filename)
 {
     const bool publish = true;
+    bool fdir_idempotency_enabled;
+    bool fs_idempotency_enabled;
     int result;
-    char sf_idempotency_config[256];
+    BufferInfo sf_idempotency_config;
+    char buff[256];
     char owner_config[2 * NAME_MAX + 64];
     char max_threads_buff[64];
     IniContext iniContext;
@@ -165,6 +167,18 @@ int fcfs_fuse_global_init(const char *config_filename)
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename,
             FCFS_API_DEFAULT_FASTDIR_SECTION_NAME, &iniContext);
     do {
+        if ((result=fcfs_api_load_idempotency_config(
+                        "fcfs_fused", &ini_ctx)) != 0)
+        {
+            break;
+        }
+
+        //save
+        fdir_idempotency_enabled = g_fdir_client_vars.
+            client_ctx.idempotency_enabled;
+        fs_idempotency_enabled = g_fs_client_vars.
+            client_ctx.idempotency_enabled;
+
         if ((result=load_fuse_config(&ini_ctx)) != 0) {
             break;
         }
@@ -176,17 +190,17 @@ int fcfs_fuse_global_init(const char *config_filename)
             break;
         }
 
-        if ((result=fcfs_api_load_idempotency_config(
-                        "fcfs_fused", &ini_ctx)) != 0)
-        {
-            break;
-        }
-
         if ((result=fcfs_api_check_mountpoint1(config_filename,
                         g_fuse_global_vars.nsmp.mountpoint)) != 0)
         {
             break;
         }
+
+        //restore
+        g_fdir_client_vars.client_ctx.idempotency_enabled =
+            fdir_idempotency_enabled;
+        g_fs_client_vars.client_ctx.idempotency_enabled =
+            fs_idempotency_enabled;
     } while (0);
 
     iniFreeContext(&iniContext);
@@ -194,11 +208,12 @@ int fcfs_fuse_global_init(const char *config_filename)
         return result;
     }
 
+    sf_idempotency_config.buff = buff;
+    sf_idempotency_config.alloc_size = sizeof(buff);
     fcfs_api_log_client_common_configs(&g_fcfs_api_ctx,
-            &g_fuse_global_vars.owner,
             FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,
             FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME,
-            sf_idempotency_config, owner_config);
+            &sf_idempotency_config, owner_config);
 
 #if FUSE_VERSION < FUSE_MAKE_VERSION(3, 12)
     sprintf(max_threads_buff, "max_idle_threads: %d",
@@ -211,7 +226,7 @@ int fcfs_fuse_global_init(const char *config_filename)
 
     logInfo("FastCFS V%d.%d.%d, FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
-            "owner_type: %s%s, singlethread: %d, clone_fd: %d, "
+            "%s, singlethread: %d, clone_fd: %d, "
             "%s, allow_others: %s, auto_unmount: %d, "
             "attribute_timeout: %.1fs, entry_timeout: %.1fs, "
             "xattr_enabled: %d, writeback_cache: %d, kernel_cache: %d",
@@ -219,8 +234,8 @@ int fcfs_fuse_global_init(const char *config_filename)
             g_fcfs_global_vars.version.minor,
             g_fcfs_global_vars.version.patch,
             fuse_pkgversion(), g_fuse_global_vars.nsmp.ns,
-            sf_idempotency_config, g_fuse_global_vars.nsmp.mountpoint,
-            fcfs_api_get_owner_type_caption(g_fuse_global_vars.owner.type),
+            sf_idempotency_config.buff,
+            g_fuse_global_vars.nsmp.mountpoint,
             owner_config, g_fuse_global_vars.singlethread,
             g_fuse_global_vars.clone_fd, max_threads_buff,
             get_allow_others_caption(g_fuse_global_vars.allow_others),

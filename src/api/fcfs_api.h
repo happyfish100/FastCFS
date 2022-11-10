@@ -47,7 +47,7 @@
 
 #define fcfs_api_destroy()  fcfs_api_destroy_ex(&g_fcfs_api_ctx)
 
-#define fcfs_api_start() fcfs_api_start_ex(&g_fcfs_api_ctx, NULL)
+#define fcfs_api_start() fcfs_api_start_ex(&g_fcfs_api_ctx)
 #define fcfs_api_terminate() fcfs_api_terminate_ex(&g_fcfs_api_ctx)
 
 #define fcfs_api_async_report_config_to_string(output, size) \
@@ -110,7 +110,7 @@ extern "C" {
 
     void fcfs_api_destroy_ex(FCFSAPIContext *ctx);
 
-    int fcfs_api_start_ex(FCFSAPIContext *ctx, const FCFSAPIOwnerInfo *owner);
+    int fcfs_api_start_ex(FCFSAPIContext *ctx);
 
     void fcfs_api_terminate_ex(FCFSAPIContext *ctx);
 
@@ -185,9 +185,8 @@ extern "C" {
             FCFSAPIOwnerInfo *owner_info);
 
     void fcfs_api_log_client_common_configs(FCFSAPIContext *ctx,
-            const FCFSAPIOwnerInfo *owner, const char *fdir_section_name,
-            const char *fs_section_name, char *sf_idempotency_config,
-            char *owner_config);
+            const char *fdir_section_name, const char *fs_section_name,
+            BufferInfo *sf_idempotency_config, char *owner_config);
 
     static inline const char *fcfs_api_get_owner_type_caption(
             const FCFSAPIOwnerType owner_type)

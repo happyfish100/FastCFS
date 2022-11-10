@@ -27,7 +27,7 @@
 #include "fuse3/fuse_lowlevel.h"
 
 #define FCFS_FUSE_SET_OMP(omp, m, euid, egid) \
-    FCFS_API_SET_OMP(omp, g_fuse_global_vars.owner, m, euid, egid)
+    FCFS_API_SET_OMP(omp, g_fcfs_api_ctx.owner, m, euid, egid)
 
 #define FCFS_FUSE_SET_OMP_BY_REQ(omp, m, req) \
     do { \

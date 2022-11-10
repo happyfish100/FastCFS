@@ -57,8 +57,11 @@ typedef struct fcfs_api_context {
         int hashtable_sharding_count;
         int64_t hashtable_total_capacity;
     } async_report;
+
     string_t ns;  //namespace
     char ns_holder[NAME_MAX];
+    FCFSAPIOwnerInfo owner;
+
     struct {
         FDIRClientContext *fdir;
         FSAPIContext *fsapi;
