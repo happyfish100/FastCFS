@@ -117,6 +117,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fdir & fstore] 针对两副本，数据提交多数派机制智能化（已完成）
 *  [fstore] 文件读写性能优化（已完成）
 *  [api] 提供Java Native API（进行中）
+*  [fdir & api] POSIX兼容性测试及改进（进行中）
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 *  [all] 支持集群在线扩容
 
