@@ -23,15 +23,16 @@
 
 int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name,
-        const int flags, const int64_t tid)
+        const FDIRDentryOperator *oper, const int flags,
+        const int64_t tid)
 {
-    FDIRDEntryPName pname;
+    FDIRClientOperPnamePair opname;
     FDIRDEntryInfo dentry;
     int result;
 
-    FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
+    FCFSAPI_SET_PATH_OPER_PNAME(opname, *oper, parent_inode, name);
     if ((result=fdir_client_remove_dentry_by_pname_ex(
-            ctx->contexts.fdir, &ctx->ns, &pname,
+            ctx->contexts.fdir, &ctx->ns, &opname,
             flags, &dentry)) != 0)
     {
         return result;
@@ -45,15 +46,14 @@ int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
 }
 
 int fcfs_api_remove_dentry_ex(FCFSAPIContext *ctx,
-        const char *path, const int flags, const int64_t tid)
+        const FDIRClientOperFnamePair *path,
+        const int flags, const int64_t tid)
 {
-    FDIRDEntryFullName fullname;
     FDIRDEntryInfo dentry;
     int result;
 
-    FCFSAPI_SET_PATH_FULLNAME(fullname, ctx, path);
     if ((result=fdir_client_remove_dentry_ex(ctx->contexts.fdir,
-                    &fullname, flags, &dentry)) != 0)
+                    path, flags, &dentry)) != 0)
     {
         return result;
     }
@@ -68,7 +68,7 @@ int fcfs_api_remove_dentry_ex(FCFSAPIContext *ctx,
 int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t src_parent_inode, const string_t *src_name,
         const int64_t dest_parent_inode, const string_t *dest_name,
-        const int flags, const int64_t tid)
+        const FDIRDentryOperator *oper, const int flags, const int64_t tid)
 {
     FDIRDEntryPName src_pname;
     FDIRDEntryPName dest_pname;
@@ -80,8 +80,8 @@ int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
     FDIR_SET_DENTRY_PNAME_PTR(&dest_pname, dest_parent_inode, dest_name);
     pe = &dentry;
     if ((result=fdir_client_rename_dentry_by_pname_ex(ctx->contexts.fdir,
-                    &ctx->ns, &src_pname, &ctx->ns, &dest_pname, flags,
-                    &pe)) != 0)
+                    &ctx->ns, &src_pname, &ctx->ns, &dest_pname, oper,
+                    flags, &pe)) != 0)
     {
         return result;
     }
@@ -93,8 +93,8 @@ int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
     return result;
 }
 
-int fcfs_api_rename_dentry_ex(FCFSAPIContext *ctx,
-        const char *path1, const char *path2,
+int fcfs_api_rename_dentry_ex(FCFSAPIContext *ctx, const char *path1,
+        const char *path2, const FDIRDentryOperator *oper,
         const int flags, const int64_t tid)
 {
     FDIRDEntryFullName src;
@@ -107,7 +107,7 @@ int fcfs_api_rename_dentry_ex(FCFSAPIContext *ctx,
     FCFSAPI_SET_PATH_FULLNAME(dest, ctx, path2);
     pe = &dentry;
     if ((result=fdir_client_rename_dentry_ex(ctx->contexts.fdir,
-                    &src, &dest, flags, &pe)) != 0)
+                    &src, &dest, oper, flags, &pe)) != 0)
     {
         return result;
     }

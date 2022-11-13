@@ -155,7 +155,7 @@ extern "C" {
             const int64_t offset, const int64_t len, const int64_t tid);
 
     static inline int fcfs_api_unlink_ex(FCFSAPIContext *ctx,
-            const char *path, const int64_t tid)
+            const FDIRClientOperFnamePair *path, const int64_t tid)
     {
         const int flags = FDIR_UNLINK_FLAGS_MATCH_FILE;
         return fcfs_api_remove_dentry_ex(ctx, path, flags, tid);
@@ -167,10 +167,11 @@ extern "C" {
     int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf);
 
     int fcfs_api_lstat_ex(FCFSAPIContext *ctx, const char *path,
-            struct stat *buf);
+            const uid_t uid, const gid_t gid, struct stat *buf);
 
     int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path,
-            struct stat *buf, const int flags);
+            const uid_t uid, const gid_t gid, struct stat *buf,
+            const int flags);
 
     int fcfs_api_flock_ex2(FCFSAPIFileInfo *fi, const int operation,
             const int64_t owner_id, const pid_t pid);
@@ -227,7 +228,7 @@ extern "C" {
             const char *path, const FDIRClientOwnerModePair *omp);
 
     int fcfs_api_readlink(FCFSAPIContext *ctx, const char *path,
-            char *buff, const int size);
+            const uid_t uid, const gid_t gid, char *buff, const int size);
 
     int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
             const char *new_path, const FDIRClientOwnerModePair *omp,

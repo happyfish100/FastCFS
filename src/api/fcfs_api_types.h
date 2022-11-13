@@ -72,6 +72,7 @@ typedef struct fcfs_api_context {
 
 typedef struct fcfs_api_file_info {
     FCFSAPIContext *ctx;
+    FDIRDentryOperator oper;
     int64_t tid;
     struct {
         FDIRClientSession flock;
