@@ -58,11 +58,13 @@ static void usage(char *argv[])
 
 static int check_create_root_path()
 {
+    const uid_t uid = 0;
+    const gid_t gid = 0;
     int result;
     int64_t inode;
     FDIRClientOwnerModePair omp;
 
-    if ((result=fcfs_api_lookup_inode_by_path("/", &inode)) != 0) {
+    if ((result=fcfs_api_lookup_inode_by_path("/", uid, gid, &inode)) != 0) {
         if (result == ENOENT) {
             FDIRDEntryFullName fullname;
             FDIRDEntryInfo dentry;

@@ -13,8 +13,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/stat.h>
-#include <limits.h>
 #include "fastcommon/shared_func.h"
 #include "fastcommon/logger.h"
 #include "fastcommon/sockopt.h"
@@ -26,19 +24,9 @@
 
 #define FCFS_API_MAGIC_NUMBER    1588076578
 
-#ifdef O_SYMLINK
-#define FCFS_API_NOFOLLOW_SYMLINK_FLAGS  (O_NOFOLLOW | O_SYMLINK)
-#else
-#define FCFS_API_NOFOLLOW_SYMLINK_FLAGS  (O_NOFOLLOW)
-#endif
-
 static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
         const int64_t new_size, const FDIRDentryOperator *oper,
         const int64_t tid);
-
-#define GET_STAT_FLAGS(open_flags) \
-    ((((open_flags) & FCFS_API_NOFOLLOW_SYMLINK_FLAGS) != 0) ? \
-     0 : FDIR_FLAGS_FOLLOW_SYMLINK)
 
 static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRClientOperFnamePair *path,
         const FDIRClientOwnerModePair *omp, const int64_t tid, int result)
@@ -65,9 +53,10 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRClientOperFnamePair *path,
                         return EEXIST;
                     }
 
-                    if ((result=fcfs_api_stat_dentry_by_fullname_ex(fi->ctx,
-                                    path, GET_STAT_FLAGS(fi->flags),
-                                    LOG_DEBUG, &fi->dentry)) != 0)
+                    if ((result=fcfs_api_access_dentry_by_path_ex(fi->ctx,
+                                    path, FCFS_API_GET_ACCESS_MASK(fi->flags),
+                                    FCFS_API_GET_ACCESS_FLAGS(fi->flags),
+                                    &fi->dentry)) != 0)
                     {
                         return result;
                     }
@@ -138,8 +127,9 @@ int fcfs_api_open_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
     SET_FILE_COMMON_FIELDS(fi, ctx, flags);
     FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, fctx->omp.uid,
             fctx->omp.gid, path);
-    result = fcfs_api_stat_dentry_by_fullname_ex(ctx, &fname,
-            GET_STAT_FLAGS(flags), LOG_DEBUG, &fi->dentry);
+    result = fcfs_api_access_dentry_by_path_ex(ctx,
+            &fname, FCFS_API_GET_ACCESS_MASK(flags),
+            FCFS_API_GET_ACCESS_FLAGS(flags), &fi->dentry);
     if ((result=deal_open_flags(fi, &fname, &new_omp,
                     fctx->tid, result)) != 0)
     {
@@ -176,8 +166,10 @@ int fcfs_api_open_by_inode_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
     int result;
 
     FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, fctx->omp.uid, fctx->omp.gid, inode);
-    if ((result=fcfs_api_stat_dentry_by_inode_ex(ctx, &oino,
-                    GET_STAT_FLAGS(flags), &fi->dentry)) != 0)
+    if ((result=fcfs_api_access_dentry_by_inode_ex(ctx, &oino,
+                    FCFS_API_GET_ACCESS_MASK(flags),
+                    FCFS_API_GET_ACCESS_FLAGS(flags),
+                    &fi->dentry)) != 0)
     {
         return result;
     }

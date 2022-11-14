@@ -25,18 +25,20 @@ int dao_granted_create(FDIRClientContext *client_ctx, const string_t *username,
 {
     int result;
     int64_t inode;
-    AuthFullPath pool_path;
+    AuthFullPath fp;
+    FDIRClientOperFnamePair path;
     FDIRDEntryInfo dentry;
 
-    AUTH_SET_GRANTED_POOL_PATH(pool_path, username, granted->pool_id);
+    AUTH_SET_GRANTED_POOL_PATH(fp, username, granted->pool_id);
+    AUTH_SET_PATH_OPER_FNAME(path, fp);
     if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
-                    &pool_path.fullname, LOG_DEBUG, &inode)) != 0)
+                    &path, LOG_DEBUG, &inode)) != 0)
     {
         if (result != ENOENT) {
             return result;
         }
 
-        if ((result=fdir_client_create_dentry(client_ctx, &pool_path.
+        if ((result=fdir_client_create_dentry(client_ctx, &fp.
                         fullname, &DAO_OMP_FILE, &dentry)) != 0)
         {
             return result;
@@ -63,10 +65,12 @@ int dao_granted_remove(FDIRClientContext *client_ctx,
         const string_t *username, const int64_t pool_id)
 {
     const int flags = 0;
-    AuthFullPath pool_path;
+    AuthFullPath fp;
+    FDIRClientOperFnamePair path;
 
-    AUTH_SET_GRANTED_POOL_PATH(pool_path, username, pool_id);
-    return fdir_client_remove_dentry(client_ctx, &pool_path.fullname, flags);
+    AUTH_SET_GRANTED_POOL_PATH(fp, username, pool_id);
+    AUTH_SET_PATH_OPER_FNAME(path, fp);
+    return fdir_client_remove_dentry(client_ctx, &path, flags);
 }
 
 static int dump_to_granted_array(FDIRClientContext *client_ctx,
@@ -133,6 +137,7 @@ int dao_granted_list(FDIRClientContext *client_ctx, const string_t *username,
 {
     int result;
     AuthFullPath fp;
+    FDIRClientOperFnamePair path;
     FDIRClientDentryArray dentry_array;
 
     if ((result=fdir_client_dentry_array_init(&dentry_array)) != 0) {
@@ -140,8 +145,9 @@ int dao_granted_list(FDIRClientContext *client_ctx, const string_t *username,
     }
 
     AUTH_SET_USER_PATH1(fp, username, AUTH_DIR_NAME_GRANTED_STR);
+    AUTH_SET_PATH_OPER_FNAME(path, fp);
     if ((result=fdir_client_list_dentry_by_path(client_ctx,
-                    &fp.fullname, &dentry_array)) != 0)
+                    &path, &dentry_array)) != 0)
     {
         fdir_client_dentry_array_free(&dentry_array);
         return result;

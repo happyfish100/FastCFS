@@ -22,17 +22,14 @@
 #include "fcfs_api_util.h"
 
 int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
-        const int64_t parent_inode, const string_t *name,
-        const FDIRDentryOperator *oper, const int flags,
-        const int64_t tid)
+        const FDIRClientOperPnamePair *opname,
+        const int flags, const int64_t tid)
 {
-    FDIRClientOperPnamePair opname;
     FDIRDEntryInfo dentry;
     int result;
 
-    FCFSAPI_SET_PATH_OPER_PNAME(opname, *oper, parent_inode, name);
     if ((result=fdir_client_remove_dentry_by_pname_ex(
-            ctx->contexts.fdir, &ctx->ns, &opname,
+            ctx->contexts.fdir, &ctx->ns, opname,
             flags, &dentry)) != 0)
     {
         return result;

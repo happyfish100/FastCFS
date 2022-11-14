@@ -19,6 +19,8 @@
 
 #include <sys/types.h>
 #include <sys/statvfs.h>
+#include <sys/stat.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <utime.h>
 #include "fcfs_api_types.h"
@@ -31,6 +33,21 @@
 #ifndef FALLOC_FL_PUNCH_HOLE
 #define FALLOC_FL_PUNCH_HOLE 0x02
 #endif
+
+#ifdef O_SYMLINK
+#define FCFS_API_NOFOLLOW_SYMLINK_FLAGS  (O_NOFOLLOW | O_SYMLINK)
+#else
+#define FCFS_API_NOFOLLOW_SYMLINK_FLAGS  (O_NOFOLLOW)
+#endif
+
+#define FCFS_API_GET_ACCESS_FLAGS(open_flags) \
+    ((((open_flags) & FCFS_API_NOFOLLOW_SYMLINK_FLAGS) != 0) ? \
+     FDIR_FLAGS_OUTPUT_DENTRY : (FDIR_FLAGS_FOLLOW_SYMLINK | \
+         FDIR_FLAGS_OUTPUT_DENTRY))
+
+#define FCFS_API_GET_ACCESS_MASK(open_flags) \
+    (((open_flags) & O_WRONLY) ? W_OK : (((open_flags) & O_RDWR) ? \
+        (R_OK | W_OK) : R_OK))
 
 #ifdef __cplusplus
 extern "C" {

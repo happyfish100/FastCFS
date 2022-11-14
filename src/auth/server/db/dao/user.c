@@ -25,13 +25,15 @@ static int user_make_subdir(FDIRClientContext *client_ctx,
         const bool check_exist)
 {
     AuthFullPath fp;
+    FDIRClientOperFnamePair path;
     FDIRDEntryInfo dentry;
     int result;
 
     AUTH_SET_USER_PATH1(fp, username, subdir);
+    AUTH_SET_PATH_OPER_FNAME(path, fp);
     if (check_exist) {
         result = fdir_client_lookup_inode_by_path_ex(client_ctx,
-                &fp.fullname, LOG_DEBUG, &dentry.inode);
+                &path, LOG_DEBUG, &dentry.inode);
         if (result == 0) {
             return 0;
         } else if (result != ENOENT) {
@@ -50,6 +52,7 @@ int dao_user_create(FDIRClientContext *client_ctx, FCFSAuthUserInfo *user)
     int result;
     bool check_exist;
     AuthFullPath home;
+    FDIRClientOperFnamePair path;
     FDIRDEntryInfo dentry;
 
     AUTH_SET_USER_HOME(home, &user->name);
@@ -59,8 +62,9 @@ int dao_user_create(FDIRClientContext *client_ctx, FCFSAuthUserInfo *user)
         inode = dentry.inode;
         check_exist = false;
     } else if (result == EEXIST) {
+        AUTH_SET_PATH_OPER_FNAME(path, home);
         if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
-                        &home.fullname, LOG_ERR, &inode)) != 0)
+                        &path, LOG_ERR, &inode)) != 0)
         {
             return result;
         }
@@ -187,6 +191,8 @@ int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
     FDIRDEntryInfo dentry;
     AuthFullPath fp;
     FDIRDEntryFullName root;
+    FDIRClientOperFnamePair path;
+    FDIRClientOperInodePair oino;
     FDIRClientDentryArray dentry_array;
 
     if ((result=fdir_client_dentry_array_init_ex(
@@ -196,8 +202,9 @@ int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
     }
 
     AUTH_SET_BASE_PATH(fp);
+    AUTH_SET_PATH_OPER_FNAME(path, fp);
     if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
-                    &fp.fullname, LOG_DEBUG, &dentry.inode)) != 0)
+                    &path, LOG_DEBUG, &dentry.inode)) != 0)
     {
         if (result != ENOENT) {
             return result;
@@ -218,8 +225,9 @@ int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
         }
     }
 
+    AUTH_SET_OPER_INODE_PAIR(oino, dentry.inode);
     if ((result=fdir_client_list_dentry_by_inode(client_ctx,
-                    &DAO_NAMESPACE, dentry.inode, &dentry_array)) != 0)
+                    &DAO_NAMESPACE, &oino, &dentry_array)) != 0)
     {
         fdir_client_dentry_array_free(&dentry_array);
         return result;

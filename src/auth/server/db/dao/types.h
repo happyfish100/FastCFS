@@ -81,4 +81,13 @@ typedef struct auth_full_path {
                 AUTH_BASE_PATH_LEN); \
     } while (0)
 
+#define AUTH_SET_PATH_OPER_FNAME(path, fp) \
+    path.oper.uid = path.oper.gid = 0; \
+    path.fullname = fp.fullname
+
+#define AUTH_SET_OPER_INODE_PAIR(oino, _inode) \
+    oino.oper.uid = 0;  \
+    oino.oper.gid = 0;  \
+    oino.inode = _inode
+
 #endif
