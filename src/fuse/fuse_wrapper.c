@@ -113,6 +113,7 @@ static void fs_do_getattr(fuse_req_t req, fuse_ino_t ino,
 			     struct fuse_file_info *fi)
 {
     const int flags = 0;
+    int result;
     int64_t new_inode;
     FDIRClientOperInodePair oino;
     FDIRDEntryInfo dentry;
@@ -123,10 +124,10 @@ static void fs_do_getattr(fuse_req_t req, fuse_ino_t ino,
     }
 
     SET_OPER_INODE_PAIR(req, oino, new_inode);
-    if (fcfs_api_stat_dentry_by_inode(&oino, flags, &dentry) == 0) {
+    if ((result=fcfs_api_stat_dentry_by_inode(&oino, flags, &dentry)) == 0) {
         do_reply_attr(req, &dentry);
     } else {
-        fuse_reply_err(req, ENOENT);
+        fuse_reply_err(req, result);
     }
 }
 
@@ -216,15 +217,16 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
         fuse_reply_err(req, ENOENT);
         return;
     }
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, new_inode: %"PRId64", "
             "flags: %"PRId64", atime bit: %d, mtime bit: %d, uid bit: %d, "
-            "gid bit: %d", __LINE__, __FUNCTION__, new_inode, options.flags,
-            options.atime, options.mtime, options.uid, options.gid);
+            "gid bit: %d, oper uid: %d, gid: %d", __LINE__, __FUNCTION__,
+            new_inode, options.flags, options.atime, options.mtime,
+            options.uid, options.gid, oino.oper.uid, oino.oper.gid);
             */
 
-    SET_OPER_INODE_PAIR(req, oino, new_inode);
     if (options.flags == 0) {
         if (pe == NULL) {
             pe = &dentry;
@@ -238,11 +240,10 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
                 attr, options.flags, &dentry);
     }
     if (result != 0) {
-        fuse_reply_err(req, ENOENT);
-        return;
+        fuse_reply_err(req, result);
+    } else {
+        do_reply_attr(req, pe);
     }
-
-    do_reply_attr(req, pe);
 }
 
 static void fs_do_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
@@ -266,7 +267,7 @@ static void fs_do_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
                 "parent: %"PRId64", name: %s(%d), result: %d",
                 __LINE__, __FUNCTION__, parent, name, (int)strlen(name), result);
                 */
-        fuse_reply_err(req, ENOENT);
+        fuse_reply_err(req, result);
         return;
     }
 
@@ -481,13 +482,7 @@ static void fs_do_access(fuse_req_t req, fuse_ino_t ino, int mask)
     }
 
     SET_OPER_INODE_PAIR(req, oino, new_inode);
-    if ((result=fcfs_api_access_dentry_by_inode(&oino,
-                    mask, flags, &dentry)) != 0)
-    {
-        fuse_reply_err(req, ENOENT);
-        return;
-    }
-
+    result = fcfs_api_access_dentry_by_inode(&oino, mask, flags, &dentry);
     fuse_reply_err(req, result);
 }
 
@@ -514,7 +509,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
                     &nm, &fctx.omp, rdev, &dentry)) != 0)
     {
         if (result != EEXIST) {
-            fuse_reply_err(req, ENOENT);
+            fuse_reply_err(req, result);
             return;
         }
 
@@ -530,7 +525,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
                         FCFS_API_GET_ACCESS_FLAGS(fi->flags),
                         &dentry)) != 0)
         {
-            fuse_reply_err(req, ENOENT);
+            fuse_reply_err(req, result);
             return;
         }
     }
@@ -571,11 +566,7 @@ static void do_mknod(fuse_req_t req, fuse_ino_t parent,
     if ((result=fcfs_api_create_dentry_by_pname(parent_inode, &nm,
                     &omp, rdev, &dentry)) != 0)
     {
-        if (result == EEXIST || result == ENOENT) {
-            fuse_reply_err(req, result);
-        } else {
-            fuse_reply_err(req, ENOENT);
-        }
+        fuse_reply_err(req, result);
         return;
     }
 
@@ -807,7 +798,7 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
                     FCFS_API_GET_ACCESS_FLAGS(fi->flags),
                     &dentry)) != 0)
     {
-        fuse_reply_err(req, ENOENT);
+        fuse_reply_err(req, result);
         return;
     }
 
