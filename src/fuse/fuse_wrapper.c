@@ -237,7 +237,7 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     } else {
         pe = &dentry;
         result = fcfs_api_modify_stat_by_inode(&oino,
-                attr, options.flags, &dentry);
+                attr, options.flags, flags, &dentry);
     }
     if (result != 0) {
         fuse_reply_err(req, result);

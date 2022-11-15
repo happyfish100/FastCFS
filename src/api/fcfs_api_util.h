@@ -131,8 +131,9 @@ extern "C" {
     fcfs_api_rename_dentry_ex(&g_fcfs_api_ctx, \
             path1, path2, flags, tid)
 
-#define fcfs_api_modify_stat_by_inode(inode, attr, flags, dentry)  \
-    fcfs_api_modify_stat_by_inode_ex(&g_fcfs_api_ctx, inode, attr, flags, dentry)
+#define fcfs_api_modify_stat_by_inode(oino, attr, mflags, flags, dentry)  \
+    fcfs_api_modify_stat_by_inode_ex(&g_fcfs_api_ctx, \
+            oino, attr, mflags, flags, dentry)
 
 #define fcfs_api_set_xattr_by_inode(inode, xattr, flags) \
     fcfs_api_set_xattr_by_inode_ex(&g_fcfs_api_ctx, inode, xattr, flags)
@@ -375,9 +376,8 @@ int fcfs_api_rename_dentry_ex(FCFSAPIContext *ctx, const char *path1,
 
 static inline int fcfs_api_modify_stat_by_inode_ex(FCFSAPIContext *ctx,
         const FDIRClientOperInodePair *oino, const struct stat *attr,
-        const int64_t mflags, FDIRDEntryInfo *dentry)
+        const int64_t mflags, const int flags, FDIRDEntryInfo *dentry)
 {
-    const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     FDIRDEntryStat stat;
 
     if (ctx->async_report.enabled) {
