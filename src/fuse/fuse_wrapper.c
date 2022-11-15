@@ -495,7 +495,6 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
         const char *name, mode_t mode, struct fuse_file_info *fi)
 {
     const dev_t rdev = 0;
-    const int flags = 0;
     FCFSAPIFileContext fctx;
     int result;
     int64_t parent_inode;
@@ -526,8 +525,10 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
 
         FCFSAPI_SET_PATH_OPER_PNAME_EX(opname, fctx.omp.uid,
                 fctx.omp.gid, parent_inode, &nm);
-        if ((result=fcfs_api_stat_dentry_by_pname(&opname,
-                        flags, &dentry)) != 0)
+        if ((result=fcfs_api_access_dentry_by_pname(&opname,
+                        FCFS_API_GET_ACCESS_MASK(fi->flags),
+                        FCFS_API_GET_ACCESS_FLAGS(fi->flags),
+                        &dentry)) != 0)
         {
             fuse_reply_err(req, ENOENT);
             return;

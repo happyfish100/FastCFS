@@ -91,6 +91,10 @@ extern "C" {
     fcfs_api_access_dentry_by_inode_ex(&g_fcfs_api_ctx, \
             oino, mask, flags, dentry)
 
+#define fcfs_api_access_dentry_by_pname(opname, mask, flags, dentry) \
+    fcfs_api_access_dentry_by_pname_ex(&g_fcfs_api_ctx, \
+            opname, mask, flags, dentry)
+
 #define fcfs_api_create_dentry_by_pname(parent_inode, name, omp, rdev, dentry) \
     fcfs_api_create_dentry_by_pname_ex(&g_fcfs_api_ctx, \
             parent_inode, name, omp, rdev, dentry)
@@ -263,6 +267,7 @@ static inline int fcfs_api_access_dentry_by_inode_ex(FCFSAPIContext *ctx,
     if (ctx->async_report.enabled && (flags & FDIR_FLAGS_OUTPUT_DENTRY)) {
         inode_htable_check_conflict_and_wait(oino->inode);
     }
+
     return fdir_client_access_dentry_by_inode(ctx->contexts.fdir,
             &ctx->ns, oino, mask, flags, dentry);
 }
@@ -285,8 +290,32 @@ static inline int fcfs_api_access_dentry_by_path_ex(FCFSAPIContext *ctx,
         return fcfs_api_access_dentry_by_inode_ex(
                 ctx, &oino, mask, flags, dentry);
     }
+
     return fdir_client_access_dentry_by_path(ctx->
             contexts.fdir, path, mask, flags, dentry);
+}
+
+static inline int fcfs_api_access_dentry_by_pname_ex(FCFSAPIContext *ctx,
+        const FDIRClientOperPnamePair *opname, const char mask,
+        const int flags, FDIRDEntryInfo *dentry)
+{
+    if (ctx->async_report.enabled && (flags & FDIR_FLAGS_OUTPUT_DENTRY)) {
+        int result;
+        FDIRClientOperInodePair oino;
+
+        if ((result=fdir_client_lookup_inode_by_pname_ex(ctx->contexts.fdir,
+                        &ctx->ns, opname, LOG_NOTHING, &oino.inode)) != 0)
+        {
+            return result;
+        }
+
+        oino.oper = opname->oper;
+        return fcfs_api_access_dentry_by_inode_ex(
+                ctx, &oino, mask, flags, dentry);
+    }
+
+    return fdir_client_access_dentry_by_pname(ctx->contexts.fdir,
+            &ctx->ns, opname, mask, flags, dentry);
 }
 
 static inline int fcfs_api_create_dentry_by_pname_ex(FCFSAPIContext *ctx,
