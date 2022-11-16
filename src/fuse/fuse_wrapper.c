@@ -34,6 +34,7 @@ static struct fast_mblock_man fh_allocator;
 static void fill_stat(const FDIRDEntryInfo *dentry, struct stat *stat)
 {
     stat->st_ino = dentry->inode;
+    stat->st_rdev = dentry->stat.rdev;
     stat->st_mode = dentry->stat.mode;
     stat->st_size = dentry->stat.size;
     stat->st_atime = dentry->stat.atime;
@@ -221,10 +222,16 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, new_inode: %"PRId64", "
-            "flags: %"PRId64", atime bit: %d, mtime bit: %d, uid bit: %d, "
-            "gid bit: %d, oper uid: %d, gid: %d", __LINE__, __FUNCTION__,
-            new_inode, options.flags, options.atime, options.mtime,
-            options.uid, options.gid, oino.oper.uid, oino.oper.gid);
+            "flags: %"PRId64", to_set: %d, atime bit: %d, mtime bit: %d, ctime bit: %d, "
+            "uid bit: %d, uid_to_set: %d, gid bit: %d, gid_to_set: %d, "
+            "oper {uid: %d, gid: %d}, atime_now: %d, atime: %ld, "
+            "mtime_now: %d, mtime: %ld", __LINE__, __FUNCTION__,
+            new_inode, options.flags, to_set, (to_set & FUSE_SET_ATTR_ATIME),
+            (to_set & FUSE_SET_ATTR_MTIME), options.ctime, options.uid,
+            attr->st_uid, options.gid, attr->st_gid, oino.oper.uid,
+            oino.oper.gid, (to_set & FUSE_SET_ATTR_ATIME_NOW),
+            attr->st_atim.tv_sec, (to_set & FUSE_SET_ATTR_MTIME_NOW),
+            attr->st_mtim.tv_sec);
             */
 
     if (options.flags == 0) {
@@ -557,8 +564,9 @@ static void do_mknod(fuse_req_t req, fuse_ino_t parent,
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
-            "parent ino: %"PRId64", name: %s, mode: %03o, isdir: %d",
-            __LINE__, __FUNCTION__, parent_inode, name, mode, S_ISDIR(mode));
+            "parent ino: %"PRId64", name: %s, mode: %03o, "
+            "rdev: %lx, isdir: %d", __LINE__, __FUNCTION__,
+            parent_inode, name, mode, (long)rdev, S_ISDIR(mode));
             */
 
     FCFS_FUSE_SET_OMP_BY_REQ(omp, mode, req);
