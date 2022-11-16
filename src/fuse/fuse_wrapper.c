@@ -140,6 +140,7 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     int64_t new_inode;
     FDIRStatModifyFlags options;
     FDIRClientOperInodePair oino;
+    const struct fuse_ctx *fctx;
     FDIRDEntryInfo *pe;
     FDIRDEntryInfo dentry;
 
@@ -148,6 +149,13 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
             "ino: %"PRId64", to_set: %d, fi: %p ====",
             __LINE__, __FUNCTION__, ino, to_set, fi);
             */
+
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+    fctx = fuse_req_ctx(req);
+    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, fctx->uid, fctx->gid, new_inode);
 
     options.flags = 0;
     if ((to_set & FUSE_SET_ATTR_MODE)) {
@@ -164,36 +172,41 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
 
     if ((to_set & FUSE_SET_ATTR_SIZE)) {
         FCFSAPIFileInfo *fh;
-        const struct fuse_ctx *fctx;
 
         if (fi == NULL) {
-            fuse_reply_err(req, EBADF);
-            return;
+            if ((result=fcfs_api_file_truncate(&oino, attr->st_size,
+                            fctx->pid, &dentry)) != 0)
+            {
+                fuse_reply_err(req, result);
+                return;
+            }
+
+            dentry.stat.size = attr->st_size;
+            pe = &dentry;
+        } else {
+            fh = (FCFSAPIFileInfo *)fi->fh;
+            if (fh == NULL) {
+                fuse_reply_err(req, EBADF);
+                return;
+            }
+
+            /*
+               logInfo("file: "__FILE__", line: %d, func: %s, "
+               "SET file size from %"PRId64" to: %"PRId64,
+               __LINE__, __FUNCTION__, fh->dentry.stat.size,
+               (int64_t)attr->st_size);
+               */
+
+            if ((result=fcfs_api_ftruncate_ex(fh,
+                            attr->st_size, fctx->pid)) != 0)
+            {
+                fuse_reply_err(req, result);
+                return;
+            }
+
+            fh->dentry.stat.size = attr->st_size;
+            pe = &fh->dentry;
         }
-
-        fh = (FCFSAPIFileInfo *)fi->fh;
-        if (fh == NULL) {
-            fuse_reply_err(req, EBADF);
-            return;
-        }
-
-        /*
-        logInfo("file: "__FILE__", line: %d, func: %s, "
-                "SET file size from %"PRId64" to: %"PRId64,
-                __LINE__, __FUNCTION__, fh->dentry.stat.size,
-                (int64_t)attr->st_size);
-                */
-
-        fctx = fuse_req_ctx(req);
-        if ((result=fcfs_api_ftruncate_ex(fh,
-                        attr->st_size, fctx->pid)) != 0)
-        {
-            fuse_reply_err(req, result);
-            return;
-        }
-
-        fh->dentry.stat.size = attr->st_size;
-        pe = &fh->dentry;
     } else {
         pe = NULL;
     }
@@ -213,12 +226,6 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     } else if ((to_set & FUSE_SET_ATTR_MTIME_NOW)) {
         options.mtime = 1;
     }
-
-    if (fs_convert_inode(req, ino, &new_inode) != 0) {
-        fuse_reply_err(req, ENOENT);
-        return;
-    }
-    SET_OPER_INODE_PAIR(req, oino, new_inode);
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, new_inode: %"PRId64", "
@@ -532,6 +539,9 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
                         FCFS_API_GET_ACCESS_FLAGS(fi->flags),
                         &dentry)) != 0)
         {
+            if (result == EPERM) {
+                result = EACCES;
+            }
             fuse_reply_err(req, result);
             return;
         }
@@ -806,6 +816,9 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
                     FCFS_API_GET_ACCESS_FLAGS(fi->flags),
                     &dentry)) != 0)
     {
+        if (result == EPERM) {
+            result = EACCES;
+        }
         fuse_reply_err(req, result);
         return;
     }

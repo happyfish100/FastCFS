@@ -929,6 +929,29 @@ int fcfs_api_truncate_ex(FCFSAPIContext *ctx, const char *path,
     return file_truncate(ctx, inode, new_size, &fname.oper, fctx->tid);
 }
 
+int fcfs_api_file_truncate_ex(FCFSAPIContext *ctx,
+       const FDIRClientOperInodePair *oino,
+       const int64_t new_size, const int64_t tid,
+       FDIRDEntryInfo *dentry)
+{
+    const int flags = FDIR_FLAGS_OUTPUT_DENTRY;
+    int result;
+
+    if ((result=fcfs_api_access_dentry_by_inode_ex(ctx,
+                    oino, W_OK, flags, dentry)) != 0)
+    {
+        if (result == EPERM) {
+            result = EACCES;
+        }
+        return result;
+    }
+    if (S_ISDIR(dentry->stat.mode)) {
+        return EISDIR;
+    }
+
+    return file_truncate(ctx, oino->inode, new_size, &oino->oper, tid);
+}
+
 #define calc_file_offset(fi, offset, whence, new_offset)  \
     calc_file_offset_ex(fi, offset, whence, false, new_offset)
 

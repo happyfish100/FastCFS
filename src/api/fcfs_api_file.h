@@ -95,6 +95,9 @@ extern "C" {
 #define fcfs_api_truncate(path, new_size, fctx) \
     fcfs_api_truncate_ex(&g_fcfs_api_ctx, path, new_size, fctx)
 
+#define fcfs_api_file_truncate(oino, new_size, tid, dentry) \
+    fcfs_api_file_truncate_ex(&g_fcfs_api_ctx, oino, new_size, tid, dentry)
+
 #define fcfs_api_unlink(path, tid)  \
     fcfs_api_unlink_ex(&g_fcfs_api_ctx, path, tid)
 
@@ -161,6 +164,11 @@ extern "C" {
 
     int fcfs_api_readv_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
             const int iovcnt, int *read_bytes, const int64_t tid);
+
+    int fcfs_api_file_truncate_ex(FCFSAPIContext *ctx,
+            const FDIRClientOperInodePair *oino,
+            const int64_t new_size, const int64_t tid,
+            FDIRDEntryInfo *dentry);
 
     int fcfs_api_ftruncate_ex(FCFSAPIFileInfo *fi, const int64_t new_size,
             const int64_t tid);
