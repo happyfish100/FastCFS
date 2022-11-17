@@ -37,7 +37,7 @@ int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
 
     if (S_ISREG(dentry.stat.mode) && dentry.stat.nlink == 0) {
         result = fs_api_unlink_file(ctx->contexts.fsapi,
-                dentry.inode, dentry.stat.size, tid);
+                dentry.inode, dentry.stat.space_end, tid);
     }
     return result;
 }
@@ -57,7 +57,7 @@ int fcfs_api_remove_dentry_ex(FCFSAPIContext *ctx,
 
     if (S_ISREG(dentry.stat.mode) && dentry.stat.nlink == 0) {
         result = fs_api_unlink_file(ctx->contexts.fsapi,
-                dentry.inode, dentry.stat.size, tid);
+                dentry.inode, dentry.stat.space_end, tid);
     }
     return result;
 }
@@ -85,7 +85,7 @@ int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
 
     if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0) {
         fs_api_unlink_file(ctx->contexts.fsapi, pe->inode,
-                pe->stat.size, tid);
+                pe->stat.space_end, tid);
     }
     return result;
 }
@@ -111,7 +111,7 @@ int fcfs_api_rename_dentry_ex(FCFSAPIContext *ctx, const char *path1,
 
     if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0) {
         fs_api_unlink_file(ctx->contexts.fsapi, pe->inode,
-                pe->stat.size, tid);
+                pe->stat.space_end, tid);
     }
     return result;
 }

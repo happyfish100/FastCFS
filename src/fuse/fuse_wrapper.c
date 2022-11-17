@@ -191,11 +191,11 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
             }
 
             /*
-               logInfo("file: "__FILE__", line: %d, func: %s, "
-               "SET file size from %"PRId64" to: %"PRId64,
-               __LINE__, __FUNCTION__, fh->dentry.stat.size,
-               (int64_t)attr->st_size);
-               */
+            logInfo("file: "__FILE__", line: %d, func: %s, "
+                    "SET file size from %"PRId64" to: %"PRId64,
+                    __LINE__, __FUNCTION__, fh->dentry.stat.size,
+                    (int64_t)attr->st_size);
+                    */
 
             if ((result=fcfs_api_ftruncate_ex(fh,
                             attr->st_size, fctx->pid)) != 0)
