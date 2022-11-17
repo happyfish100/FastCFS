@@ -539,9 +539,6 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
                         FCFS_API_GET_ACCESS_FLAGS(fi->flags),
                         &dentry)) != 0)
         {
-            if (result == EPERM) {
-                result = EACCES;
-            }
             fuse_reply_err(req, result);
             return;
         }
@@ -732,8 +729,9 @@ static void fs_do_symlink(fuse_req_t req, const char *link,
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
-            "link: %s, parent ino: %"PRId64", name: %s",
-            __LINE__, __FUNCTION__, link, parent_inode, name);
+            "link length: %d, parent ino: %"PRId64", "
+            "name length: %d", __LINE__, __FUNCTION__,
+            (int)strlen(link), parent_inode, (int)strlen(name));
             */
 
     fctx = fuse_req_ctx(req);
@@ -799,8 +797,11 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", fh: %"PRId64", O_APPEND flag: %d",
-            __LINE__, __FUNCTION__, ino, fi->fh, (fi->flags & O_APPEND));
+            "ino: %"PRId64", fh: %"PRId64", O_APPEND flag: %d, "
+            "O_WRONLY: %d, O_RDWR: %d, O_NONBLOCK flag: %d",
+            __LINE__, __FUNCTION__, ino, fi->fh,
+            (fi->flags & O_APPEND), (fi->flags & O_WRONLY),
+            (fi->flags & O_RDWR), (fi->flags & O_NONBLOCK));
             */
 
     if (fs_convert_inode(req, ino, &new_inode) != 0) {
@@ -816,9 +817,6 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
                     FCFS_API_GET_ACCESS_FLAGS(fi->flags),
                     &dentry)) != 0)
     {
-        if (result == EPERM) {
-            result = EACCES;
-        }
         fuse_reply_err(req, result);
         return;
     }

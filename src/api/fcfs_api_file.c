@@ -36,7 +36,7 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRClientOperFnamePair *path,
     fi->oper.gid = omp->gid;
     if (!((fi->flags & O_WRONLY) || (fi->flags & O_RDWR))) {
         fi->offset = 0;
-        return result;
+        return (fi->flags & O_TRUNC) ? EACCES : result;
     }
 
     if ((fi->flags & O_CREAT)) {
@@ -940,9 +940,6 @@ int fcfs_api_file_truncate_ex(FCFSAPIContext *ctx,
     if ((result=fcfs_api_access_dentry_by_inode_ex(ctx,
                     oino, W_OK, flags, dentry)) != 0)
     {
-        if (result == EPERM) {
-            result = EACCES;
-        }
         return result;
     }
     if (S_ISDIR(dentry->stat.mode)) {
@@ -1542,62 +1539,28 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
     return 0;
 }
 
-#define USER_PERM_MASK(mask)  ((mask << 6) & 0700)
-#define GROUP_PERM_MASK(mask) ((mask << 3) & 0070)
-#define OTHER_PERM_MASK(mask) (mask & 0007)
-
 int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
         const int mask, const FDIRClientOwnerModePair *omp,
         const int flags)
 {
-    int result;
     FDIRClientOperFnamePair fname;
     FDIRDEntryInfo dentry;
 
     FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, omp->uid, omp->gid, path);
-    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx, &fname,
-                    flags, LOG_DEBUG, &dentry)) != 0)
-    {
-        return result;
-    }
-
-    /*
-    if (mask != F_OK) {
-        if (omp->uid != 0) {
-            if (omp->uid == dentry.stat.uid) {
-                result = (dentry.stat.mode & USER_PERM_MASK(mask)) ==
-                    USER_PERM_MASK(mask) ? 0 : EPERM;
-            } else if (omp->gid == dentry.stat.gid) {
-                result = (dentry.stat.mode & GROUP_PERM_MASK(mask)) ==
-                    GROUP_PERM_MASK(mask) ? 0 : EPERM;
-            } else {
-                result = (dentry.stat.mode & OTHER_PERM_MASK(mask)) ==
-                    OTHER_PERM_MASK(mask) ? 0 : EPERM;
-            }
-        }
-    }
-    */
-
-    return result;
+    return fcfs_api_access_dentry_by_path_ex(ctx,
+            &fname, mask, flags, &dentry);
 }
 
 int fcfs_api_euidaccess_ex(FCFSAPIContext *ctx, const char *path,
         const int mask, const FDIRClientOwnerModePair *omp,
         const int flags)
 {
-    int result;
     FDIRClientOperFnamePair fname;
     FDIRDEntryInfo dentry;
 
-    //TODO
     FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, omp->uid, omp->gid, path);
-    if ((result=fcfs_api_stat_dentry_by_fullname_ex(ctx, &fname,
-                    flags, LOG_DEBUG, &dentry)) != 0)
-    {
-        return result;
-    }
-
-    return result;
+    return fcfs_api_access_dentry_by_path_ex(ctx,
+            &fname, mask, flags, &dentry);
 }
 
 int fcfs_api_set_file_flags(FCFSAPIFileInfo *fi, const int flags)
