@@ -189,6 +189,8 @@ extern "C" {
     int fcfs_api_lseek(FCFSAPIFileInfo *fi, const int64_t offset,
             const int whence);
 
+    void fcfs_api_fill_stat(const FDIRDEntryInfo *dentry, struct stat *stat);
+
     int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf);
 
     int fcfs_api_lstat_ex(FCFSAPIContext *ctx, const char *path,

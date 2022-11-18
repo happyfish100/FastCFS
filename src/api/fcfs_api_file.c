@@ -1016,14 +1016,24 @@ int fcfs_api_lseek(FCFSAPIFileInfo *fi, const int64_t offset, const int whence)
     return 0;
 }
 
-static void fill_stat(const FDIRDEntryInfo *dentry, struct stat *buf)
+void fcfs_api_fill_stat(const FDIRDEntryInfo *dentry, struct stat *stat)
 {
-    memset(buf, 0, sizeof(struct stat));
-    buf->st_ino = dentry->inode;
-    buf->st_mode = dentry->stat.mode;
-    buf->st_size = dentry->stat.size;
-    buf->st_mtime = dentry->stat.mtime;
-    buf->st_ctime = dentry->stat.ctime;
+    stat->st_ino = dentry->inode;
+    stat->st_rdev = dentry->stat.rdev;
+    stat->st_mode = dentry->stat.mode;
+    stat->st_size = dentry->stat.size;
+    stat->st_atime = (uint32_t)dentry->stat.atime;
+    stat->st_mtime = (uint32_t)dentry->stat.mtime;
+    stat->st_ctime = (uint32_t)dentry->stat.ctime;
+    stat->st_uid = dentry->stat.uid;
+    stat->st_gid = dentry->stat.gid;
+    stat->st_nlink = dentry->stat.nlink;
+
+    stat->st_blksize = 512;
+    if (dentry->stat.alloc > 0) {
+        stat->st_blocks = (dentry->stat.alloc + stat->st_blksize - 1) /
+            stat->st_blksize;
+    }
 }
 
 int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf)
@@ -1043,7 +1053,8 @@ int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf)
         return result;
     }
 
-    fill_stat(&fi->dentry, buf);
+    memset(buf, 0, sizeof(struct stat));
+    fcfs_api_fill_stat(&fi->dentry, buf);
     return 0;
 }
 
@@ -1060,7 +1071,8 @@ static inline int fapi_stat(FCFSAPIContext *ctx,
         return result;
     }
 
-    fill_stat(&dentry, buf);
+    memset(buf, 0, sizeof(struct stat));
+    fcfs_api_fill_stat(&dentry, buf);
     return 0;
 }
 

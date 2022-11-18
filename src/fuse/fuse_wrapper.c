@@ -31,26 +31,6 @@
 struct fuse_conn_info_opts *g_fuse_cinfo_opts;
 static struct fast_mblock_man fh_allocator;
 
-static void fill_stat(const FDIRDEntryInfo *dentry, struct stat *stat)
-{
-    stat->st_ino = dentry->inode;
-    stat->st_rdev = dentry->stat.rdev;
-    stat->st_mode = dentry->stat.mode;
-    stat->st_size = dentry->stat.size;
-    stat->st_atime = dentry->stat.atime;
-    stat->st_mtime = dentry->stat.mtime;
-    stat->st_ctime = dentry->stat.ctime;
-    stat->st_uid = dentry->stat.uid;
-    stat->st_gid = dentry->stat.gid;
-    stat->st_nlink = dentry->stat.nlink;
-
-    stat->st_blksize = 512;
-    if (dentry->stat.alloc > 0) {
-        stat->st_blocks = (dentry->stat.alloc + stat->st_blksize - 1) /
-            stat->st_blksize;
-    }
-}
-
 static inline void fill_entry_param(const FDIRDEntryInfo *dentry,
         struct fuse_entry_param *param)
 {
@@ -58,7 +38,7 @@ static inline void fill_entry_param(const FDIRDEntryInfo *dentry,
     param->ino = dentry->inode;
     param->attr_timeout = g_fuse_global_vars.attribute_timeout;
     param->entry_timeout = g_fuse_global_vars.entry_timeout;
-    fill_stat(dentry, &param->attr);
+    fcfs_api_fill_stat(dentry, &param->attr);
 }
 
 static inline int fs_convert_inode(fuse_req_t req,
@@ -106,7 +86,7 @@ static inline void do_reply_attr(fuse_req_t req, FDIRDEntryInfo *dentry)
 {
     struct stat stat;
     memset(&stat, 0, sizeof(stat));
-    fill_stat(dentry, &stat);
+    fcfs_api_fill_stat(dentry, &stat);
     fuse_reply_attr(req, &stat, g_fuse_global_vars.attribute_timeout);
 }
 
@@ -325,7 +305,7 @@ static int dentry_list_to_buff(fuse_req_t req, FCFSAPIOpendirSession *session)
 
         if (session->btype == FS_READDIR_BUFFER_INIT_NORMAL) {
             memset(&stat, 0, sizeof(stat));
-            fill_stat(&cd->dentry, &stat);
+            fcfs_api_fill_stat(&cd->dentry, &stat);
             fuse_add_direntry(req, session->buffer.data + session->buffer.length,
                     session->buffer.alloc_size - session->buffer.length,
                     name, &stat, next_offset);
