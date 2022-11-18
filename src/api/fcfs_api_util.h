@@ -408,16 +408,17 @@ static inline int fcfs_api_modify_stat_by_inode_ex(FCFSAPIContext *ctx,
     } while (0)
 
 
-#define SET_ONE_UTIMENS(var, option, tp) \
+#define SET_ONE_UTIMENS(var, option_flag, option_now, tp) \
     do { \
         if (tp.tv_nsec == UTIME_NOW) { \
             var = get_current_time();  \
-            option = 1; \
+            option_flag = 1; \
+            option_now = 1;  \
         } else if (tp.tv_nsec == UTIME_OMIT) { \
-            option = 0; \
+            option_flag = 0; \
         } else { \
             var = tp.tv_sec; \
-            option = 1; \
+            option_flag = 1; \
         } \
     } while (0)
 
@@ -428,8 +429,10 @@ static inline int fcfs_api_modify_stat_by_inode_ex(FCFSAPIContext *ctx,
         if (times == NULL) { \
             stat.atime = stat.mtime = get_current_time(); \
         } else { \
-            SET_ONE_UTIMENS(stat.atime, options.atime, times[0]); \
-            SET_ONE_UTIMENS(stat.mtime, options.mtime, times[1]); \
+            SET_ONE_UTIMENS(stat.atime, options.atime, \
+		options.atime_now, times[0]); \
+            SET_ONE_UTIMENS(stat.mtime, options.mtime, \
+		options.mtime_now, times[1]); \
         } \
     } while (0)
 

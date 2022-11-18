@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <pwd.h>
 #include "fastcommon/common_define.h"
 #include "fastcommon/sched_thread.h"
 #include "global.h"
@@ -112,6 +113,40 @@ static void fs_do_getattr(fuse_req_t req, fuse_ino_t ino,
     }
 }
 
+static int match_gid(uid_t uid, const gid_t gid)
+{
+#define MAX_GROUPS  128
+    const char *id_program = "/usr/bin/id";
+    struct passwd *wd;
+    char command[256];
+    char output[1024];
+    char *groups[MAX_GROUPS];
+    int count;
+    int i;
+    int result;
+
+    if (access(id_program, X_OK) != 0) {
+        return errno != 0 ? errno : ENOENT;
+    }
+    if ((wd=getpwuid(uid)) == NULL) {
+        return errno != 0 ? errno : EPERM;
+    }
+
+    snprintf(command, sizeof(command), "/usr/bin/id -G %s", wd->pw_name);
+    if ((result=getExecResult(command, output, sizeof(output)) != 0)) {
+        return result;
+    }
+
+    count = splitEx(output, ' ', groups, MAX_GROUPS);
+    for (i=0; i<count; i++) {
+        if (atoi(groups[i]) == gid) {
+            return 0;
+        }
+    }
+
+    return ENOENT;
+}
+
 void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
              int to_set, struct fuse_file_info *fi)
 {
@@ -147,6 +182,12 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     }
 
     if ((to_set & FUSE_SET_ATTR_GID)) {
+        if (fctx->uid != 0 && attr->st_gid != fctx->gid) {
+            if (match_gid(fctx->uid, attr->st_gid) != 0) {
+                fuse_reply_err(req, EPERM);
+                return;
+            }
+        }
         options.gid = 1;
     }
 
@@ -195,16 +236,20 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
         options.ctime = 1;
     }
 
-    if ((to_set & FUSE_SET_ATTR_ATIME)) {
+    if ((to_set & (FUSE_SET_ATTR_ATIME | FUSE_SET_ATTR_ATIME_NOW))) {
         options.atime = 1;
-    } else if ((to_set & FUSE_SET_ATTR_ATIME_NOW)) {
-        options.atime = 1;
+        if ((to_set & FUSE_SET_ATTR_ATIME_NOW)) {
+            options.atime_now = 1;
+        }
     }
 
-    if ((to_set & FUSE_SET_ATTR_MTIME)) {
+    if ((to_set & (FUSE_SET_ATTR_MTIME | FUSE_SET_ATTR_MTIME_NOW))) {
         options.mtime = 1;
-    } else if ((to_set & FUSE_SET_ATTR_MTIME_NOW)) {
-        options.mtime = 1;
+        if ((to_set & FUSE_SET_ATTR_MTIME_NOW)) {
+            options.mtime_now = 1;
+        } else if (options.atime_now && attr->st_atime == attr->st_mtime) {
+            options.mtime_now = 1;
+        }
     }
 
     /*
