@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <pwd.h>
 #include "fastcommon/common_define.h"
 #include "fastcommon/sched_thread.h"
 #include "global.h"
@@ -31,25 +32,6 @@
 struct fuse_conn_info_opts *g_fuse_cinfo_opts;
 static struct fast_mblock_man fh_allocator;
 
-static void fill_stat(const FDIRDEntryInfo *dentry, struct stat *stat)
-{
-    stat->st_ino = dentry->inode;
-    stat->st_mode = dentry->stat.mode;
-    stat->st_size = dentry->stat.size;
-    stat->st_atime = dentry->stat.atime;
-    stat->st_mtime = dentry->stat.mtime;
-    stat->st_ctime = dentry->stat.ctime;
-    stat->st_uid = dentry->stat.uid;
-    stat->st_gid = dentry->stat.gid;
-    stat->st_nlink = dentry->stat.nlink;
-
-    stat->st_blksize = 512;
-    if (dentry->stat.alloc > 0) {
-        stat->st_blocks = (dentry->stat.alloc + stat->st_blksize - 1) /
-            stat->st_blksize;
-    }
-}
-
 static inline void fill_entry_param(const FDIRDEntryInfo *dentry,
         struct fuse_entry_param *param)
 {
@@ -57,17 +39,22 @@ static inline void fill_entry_param(const FDIRDEntryInfo *dentry,
     param->ino = dentry->inode;
     param->attr_timeout = g_fuse_global_vars.attribute_timeout;
     param->entry_timeout = g_fuse_global_vars.entry_timeout;
-    fill_stat(dentry, &param->attr);
+    fcfs_api_fill_stat(dentry, &param->attr);
 }
 
-static inline int fs_convert_inode(const fuse_ino_t ino, int64_t *new_inode)
+static inline int fs_convert_inode(fuse_req_t req,
+        const fuse_ino_t ino, int64_t *new_inode)
 {
     int result;
     static int64_t root_inode = 0;
 
     if (ino == FUSE_ROOT_ID) {
         if (root_inode == 0) {
-            if ((result=fcfs_api_lookup_inode_by_path("/", new_inode)) != 0) {
+            const struct fuse_ctx *fctx;
+            fctx = fuse_req_ctx(req);
+            if ((result=fcfs_api_lookup_inode_by_path("/", fctx->uid,
+                            fctx->gid, new_inode)) != 0)
+            {
                 return result;
             }
             root_inode = *new_inode;
@@ -80,11 +67,27 @@ static inline int fs_convert_inode(const fuse_ino_t ino, int64_t *new_inode)
     return 0;
 }
 
+#define SET_OPER_INODE_PAIR(req, oino, inode) \
+    do { \
+        const struct fuse_ctx *fctx; \
+        fctx = fuse_req_ctx(req); \
+        FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, fctx->uid, fctx->gid, inode); \
+    } while (0)
+
+
+#define SET_OPER_PNAME_PAIR(req, opname, parent_inode, name) \
+    do { \
+        const struct fuse_ctx *fctx; \
+        fctx = fuse_req_ctx(req); \
+        FCFSAPI_SET_PATH_OPER_PNAME1(opname, fctx->uid, \
+                fctx->gid, parent_inode, name); \
+    } while (0)
+
 static inline void do_reply_attr(fuse_req_t req, FDIRDEntryInfo *dentry)
 {
     struct stat stat;
     memset(&stat, 0, sizeof(stat));
-    fill_stat(dentry, &stat);
+    fcfs_api_fill_stat(dentry, &stat);
     fuse_reply_attr(req, &stat, g_fuse_global_vars.attribute_timeout);
 }
 
@@ -92,19 +95,56 @@ static void fs_do_getattr(fuse_req_t req, fuse_ino_t ino,
 			     struct fuse_file_info *fi)
 {
     const int flags = 0;
+    int result;
     int64_t new_inode;
+    FDIRClientOperInodePair oino;
     FDIRDEntryInfo dentry;
 
-    if (fs_convert_inode(ino, &new_inode) != 0) {
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
 
-    if (fcfs_api_stat_dentry_by_inode(new_inode, flags, &dentry) == 0) {
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
+    if ((result=fcfs_api_stat_dentry_by_inode(&oino, flags, &dentry)) == 0) {
         do_reply_attr(req, &dentry);
     } else {
-        fuse_reply_err(req, ENOENT);
+        fuse_reply_err(req, result);
     }
+}
+
+static int match_gid(uid_t uid, const gid_t gid)
+{
+#define MAX_GROUPS  128
+    const char *id_program = "/usr/bin/id";
+    struct passwd *wd;
+    char command[256];
+    char output[1024];
+    char *groups[MAX_GROUPS];
+    int count;
+    int i;
+    int result;
+
+    if (access(id_program, X_OK) != 0) {
+        return errno != 0 ? errno : ENOENT;
+    }
+    if ((wd=getpwuid(uid)) == NULL) {
+        return errno != 0 ? errno : EPERM;
+    }
+
+    snprintf(command, sizeof(command), "/usr/bin/id -G %s", wd->pw_name);
+    if ((result=getExecResult(command, output, sizeof(output)) != 0)) {
+        return result;
+    }
+
+    count = splitEx(output, ' ', groups, MAX_GROUPS);
+    for (i=0; i<count; i++) {
+        if (atoi(groups[i]) == gid) {
+            return 0;
+        }
+    }
+
+    return ENOENT;
 }
 
 void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
@@ -114,6 +154,8 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     int result;
     int64_t new_inode;
     FDIRStatModifyFlags options;
+    FDIRClientOperInodePair oino;
+    const struct fuse_ctx *fctx;
     FDIRDEntryInfo *pe;
     FDIRDEntryInfo dentry;
 
@@ -122,6 +164,13 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
             "ino: %"PRId64", to_set: %d, fi: %p ====",
             __LINE__, __FUNCTION__, ino, to_set, fi);
             */
+
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+    fctx = fuse_req_ctx(req);
+    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, fctx->uid, fctx->gid, new_inode);
 
     options.flags = 0;
     if ((to_set & FUSE_SET_ATTR_MODE)) {
@@ -133,41 +182,52 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     }
 
     if ((to_set & FUSE_SET_ATTR_GID)) {
+        if (fctx->uid != 0 && attr->st_gid != fctx->gid) {
+            if (match_gid(fctx->uid, attr->st_gid) != 0) {
+                fuse_reply_err(req, EPERM);
+                return;
+            }
+        }
         options.gid = 1;
     }
 
     if ((to_set & FUSE_SET_ATTR_SIZE)) {
         FCFSAPIFileInfo *fh;
-        const struct fuse_ctx *fctx;
 
         if (fi == NULL) {
-            fuse_reply_err(req, EBADF);
-            return;
+            if ((result=fcfs_api_file_truncate(&oino, attr->st_size,
+                            fctx->pid, &dentry)) != 0)
+            {
+                fuse_reply_err(req, result);
+                return;
+            }
+
+            dentry.stat.size = attr->st_size;
+            pe = &dentry;
+        } else {
+            fh = (FCFSAPIFileInfo *)fi->fh;
+            if (fh == NULL) {
+                fuse_reply_err(req, EBADF);
+                return;
+            }
+
+            /*
+            logInfo("file: "__FILE__", line: %d, func: %s, "
+                    "SET file size from %"PRId64" to: %"PRId64,
+                    __LINE__, __FUNCTION__, fh->dentry.stat.size,
+                    (int64_t)attr->st_size);
+                    */
+
+            if ((result=fcfs_api_ftruncate_ex(fh,
+                            attr->st_size, fctx->pid)) != 0)
+            {
+                fuse_reply_err(req, result);
+                return;
+            }
+
+            fh->dentry.stat.size = attr->st_size;
+            pe = &fh->dentry;
         }
-
-        fh = (FCFSAPIFileInfo *)fi->fh;
-        if (fh == NULL) {
-            fuse_reply_err(req, EBADF);
-            return;
-        }
-
-        /*
-        logInfo("file: "__FILE__", line: %d, func: %s, "
-                "SET file size from %"PRId64" to: %"PRId64,
-                __LINE__, __FUNCTION__, fh->dentry.stat.size,
-                (int64_t)attr->st_size);
-                */
-
-        fctx = fuse_req_ctx(req);
-        if ((result=fcfs_api_ftruncate_ex(fh,
-                        attr->st_size, fctx->pid)) != 0)
-        {
-            fuse_reply_err(req, result);
-            return;
-        }
-
-        fh->dentry.stat.size = attr->st_size;
-        pe = &fh->dentry;
     } else {
         pe = NULL;
     }
@@ -176,48 +236,53 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
         options.ctime = 1;
     }
 
-    if ((to_set & FUSE_SET_ATTR_ATIME)) {
+    if ((to_set & (FUSE_SET_ATTR_ATIME | FUSE_SET_ATTR_ATIME_NOW))) {
         options.atime = 1;
-    } else if ((to_set & FUSE_SET_ATTR_ATIME_NOW)) {
-        options.atime = 1;
+        if ((to_set & FUSE_SET_ATTR_ATIME_NOW)) {
+            options.atime_now = 1;
+        }
     }
 
-    if ((to_set & FUSE_SET_ATTR_MTIME)) {
+    if ((to_set & (FUSE_SET_ATTR_MTIME | FUSE_SET_ATTR_MTIME_NOW))) {
         options.mtime = 1;
-    } else if ((to_set & FUSE_SET_ATTR_MTIME_NOW)) {
-        options.mtime = 1;
-    }
-
-    if (fs_convert_inode(ino, &new_inode) != 0) {
-        fuse_reply_err(req, ENOENT);
-        return;
+        if ((to_set & FUSE_SET_ATTR_MTIME_NOW)) {
+            options.mtime_now = 1;
+        } else if (options.atime_now && attr->st_atime == attr->st_mtime) {
+            options.mtime_now = 1;
+        }
     }
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, new_inode: %"PRId64", "
-            "flags: %"PRId64", atime bit: %d, mtime bit: %d, uid bit: %d, "
-            "gid bit: %d", __LINE__, __FUNCTION__, new_inode, options.flags,
-            options.atime, options.mtime, options.uid, options.gid);
+            "flags: %"PRId64", to_set: %d, atime bit: %d, mtime bit: %d, ctime bit: %d, "
+            "uid bit: %d, uid_to_set: %d, gid bit: %d, gid_to_set: %d, "
+            "oper {uid: %d, gid: %d}, atime_now: %d, atime: %ld, "
+            "mtime_now: %d, mtime: %ld", __LINE__, __FUNCTION__,
+            new_inode, options.flags, to_set, (to_set & FUSE_SET_ATTR_ATIME),
+            (to_set & FUSE_SET_ATTR_MTIME), options.ctime, options.uid,
+            attr->st_uid, options.gid, attr->st_gid, oino.oper.uid,
+            oino.oper.gid, (to_set & FUSE_SET_ATTR_ATIME_NOW),
+            attr->st_atim.tv_sec, (to_set & FUSE_SET_ATTR_MTIME_NOW),
+            attr->st_mtim.tv_sec);
             */
 
     if (options.flags == 0) {
         if (pe == NULL) {
             pe = &dentry;
-            result = fcfs_api_stat_dentry_by_inode(new_inode, flags, &dentry);
+            result = fcfs_api_stat_dentry_by_inode(&oino, flags, &dentry);
         } else {
             result = 0;
         }
     } else {
         pe = &dentry;
-        result = fcfs_api_modify_stat_by_inode(new_inode,
-                attr, options.flags, &dentry);
+        result = fcfs_api_modify_stat_by_inode(&oino,
+                attr, options.flags, flags, &dentry);
     }
     if (result != 0) {
-        fuse_reply_err(req, ENOENT);
-        return;
+        fuse_reply_err(req, result);
+    } else {
+        do_reply_attr(req, pe);
     }
-
-    do_reply_attr(req, pe);
 }
 
 static void fs_do_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
@@ -226,25 +291,22 @@ static void fs_do_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
     int result;
     int64_t parent_inode;
     FDIRDEntryInfo dentry;
-    string_t nm;
+    FDIRClientOperPnamePair opname;
     struct fuse_entry_param param;
 
-
-    if (fs_convert_inode(parent, &parent_inode) != 0) {
+    if (fs_convert_inode(req, parent, &parent_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
 
-    FC_SET_STRING(nm, (char *)name);
-    if ((result=fcfs_api_stat_dentry_by_pname(parent_inode,
-                    &nm, flags, &dentry)) != 0)
-    {
+    SET_OPER_PNAME_PAIR(req, opname, parent_inode, name);
+    if ((result=fcfs_api_stat_dentry_by_pname(&opname, flags, &dentry)) != 0) {
         /*
         logError("file: "__FILE__", line: %d, func: %s, "
                 "parent: %"PRId64", name: %s(%d), result: %d",
                 __LINE__, __FUNCTION__, parent, name, (int)strlen(name), result);
                 */
-        fuse_reply_err(req, ENOENT);
+        fuse_reply_err(req, result);
         return;
     }
 
@@ -288,7 +350,7 @@ static int dentry_list_to_buff(fuse_req_t req, FCFSAPIOpendirSession *session)
 
         if (session->btype == FS_READDIR_BUFFER_INIT_NORMAL) {
             memset(&stat, 0, sizeof(stat));
-            fill_stat(&cd->dentry, &stat);
+            fcfs_api_fill_stat(&cd->dentry, &stat);
             fuse_add_direntry(req, session->buffer.data + session->buffer.length,
                     session->buffer.alloc_size - session->buffer.length,
                     name, &stat, next_offset);
@@ -310,9 +372,10 @@ static void fs_do_opendir(fuse_req_t req, fuse_ino_t ino,
 {
     int64_t new_inode;
     FCFSAPIOpendirSession *session;
+    FDIRClientOperInodePair oino;
     int result;
 
-    if (fs_convert_inode(ino, &new_inode) != 0) {
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
@@ -321,8 +384,9 @@ static void fs_do_opendir(fuse_req_t req, fuse_ino_t ino,
         return;
     }
 
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
     session->btype = FS_READDIR_BUFFER_INIT_NONE;
-    if ((result=fcfs_api_list_dentry_by_inode(new_inode,
+    if ((result=fcfs_api_list_dentry_by_inode(&oino,
                     &session->array)) != 0)
     {
         fcfs_api_free_opendir_session(session);
@@ -445,52 +509,19 @@ static int do_open(fuse_req_t req, FDIRDEntryInfo *dentry,
 
 static void fs_do_access(fuse_req_t req, fuse_ino_t ino, int mask)
 {
-#define USER_PERM_MASK(mask)  ((mask << 6) & 0700)
-#define GROUP_PERM_MASK(mask) ((mask << 3) & 0070)
-#define OTHER_PERM_MASK(mask) (mask & 0007)
- 
     const int flags = 0;
     int result;
     int64_t new_inode;
+    FDIRClientOperInodePair oino;
     FDIRDEntryInfo dentry;
 
-    if (fs_convert_inode(ino, &new_inode) != 0) {
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
 
-    if ((result=fcfs_api_stat_dentry_by_inode(new_inode,
-                    flags, &dentry)) != 0)
-    {
-        fuse_reply_err(req, ENOENT);
-        return;
-    }
-
-    /*
-    if (mask != F_OK) {
-        const struct fuse_ctx *fctx;
-        fctx = fuse_req_ctx(req);
-        if (fctx->uid != 0) {
-            if (fctx->uid == dentry.stat.uid) {
-                result = (dentry.stat.mode & USER_PERM_MASK(mask)) ==
-                    USER_PERM_MASK(mask) ? 0 : EPERM;
-            } else if (fctx->gid == dentry.stat.gid) {
-                result = (dentry.stat.mode & GROUP_PERM_MASK(mask)) ==
-                        GROUP_PERM_MASK(mask) ? 0 : EPERM;
-            } else {
-                result = (dentry.stat.mode & OTHER_PERM_MASK(mask)) ==
-                    OTHER_PERM_MASK(mask) ? 0 : EPERM;
-            }
-        }
-    }
-    */
-
-    /*
-    logInfo("file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", mask: 0%o, result: %d", __LINE__,
-            __FUNCTION__, ino, mask, result);
-            */
-
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
+    result = fcfs_api_access_dentry_by_inode(&oino, mask, flags, &dentry);
     fuse_reply_err(req, result);
 }
 
@@ -498,15 +529,15 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
         const char *name, mode_t mode, struct fuse_file_info *fi)
 {
     const dev_t rdev = 0;
-    const int flags = 0;
     FCFSAPIFileContext fctx;
     int result;
     int64_t parent_inode;
     string_t nm;
+    FDIRClientOperPnamePair opname;
     FDIRDEntryInfo dentry;
     struct fuse_entry_param param;
 
-    if (fs_convert_inode(parent, &parent_inode) != 0) {
+    if (fs_convert_inode(req, parent, &parent_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
@@ -517,7 +548,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
                     &nm, &fctx.omp, rdev, &dentry)) != 0)
     {
         if (result != EEXIST) {
-            fuse_reply_err(req, ENOENT);
+            fuse_reply_err(req, result);
             return;
         }
 
@@ -526,10 +557,14 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
             return;
         }
 
-        if ((result=fcfs_api_stat_dentry_by_pname(parent_inode,
-                        &nm, flags, &dentry)) != 0)
+        FCFSAPI_SET_PATH_OPER_PNAME_EX(opname, fctx.omp.uid,
+                fctx.omp.gid, parent_inode, &nm);
+        if ((result=fcfs_api_access_dentry_by_pname(&opname,
+                        FCFS_API_GET_ACCESS_MASK(fi->flags),
+                        FCFS_API_GET_ACCESS_FLAGS(fi->flags),
+                        &dentry)) != 0)
         {
-            fuse_reply_err(req, ENOENT);
+            fuse_reply_err(req, result);
             return;
         }
     }
@@ -554,15 +589,16 @@ static void do_mknod(fuse_req_t req, fuse_ino_t parent,
     FDIRDEntryInfo dentry;
     struct fuse_entry_param param;
 
-    if (fs_convert_inode(parent, &parent_inode) != 0) {
+    if (fs_convert_inode(req, parent, &parent_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
-            "parent ino: %"PRId64", name: %s, mode: %03o, isdir: %d",
-            __LINE__, __FUNCTION__, parent_inode, name, mode, S_ISDIR(mode));
+            "parent ino: %"PRId64", name: %s, mode: %03o, "
+            "rdev: %lx, isdir: %d", __LINE__, __FUNCTION__,
+            parent_inode, name, mode, (long)rdev, S_ISDIR(mode));
             */
 
     FCFS_FUSE_SET_OMP_BY_REQ(omp, mode, req);
@@ -570,11 +606,7 @@ static void do_mknod(fuse_req_t req, fuse_ino_t parent,
     if ((result=fcfs_api_create_dentry_by_pname(parent_inode, &nm,
                     &omp, rdev, &dentry)) != 0)
     {
-        if (result == EEXIST || result == ENOENT) {
-            fuse_reply_err(req, result);
-        } else {
-            fuse_reply_err(req, ENOENT);
-        }
+        fuse_reply_err(req, result);
         return;
     }
 
@@ -600,9 +632,9 @@ static int remove_dentry(fuse_req_t req, fuse_ino_t parent,
 {
     const struct fuse_ctx *fctx;
     int64_t parent_inode;
-    string_t nm;
+    FDIRClientOperPnamePair opname;
 
-    if (fs_convert_inode(parent, &parent_inode) != 0) {
+    if (fs_convert_inode(req, parent, &parent_inode) != 0) {
         return ENOENT;
     }
 
@@ -613,9 +645,9 @@ static int remove_dentry(fuse_req_t req, fuse_ino_t parent,
             */
 
     fctx = fuse_req_ctx(req);
-    FC_SET_STRING(nm, (char *)name);
-    return fcfs_api_remove_dentry_by_pname(
-            parent_inode, &nm, flags, fctx->pid);
+    FCFSAPI_SET_PATH_OPER_PNAME1(opname, fctx->uid,
+            fctx->gid, parent_inode, name);
+    return fcfs_api_remove_dentry_by_pname(&opname, flags, fctx->pid);
 }
 
 static void fs_do_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name)
@@ -642,14 +674,15 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
     const struct fuse_ctx *fctx;
     string_t old_nm;
     string_t new_nm;
+    FDIRDentryOperator oper;
     int result;
 
-    if (fs_convert_inode(oldparent, &old_parent_inode) != 0) {
+    if (fs_convert_inode(req, oldparent, &old_parent_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
 
-    if (fs_convert_inode(newparent, &new_parent_inode) != 0) {
+    if (fs_convert_inode(req, newparent, &new_parent_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
@@ -665,8 +698,10 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
     fctx = fuse_req_ctx(req);
     FC_SET_STRING(old_nm, (char *)oldname);
     FC_SET_STRING(new_nm, (char *)newname);
+    oper.uid = fctx->uid;
+    oper.gid = fctx->gid;
     result = fcfs_api_rename_dentry_by_pname(old_parent_inode, &old_nm,
-            new_parent_inode, &new_nm, flags, fctx->pid);
+            new_parent_inode, &new_nm, &oper, flags, fctx->pid);
     fuse_reply_err(req, result);
 }
 
@@ -682,7 +717,7 @@ static void fs_do_link(fuse_req_t req, fuse_ino_t ino,
     string_t nm;
     int result;
 
-    if (fs_convert_inode(parent, &parent_inode) != 0) {
+    if (fs_convert_inode(req, parent, &parent_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
@@ -712,15 +747,16 @@ static void fs_do_symlink(fuse_req_t req, const char *link,
     struct fuse_entry_param param;
     int result;
 
-    if (fs_convert_inode(parent, &parent_inode) != 0) {
+    if (fs_convert_inode(req, parent, &parent_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
-            "link: %s, parent ino: %"PRId64", name: %s",
-            __LINE__, __FUNCTION__, link, parent_inode, name);
+            "link length: %d, parent ino: %"PRId64", "
+            "name length: %d", __LINE__, __FUNCTION__,
+            (int)strlen(link), parent_inode, (int)strlen(name));
             */
 
     fctx = fuse_req_ctx(req);
@@ -742,10 +778,12 @@ static void fs_do_readlink(fuse_req_t req, fuse_ino_t ino)
 {
     int result;
     char buff[PATH_MAX];
+    FDIRClientOperInodePair oino;
     string_t link;
 
+    SET_OPER_INODE_PAIR(req, oino, ino);
     link.str = buff;
-    if ((result=fcfs_api_readlink_by_inode(ino, &link, PATH_MAX)) == 0) {
+    if ((result=fcfs_api_readlink_by_inode(&oino, &link, PATH_MAX)) == 0) {
         fuse_reply_readlink(req, link.str);
     } else {
         fuse_reply_err(req, result);
@@ -775,35 +813,42 @@ static void fs_do_forget_multi(fuse_req_t req, size_t count,
 static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
 			  struct fuse_file_info *fi)
 {
-    const int flags = 0;
     int result;
     int64_t new_inode;
     FCFSAPIFileContext fctx;
+    FDIRClientOperInodePair oino;
     const struct fuse_ctx *fuse_ctx;
     FDIRDEntryInfo dentry;
 
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", fh: %"PRId64", O_APPEND flag: %d",
-            __LINE__, __FUNCTION__, ino, fi->fh, (fi->flags & O_APPEND));
+            "ino: %"PRId64", fh: %"PRId64", O_APPEND flag: %d, "
+            "O_WRONLY: %d, O_RDWR: %d, O_NONBLOCK flag: %d",
+            __LINE__, __FUNCTION__, ino, fi->fh,
+            (fi->flags & O_APPEND), (fi->flags & O_WRONLY),
+            (fi->flags & O_RDWR), (fi->flags & O_NONBLOCK));
             */
 
-    if (fs_convert_inode(ino, &new_inode) != 0) {
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
 
-    if ((result=fcfs_api_stat_dentry_by_inode(new_inode,
-                    flags, &dentry)) != 0)
+    fuse_ctx = fuse_req_ctx(req);
+    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, fuse_ctx->uid,
+            fuse_ctx->gid, new_inode);
+    if ((result=fcfs_api_access_dentry_by_inode(&oino,
+                    FCFS_API_GET_ACCESS_MASK(fi->flags),
+                    FCFS_API_GET_ACCESS_FLAGS(fi->flags),
+                    &dentry)) != 0)
     {
-        fuse_reply_err(req, ENOENT);
+        fuse_reply_err(req, result);
         return;
     }
-    fuse_ctx = fuse_req_ctx(req);
 
     fctx.omp.mode = dentry.stat.mode;
-    fctx.omp.uid = dentry.stat.uid;
-    fctx.omp.gid = dentry.stat.gid;
+    fctx.omp.uid = fuse_ctx->uid;
+    fctx.omp.gid = fuse_ctx->gid;
     fctx.tid = fuse_ctx->pid;
     if ((result=do_open(req, &dentry, fi, &fctx)) != 0) {
         fuse_reply_err(req, result);
@@ -1095,6 +1140,7 @@ static void fs_do_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
 {
     int64_t new_inode;
     int result;
+    FDIRClientOperInodePair oino;
     key_value_pair_t xattr;
 
     if (!g_fuse_global_vars.xattr_enabled) {
@@ -1102,14 +1148,15 @@ static void fs_do_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
         return;
     }
 
-    if (fs_convert_inode(ino, &new_inode) != 0) {
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
 
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
     FC_SET_STRING(xattr.key, (char *)name);
     FC_SET_STRING_EX(xattr.value, (char *)value, size);
-    result = fcfs_api_set_xattr_by_inode(new_inode, &xattr, flags);
+    result = fcfs_api_set_xattr_by_inode(&oino, &xattr, flags);
     fuse_reply_err(req, result);
 }
 
@@ -1117,8 +1164,9 @@ static void fs_do_removexattr(fuse_req_t req, fuse_ino_t ino,
         const char *name)
 {
     const int flags = 0;
-    int64_t new_inode;
     int result;
+    int64_t new_inode;
+    FDIRClientOperInodePair oino;
     string_t nm;
 
     if (!g_fuse_global_vars.xattr_enabled) {
@@ -1126,24 +1174,26 @@ static void fs_do_removexattr(fuse_req_t req, fuse_ino_t ino,
         return;
     }
 
-    if (fs_convert_inode(ino, &new_inode) != 0) {
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
 
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
     FC_SET_STRING(nm, (char *)name);
-    result = fcfs_api_remove_xattr_by_inode(new_inode, &nm, flags);
+    result = fcfs_api_remove_xattr_by_inode(&oino, &nm, flags);
     fuse_reply_err(req, result);
 }
 
 static void fs_do_getxattr(fuse_req_t req, fuse_ino_t ino,
         const char *name, size_t size)
 {
-    int flags;
-    int64_t new_inode;
-    int value_size;
     int result;
+    int flags;
+    int value_size;
+    int64_t new_inode;
     char v[FDIR_XATTR_MAX_VALUE_SIZE];
+    FDIRClientOperInodePair oino;
     string_t nm;
     string_t value;
 
@@ -1152,7 +1202,7 @@ static void fs_do_getxattr(fuse_req_t req, fuse_ino_t ino,
         return;
     }
 
-    if (fs_convert_inode(ino, &new_inode) != 0) {
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
@@ -1173,9 +1223,10 @@ static void fs_do_getxattr(fuse_req_t req, fuse_ino_t ino,
         flags = 0;
     }
 
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
     value.str = v;
     FC_SET_STRING(nm, (char *)name);
-    if ((result=fcfs_api_get_xattr_by_inode(new_inode,
+    if ((result=fcfs_api_get_xattr_by_inode(&oino,
                     &nm, &value, value_size, flags)) != 0)
     {
         fuse_reply_err(req, result == EOVERFLOW ? ERANGE : result);
@@ -1193,10 +1244,11 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
 {
 #define MAX_LIST_SIZE  (8 * 1024)
 
-    int flags;
-    int64_t new_inode;
-    int list_size;
     int result;
+    int flags;
+    int list_size;
+    int64_t new_inode;
+    FDIRClientOperInodePair oino;
     char v[MAX_LIST_SIZE];
     string_t list;
 
@@ -1205,7 +1257,7 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
         return;
     }
 
-    if (fs_convert_inode(ino, &new_inode) != 0) {
+    if (fs_convert_inode(req, ino, &new_inode) != 0) {
         fuse_reply_err(req, ENOENT);
         return;
     }
@@ -1221,8 +1273,9 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
         flags = 0;
     }
 
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
     list.str = v;
-    if ((result=fcfs_api_list_xattr_by_inode(new_inode,
+    if ((result=fcfs_api_list_xattr_by_inode(&oino,
                     &list, list_size, flags)) != 0)
     {
         fuse_reply_err(req, result == EOVERFLOW ? ERANGE : result);

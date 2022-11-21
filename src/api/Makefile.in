@@ -51,7 +51,7 @@ install:
 	install -m 644 $(API_HEADER_FILES) $(TARGET_PREFIX)/include/fastcfs/api/
 	install -m 644 $(STD_HEADER_FILES) $(TARGET_PREFIX)/include/fastcfs/api/std/
 	@BUILDROOT=$$(echo "$(TARGET_PREFIX)" | grep BUILDROOT); \
-	if [ -z "$$BUILDROOT" ] && [ ! -e $(TARGET_PREFIX)/lib/libfcfsapi.so ]; then ln -s $(TARGET_LIB)/libfcfsapi.so $(TARGET_PREFIX)/lib/libfcfsapi.so; fi
+	if [ -z "$$BUILDROOT" ] && [ "$(TARGET_LIB)" != "$(TARGET_PREFIX)/lib" ]; then ln -sf $(TARGET_LIB)/libfcfsapi.so $(TARGET_PREFIX)/lib/libfcfsapi.so; fi
 clean:
 	rm -f $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
 

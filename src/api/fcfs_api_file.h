@@ -19,6 +19,8 @@
 
 #include <sys/types.h>
 #include <sys/statvfs.h>
+#include <sys/stat.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <utime.h>
 #include "fcfs_api_types.h"
@@ -31,6 +33,21 @@
 #ifndef FALLOC_FL_PUNCH_HOLE
 #define FALLOC_FL_PUNCH_HOLE 0x02
 #endif
+
+#ifdef O_SYMLINK
+#define FCFS_API_NOFOLLOW_SYMLINK_FLAGS  (O_NOFOLLOW | O_SYMLINK)
+#else
+#define FCFS_API_NOFOLLOW_SYMLINK_FLAGS  (O_NOFOLLOW)
+#endif
+
+#define FCFS_API_GET_ACCESS_FLAGS(open_flags) \
+    ((((open_flags) & FCFS_API_NOFOLLOW_SYMLINK_FLAGS) != 0) ? \
+     FDIR_FLAGS_OUTPUT_DENTRY : (FDIR_FLAGS_FOLLOW_SYMLINK | \
+         FDIR_FLAGS_OUTPUT_DENTRY))
+
+#define FCFS_API_GET_ACCESS_MASK(open_flags) \
+    (((open_flags) & O_WRONLY) ? W_OK : (((open_flags) & O_RDWR) ? \
+        (R_OK | W_OK) : R_OK))
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +94,9 @@ extern "C" {
 
 #define fcfs_api_truncate(path, new_size, fctx) \
     fcfs_api_truncate_ex(&g_fcfs_api_ctx, path, new_size, fctx)
+
+#define fcfs_api_file_truncate(oino, new_size, tid, dentry) \
+    fcfs_api_file_truncate_ex(&g_fcfs_api_ctx, oino, new_size, tid, dentry)
 
 #define fcfs_api_unlink(path, tid)  \
     fcfs_api_unlink_ex(&g_fcfs_api_ctx, path, tid)
@@ -145,6 +165,11 @@ extern "C" {
     int fcfs_api_readv_ex(FCFSAPIFileInfo *fi, const struct iovec *iov,
             const int iovcnt, int *read_bytes, const int64_t tid);
 
+    int fcfs_api_file_truncate_ex(FCFSAPIContext *ctx,
+            const FDIRClientOperInodePair *oino,
+            const int64_t new_size, const int64_t tid,
+            FDIRDEntryInfo *dentry);
+
     int fcfs_api_ftruncate_ex(FCFSAPIFileInfo *fi, const int64_t new_size,
             const int64_t tid);
 
@@ -155,7 +180,7 @@ extern "C" {
             const int64_t offset, const int64_t len, const int64_t tid);
 
     static inline int fcfs_api_unlink_ex(FCFSAPIContext *ctx,
-            const char *path, const int64_t tid)
+            const FDIRClientOperFnamePair *path, const int64_t tid)
     {
         const int flags = FDIR_UNLINK_FLAGS_MATCH_FILE;
         return fcfs_api_remove_dentry_ex(ctx, path, flags, tid);
@@ -164,13 +189,16 @@ extern "C" {
     int fcfs_api_lseek(FCFSAPIFileInfo *fi, const int64_t offset,
             const int whence);
 
+    void fcfs_api_fill_stat(const FDIRDEntryInfo *dentry, struct stat *stat);
+
     int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf);
 
     int fcfs_api_lstat_ex(FCFSAPIContext *ctx, const char *path,
-            struct stat *buf);
+            const uid_t uid, const gid_t gid, struct stat *buf);
 
     int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path,
-            struct stat *buf, const int flags);
+            const uid_t uid, const gid_t gid, struct stat *buf,
+            const int flags);
 
     int fcfs_api_flock_ex2(FCFSAPIFileInfo *fi, const int operation,
             const int64_t owner_id, const pid_t pid);
@@ -227,7 +255,7 @@ extern "C" {
             const char *path, const FDIRClientOwnerModePair *omp);
 
     int fcfs_api_readlink(FCFSAPIContext *ctx, const char *path,
-            char *buff, const int size);
+            const uid_t uid, const gid_t gid, char *buff, const int size);
 
     int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
             const char *new_path, const FDIRClientOwnerModePair *omp,

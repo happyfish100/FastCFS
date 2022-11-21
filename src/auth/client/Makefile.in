@@ -54,7 +54,7 @@ install:
 	install -m 755 $(SHARED_LIBS) $(TARGET_LIB)
 	install -m 644 $(HEADER_FILES) $(TARGET_PREFIX)/include/fastcfs/auth
 	@BUILDROOT=$$(echo "$(TARGET_PREFIX)" | grep BUILDROOT); \
-	if [ -z "$$BUILDROOT" ] && [ ! -e $(TARGET_PREFIX)/lib/libfcfsauthclient.so ]; then ln -s $(TARGET_LIB)/libfcfsauthclient.so $(TARGET_PREFIX)/lib/libfcfsauthclient.so; fi
+	if [ -z "$$BUILDROOT" ] && [ "$(TARGET_LIB)" != "$(TARGET_PREFIX)/lib" ]; then ln -sf $(TARGET_LIB)/libfcfsauthclient.so $(TARGET_PREFIX)/lib/libfcfsauthclient.so; fi
 clean:
 	rm -f $(ALL_OBJS) $(ALL_PRGS) $(ALL_LIBS)
 

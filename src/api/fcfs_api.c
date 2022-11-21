@@ -296,10 +296,13 @@ static int check_create_root_path(FCFSAPIContext *ctx)
 {
     int result;
     int64_t inode;
+    FDIRClientOperFnamePair fname;
     FDIRClientOwnerModePair omp;
 
-    if ((result=fcfs_api_lookup_inode_by_path_ex(ctx,
-                    "/", LOG_DEBUG, &inode)) != 0)
+    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, ctx->owner.uid,
+            ctx->owner.gid, "/");
+    if ((result=fcfs_api_lookup_inode_by_fullname_ex(ctx,
+                    &fname, LOG_DEBUG, &inode)) != 0)
     {
         if (result == ENOENT) {
             FDIRDEntryFullName fullname;
@@ -313,8 +316,8 @@ static int check_create_root_path(FCFSAPIContext *ctx)
                             &fullname, &omp, &dentry)) == EEXIST)
             {
                 /* check again */
-                result = fcfs_api_lookup_inode_by_path_ex(ctx,
-                        "/", LOG_DEBUG, &inode);
+                result = fcfs_api_lookup_inode_by_fullname_ex(ctx,
+                        &fname, LOG_DEBUG, &inode);
             }
         }
     }

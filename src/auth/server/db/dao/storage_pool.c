@@ -25,18 +25,20 @@ int dao_spool_create(FDIRClientContext *client_ctx,
 {
     int result;
     int64_t inode;
-    AuthFullPath pool_path;
+    AuthFullPath fp;
+    FDIRClientOperFnamePair path;
     FDIRDEntryInfo dentry;
 
-    AUTH_SET_USER_PATH2(pool_path, username,
+    AUTH_SET_USER_PATH2(fp, username,
             AUTH_DIR_NAME_CREATED_STR, spool->name);
-    if ((result=fdir_client_create_dentry(client_ctx,
-            &pool_path.fullname, &DAO_OMP_FILE, &dentry)) == 0)
+    AUTH_SET_PATH_OPER_FNAME(path, fp);
+    if ((result=fdir_client_create_dentry(client_ctx, &fp.fullname,
+                    &DAO_OMP_FILE, &dentry)) == 0)
     {
         inode = dentry.inode;
     } else if (result == EEXIST) {
         if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
-                        &pool_path.fullname, LOG_ERR, &inode)) != 0)
+                        &path, LOG_ERR, &inode)) != 0)
         {
             return result;
         }
@@ -124,6 +126,7 @@ int dao_spool_list(FDIRClientContext *client_ctx, const string_t *username,
 {
     int result;
     AuthFullPath fp;
+    FDIRClientOperFnamePair path;
     FDIRClientDentryArray dentry_array;
 
     if ((result=fdir_client_dentry_array_init_ex(
@@ -133,8 +136,9 @@ int dao_spool_list(FDIRClientContext *client_ctx, const string_t *username,
     }
 
     AUTH_SET_USER_PATH1(fp, username, AUTH_DIR_NAME_CREATED_STR);
+    AUTH_SET_PATH_OPER_FNAME(path, fp);
     if ((result=fdir_client_list_dentry_by_path(client_ctx,
-                    &fp.fullname, &dentry_array)) != 0)
+                    &path, &dentry_array)) != 0)
     {
         fdir_client_dentry_array_free(&dentry_array);
         return result;
@@ -149,10 +153,12 @@ int dao_spool_list(FDIRClientContext *client_ctx, const string_t *username,
 int dao_spool_set_base_path_inode(FDIRClientContext *client_ctx)
 {
     AuthFullPath fp;
+    FDIRClientOperFnamePair path;
 
     AUTH_SET_BASE_PATH(fp);
+    AUTH_SET_PATH_OPER_FNAME(path, fp);
     return fdir_client_lookup_inode_by_path(client_ctx,
-            &fp.fullname, &DAO_BASE_PATH_INODE);
+            &path, &DAO_BASE_PATH_INODE);
 }
 
 int dao_spool_get_auto_id(FDIRClientContext *client_ctx, int64_t *auto_id)

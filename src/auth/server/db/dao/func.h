@@ -89,12 +89,14 @@ extern FCFSAuthDAOVariables g_auth_dao_vars;
 static inline int dao_set_xattr_string(FDIRClientContext *client_ctx,
         const int64_t inode, const string_t *name, const string_t *value)
 {
+    FDIRClientOperInodePair oino;
     key_value_pair_t xattr;
 
+    AUTH_SET_OPER_INODE_PAIR(oino, inode);
     xattr.key = *name;
     xattr.value = *value;
     return fdir_client_set_xattr_by_inode(client_ctx,
-            &DAO_NAMESPACE, inode, &xattr, 0);
+            &DAO_NAMESPACE, &oino, &xattr, 0);
 }
 
 static inline int dao_set_xattr_integer(FDIRClientContext *client_ctx,
@@ -114,8 +116,11 @@ static inline int dao_get_xattr_string(FDIRClientContext *client_ctx,
 {
     const int flags = 0;
     int result;
+    FDIRClientOperInodePair oino;
+
+    AUTH_SET_OPER_INODE_PAIR(oino, inode);
     result = fdir_client_get_xattr_by_inode_ex(client_ctx,
-            &DAO_NAMESPACE, inode, name, LOG_WARNING,
+            &DAO_NAMESPACE, &oino, name, LOG_WARNING,
             value, size, flags);
     if (result == ENODATA) {
         value->len = 0;
