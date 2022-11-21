@@ -1,2 +1,2 @@
-usr/lib64/libfcfsvoteclient.so* usr/lib/
+usr/lib/libfcfsvoteclient.so*
 usr/bin/fvote_cluster_stat

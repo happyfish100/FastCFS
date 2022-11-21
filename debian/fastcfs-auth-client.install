@@ -1,4 +1,4 @@
-usr/lib64/libfcfsauthclient.so* usr/lib/
+usr/lib/libfcfsauthclient.so*
 usr/bin/fcfs_user
 usr/bin/fcfs_pool
 usr/bin/fauth_list_servers
