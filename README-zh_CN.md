@@ -24,7 +24,7 @@ FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文
 
 ## 2. 当前版本
 
-V3.6.3
+V3.7.0
 
 ## 3. 支持的操作系统
 
@@ -37,12 +37,12 @@ V3.6.3
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
-* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.63)
-* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.22)
-* [libdiskallocator](https://gitee.com/fastdfs100/libdiskallocator) (tag: V1.0.8)
-* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V3.6.3)
-* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V3.6.3)
-* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V3.6.3)
+* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.64)
+* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.1.23)
+* [libdiskallocator](https://gitee.com/fastdfs100/libdiskallocator) (tag: V1.0.9)
+* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V3.7.0)
+* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V3.7.0)
+* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V3.7.0)
 
 ## 5. 部署 & 运维
 
@@ -116,8 +116,8 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fdir & fstore] 数据提交采用多数派确认机制保证数据一致性和可靠性（已完成）
 *  [fdir & fstore] 针对两副本，数据提交多数派机制智能化（已完成）
 *  [fstore] 文件读写性能优化（已完成）
+*  [fdir & api] POSIX兼容性测试及改进（已完成）
 *  [api] 提供Java Native API（进行中）
-*  [fdir & api] POSIX兼容性测试及改进（进行中）
 *  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 *  [all] 支持集群在线扩容
 
