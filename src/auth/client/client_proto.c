@@ -856,6 +856,7 @@ static int client_proto_gpool_list_do(FCFSAuthClientContext
     FCFSAuthProtoGPoolListReq *req;
     FCFSAuthProtoListRespHeader *resp_header;
     FCFSAuthProtoGPoolListRespBodyPart *body_part;
+    FCFSAuthProtoNameInfo *proto_pname;
     FCFSAuthGrantedPoolFullInfo *gpool;
     FCFSAuthGrantedPoolFullInfo *end;
     char *p;
@@ -903,15 +904,17 @@ static int client_proto_gpool_list_do(FCFSAuthClientContext
         body_part = (FCFSAuthProtoGPoolListRespBodyPart *)p;
         gpool->granted.privs.fdir = buff2int(body_part->privs.fdir);
         gpool->granted.privs.fstore = buff2int(body_part->privs.fstore);
-        if ((result=fast_mpool_alloc_string_ex(mpool,
-                        &gpool->username, body_part->up_pair.username.str,
+        if ((result=fast_mpool_alloc_string_ex(mpool, &gpool->username,
+                        body_part->up_pair.username.str,
                         body_part->up_pair.username.len)) != 0)
         {
             return result;
         }
-        if ((result=fast_mpool_alloc_string_ex(mpool,
-                        &gpool->pool_name, body_part->up_pair.poolname.str,
-                        body_part->up_pair.poolname.len)) != 0)
+
+        proto_pname = (FCFSAuthProtoNameInfo *)(body_part->up_pair.
+                username.str + body_part->up_pair.username.len);
+        if ((result=fast_mpool_alloc_string_ex(mpool, &gpool->pool_name,
+                        proto_pname->str, proto_pname->len)) != 0)
         {
             return result;
         }
