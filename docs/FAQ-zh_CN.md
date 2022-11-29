@@ -73,3 +73,9 @@ CFLAGS='-Wall -DFS_DUMP_SLICE_FOR_DEBUG=32'
 注意：-DFS_DUMP_SLICE_FOR_DEBUG=32 这个编译选项仅供测试环境进行数据一致性验证，请不要在生产环境使用。
 
 ```
+
+## 7. fuse客户端通过df看到的空间明显大于存储池配额
+
+这是因为客户端没有启用auth，需要将配置文件/etc/fastcfs/auth/auth.conf中的auth_enabled设置为true，修改后重启fcfs_fused生效。
+
+友情提示：如何配置auth服务请参阅 [认证配置文档](AUTH-zh_CN.md)
