@@ -123,6 +123,7 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fstore] file read & write performance optimization (done)
 *  [fdir & api] POSIX compatibility test and improvement (done)
 *  [api] provide Java native API (doing)
+*  [fstore] slice storage engine plugin to support massive data with limited memory (doing)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [all] cluster online expansion
 
