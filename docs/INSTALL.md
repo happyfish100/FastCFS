@@ -78,12 +78,12 @@ mkdir -p /etc/fastcfs/fstore/
 cp conf/*.conf /etc/fastcfs/fstore/
 ```
 
-
-### 9. libfuse
+### 9. fuse client
+#### 9.1. libfuse
 
 libfuse requires meson and ninja which require python3.5 or higher version
 
-##### pkg-config and python
+##### 9.1.1. pkg-config and python
 
 packages: pkg-config  python3  python3-pip
 
@@ -97,14 +97,14 @@ CentOS:
 yum install pkgconfig python3 python3-pip -y
 ```
 
-##### meson and ninja
+##### 9.1.2. meson and ninja
 
 ```
 pip3 install meson
 pip3 install ninja
 ```
 
-##### gcc
+##### 9.1.3. gcc
 
 Ubuntu:
 ```
@@ -116,7 +116,7 @@ CentOS:
 yum install gcc gcc-c++ -y
 ```
 
-##### libfuse
+##### 9.1.4. libfuse
 
 ```
 git clone git@github.com:libfuse/libfuse.git || git clone https://github.com/libfuse/libfuse.git
@@ -128,9 +128,10 @@ meson configure -D prefix=/usr
 meson configure -D examples=false
 ninja && ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
+sed -i "s#prefix=.*#prefix=/usr#g" /usr/lib64/pkgconfig/fuse3.pc
 ```
 
-### 10. FastCFS
+#### 9.2. fcfs_fused
 
 ```
 cd FastCFS/

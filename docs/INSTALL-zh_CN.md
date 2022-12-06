@@ -107,14 +107,15 @@ mkdir -p /etc/fastcfs/fstore/
 cp conf/*.conf /etc/fastcfs/fstore/
 ```
 
+### 2.9. fuse客户端编译安装
 
-### 2.9. libfuse 编译安装
+#### 2.9.1. libfuse 编译安装
 
 libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编译和安装。或者执行如下步骤DIY：
 
 构建libfuse需要先安装meson和ninja。安装meson和ninja需要python3.5及以上版本。
 
-#### 2.9.1. gcc 安装
+##### 2.9.1.1 gcc 安装
 
 Ubuntu下安装命令：
 
@@ -128,7 +129,7 @@ CentOS下安装命令：
 yum install gcc gcc-c++ -y
 ```
 
-#### 2.9.2. pkg-config 和 python安装
+##### 2.9.1.2. pkg-config 和 python安装
 
 需要安装的包名：
 * pkg-config
@@ -147,14 +148,14 @@ CentOS下安装命令：
 yum install pkgconfig python3 python3-pip -y
 ```
 
-#### 2.9.3. meson 和 ninja 安装
+##### 2.9.1.3. meson 和 ninja 安装
 
 ```
 pip3 install meson
 pip3 install ninja
 ```
 
-#### 2.9.4. libfuse 安装
+##### 2.9.1.4. libfuse 安装
 
 ```
 git clone https://gitee.com/mirrors/libfuse.git; cd libfuse/
@@ -165,9 +166,10 @@ meson configure -D prefix=/usr
 meson configure -D examples=false
 ninja && ninja install
 sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
+sed -i "s#prefix=.*#prefix=/usr#g" /usr/lib64/pkgconfig/fuse3.pc
 ```
 
-### 2.10. FastCFS 编译安装
+#### 2.9.2. fcfs_fused 编译安装
 
 进入之前clone下来的FastCFS目录，然后执行：
 ```
