@@ -79,3 +79,26 @@ CFLAGS='-Wall -DFS_DUMP_SLICE_FOR_DEBUG=32'
 这是因为客户端没有启用auth，需要将配置文件/etc/fastcfs/auth/auth.conf中的auth_enabled设置为true，修改后重启fcfs_fused生效。
 
 友情提示：如何配置auth服务请参阅 [认证配置文档](AUTH-zh_CN.md)
+
+## 8. FastCFS作为NFS后端存储时NFS client mount失败
+
+出错信息：reason given by server: No such file or directory
+
+解决方法：
+
+NFS v3直接使用服务端配置的目录如：/opt/fastcfs/fuse，而v4将服务端配置的路径作为基路径，mount要使用/
+
+NFS挂载默认会使用最新的NFS协议，挂载命令示例（支持v4前提下使用）：
+```
+mount -t nfs -onolock 172.16.168.131:/ /mnt/nfs
+```
+
+NFS v3挂载命令示例：
+```
+mount -t nfs -onolock 172.16.168.131:/opt/fastcfs/fuse /mnt/nfs
+```
+
+指定NFS v4挂载命令示例：
+```
+mount -t nfs -onolock,nfsvers=4 172.16.168.131:/ /mnt/nfs
+```

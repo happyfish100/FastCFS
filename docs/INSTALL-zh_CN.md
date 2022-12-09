@@ -113,9 +113,11 @@ cp conf/*.conf /etc/fastcfs/fstore/
 
 libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编译和安装。或者执行如下步骤DIY：
 
-构建libfuse需要先安装meson和ninja。安装meson和ninja需要python3.5及以上版本。
+构建libfuse需要先安装meson和ninja。安装meson和ninja需要python3.5及更高版本。
 
 ##### 2.9.1.1 gcc 安装
+
+友情提示：gcc版本必须 >= 4.7.0
 
 Ubuntu下安装命令：
 
@@ -149,6 +151,8 @@ yum install pkgconfig python3 python3-pip -y
 ```
 
 ##### 2.9.1.3. meson 和 ninja 安装
+
+友情提示： ninja 版本必须 >= 1.7
 
 ```
 pip3 install meson
