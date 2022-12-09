@@ -135,6 +135,7 @@ static int dump_to_granted_array(FDIRClientContext *client_ctx,
 int dao_granted_list(FDIRClientContext *client_ctx, const string_t *username,
         FCFSAuthGrantedPoolArray *granted_array)
 {
+    const int flags = 0;
     int result;
     AuthFullPath fp;
     FDIRClientOperFnamePair path;
@@ -147,7 +148,7 @@ int dao_granted_list(FDIRClientContext *client_ctx, const string_t *username,
     AUTH_SET_USER_PATH1(fp, username, AUTH_DIR_NAME_GRANTED_STR);
     AUTH_SET_PATH_OPER_FNAME(path, fp);
     if ((result=fdir_client_list_dentry_by_path(client_ctx,
-                    &path, &dentry_array)) != 0)
+                    &path, &dentry_array, flags)) != 0)
     {
         fdir_client_dentry_array_free(&dentry_array);
         return result;

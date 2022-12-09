@@ -187,6 +187,7 @@ static int dump_to_user_array(FDIRClientContext *client_ctx,
 int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
         *mpool, FCFSAuthUserArray *user_array)
 {
+    const int flags = 0;
     int result;
     FDIRDEntryInfo dentry;
     AuthFullPath fp;
@@ -226,8 +227,8 @@ int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
     }
 
     AUTH_SET_OPER_INODE_PAIR(oino, dentry.inode);
-    if ((result=fdir_client_list_dentry_by_inode(client_ctx,
-                    &DAO_NAMESPACE, &oino, &dentry_array)) != 0)
+    if ((result=fdir_client_list_dentry_by_inode(client_ctx, &DAO_NAMESPACE,
+                    &oino, &dentry_array, flags)) != 0)
     {
         fdir_client_dentry_array_free(&dentry_array);
         return result;

@@ -680,11 +680,12 @@ static inline int fcfs_api_list_xattr_by_path_ex(FCFSAPIContext *ctx,
 static inline int fcfs_api_list_dentry_by_inode_ex(FCFSAPIContext *ctx,
         const FDIRClientOperInodePair *oino, FDIRClientDentryArray *array)
 {
+    const int flags = FDIR_LIST_DENTRY_FLAGS_OUTPUT_SPECIAL;
     if (ctx->async_report.enabled) {
         async_reporter_wait_all(oino->inode);
     }
     return fdir_client_list_dentry_by_inode(ctx->contexts.fdir,
-            &ctx->ns, oino, array);
+            &ctx->ns, oino, array, flags);
 }
 
 static inline int fcfs_api_list_compact_dentry_by_path_ex(FCFSAPIContext *ctx,

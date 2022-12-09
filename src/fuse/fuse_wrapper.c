@@ -351,13 +351,15 @@ static int dentry_list_to_buff(fuse_req_t req, FCFSAPIOpendirSession *session)
         if (session->btype == FS_READDIR_BUFFER_INIT_NORMAL) {
             memset(&stat, 0, sizeof(stat));
             fcfs_api_fill_stat(&cd->dentry, &stat);
-            fuse_add_direntry(req, session->buffer.data + session->buffer.length,
-                    session->buffer.alloc_size - session->buffer.length,
+            fuse_add_direntry(req, session->buffer.data +
+                    session->buffer.length, session->buffer.
+                    alloc_size - session->buffer.length,
                     name, &stat, next_offset);
         } else {
             fill_entry_param(&cd->dentry, &param);
-            fuse_add_direntry_plus(req, session->buffer.data + session->buffer.length,
-                    session->buffer.alloc_size - session->buffer.length,
+            fuse_add_direntry_plus(req, session->buffer.data +
+                    session->buffer.length, session->buffer.
+                    alloc_size - session->buffer.length,
                     name, &param, next_offset);
         }
 
@@ -1297,6 +1299,7 @@ static void fs_do_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
 static void fs_do_init(void *userdata, struct fuse_conn_info *conn)
 {
     fuse_apply_conn_info_opts(g_fuse_cinfo_opts, conn);
+    conn->want |= FUSE_CAP_EXPORT_SUPPORT;
 }
 
 int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
