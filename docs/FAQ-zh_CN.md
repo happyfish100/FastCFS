@@ -102,3 +102,7 @@ mount -t nfs -onolock 172.16.168.131:/opt/fastcfs/fuse /mnt/nfs
 ```
 mount -t nfs -onolock,nfsvers=4 172.16.168.131:/ /mnt/nfs
 ```
+
+## 9. 为何删除了足够多的数据，df看到磁盘占用空间不见降低呢？
+
+FastCFS基于trunk file进行空间分配，目前trunk file只会增加而不会释放。文件数据删除后空间会回收利用，通过fuse client上df命令可以看到FastCFS的可用空间将增加。
