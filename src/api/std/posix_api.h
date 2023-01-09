@@ -211,13 +211,7 @@ extern "C" {
     static inline int fcfs_posix_api_set_owner_ex(
             FCFSPosixAPIContext *pctx)
     {
-        if (pctx->api_ctx.owner.type == fcfs_api_owner_type_fixed) {
-            return EINVAL;
-        }
-
-        pctx->api_ctx.owner.gid = getegid();
-        pctx->api_ctx.owner.uid = geteuid();
-        return 0;
+        return fcfs_api_set_owner(&pctx->api_ctx);
     }
 
     static inline int fcfs_posix_api_set_owner()
@@ -225,25 +219,14 @@ extern "C" {
         return fcfs_posix_api_set_owner_ex(&g_fcfs_papi_global_vars.ctx);
     }
 
-    static inline void fcfs_posix_api_set_omp(FDIRClientOwnerModePair *omp,
-            const FCFSPosixAPIContext *pctx, const mode_t mode)
-    {
-        omp->mode = (mode & (~fc_get_umask()));
-        omp->uid = pctx->api_ctx.owner.uid;
-        omp->gid = pctx->api_ctx.owner.gid;
-    }
-
     static inline void fcfs_posix_api_set_fctx(FCFSAPIFileContext *fctx,
             const FCFSPosixAPIContext *pctx, const mode_t mode,
             const FCFSPosixAPITPIDType tpid_type)
     {
-        fcfs_posix_api_set_omp(&fctx->omp, pctx, mode);
+        fctx->mode = (mode & (~fc_get_umask()));
+        fctx->oper = pctx->api_ctx.owner.oper;
         fctx->tid = fcfs_posix_api_gettid(tpid_type);
     }
-
-#define FCFS_API_FILL_OPER(oper, ctx)    \
-    (oper).uid = ctx->api_ctx.owner.uid; \
-    (oper).gid = ctx->api_ctx.owner.gid
 
 #define FCFS_API_IS_MY_MOUNTPOINT_EX(ctx, path) \
     (strlen(path) > (ctx)->mountpoint.len && \

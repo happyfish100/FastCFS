@@ -29,11 +29,11 @@ static int file_truncate(FCFSAPIContext *ctx, const int64_t oid,
         const int64_t tid);
 
 static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRClientOperFnamePair *path,
-        const FDIRClientOwnerModePair *omp, const int64_t tid, int result)
+        const FDIRDentryOperator *oper, const mode_t mode,
+        const int64_t tid, int result)
 {
     fi->tid = tid;
-    fi->oper.uid = omp->uid;
-    fi->oper.gid = omp->gid;
+    fi->oper = *oper;
     if (!((fi->flags & O_WRONLY) || (fi->flags & O_RDWR))) {
         fi->offset = 0;
         return (fi->flags & O_TRUNC) ? EACCES : result;
@@ -46,7 +46,7 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRClientOperFnamePair *path,
             }
         } else if (result == ENOENT) {
             if ((result=fdir_client_create_dentry(fi->ctx->contexts.fdir,
-                            &path->fullname, omp, &fi->dentry)) != 0)
+                            path, mode, &fi->dentry)) != 0)
             {
                 if (result == EEXIST) {
                     if ((fi->flags & O_EXCL)) {
@@ -113,25 +113,22 @@ int fcfs_api_open_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
         const FCFSAPIFileContext *fctx)
 {
     FDIRClientOperFnamePair fname;
-    FDIRClientOwnerModePair new_omp;
+    mode_t mode;
     int result;
 
-    new_omp.uid = fctx->omp.uid;
-    new_omp.gid = fctx->omp.gid;
-    if ((fctx->omp.mode & S_IFMT)) {
-        new_omp.mode = (fctx->omp.mode & (~S_IFMT)) | S_IFREG;
+    if ((fctx->mode & S_IFMT)) {
+        mode = (fctx->mode & (~S_IFMT)) | S_IFREG;
     } else {
-        new_omp.mode = fctx->omp.mode | S_IFREG;
+        mode = fctx->mode | S_IFREG;
     }
 
     SET_FILE_COMMON_FIELDS(fi, ctx, flags);
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, fctx->omp.uid,
-            fctx->omp.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, fctx->oper, path);
     result = fcfs_api_access_dentry_by_path_ex(ctx,
             &fname, FCFS_API_GET_ACCESS_MASK(flags),
             FCFS_API_GET_ACCESS_FLAGS(flags), &fi->dentry);
-    if ((result=deal_open_flags(fi, &fname, &new_omp,
-                    fctx->tid, result)) != 0)
+    if ((result=deal_open_flags(fi, &fname, &fctx->oper,
+                    mode, fctx->tid, result)) != 0)
     {
         return result;
     }
@@ -149,8 +146,8 @@ int fcfs_api_open_by_dentry_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
     SET_FILE_COMMON_FIELDS(fi, ctx, flags);
     fi->dentry = *dentry;
     result = 0;
-    if ((result=deal_open_flags(fi, NULL, &fctx->omp,
-                    fctx->tid, result)) != 0)
+    if ((result=deal_open_flags(fi, NULL, &fctx->oper,
+                    fctx->mode, fctx->tid, result)) != 0)
     {
         return result;
     }
@@ -165,7 +162,7 @@ int fcfs_api_open_by_inode_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
     FDIRClientOperInodePair oino;
     int result;
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, fctx->omp.uid, fctx->omp.gid, inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, fctx->oper, inode);
     if ((result=fcfs_api_access_dentry_by_inode_ex(ctx, &oino,
                     FCFS_API_GET_ACCESS_MASK(flags),
                     FCFS_API_GET_ACCESS_FLAGS(flags),
@@ -175,8 +172,8 @@ int fcfs_api_open_by_inode_ex(FCFSAPIContext *ctx, FCFSAPIFileInfo *fi,
     }
 
     SET_FILE_COMMON_FIELDS(fi, ctx, flags);
-    if ((result=deal_open_flags(fi, NULL, &fctx->omp,
-                    fctx->tid, result)) != 0)
+    if ((result=deal_open_flags(fi, NULL, &fctx->oper,
+                    fctx->mode, fctx->tid, result)) != 0)
     {
         return result;
     }
@@ -920,8 +917,7 @@ int fcfs_api_truncate_ex(FCFSAPIContext *ctx, const char *path,
     FDIRClientOperFnamePair fname;
     int64_t inode;
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, fctx->omp.uid,
-            fctx->omp.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, fctx->oper, path);
     if ((result=get_regular_file_inode(ctx, &fname, &inode)) != 0) {
         return result;
     }
@@ -1077,22 +1073,22 @@ static inline int fapi_stat(FCFSAPIContext *ctx,
 }
 
 int fcfs_api_lstat_ex(FCFSAPIContext *ctx, const char *path,
-        const uid_t uid, const gid_t gid, struct stat *buf)
+        const FDIRDentryOperator *oper, struct stat *buf)
 {
     const int flags = 0;
     FDIRClientOperFnamePair fname;
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, uid, gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, *oper, path);
     return fapi_stat(ctx, &fname, buf, flags);
 }
 
 int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path,
-        const uid_t uid, const gid_t gid, struct stat *buf,
+        const FDIRDentryOperator *oper, struct stat *buf,
         const int flags)
 {
     FDIRClientOperFnamePair fname;
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, uid, gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, *oper, path);
     return fapi_stat(ctx, &fname, buf, flags);
 }
 
@@ -1367,7 +1363,6 @@ int fcfs_api_rename_ex(FCFSAPIContext *ctx, const char *old_path,
 {
     FDIRDEntryFullName src_fullname;
     FDIRDEntryFullName dest_fullname;
-    FDIRDentryOperator oper;
     FDIRDEntryInfo dentry;
     FDIRDEntryInfo *pe;
     int result;
@@ -1377,11 +1372,9 @@ int fcfs_api_rename_ex(FCFSAPIContext *ctx, const char *old_path,
     dest_fullname.ns = ctx->ns;
     FC_SET_STRING(dest_fullname.path, (char *)new_path);
 
-    oper.uid = fctx->omp.uid;
-    oper.gid = fctx->omp.gid;
     pe = &dentry;
     if ((result=fdir_client_rename_dentry_ex(ctx->contexts.fdir,
-                    &src_fullname, &dest_fullname, &oper,
+                    &src_fullname, &dest_fullname, &fctx->oper,
                     flags, &pe)) != 0)
     {
         return result;
@@ -1396,34 +1389,34 @@ int fcfs_api_rename_ex(FCFSAPIContext *ctx, const char *old_path,
 }
 
 int fcfs_api_symlink_ex(FCFSAPIContext *ctx, const char *target,
-        const char *path, const FDIRClientOwnerModePair *omp)
+        const char *path, const FDIRDentryOperator *oper,
+        const mode_t mode)
 {
-    FDIRDEntryFullName fullname;
+    FDIRClientOperFnamePair fname;
     string_t link;
     FDIRDEntryInfo dentry;
 
-    fullname.ns = ctx->ns;
-    FC_SET_STRING(fullname.path, (char *)path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, *oper, path);
     FC_SET_STRING(link, (char *)target);
     return fdir_client_symlink_dentry(ctx->contexts.fdir,
-            &link, &fullname, omp, &dentry);
+            &link, &fname, mode, &dentry);
 }
 
 int fcfs_api_readlink(FCFSAPIContext *ctx, const char *path,
-        const uid_t uid, const gid_t gid, char *buff, const int size)
+        const FDIRDentryOperator *oper, char *buff, const int size)
 {
     FDIRClientOperFnamePair fname;
     string_t link;
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, uid, gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, *oper, path);
     link.str = buff;
     return fdir_client_readlink_by_path(ctx->contexts.fdir,
         &fname, &link, size);
 }
 
 int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
-        const char *new_path, const FDIRClientOwnerModePair *omp,
-        const int flags)
+        const char *new_path, const FDIRDentryOperator *oper,
+        const mode_t mode, const int flags)
 {
     FDIRDEntryFullName src_fullname;
     FDIRDEntryFullName dest_fullname;
@@ -1435,47 +1428,46 @@ int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
     FC_SET_STRING(dest_fullname.path, (char *)new_path);
 
     return fdir_client_link_dentry(ctx->contexts.fdir, &src_fullname,
-            &dest_fullname, omp, flags, &dentry);
+            &dest_fullname, oper, mode, flags, &dentry);
 }
 
 int fcfs_api_mknod_ex(FCFSAPIContext *ctx, const char *path,
-        const FDIRClientOwnerModePair *omp, const dev_t dev)
+        const FDIRDentryOperator *oper, const mode_t mode,
+        const dev_t dev)
 {
-    FDIRDEntryFullName fullname;
+    FDIRClientOperFnamePair fname;
     FDIRDEntryInfo dentry;
 
-    fullname.ns = ctx->ns;
-    FC_SET_STRING(fullname.path, (char *)path);
-    if (!(S_ISCHR(omp->mode) || S_ISBLK(omp->mode))) {
+    if (!(S_ISCHR(mode) || S_ISBLK(mode))) {
         return EINVAL;
     }
+
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, *oper, path);
     return fdir_client_create_dentry_ex(ctx->contexts.fdir,
-            &fullname, omp, dev, &dentry);
+            &fname, mode, dev, &dentry);
 }
 
 static inline int do_make_dentry(FCFSAPIContext *ctx, const char *path,
-        FDIRClientOwnerModePair *omp, const int mtype)
+        FDIRDentryOperator *oper, const mode_t mode, const int mtype)
 {
-    FDIRDEntryFullName fullname;
+    FDIRClientOperFnamePair fname;
     FDIRDEntryInfo dentry;
 
-    fullname.ns = ctx->ns;
-    FC_SET_STRING(fullname.path, (char *)path);
-    omp->mode = ((omp->mode & (~S_IFMT)) | mtype);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, *oper, path);
     return fdir_client_create_dentry(ctx->contexts.fdir,
-            &fullname, omp, &dentry);
+            &fname, ((mode & (~S_IFMT)) | mtype), &dentry);
 }
 
 int fcfs_api_mkfifo_ex(FCFSAPIContext *ctx, const char *path,
-        FDIRClientOwnerModePair *omp)
+        FDIRDentryOperator *oper, const mode_t mode)
 {
-    return do_make_dentry(ctx, path, omp, S_IFIFO);
+    return do_make_dentry(ctx, path, oper, mode, S_IFIFO);
 }
 
 int fcfs_api_mkdir_ex(FCFSAPIContext *ctx, const char *path,
-        FDIRClientOwnerModePair *omp)
+        FDIRDentryOperator *oper, const mode_t mode)
 {
-    return do_make_dentry(ctx, path, omp, S_IFDIR);
+    return do_make_dentry(ctx, path, oper, mode, S_IFDIR);
 }
 
 int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
@@ -1552,25 +1544,25 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
 }
 
 int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
-        const int mask, const FDIRClientOwnerModePair *omp,
+        const int mask, const FDIRDentryOperator *oper,
         const int flags)
 {
     FDIRClientOperFnamePair fname;
     FDIRDEntryInfo dentry;
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, omp->uid, omp->gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, *oper, path);
     return fcfs_api_access_dentry_by_path_ex(ctx,
             &fname, mask, flags, &dentry);
 }
 
 int fcfs_api_euidaccess_ex(FCFSAPIContext *ctx, const char *path,
-        const int mask, const FDIRClientOwnerModePair *omp,
+        const int mask, const FDIRDentryOperator *oper,
         const int flags)
 {
     FDIRClientOperFnamePair fname;
     FDIRDEntryInfo dentry;
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, omp->uid, omp->gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, *oper, path);
     return fcfs_api_access_dentry_by_path_ex(ctx,
             &fname, mask, flags, &dentry);
 }

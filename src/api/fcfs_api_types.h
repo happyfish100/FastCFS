@@ -33,8 +33,7 @@ typedef enum {
 
 typedef struct fcfs_api_owner_info {
     FCFSAPIOwnerType type;
-    uid_t uid;
-    gid_t gid;
+    FDIRDentryOperator oper;
 } FCFSAPIOwnerInfo;
 
 typedef struct fcfs_api_ns_mountpoint_holder {
@@ -88,7 +87,8 @@ typedef struct fcfs_api_file_info {
 } FCFSAPIFileInfo;
 
 typedef struct fcfs_api_file_context {
-    FDIRClientOwnerModePair omp;
+    FDIRDentryOperator oper;
+    mode_t mode;
     int64_t tid;
 } FCFSAPIFileContext;
 
@@ -140,15 +140,12 @@ typedef struct fcfs_api_async_report_event_ptr_array {
 } FCFSAPIAsyncReportEventPtrArray;
 
 
-#define FCFS_API_SET_OMP(omp, owner, m, euid, egid) \
+#define FCFS_API_SET_OPERATOR(_oper, _owner, _uid, _gid) \
     do {  \
-        omp.mode = m;  \
-        if ((owner).type == fcfs_api_owner_type_fixed) { \
-            omp.uid = (owner).uid; \
-            omp.gid = (owner).gid; \
+        if ((_owner).type == fcfs_api_owner_type_fixed) { \
+            _oper = (_owner).oper; \
         } else {  \
-            omp.uid = euid; \
-            omp.gid = egid; \
+            FDIR_SET_OPERATOR(_oper, _uid, _gid, 0, NULL); \
         }  \
     } while (0)
 

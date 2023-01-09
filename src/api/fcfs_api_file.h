@@ -101,11 +101,11 @@ extern "C" {
 #define fcfs_api_unlink(path, tid)  \
     fcfs_api_unlink_ex(&g_fcfs_api_ctx, path, tid)
 
-#define fcfs_api_stat(path, buf, flags)  \
-    fcfs_api_stat_ex(&g_fcfs_api_ctx, path, buf, flags)
+#define fcfs_api_stat(path, oper, buf, flags)  \
+    fcfs_api_stat_ex(&g_fcfs_api_ctx, path, oper, buf, flags)
 
-#define fcfs_api_lstat(path, buf)  \
-    fcfs_api_lstat_ex(&g_fcfs_api_ctx, path, buf)
+#define fcfs_api_lstat(path, oper, buf)  \
+    fcfs_api_lstat_ex(&g_fcfs_api_ctx, path, oper, buf)
 
 #define fcfs_api_rename(old_path, new_path, fctx)  \
     fcfs_api_rename_ex(&g_fcfs_api_ctx, old_path, new_path, 0, fctx)
@@ -194,10 +194,10 @@ extern "C" {
     int fcfs_api_fstat(FCFSAPIFileInfo *fi, struct stat *buf);
 
     int fcfs_api_lstat_ex(FCFSAPIContext *ctx, const char *path,
-            const uid_t uid, const gid_t gid, struct stat *buf);
+            const FDIRDentryOperator *oper, struct stat *buf);
 
     int fcfs_api_stat_ex(FCFSAPIContext *ctx, const char *path,
-            const uid_t uid, const gid_t gid, struct stat *buf,
+            const FDIRDentryOperator *oper, struct stat *buf,
             const int flags);
 
     int fcfs_api_flock_ex2(FCFSAPIFileInfo *fi, const int operation,
@@ -252,37 +252,40 @@ extern "C" {
             const FCFSAPIFileContext *fctx);
 
     int fcfs_api_symlink_ex(FCFSAPIContext *ctx, const char *target,
-            const char *path, const FDIRClientOwnerModePair *omp);
+            const char *path, const FDIRDentryOperator *oper,
+            const mode_t mode);
 
     int fcfs_api_readlink(FCFSAPIContext *ctx, const char *path,
-            const uid_t uid, const gid_t gid, char *buff, const int size);
+            const FDIRDentryOperator *oper, char *buff, const int size);
 
     int fcfs_api_link_ex(FCFSAPIContext *ctx, const char *old_path,
-            const char *new_path, const FDIRClientOwnerModePair *omp,
-            const int flags);
+            const char *new_path, const FDIRDentryOperator *oper,
+            const mode_t mode, const int flags);
 
     int fcfs_api_mknod_ex(FCFSAPIContext *ctx, const char *path,
-            const FDIRClientOwnerModePair *omp, const dev_t dev);
+            const FDIRDentryOperator *oper, const mode_t mode,
+            const dev_t dev);
 
     int fcfs_api_mkfifo_ex(FCFSAPIContext *ctx, const char *path,
-            FDIRClientOwnerModePair *omp);
+            FDIRDentryOperator *oper, const mode_t mode);
 
     int fcfs_api_mkdir_ex(FCFSAPIContext *ctx, const char *path,
-            FDIRClientOwnerModePair *omp);
+            FDIRDentryOperator *oper, const mode_t mode);
 
     int fcfs_api_access_ex(FCFSAPIContext *ctx, const char *path,
-            const int mask, const FDIRClientOwnerModePair *omp,
+            const int mask, const FDIRDentryOperator *oper,
             const int flags);
 
     int fcfs_api_euidaccess_ex(FCFSAPIContext *ctx, const char *path,
-            const int mask, const FDIRClientOwnerModePair *omp,
+            const int mask, const FDIRDentryOperator *oper,
             const int flags);
 
-    static inline int fcfs_api_eaccess_ex(FCFSAPIContext *ctx, const char *path,
-            const int mask, const FDIRClientOwnerModePair *omp,
+    static inline int fcfs_api_eaccess_ex(FCFSAPIContext *ctx,
+            const char *path, const int mask,
+            const FDIRDentryOperator *oper,
             const int flags)
     {
-        return fcfs_api_euidaccess_ex(ctx, path, mask, omp, flags);
+        return fcfs_api_euidaccess_ex(ctx, path, mask, oper, flags);
     }
 
     int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,

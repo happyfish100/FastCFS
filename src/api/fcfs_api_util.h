@@ -32,37 +32,37 @@ extern "C" {
     fullname.ns = (ctx)->ns;    \
     FC_SET_STRING(fullname.path, (char *)path_str)
 
-#define FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, _uid, _gid, path_str) \
-    fname.oper.uid = _uid;  \
-    fname.oper.gid = _gid;  \
-    fname.fullname.ns = (ctx)->ns;  \
-    FC_SET_STRING(fname.fullname.path, (char *)path_str)
+#define FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, \
+        _uid, _gid, _gcount, _glist, path_str) \
+    FDIR_SET_OPERATOR(fname.oper, _uid, _gid, _gcount, _glist); \
+    FCFSAPI_SET_PATH_FULLNAME(fname.fullname, ctx, path_str)
 
 #define FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, _oper, path_str) \
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, \
-            (_oper).uid, (_oper).gid, path_str)
+    fname.oper = _oper; \
+    FCFSAPI_SET_PATH_FULLNAME(fname.fullname, ctx, path_str)
 
-#define FCFSAPI_SET_PATH_OPER_PNAME_EX(opname, _uid, _gid, parent_inode, name) \
-    opname.oper.uid = _uid;  \
-    opname.oper.gid = _gid;  \
+#define FCFSAPI_SET_PATH_OPER_PNAME_EX(opname, _uid, _gid, \
+        _gcount, _glist, parent_inode, name) \
+    FDIR_SET_OPERATOR(opname.oper, _uid, _gid, _gcount, _glist); \
     FDIR_SET_DENTRY_PNAME_PTR(&opname.pname, parent_inode, name)
 
 #define FCFSAPI_SET_PATH_OPER_PNAME(opname, _oper, parent_inode, name) \
-    FCFSAPI_SET_PATH_OPER_PNAME_EX(opname, (_oper).uid, \
-            (_oper).gid, parent_inode, name)
+    opname.oper = _oper; \
+    FDIR_SET_DENTRY_PNAME_PTR(&opname.pname, parent_inode, name)
 
-#define FCFSAPI_SET_PATH_OPER_PNAME1(opname, _uid, _gid, parent_inode, name) \
-    opname.oper.uid = _uid;  \
-    opname.oper.gid = _gid;  \
+#define FCFSAPI_SET_PATH_OPER_PNAME1(opname, _uid, _gid, \
+        _gcount, _glist, parent_inode, name) \
+    FDIR_SET_OPERATOR(opname.oper, _uid, _gid, _gcount, _glist); \
     FDIR_SET_DENTRY_PNAME_STR(&opname.pname, parent_inode, name)
 
-#define FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, _uid, _gid, _inode) \
-    oino.oper.uid = _uid;  \
-    oino.oper.gid = _gid;  \
+#define FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, \
+        _uid, _gid, _gcount, _glist, _inode) \
+    FDIR_SET_OPERATOR(fname.oper, _uid, _gid, _gcount, _glist); \
     oino.inode = _inode
 
 #define FCFSAPI_SET_OPER_INODE_PAIR(oino, _oper, _inode) \
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, (_oper).uid, (_oper).gid, _inode)
+    oino.oper = _oper; \
+    oino.inode = _inode
 
 #define fcfs_api_lookup_inode_by_path(path, uid, gid, inode) \
     fcfs_api_lookup_inode_by_path_ex(&g_fcfs_api_ctx, path,  \
@@ -95,13 +95,13 @@ extern "C" {
     fcfs_api_access_dentry_by_pname_ex(&g_fcfs_api_ctx, \
             opname, mask, flags, dentry)
 
-#define fcfs_api_create_dentry_by_pname(parent_inode, name, omp, rdev, dentry) \
+#define fcfs_api_create_dentry_by_pname(parent_inode, name, oper, rdev, dentry) \
     fcfs_api_create_dentry_by_pname_ex(&g_fcfs_api_ctx, \
-            parent_inode, name, omp, rdev, dentry)
+            parent_inode, name, oper, rdev, dentry)
 
-#define fcfs_api_symlink_dentry_by_pname(link, parent_inode, name, omp, dentry)\
+#define fcfs_api_symlink_dentry_by_pname(link, parent_inode, name, oper, dentry)\
     fcfs_api_symlink_dentry_by_pname_ex(&g_fcfs_api_ctx, link, \
-            parent_inode, name, omp, dentry)
+            parent_inode, name, oper, dentry)
 
 #define fcfs_api_readlink_by_pname(parent_inode, name, link, size) \
     fcfs_api_readlink_by_pname_ex(&g_fcfs_api_ctx, parent_inode, \
@@ -111,9 +111,9 @@ extern "C" {
     fcfs_api_readlink_by_inode_ex(&g_fcfs_api_ctx, inode, link, size)
 
 #define fcfs_api_link_dentry_by_pname(src_inode, dest_parent_inode, \
-        dest_name, omp, flags, dentry)  \
+        dest_name, oper, flags, dentry)  \
     fcfs_api_link_dentry_by_pname_ex(&g_fcfs_api_ctx, src_inode, \
-            dest_parent_inode, dest_name, omp, flags, dentry)
+            dest_parent_inode, dest_name, oper, flags, dentry)
 
 #define fcfs_api_remove_dentry_by_pname(opname, flags, tid)  \
     fcfs_api_remove_dentry_by_pname_ex(&g_fcfs_api_ctx, \
@@ -189,11 +189,11 @@ static inline int fcfs_api_lookup_inode_by_fullname_ex(FCFSAPIContext *ctx,
 }
 
 static inline int fcfs_api_lookup_inode_by_path_ex(FCFSAPIContext *ctx,
-        const char *path, const uid_t uid, const gid_t gid,
+        const char *path, const FDIRDentryOperator *oper,
         const int enoent_log_level, int64_t *inode)
 {
     FDIRClientOperFnamePair fname;
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, uid, gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, *oper, path);
     return fdir_client_lookup_inode_by_path_ex(ctx->contexts.fdir,
             &fname, enoent_log_level, inode);
 }
@@ -321,24 +321,24 @@ static inline int fcfs_api_access_dentry_by_pname_ex(FCFSAPIContext *ctx,
 
 static inline int fcfs_api_create_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t parent_inode, const string_t *name,
-        const FDIRClientOwnerModePair *omp, const dev_t rdev,
-        FDIRDEntryInfo *dentry)
+        const FDIRDentryOperator *oper, const mode_t mode,
+        const dev_t rdev, FDIRDEntryInfo *dentry)
 {
-    FDIRDEntryPName pname;
-    FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
+    FDIRClientOperPnamePair opname;
+    FCFSAPI_SET_PATH_OPER_PNAME(opname, *oper, parent_inode, name);
     return fdir_client_create_dentry_by_pname_ex(ctx->contexts.fdir,
-            &ctx->ns, &pname, omp, rdev, dentry);
+            &ctx->ns, &opname, mode, rdev, dentry);
 }
 
 static inline int fcfs_api_symlink_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const string_t *link, const int64_t parent_inode,
-        const string_t *name, const FDIRClientOwnerModePair *omp,
-        FDIRDEntryInfo *dentry)
+        const string_t *name, const FDIRDentryOperator *oper,
+        const mode_t mode, FDIRDEntryInfo *dentry)
 {
-    FDIRDEntryPName pname;
-    FDIR_SET_DENTRY_PNAME_PTR(&pname, parent_inode, name);
+    FDIRClientOperPnamePair opname;
+    FCFSAPI_SET_PATH_OPER_PNAME(opname, *oper, parent_inode, name);
     return fdir_client_symlink_dentry_by_pname(ctx->contexts.fdir,
-            link, &ctx->ns, &pname, omp, dentry);
+            link, &ctx->ns, &opname, mode, dentry);
 }
 
 static inline int fcfs_api_readlink_by_pname_ex(FCFSAPIContext *ctx,
@@ -741,13 +741,14 @@ static inline int fcfs_api_dentry_sys_unlock(FDIRClientSession *session,
 
 static inline int fcfs_api_link_dentry_by_pname_ex(FCFSAPIContext *ctx,
         const int64_t src_inode, const int64_t dest_parent_inode,
-        const string_t *dest_name, const FDIRClientOwnerModePair *omp,
-        const int flags, FDIRDEntryInfo *dentry)
+        const string_t *dest_name, const FDIRDentryOperator *oper,
+        const mode_t mode, const int flags, FDIRDEntryInfo *dentry)
 {
-    FDIRDEntryPName dest_pname;
-    FDIR_SET_DENTRY_PNAME_PTR(&dest_pname, dest_parent_inode, dest_name);
-    return fdir_client_link_dentry_by_pname(ctx->contexts.fdir, src_inode,
-            &ctx->ns, &dest_pname, omp, flags, dentry);
+    FDIRClientOperPnamePair dest_opname;
+    FCFSAPI_SET_PATH_OPER_PNAME(dest_opname, *oper,
+            dest_parent_inode, dest_name);
+    return fdir_client_link_dentry_by_pname(ctx->contexts.fdir,
+            src_inode, &ctx->ns, &dest_opname, mode, flags, dentry);
 }
 
 #ifdef __cplusplus

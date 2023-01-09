@@ -181,12 +181,11 @@ extern "C" {
     void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
             char *output, const int size);
 
-    int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
-            FCFSAPIOwnerInfo *owner_info);
-
     void fcfs_api_log_client_common_configs(FCFSAPIContext *ctx,
             const char *fdir_section_name, const char *fs_section_name,
             BufferInfo *sf_idempotency_config, char *owner_config);
+
+    int fcfs_api_set_owner(FCFSAPIContext *ctx);
 
     static inline const char *fcfs_api_get_owner_type_caption(
             const FCFSAPIOwnerType owner_type)

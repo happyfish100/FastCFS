@@ -183,6 +183,18 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
 
     if ((to_set & FUSE_SET_ATTR_GID)) {
         if (fctx->uid != 0 && attr->st_gid != fctx->gid) {
+            int count;
+            gid_t list[32];
+            count = fuse_req_getgroups(req, 32, list);
+            if (count >= 0) {
+                logInfo("=====file: "__FILE__", line: %d, func: %s, "
+                        "count: %d", __LINE__, __FUNCTION__, count);
+                for (int i=0; i<count; i++) {
+                    logInfo("=====file: "__FILE__", line: %d, func: %s, "
+                            "%d. %d", __LINE__, __FUNCTION__, i + 1, list[i]);
+                }
+            }
+
             if (match_gid(fctx->uid, attr->st_gid) != 0) {
                 fuse_reply_err(req, EPERM);
                 return;
@@ -543,6 +555,12 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
         fuse_reply_err(req, ENOENT);
         return;
     }
+
+    /*
+    logInfo("file: "__FILE__", line: %d, func: %s, "
+            "parent ino: %"PRId64", name: %s, mode: %03o",
+            __LINE__, __FUNCTION__, parent_inode, name, mode);
+            */
 
     FCFS_FUSE_SET_FCTX_BY_REQ(fctx, mode, req);
     FC_SET_STRING(nm, (char *)name);
