@@ -64,9 +64,9 @@ extern "C" {
     oino.oper = _oper; \
     oino.inode = _inode
 
-#define fcfs_api_lookup_inode_by_path(path, uid, gid, inode) \
+#define fcfs_api_lookup_inode_by_path(path, oper, inode) \
     fcfs_api_lookup_inode_by_path_ex(&g_fcfs_api_ctx, path,  \
-            uid, gid, LOG_DEBUG, inode)
+            oper, LOG_DEBUG, inode)
 
 #define fcfs_api_stat_dentry_by_path(path, flags, dentry)  \
     fcfs_api_stat_dentry_by_path_ex(&g_fcfs_api_ctx, \

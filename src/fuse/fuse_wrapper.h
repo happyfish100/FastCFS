@@ -26,24 +26,6 @@
 #include "fastcfs/api/fcfs_api_util.h"
 #include "fuse3/fuse_lowlevel.h"
 
-#define FCFS_FUSE_SET_OMP(omp, m, euid, egid) \
-    FCFS_API_SET_OMP(omp, g_fcfs_api_ctx.owner, m, euid, egid)
-
-#define FCFS_FUSE_SET_OMP_BY_REQ(omp, m, req) \
-    do { \
-        const struct fuse_ctx *_fctx;  \
-        _fctx = fuse_req_ctx(req);     \
-        FCFS_FUSE_SET_OMP(omp, m, _fctx->uid, _fctx->gid); \
-    } while (0)
-
-#define FCFS_FUSE_SET_FCTX_BY_REQ(fctx, m, req) \
-    do { \
-        const struct fuse_ctx *_fctx;  \
-        _fctx = fuse_req_ctx(req);     \
-        FCFS_FUSE_SET_OMP(fctx.omp, m, _fctx->uid, _fctx->gid); \
-        fctx.tid = _fctx->pid;  \
-    } while (0)
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -149,6 +149,10 @@ typedef struct fcfs_api_async_report_event_ptr_array {
         }  \
     } while (0)
 
+#define FCFS_API_SET_FCTX(fctx, _oper, _mode, _tid) \
+    fctx.oper = _oper; \
+    fctx.mode = _mode; \
+    fctx.tid = _tid
 
 #ifdef __cplusplus
 extern "C" {
