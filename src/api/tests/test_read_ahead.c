@@ -58,25 +58,20 @@ static void usage(char *argv[])
 
 static int check_create_root_path()
 {
-    const uid_t uid = 0;
-    const gid_t gid = 0;
-    int result;
+    FDIRClientOperFnamePair path;
+    FDIRDEntryInfo dentry;
     int64_t inode;
-    FDIRClientOwnerModePair omp;
+    int result;
 
-    if ((result=fcfs_api_lookup_inode_by_path("/", uid, gid, &inode)) != 0) {
+    FC_SET_STRING(path.fullname.ns, ns);
+    FC_SET_STRING(path.fullname.path, "/");
+    FDIR_SET_OPERATOR(path.oper, geteuid(), getegid(), 0, NULL);
+    if ((result=fdir_client_lookup_inode_by_path_ex(g_fcfs_api_ctx.
+                    contexts.fdir, &path, LOG_DEBUG, &inode)) != 0)
+    {
         if (result == ENOENT) {
-            FDIRDEntryFullName fullname;
-            FDIRDEntryInfo dentry;
-
-            FC_SET_STRING(fullname.ns, ns);
-            FC_SET_STRING(fullname.path, "/");
-
-            omp.mode = 0777 | S_IFDIR;
-            omp.uid = geteuid();
-            omp.gid = getegid();
-            result = fdir_client_create_dentry(g_fcfs_api_ctx.contexts.fdir,
-                    &fullname, &omp, &dentry);
+            result = fdir_client_create_dentry(g_fcfs_api_ctx.
+                    contexts.fdir, &path, 0777 | S_IFDIR, &dentry);
         }
     }
 
@@ -222,9 +217,8 @@ static void *write_thread(void *arg)
 
     thread_index = (long)arg;
     fctx.tid = getpid() + thread_index;
-    fctx.omp.mode = 0755;
-    fctx.omp.uid = geteuid();
-    fctx.omp.gid = getegid();
+    fctx.mode = 0755;
+    FDIR_SET_OPERATOR(fctx.oper, geteuid(), getegid(), 0, NULL);
     if ((result=fcfs_api_open(&fi, filename, O_CREAT |
                     O_WRONLY | O_TRUNC, &fctx)) != 0)
     {
@@ -345,9 +339,8 @@ static int read_test(const int thread_index)
     int result;
 
     fctx.tid = getpid() + thread_index;
-    fctx.omp.mode = 0755;
-    fctx.omp.uid = geteuid();
-    fctx.omp.gid = getegid();
+    fctx.mode = 0755;
+    FDIR_SET_OPERATOR(fctx.oper, geteuid(), getegid(), 0, NULL);
     if ((result=fcfs_api_open(&fi, filename, O_RDONLY, &fctx)) != 0) {
         return result;
     }
