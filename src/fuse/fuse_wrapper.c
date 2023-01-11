@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <pwd.h>
+#include <grp.h>
 #include "fastcommon/common_define.h"
 #include "fastcommon/sched_thread.h"
 #include "fastcommon/system_info.h"
@@ -32,6 +33,98 @@
 
 struct fuse_conn_info_opts *g_fuse_cinfo_opts;
 static struct fast_mblock_man fh_allocator;
+
+static inline int get_last_id(const char *buff,
+        const char *tag_str, const int tag_len)
+{
+    char *start;
+    char *last;
+
+    if ((start=strstr(buff, tag_str)) == NULL) {
+        return -1;
+    }
+
+    start += tag_len;
+    if ((last=strchr(start, '\n')) == NULL) {
+        return -1;
+    }
+
+    do {
+        --last;
+    } while (last > start && (*last >= '0' && *last <= '9'));
+
+    return strtol(last, NULL, 10);
+}
+
+static int fuse_get_groups(const pid_t pid, const uid_t fsuid,
+        const gid_t fsgid, const int size, gid_t *list)
+{
+#define UID_TAG_STR   "\nUid:"
+#define UID_TAG_LEN   (sizeof(UID_TAG_STR) - 1)
+#define GID_TAG_STR   "\nGid:"
+#define GID_TAG_LEN   (sizeof(GID_TAG_STR) - 1)
+#define GROUPS_TAG_STR   "\nGroups:"
+#define GROUPS_TAG_LEN   (sizeof(GROUPS_TAG_STR) - 1)
+
+    char filename[64];
+    char buff[1024];
+    struct passwd *user;
+    char *p;
+    char *end;
+    int fd;
+    int len;
+    uid_t euid;
+    gid_t egid;
+    gid_t val;
+    int count;
+
+    sprintf(filename, "/proc/%d/status", pid);
+    fd = open(filename, O_RDONLY);
+    if (fd < 0) {
+        return 0;
+    }
+
+    len = read(fd, buff, sizeof(buff));
+    close(fd);
+    if (len <= 0) {
+        return 0;
+    }
+
+    buff[len - 1] = '\0';
+    euid = get_last_id(buff, UID_TAG_STR, UID_TAG_LEN);
+    egid = get_last_id(buff, GID_TAG_STR, GID_TAG_LEN);
+    if (fsuid == euid && fsgid == egid) {
+        if ((p=strstr(buff, GROUPS_TAG_STR)) == NULL) {
+            return 0;
+        }
+
+        p += GROUPS_TAG_LEN;
+        count = 0;
+        while (count < size) {
+            val = strtoul(p, &end, 10);
+            if (end == p) {
+                break;
+            }
+
+            if (val != fsgid) {
+                list[count++] = val;
+            }
+            p = end;
+        }
+    } else {
+        logInfo("fsuid: %d, euid: %d, fsgid: %d, egid: %d", fsuid, euid, fsgid, egid);
+        if ((user=getpwuid(fsuid)) == NULL) {
+            return 0;
+        }
+
+        count = size;
+        if (getgrouplist(user->pw_name, fsgid, list, &count) < 0) {
+            return 0;
+        }
+    }
+
+    return count;
+}
 
 static inline void set_operator_by_req(const struct fuse_ctx *fctx,
         FDIRDentryOperator *oper, char *buff)
@@ -47,7 +140,13 @@ static inline void set_operator_by_req(const struct fuse_ctx *fctx,
         return;
     }
 
-    count = get_groups(fctx->pid, fctx->gid, FDIR_MAX_USER_GROUP_COUNT, list);
+    if (fctx->uid == 0) {
+        FDIR_SET_OPERATOR(*oper, fctx->uid, fctx->gid, 0, buff);
+        return;
+    }
+
+    count = fuse_get_groups(fctx->pid, fctx->uid, fctx->gid,
+            FDIR_MAX_USER_GROUP_COUNT, list);
     if (count <= 0) {
         count = 0;
     } else if (count == 1 && list[0] == fctx->gid) {
@@ -58,10 +157,13 @@ static inline void set_operator_by_req(const struct fuse_ctx *fctx,
             if (*group != fctx->gid) {
                 int2buff(*group, p);
                 p += 4;
+
             }
+            //logInfo("%d. gid: %d", (int)(group - list) + 1, *group);
         }
         count = (p - buff) / 4;
     }
+    //logInfo("line: %d, count: %d, first gid: %d", __LINE__, count, count > 0 ? buff2int(buff) : -1);
     FDIR_SET_OPERATOR(*oper, fctx->uid, fctx->gid, count, buff);
 }
 
@@ -102,9 +204,9 @@ static inline int fs_convert_inode(fuse_req_t req,
 }
 
 #define SET_OPER_INODE_PAIR(req, oino, _inode) \
+    char groups_buff[FDIR_MAX_USER_GROUP_BYTES]; \
     do { \
         const struct fuse_ctx *fctx; \
-        char groups_buff[FDIR_MAX_USER_GROUP_BYTES]; \
         fctx = fuse_req_ctx(req); \
         set_operator_by_req(fctx, &oino.oper, groups_buff); \
         oino.inode = _inode; \
@@ -112,8 +214,8 @@ static inline int fs_convert_inode(fuse_req_t req,
 
 
 #define SET_OPER_PNAME_PAIR(req, opname, parent_inode, name) \
+    char groups_buff[FDIR_MAX_USER_GROUP_BYTES]; \
     do { \
-        char groups_buff[FDIR_MAX_USER_GROUP_BYTES]; \
         set_operator_by_req(fuse_req_ctx(req), &opname.oper, groups_buff); \
         FDIR_SET_DENTRY_PNAME_STR(&opname.pname, parent_inode, name); \
     } while (0)
@@ -638,13 +740,14 @@ static int remove_dentry(fuse_req_t req, fuse_ino_t parent,
         return ENOENT;
     }
 
+    fctx = fuse_req_ctx(req);
+
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
-            "parent ino: %"PRId64", name: %s",
-            __LINE__, __FUNCTION__, parent_inode, name);
+            "parent ino: %"PRId64", name: %s, pid: %d, uid: %d, gid: %d",
+            __LINE__, __FUNCTION__, parent_inode, name, fctx->pid, fctx->uid, fctx->gid);
             */
 
-    fctx = fuse_req_ctx(req);
     SET_OPER_PNAME_PAIR(req, opname, parent_inode, name);
     return fcfs_api_remove_dentry_by_pname(&opname, flags, fctx->pid);
 }
@@ -674,6 +777,7 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
     string_t old_nm;
     string_t new_nm;
     FDIRDentryOperator oper;
+    char buff[FDIR_MAX_USER_GROUP_BYTES];
     int result;
 
     if (fs_convert_inode(req, oldparent, &old_parent_inode) != 0) {
@@ -697,8 +801,8 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
     fctx = fuse_req_ctx(req);
     FC_SET_STRING(old_nm, (char *)oldname);
     FC_SET_STRING(new_nm, (char *)newname);
-    oper.uid = fctx->uid;
-    oper.gid = fctx->gid;
+
+    set_operator_by_req(fctx, &oper, buff);
     result = fcfs_api_rename_dentry_by_pname(old_parent_inode, &old_nm,
             new_parent_inode, &new_nm, &oper, flags, fctx->pid);
     fuse_reply_err(req, result);
