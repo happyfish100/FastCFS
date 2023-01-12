@@ -37,6 +37,14 @@ typedef struct {
     bool xattr_enabled;
     bool writeback_cache;
     bool kernel_cache;
+    struct {
+        bool enabled;
+        int timeout;
+        int sharding_count;
+        int htable_capacity;
+        int allocator_count;
+        int element_limit;
+    } group_cache;
     int max_idle_threads;
     int max_threads;      //libfuse >= 3.12
     double attribute_timeout;
@@ -46,6 +54,13 @@ typedef struct {
 } FUSEGlobalVars;
 
 #define OS_KERNEL_VERSION g_fuse_global_vars.kernel_version
+
+#define GROUP_CACHE_ENABLED         g_fuse_global_vars.group_cache.enabled
+#define GROUP_CACHE_TIMEOUT         g_fuse_global_vars.group_cache.timeout
+#define GROUP_CACHE_SHARDING_COUNT  g_fuse_global_vars.group_cache.sharding_count
+#define GROUP_CACHE_HTABLE_CAPACITY g_fuse_global_vars.group_cache.htable_capacity
+#define GROUP_CACHE_ALLOCATOR_COUNT g_fuse_global_vars.group_cache.allocator_count
+#define GROUP_CACHE_ELEMENT_LIMIT   g_fuse_global_vars.group_cache.element_limit
 
 #ifdef __cplusplus
 extern "C" {

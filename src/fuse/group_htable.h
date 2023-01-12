@@ -13,21 +13,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef _FCFS_GROUP_HTABLE_H
+#define _FCFS_GROUP_HTABLE_H
 
-#ifndef _FCFS_GETGROUPS_H
-#define _FCFS_GETGROUPS_H
-
-#include "fastcommon/common_define.h"
+#include "sf/sf_sharding_htable.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    int fcfs_getgroups(const pid_t pid, const uid_t fsuid,
-            const gid_t fsgid, const int size, gid_t *list);
+    int fcfs_group_htable_init();
 
-    int fcfs_get_groups(const pid_t pid, const uid_t fsuid,
-            const gid_t fsgid, char *buff);
+    int fcfs_group_htable_insert(const pid_t pid, const uid_t uid,
+            const gid_t gid, const int count, const char *list);
+
+    int fcfs_group_htable_find(const pid_t pid, const uid_t uid,
+            const gid_t gid, int *count, char *list);
 
 #ifdef __cplusplus
 }

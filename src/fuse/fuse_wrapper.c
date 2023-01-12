@@ -23,6 +23,7 @@
 #include <grp.h>
 #include "fastcommon/logger.h"
 #include "global.h"
+#include "group_htable.h"
 #include "getgroups.h"
 #include "fuse_wrapper.h"
 
@@ -1283,6 +1284,10 @@ int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
     if ((result=fast_mblock_init_ex1(&fh_allocator, "fuse_fh",
                     sizeof(FCFSAPIFileInfo), 4096, 0, NULL, NULL, true)) != 0)
     {
+        return result;
+    }
+
+    if ((result=fcfs_group_htable_init()) != 0) {
         return result;
     }
 
