@@ -13,8 +13,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _FCFS_GROUP_HTABLE_H
-#define _FCFS_GROUP_HTABLE_H
+#ifndef _FCFS_GROUPS_HTABLE_H
+#define _FCFS_GROUPS_HTABLE_H
 
 #include "sf/sf_sharding_htable.h"
 
@@ -22,12 +22,12 @@
 extern "C" {
 #endif
 
-    int fcfs_group_htable_init();
+    int fcfs_groups_htable_init();
 
-    int fcfs_group_htable_insert(const pid_t pid, const uid_t uid,
+    int fcfs_groups_htable_insert(const pid_t pid, const uid_t uid,
             const gid_t gid, const int count, const char *list);
 
-    int fcfs_group_htable_find(const pid_t pid, const uid_t uid,
+    int fcfs_groups_htable_find(const pid_t pid, const uid_t uid,
             const gid_t gid, int *count, char *list);
 
 #ifdef __cplusplus

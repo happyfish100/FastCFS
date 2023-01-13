@@ -32,6 +32,12 @@
 #include "global.h"
 #include "fuse_wrapper.h"
 
+//#define FDIR_MBLOCK_CHECK  1
+
+#ifdef FDIR_MBLOCK_CHECK
+static int setup_mblock_stat_task();
+#endif
+
 static struct fuse_session *fuse_instance;
 
 static int setup_server_env(const char *config_filename);
@@ -186,6 +192,10 @@ int main(int argc, char *argv[])
         return result;
     }
 
+#ifdef FDIR_MBLOCK_CHECK
+    fast_mblock_manager_init();
+#endif
+
     sf_enable_exit_on_oom();
 
     do {
@@ -208,6 +218,10 @@ int main(int argc, char *argv[])
 
         fuse_instance = se;
         sf_set_sig_quit_handler(fuse_exit_handler);
+
+#ifdef FDIR_MBLOCK_CHECK
+    setup_mblock_stat_task();
+#endif
 
         if ((result=fuse_session_mount(se, g_fuse_global_vars.
                         nsmp.mountpoint)) != 0)
@@ -372,3 +386,25 @@ static void fuse_exit_handler(int sig)
         fuse_instance = NULL;
     }
 }
+
+#ifdef FDIR_MBLOCK_CHECK
+static int mblock_stat_task_func(void *args)
+{
+    fast_mblock_manager_stat_print_ex(false, FAST_MBLOCK_ORDER_BY_ELEMENT_SIZE);
+    return 0;
+}
+
+static int setup_mblock_stat_task()
+{
+    ScheduleEntry schedule_entry;
+    ScheduleArray schedule_array;
+
+    INIT_SCHEDULE_ENTRY(schedule_entry, sched_generate_next_id(),
+            0, 0, 0, 60, mblock_stat_task_func, NULL);
+    schedule_entry.new_thread = true;
+
+    schedule_array.count = 1;
+    schedule_array.entries = &schedule_entry;
+    return sched_add_entries(&schedule_array);
+}
+#endif

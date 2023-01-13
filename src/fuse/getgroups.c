@@ -153,10 +153,13 @@ int fcfs_get_groups(const pid_t pid, const uid_t fsuid,
                 p += 4;
 
             }
-            logInfo("%d. gid: %d", (int)(group - list) + 1, *group);
+            //logInfo("%d. gid: %d", (int)(group - list) + 1, *group);
         }
         count = (p - buff) / 4;
     }
-    logInfo("line: %d, count: %d, first gid: %d", __LINE__, count, count > 0 ? buff2int(buff) : -1);
+    /*
+    logInfo("line: %d, count: %d, first gid: %d", __LINE__,
+            count, count > 0 ? buff2int(buff) : -1);
+            */
     return count;
 }

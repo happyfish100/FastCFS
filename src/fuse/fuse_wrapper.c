@@ -23,7 +23,7 @@
 #include <grp.h>
 #include "fastcommon/logger.h"
 #include "global.h"
-#include "group_htable.h"
+#include "groups_htable.h"
 #include "getgroups.h"
 #include "fuse_wrapper.h"
 
@@ -44,12 +44,34 @@ static inline void set_operator_by_req(const struct fuse_ctx *fctx,
         return;
     }
 
-    if (fctx->uid == 0) {
+    if (fctx->uid == 0 || !ADDITIONAL_GROUPS_ENABLED) {
         FDIR_SET_OPERATOR(*oper, fctx->uid, fctx->gid, 0, buff);
         return;
     }
 
-    count = fcfs_get_groups(fctx->pid, fctx->uid, fctx->gid, buff);
+    if (GROUPS_CACHE_ENABLED) {
+        if (fcfs_groups_htable_find(fctx->pid, fctx->uid,
+                    fctx->gid, &count, buff) != 0)
+        {
+            count = fcfs_get_groups(fctx->pid, fctx->uid, fctx->gid, buff);
+            fcfs_groups_htable_insert(fctx->pid, fctx->uid,
+                    fctx->gid, count, buff);
+
+            /*
+            logInfo("SET pid: %d, uid: %d, gid: %d, groups count: %d, "
+                    "first group: %d", fctx->pid, fctx->uid, fctx->gid,
+                    count, count > 0 ? buff2int(buff) : -1);
+                    */
+        } else {
+            /*
+            logInfo("get pid: %d, uid: %d, gid: %d, groups count: %d, "
+                    "first group: %d", fctx->pid, fctx->uid, fctx->gid,
+                    count, count > 0 ? buff2int(buff) : -1);
+                    */
+        }
+    } else {
+        count = fcfs_get_groups(fctx->pid, fctx->uid, fctx->gid, buff);
+    }
     FDIR_SET_OPERATOR(*oper, fctx->uid, fctx->gid, count, buff);
 }
 
@@ -72,8 +94,8 @@ static inline int fs_convert_inode(fuse_req_t req,
 
     if (ino == FUSE_ROOT_ID) {
         if (root_inode == 0) {
-            char buff[FDIR_MAX_USER_GROUP_BYTES];
-            set_operator_by_req(fuse_req_ctx(req), &oper, buff);
+            char groups_buff[FDIR_MAX_USER_GROUP_BYTES];
+            set_operator_by_req(fuse_req_ctx(req), &oper, groups_buff);
             if ((result=fcfs_api_lookup_inode_by_path("/",
                             &oper, new_inode)) != 0)
             {
@@ -659,7 +681,7 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
     string_t old_nm;
     string_t new_nm;
     FDIRDentryOperator oper;
-    char buff[FDIR_MAX_USER_GROUP_BYTES];
+    char groups_buff[FDIR_MAX_USER_GROUP_BYTES];
     int result;
 
     if (fs_convert_inode(req, oldparent, &old_parent_inode) != 0) {
@@ -684,7 +706,7 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
     FC_SET_STRING(old_nm, (char *)oldname);
     FC_SET_STRING(new_nm, (char *)newname);
 
-    set_operator_by_req(fctx, &oper, buff);
+    set_operator_by_req(fctx, &oper, groups_buff);
     result = fcfs_api_rename_dentry_by_pname(old_parent_inode, &old_nm,
             new_parent_inode, &new_nm, &oper, flags, fctx->pid);
     fuse_reply_err(req, result);
@@ -1287,8 +1309,12 @@ int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
         return result;
     }
 
-    if ((result=fcfs_group_htable_init()) != 0) {
-        return result;
+    if (GROUPS_CACHE_ENABLED && g_fcfs_api_ctx.owner.type !=
+            fcfs_api_owner_type_fixed)
+    {
+        if ((result=fcfs_groups_htable_init()) != 0) {
+            return result;
+        }
     }
 
     memset(ops, 0, sizeof(*ops));
