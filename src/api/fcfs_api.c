@@ -55,6 +55,9 @@
 
 FCFSAPIContext g_fcfs_api_ctx;
 
+static int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
+        FCFSAPIContext *ctx);
+
 static int opendir_session_alloc_init(void *element, void *args)
 {
     int result;
@@ -155,7 +158,7 @@ static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     fcfs_api_set_contexts_ex1(ctx, fdir, fsapi, ns);
 
     ini_ctx->section_name = fdir_section_name;
-    return fcfs_api_load_owner_config(ini_ctx, &ctx->owner);
+    return fcfs_api_load_owner_config(ini_ctx, ctx);
 }
 
 int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
@@ -297,23 +300,18 @@ static int check_create_root_path(FCFSAPIContext *ctx)
     int result;
     int64_t inode;
     FDIRClientOperFnamePair fname;
-    FDIRClientOwnerModePair omp;
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, ctx, ctx->owner.uid,
-            ctx->owner.gid, "/");
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, ctx, ctx->owner.oper, "/");
     if ((result=fcfs_api_lookup_inode_by_fullname_ex(ctx,
                     &fname, LOG_DEBUG, &inode)) != 0)
     {
         if (result == ENOENT) {
-            FDIRDEntryFullName fullname;
             FDIRDEntryInfo dentry;
 
-            fullname.ns = ctx->ns;
-            FC_SET_STRING(fullname.path, "/");
-            FCFS_API_SET_OMP(omp, ctx->owner, (ACCESSPERMS | S_IFDIR),
+            FCFS_API_SET_OPERATOR(fname.oper, ctx->owner,
                     geteuid(), getegid());
-            if ((result=fdir_client_create_dentry(ctx->contexts.fdir,
-                            &fullname, &omp, &dentry)) == EEXIST)
+            if ((result=fdir_client_create_dentry(ctx->contexts.fdir, &fname,
+                            ACCESSPERMS | S_IFDIR, &dentry)) == EEXIST)
             {
                 /* check again */
                 result = fcfs_api_lookup_inode_by_fullname_ex(ctx,
@@ -401,8 +399,120 @@ void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
     snprintf(output + len, size - len, " } ");
 }
 
-int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
-        FCFSAPIOwnerInfo *owner_info)
+static int fcfs_api_setgroups(FCFSAPIOwnerInfo *owner_info,
+        const gid_t *groups, const int count)
+{
+    int index;
+    const gid_t *group;
+    const gid_t *end;
+    char *buff;
+
+    if (count == 0 || (count == 1 && groups[0] ==
+                owner_info->oper.gid))
+    {
+        owner_info->oper.additional_gids.count = 0;
+        owner_info->oper.additional_gids.list = NULL;
+        return 0;
+    }
+
+    owner_info->oper.additional_gids.count = count;
+    owner_info->oper.additional_gids.list = fc_malloc(
+            FDIR_ADDITIONAL_GROUP_BYTES(owner_info->oper));
+    if (owner_info->oper.additional_gids.list == NULL) {
+        return ENOMEM;
+    }
+
+    index = 0;
+    end = groups + count;
+    for (group=groups; group<end; group++) {
+        if (*group != owner_info->oper.gid) {
+            buff = (char *)(owner_info->oper.additional_gids.
+                    list + 4 * index++);
+            int2buff(*group, buff);
+        }
+    }
+
+    owner_info->oper.additional_gids.count = index;
+    return 0;
+}
+
+static int fcfs_api_getgroups(FCFSAPIOwnerInfo *owner_info)
+{
+    int result;
+    int count;
+    gid_t groups[FDIR_MAX_USER_GROUP_COUNT];
+
+    count = getgroups(FDIR_MAX_USER_GROUP_COUNT, groups);
+    if (count < 0) {
+        result = errno != 0 ? errno : ENOENT;
+        logError("file: "__FILE__", line: %d, "
+                "getgroups fail, errno: %d, error info: %s",
+                __LINE__, result, STRERROR(result));
+        return result;
+    }
+
+    return fcfs_api_setgroups(owner_info, groups, count);
+}
+
+static int fcfs_api_getgrouplist(FCFSAPIOwnerInfo *owner_info)
+{
+    int result;
+    int count;
+    struct passwd *user;
+#ifdef OS_FREEBSD
+    int i;
+    int groups[FDIR_MAX_USER_GROUP_COUNT];
+    gid_t _groups[FDIR_MAX_USER_GROUP_COUNT];
+#else
+    gid_t groups[FDIR_MAX_USER_GROUP_COUNT];
+#endif
+    gid_t *ptr;
+
+    errno = ENOENT;
+    if ((user=getpwuid(owner_info->oper.uid)) == NULL) {
+        result = errno != 0 ? errno : ENOENT;
+        logError("file: "__FILE__", line: %d, "
+                "getpwuid fail, errno: %d, error info: %s",
+                __LINE__, result, STRERROR(result));
+        return result;
+    }
+
+    count = FDIR_MAX_USER_GROUP_COUNT;
+    if (getgrouplist(user->pw_name, owner_info->
+                oper.gid, groups, &count) < 0)
+    {
+        result = errno != 0 ? errno : ENOENT;
+        logError("file: "__FILE__", line: %d, "
+                "getgroups fail, errno: %d, error info: %s",
+                __LINE__, result, STRERROR(result));
+        return result;
+    }
+
+#ifdef OS_FREEBSD
+    for (i=0; i<count; i++) {
+        _groups[i] = groups[i];
+    }
+    ptr = _groups;
+#else
+    ptr = groups;
+#endif
+
+    return fcfs_api_setgroups(owner_info, ptr, count);
+}
+
+int fcfs_api_set_owner(FCFSAPIContext *ctx)
+{
+    if (ctx->owner.type == fcfs_api_owner_type_fixed) {
+        return EINVAL;
+    }
+
+    ctx->owner.oper.uid = geteuid();
+    ctx->owner.oper.gid = getegid();
+    return fcfs_api_getgroups(&ctx->owner);
+}
+
+static int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
+        FCFSAPIContext *ctx)
 {
     int result;
     char *owner_type;
@@ -414,42 +524,39 @@ int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
     owner_type = iniGetStrValue(ini_ctx->section_name,
             "owner_type", ini_ctx->context);
     if (owner_type == NULL || *owner_type == '\0') {
-        owner_info->type = fcfs_api_owner_type_caller;
+        ctx->owner.type = fcfs_api_owner_type_caller;
     } else if (strcasecmp(owner_type, FCFS_API_OWNER_TYPE_CALLER_STR) == 0) {
-        owner_info->type = fcfs_api_owner_type_caller;
+        ctx->owner.type = fcfs_api_owner_type_caller;
     } else if (strcasecmp(owner_type, FCFS_API_OWNER_TYPE_FIXED_STR) == 0) {
-        owner_info->type = fcfs_api_owner_type_fixed;
+        ctx->owner.type = fcfs_api_owner_type_fixed;
     } else {
-        owner_info->type = fcfs_api_owner_type_caller;
+        ctx->owner.type = fcfs_api_owner_type_caller;
     }
 
-    if (owner_info->type == fcfs_api_owner_type_caller) {
-        owner_info->uid = geteuid();
-        owner_info->gid = getegid();
-        return 0;
+    if (ctx->owner.type == fcfs_api_owner_type_caller) {
+        return fcfs_api_set_owner(ctx);
     }
 
     owner_user = iniGetStrValue(ini_ctx->section_name,
             "owner_user", ini_ctx->context);
     if (owner_user == NULL || *owner_user == '\0') {
-        owner_info->uid = geteuid();
+        ctx->owner.oper.uid = geteuid();
     } else {
         user = getpwnam(owner_user);
-        if (user == NULL)
-        {
+        if (user == NULL) {
             result = errno != 0 ? errno : ENOENT;
             logError("file: "__FILE__", line: %d, "
                     "getpwnam %s fail, errno: %d, error info: %s",
                     __LINE__, owner_user, result, STRERROR(result));
             return result;
         }
-        owner_info->uid = user->pw_uid;
+        ctx->owner.oper.uid = user->pw_uid;
     }
 
     owner_group = iniGetStrValue(ini_ctx->section_name,
             "owner_group", ini_ctx->context);
     if (owner_group == NULL || *owner_group == '\0') {
-        owner_info->gid = getegid();
+        ctx->owner.oper.gid = getegid();
     } else {
         group = getgrnam(owner_group);
         if (group == NULL) {
@@ -460,10 +567,16 @@ int fcfs_api_load_owner_config(IniFullContext *ini_ctx,
             return result;
         }
 
-        owner_info->gid = group->gr_gid;
+        ctx->owner.oper.gid = group->gr_gid;
     }
 
-    return 0;
+    if (ctx->owner.oper.uid == geteuid() &&
+            ctx->owner.oper.gid == getegid())
+    {
+        return fcfs_api_getgroups(&ctx->owner);
+    } else {
+        return fcfs_api_getgrouplist(&ctx->owner);
+    }
 }
 
 int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
@@ -706,8 +819,8 @@ void fcfs_api_log_client_common_configs(FCFSAPIContext *ctx,
         struct passwd *user;
         struct group *group;
 
-        user = getpwuid(ctx->owner.uid);
-        group = getgrgid(ctx->owner.gid);
+        user = getpwuid(ctx->owner.oper.uid);
+        group = getgrgid(ctx->owner.oper.gid);
         sprintf(owner_config + len, ", owner_user: %s, owner_group: %s",
                 user->pw_name, group->gr_name);
     }

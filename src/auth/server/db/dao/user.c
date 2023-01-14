@@ -41,8 +41,8 @@ static int user_make_subdir(FDIRClientContext *client_ctx,
         }
     }
 
-    result = fdir_client_create_dentry(client_ctx,
-            &fp.fullname, &DAO_OMP_DIR, &dentry);
+    result = fdir_client_create_dentry(client_ctx, &path,
+            DAO_MODE_DIR, &dentry);
     return result == EEXIST ? 0 : result;
 }
 
@@ -56,13 +56,13 @@ int dao_user_create(FDIRClientContext *client_ctx, FCFSAuthUserInfo *user)
     FDIRDEntryInfo dentry;
 
     AUTH_SET_USER_HOME(home, &user->name);
+    AUTH_SET_PATH_OPER_FNAME(path, home);
     result = fdir_client_create_dentry(client_ctx,
-            &home.fullname, &DAO_OMP_DIR, &dentry);
+            &path, DAO_MODE_DIR, &dentry);
     if (result == 0) {
         inode = dentry.inode;
         check_exist = false;
     } else if (result == EEXIST) {
-        AUTH_SET_PATH_OPER_FNAME(path, home);
         if ((result=fdir_client_lookup_inode_by_path_ex(client_ctx,
                         &path, LOG_ERR, &inode)) != 0)
         {
@@ -191,7 +191,7 @@ int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
     int result;
     FDIRDEntryInfo dentry;
     AuthFullPath fp;
-    FDIRDEntryFullName root;
+    FDIRClientOperFnamePair root;
     FDIRClientOperFnamePair path;
     FDIRClientOperInodePair oino;
     FDIRClientDentryArray dentry_array;
@@ -211,16 +211,17 @@ int dao_user_list(FDIRClientContext *client_ctx, struct fast_mpool_man
             return result;
         }
 
-        FC_SET_STRING_EX(root.ns, AUTH_NAMESPACE_STR,
+        FC_SET_STRING_EX(root.fullname.ns, AUTH_NAMESPACE_STR,
                 AUTH_NAMESPACE_LEN);
-        FC_SET_STRING_EX(root.path, "/", 1);
+        FC_SET_STRING_EX(root.fullname.path, "/", 1);
+        FDIR_SET_OPERATOR(root.oper, 0, 0, 0, NULL);
         if ((result=fdir_client_create_dentry(client_ctx,
-                        &root, &DAO_OMP_DIR, &dentry)) != 0)
+                        &root, DAO_MODE_DIR, &dentry)) != 0)
         {
             return result;
         }
         if ((result=fdir_client_create_dentry(client_ctx,
-                        &fp.fullname, &DAO_OMP_DIR, &dentry)) != 0)
+                        &path, DAO_MODE_DIR, &dentry)) != 0)
         {
             return result;
         }

@@ -38,8 +38,8 @@ int dao_granted_create(FDIRClientContext *client_ctx, const string_t *username,
             return result;
         }
 
-        if ((result=fdir_client_create_dentry(client_ctx, &fp.
-                        fullname, &DAO_OMP_FILE, &dentry)) != 0)
+        if ((result=fdir_client_create_dentry(client_ctx, &path,
+                        DAO_MODE_FILE, &dentry)) != 0)
         {
             return result;
         }

@@ -61,9 +61,8 @@ int main(int argc, char *argv[])
     }
 
     fctx.tid = getpid();
-    fctx.omp.mode = 0755;
-    fctx.omp.uid = geteuid();
-    fctx.omp.gid = getegid();
+    fctx.mode = 0755;
+    FDIR_SET_OPERATOR(fctx.oper, geteuid(), getegid(), 0, NULL);
     open_flags = 0;
     file_size_to_set = -1;
     while ((ch=getopt(argc, argv, "hc:o:n:i:l:S:AT")) != -1) {

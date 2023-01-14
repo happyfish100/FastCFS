@@ -20,9 +20,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <pwd.h>
-#include "fastcommon/common_define.h"
-#include "fastcommon/sched_thread.h"
+#include <grp.h>
+#include "fastcommon/logger.h"
 #include "global.h"
+#include "groups_htable.h"
+#include "getgroups.h"
 #include "fuse_wrapper.h"
 
 #define FS_READDIR_BUFFER_INIT_NONE        0
@@ -31,6 +33,47 @@
 
 struct fuse_conn_info_opts *g_fuse_cinfo_opts;
 static struct fast_mblock_man fh_allocator;
+
+static inline void set_operator_by_req(const struct fuse_ctx *fctx,
+        FDIRDentryOperator *oper, char *buff)
+{
+    int count;
+
+    if (g_fcfs_api_ctx.owner.type == fcfs_api_owner_type_fixed) {
+        *oper = g_fcfs_api_ctx.owner.oper;
+        return;
+    }
+
+    if (fctx->uid == 0 || !ADDITIONAL_GROUPS_ENABLED) {
+        FDIR_SET_OPERATOR(*oper, fctx->uid, fctx->gid, 0, buff);
+        return;
+    }
+
+    if (GROUPS_CACHE_ENABLED) {
+        if (fcfs_groups_htable_find(fctx->pid, fctx->uid,
+                    fctx->gid, &count, buff) != 0)
+        {
+            count = fcfs_get_groups(fctx->pid, fctx->uid, fctx->gid, buff);
+            fcfs_groups_htable_insert(fctx->pid, fctx->uid,
+                    fctx->gid, count, buff);
+
+            /*
+            logInfo("SET pid: %d, uid: %d, gid: %d, groups count: %d, "
+                    "first group: %d", fctx->pid, fctx->uid, fctx->gid,
+                    count, count > 0 ? buff2int(buff) : -1);
+                    */
+        } else {
+            /*
+            logInfo("get pid: %d, uid: %d, gid: %d, groups count: %d, "
+                    "first group: %d", fctx->pid, fctx->uid, fctx->gid,
+                    count, count > 0 ? buff2int(buff) : -1);
+                    */
+        }
+    } else {
+        count = fcfs_get_groups(fctx->pid, fctx->uid, fctx->gid, buff);
+    }
+    FDIR_SET_OPERATOR(*oper, fctx->uid, fctx->gid, count, buff);
+}
 
 static inline void fill_entry_param(const FDIRDEntryInfo *dentry,
         struct fuse_entry_param *param)
@@ -46,14 +89,15 @@ static inline int fs_convert_inode(fuse_req_t req,
         const fuse_ino_t ino, int64_t *new_inode)
 {
     int result;
+    FDIRDentryOperator oper;
     static int64_t root_inode = 0;
 
     if (ino == FUSE_ROOT_ID) {
         if (root_inode == 0) {
-            const struct fuse_ctx *fctx;
-            fctx = fuse_req_ctx(req);
-            if ((result=fcfs_api_lookup_inode_by_path("/", fctx->uid,
-                            fctx->gid, new_inode)) != 0)
+            char groups_buff[FDIR_MAX_USER_GROUP_BYTES];
+            set_operator_by_req(fuse_req_ctx(req), &oper, groups_buff);
+            if ((result=fcfs_api_lookup_inode_by_path("/",
+                            &oper, new_inode)) != 0)
             {
                 return result;
             }
@@ -67,20 +111,21 @@ static inline int fs_convert_inode(fuse_req_t req,
     return 0;
 }
 
-#define SET_OPER_INODE_PAIR(req, oino, inode) \
+#define SET_OPER_INODE_PAIR(req, oino, _inode) \
+    char groups_buff[FDIR_MAX_USER_GROUP_BYTES]; \
     do { \
         const struct fuse_ctx *fctx; \
         fctx = fuse_req_ctx(req); \
-        FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, fctx->uid, fctx->gid, inode); \
+        set_operator_by_req(fctx, &oino.oper, groups_buff); \
+        oino.inode = _inode; \
     } while (0)
 
 
 #define SET_OPER_PNAME_PAIR(req, opname, parent_inode, name) \
+    char groups_buff[FDIR_MAX_USER_GROUP_BYTES]; \
     do { \
-        const struct fuse_ctx *fctx; \
-        fctx = fuse_req_ctx(req); \
-        FCFSAPI_SET_PATH_OPER_PNAME1(opname, fctx->uid, \
-                fctx->gid, parent_inode, name); \
+        set_operator_by_req(fuse_req_ctx(req), &opname.oper, groups_buff); \
+        FDIR_SET_DENTRY_PNAME_STR(&opname.pname, parent_inode, name); \
     } while (0)
 
 static inline void do_reply_attr(fuse_req_t req, FDIRDEntryInfo *dentry)
@@ -113,40 +158,6 @@ static void fs_do_getattr(fuse_req_t req, fuse_ino_t ino,
     }
 }
 
-static int match_gid(uid_t uid, const gid_t gid)
-{
-#define MAX_GROUPS  128
-    const char *id_program = "/usr/bin/id";
-    struct passwd *wd;
-    char command[256];
-    char output[1024];
-    char *groups[MAX_GROUPS];
-    int count;
-    int i;
-    int result;
-
-    if (access(id_program, X_OK) != 0) {
-        return errno != 0 ? errno : ENOENT;
-    }
-    if ((wd=getpwuid(uid)) == NULL) {
-        return errno != 0 ? errno : EPERM;
-    }
-
-    snprintf(command, sizeof(command), "/usr/bin/id -G %s", wd->pw_name);
-    if ((result=getExecResult(command, output, sizeof(output)) != 0)) {
-        return result;
-    }
-
-    count = splitEx(output, ' ', groups, MAX_GROUPS);
-    for (i=0; i<count; i++) {
-        if (atoi(groups[i]) == gid) {
-            return 0;
-        }
-    }
-
-    return ENOENT;
-}
-
 void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
              int to_set, struct fuse_file_info *fi)
 {
@@ -170,7 +181,7 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
         return;
     }
     fctx = fuse_req_ctx(req);
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, fctx->uid, fctx->gid, new_inode);
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
 
     options.flags = 0;
     if ((to_set & FUSE_SET_ATTR_MODE)) {
@@ -182,12 +193,6 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     }
 
     if ((to_set & FUSE_SET_ATTR_GID)) {
-        if (fctx->uid != 0 && attr->st_gid != fctx->gid) {
-            if (match_gid(fctx->uid, attr->st_gid) != 0) {
-                fuse_reply_err(req, EPERM);
-                return;
-            }
-        }
         options.gid = 1;
     }
 
@@ -494,10 +499,6 @@ static int do_open(fuse_req_t req, FDIRDEntryInfo *dentry,
     }
 
     if ((result=fcfs_api_open_by_dentry(fh, dentry, fi->flags, fctx)) != 0) {
-        logError("file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", fh: %"PRId64", flags: %d, result: %d\n",
-            __LINE__, __FUNCTION__, dentry->inode, fi->fh, fi->flags, result);
-
         fast_mblock_free_object(&fh_allocator, fh);
         if (!(result == EISDIR || result == ENOENT)) {
             result = EACCES;
@@ -534,7 +535,6 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
     FCFSAPIFileContext fctx;
     int result;
     int64_t parent_inode;
-    string_t nm;
     FDIRClientOperPnamePair opname;
     FDIRDEntryInfo dentry;
     struct fuse_entry_param param;
@@ -544,10 +544,16 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
         return;
     }
 
-    FCFS_FUSE_SET_FCTX_BY_REQ(fctx, mode, req);
-    FC_SET_STRING(nm, (char *)name);
-    if ((result=fcfs_api_create_dentry_by_pname(parent_inode,
-                    &nm, &fctx.omp, rdev, &dentry)) != 0)
+    /*
+    logInfo("file: "__FILE__", line: %d, func: %s, "
+            "parent ino: %"PRId64", name: %s, mode: %03o",
+            __LINE__, __FUNCTION__, parent_inode, name, mode);
+            */
+
+    SET_OPER_PNAME_PAIR(req, opname, parent_inode, name);
+    if ((result=fdir_client_create_dentry_by_pname_ex(g_fcfs_api_ctx.
+                    contexts.fdir, &g_fcfs_api_ctx.ns, &opname, mode,
+                    rdev, &dentry)) != 0)
     {
         if (result != EEXIST) {
             fuse_reply_err(req, result);
@@ -559,8 +565,6 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
             return;
         }
 
-        FCFSAPI_SET_PATH_OPER_PNAME_EX(opname, fctx.omp.uid,
-                fctx.omp.gid, parent_inode, &nm);
         if ((result=fcfs_api_access_dentry_by_pname(&opname,
                         FCFS_API_GET_ACCESS_MASK(fi->flags),
                         FCFS_API_GET_ACCESS_FLAGS(fi->flags),
@@ -571,6 +575,7 @@ static void fs_do_create(fuse_req_t req, fuse_ino_t parent,
         }
     }
 
+    FCFS_API_SET_FCTX(fctx, opname.oper, mode, fuse_req_ctx(req)->pid);
     fi->flags &= ~(O_CREAT | O_EXCL);
     if ((result=do_open(req, &dentry, fi, &fctx)) != 0) {
         fuse_reply_err(req, result);
@@ -586,8 +591,7 @@ static void do_mknod(fuse_req_t req, fuse_ino_t parent,
 {
     int result;
     int64_t parent_inode;
-    string_t nm;
-    FDIRClientOwnerModePair omp;
+    FDIRClientOperPnamePair opname;
     FDIRDEntryInfo dentry;
     struct fuse_entry_param param;
 
@@ -603,10 +607,10 @@ static void do_mknod(fuse_req_t req, fuse_ino_t parent,
             parent_inode, name, mode, (long)rdev, S_ISDIR(mode));
             */
 
-    FCFS_FUSE_SET_OMP_BY_REQ(omp, mode, req);
-    FC_SET_STRING(nm, (char *)name);
-    if ((result=fcfs_api_create_dentry_by_pname(parent_inode, &nm,
-                    &omp, rdev, &dentry)) != 0)
+    SET_OPER_PNAME_PAIR(req, opname, parent_inode, name);
+    if ((result=fdir_client_create_dentry_by_pname_ex(g_fcfs_api_ctx.
+                    contexts.fdir, &g_fcfs_api_ctx.ns, &opname, mode,
+                    rdev, &dentry)) != 0)
     {
         fuse_reply_err(req, result);
         return;
@@ -640,15 +644,15 @@ static int remove_dentry(fuse_req_t req, fuse_ino_t parent,
         return ENOENT;
     }
 
+    fctx = fuse_req_ctx(req);
+
     /*
     logInfo("file: "__FILE__", line: %d, func: %s, "
-            "parent ino: %"PRId64", name: %s",
-            __LINE__, __FUNCTION__, parent_inode, name);
+            "parent ino: %"PRId64", name: %s, pid: %d, uid: %d, gid: %d",
+            __LINE__, __FUNCTION__, parent_inode, name, fctx->pid, fctx->uid, fctx->gid);
             */
 
-    fctx = fuse_req_ctx(req);
-    FCFSAPI_SET_PATH_OPER_PNAME1(opname, fctx->uid,
-            fctx->gid, parent_inode, name);
+    SET_OPER_PNAME_PAIR(req, opname, parent_inode, name);
     return fcfs_api_remove_dentry_by_pname(&opname, flags, fctx->pid);
 }
 
@@ -677,6 +681,7 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
     string_t old_nm;
     string_t new_nm;
     FDIRDentryOperator oper;
+    char groups_buff[FDIR_MAX_USER_GROUP_BYTES];
     int result;
 
     if (fs_convert_inode(req, oldparent, &old_parent_inode) != 0) {
@@ -700,8 +705,8 @@ void fs_do_rename(fuse_req_t req, fuse_ino_t oldparent, const char *oldname,
     fctx = fuse_req_ctx(req);
     FC_SET_STRING(old_nm, (char *)oldname);
     FC_SET_STRING(new_nm, (char *)newname);
-    oper.uid = fctx->uid;
-    oper.gid = fctx->gid;
+
+    set_operator_by_req(fctx, &oper, groups_buff);
     result = fcfs_api_rename_dentry_by_pname(old_parent_inode, &old_nm,
             new_parent_inode, &new_nm, &oper, flags, fctx->pid);
     fuse_reply_err(req, result);
@@ -712,11 +717,10 @@ static void fs_do_link(fuse_req_t req, fuse_ino_t ino,
 {
     const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     const struct fuse_ctx *fctx;
+    FDIRClientOperPnamePair opname;
     FDIRDEntryInfo dentry;
-    FDIRClientOwnerModePair omp;
     struct fuse_entry_param param;
     int64_t parent_inode;
-    string_t nm;
     int result;
 
     if (fs_convert_inode(req, parent, &parent_inode) != 0) {
@@ -725,10 +729,10 @@ static void fs_do_link(fuse_req_t req, fuse_ino_t ino,
     }
 
     fctx = fuse_req_ctx(req);
-    FCFS_FUSE_SET_OMP(omp, (0777 & (~fctx->umask)), fctx->uid, fctx->gid);
-    FC_SET_STRING(nm, (char *)name);
-    if ((result=fcfs_api_link_dentry_by_pname(ino, parent_inode,
-                    &nm, &omp, flags, &dentry)) == 0)
+    SET_OPER_PNAME_PAIR(req, opname, parent_inode, name);
+    if ((result=fdir_client_link_dentry_by_pname(g_fcfs_api_ctx.contexts.fdir,
+                    ino, &g_fcfs_api_ctx.ns, &opname, (0777 & (~fctx->umask)),
+                    flags, &dentry)) == 0)
     {
         fill_entry_param(&dentry, &param);
         fuse_reply_entry(req, &param);
@@ -741,9 +745,8 @@ static void fs_do_symlink(fuse_req_t req, const char *link,
         fuse_ino_t parent, const char *name)
 {
     const struct fuse_ctx *fctx;
-    FDIRClientOwnerModePair omp;
     int64_t parent_inode;
-    string_t nm;
+    FDIRClientOperPnamePair opname;
     string_t lk;
     FDIRDEntryInfo dentry;
     struct fuse_entry_param param;
@@ -762,12 +765,11 @@ static void fs_do_symlink(fuse_req_t req, const char *link,
             */
 
     fctx = fuse_req_ctx(req);
-    FCFS_FUSE_SET_OMP(omp, (0777 & (~fctx->umask)), fctx->uid, fctx->gid);
-
     FC_SET_STRING(lk, (char *)link);
-    FC_SET_STRING(nm, (char *)name);
-    if ((result=fcfs_api_symlink_dentry_by_pname(&lk, parent_inode,
-                    &nm, &omp, &dentry)) == 0)
+    SET_OPER_PNAME_PAIR(req, opname, parent_inode, name);
+    if ((result=fdir_client_symlink_dentry_by_pname(g_fcfs_api_ctx.
+                    contexts.fdir, &lk, &g_fcfs_api_ctx.ns, &opname,
+                    (0777 & (~fctx->umask)), &dentry)) == 0)
     {
         fill_entry_param(&dentry, &param);
         fuse_reply_entry(req, &param);
@@ -837,8 +839,7 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
     }
 
     fuse_ctx = fuse_req_ctx(req);
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, fuse_ctx->uid,
-            fuse_ctx->gid, new_inode);
+    SET_OPER_INODE_PAIR(req, oino, new_inode);
     if ((result=fcfs_api_access_dentry_by_inode(&oino,
                     FCFS_API_GET_ACCESS_MASK(fi->flags),
                     FCFS_API_GET_ACCESS_FLAGS(fi->flags),
@@ -848,10 +849,7 @@ static void fs_do_open(fuse_req_t req, fuse_ino_t ino,
         return;
     }
 
-    fctx.omp.mode = dentry.stat.mode;
-    fctx.omp.uid = fuse_ctx->uid;
-    fctx.omp.gid = fuse_ctx->gid;
-    fctx.tid = fuse_ctx->pid;
+    FCFS_API_SET_FCTX(fctx, oino.oper, dentry.stat.mode, fuse_ctx->pid);
     if ((result=do_open(req, &dentry, fi, &fctx)) != 0) {
         fuse_reply_err(req, result);
         return;
@@ -1309,6 +1307,14 @@ int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops)
                     sizeof(FCFSAPIFileInfo), 4096, 0, NULL, NULL, true)) != 0)
     {
         return result;
+    }
+
+    if (GROUPS_CACHE_ENABLED && g_fcfs_api_ctx.owner.type !=
+            fcfs_api_owner_type_fixed)
+    {
+        if ((result=fcfs_groups_htable_init()) != 0) {
+            return result;
+        }
     }
 
     memset(ops, 0, sizeof(*ops));

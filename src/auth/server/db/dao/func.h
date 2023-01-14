@@ -51,11 +51,6 @@ typedef struct {
     string_t ns;
 
     struct {
-        FDIRClientOwnerModePair dir;
-        FDIRClientOwnerModePair file;
-    } omps;
-
-    struct {
         string_t passwd;
         string_t priv;
         string_t status;
@@ -69,9 +64,10 @@ typedef struct {
 } FCFSAuthDAOVariables;
 
 #define DAO_NAMESPACE g_auth_dao_vars.ns
-#define DAO_OMP_DIR   g_auth_dao_vars.omps.dir
-#define DAO_OMP_FILE  g_auth_dao_vars.omps.file
 #define DAO_BASE_PATH_INODE  g_auth_dao_vars.base_path_inode
+
+#define DAO_MODE_DIR  (0700 | S_IFDIR)
+#define DAO_MODE_FILE (0700 | S_IFREG)
 
 #define AUTH_XTTR_NAME_PASSWD g_auth_dao_vars.xttr_names.passwd
 #define AUTH_XTTR_NAME_PRIV   g_auth_dao_vars.xttr_names.priv

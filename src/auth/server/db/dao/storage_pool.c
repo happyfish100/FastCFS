@@ -32,8 +32,8 @@ int dao_spool_create(FDIRClientContext *client_ctx,
     AUTH_SET_USER_PATH2(fp, username,
             AUTH_DIR_NAME_CREATED_STR, spool->name);
     AUTH_SET_PATH_OPER_FNAME(path, fp);
-    if ((result=fdir_client_create_dentry(client_ctx, &fp.fullname,
-                    &DAO_OMP_FILE, &dentry)) == 0)
+    if ((result=fdir_client_create_dentry(client_ctx, &path,
+                    DAO_MODE_FILE, &dentry)) == 0)
     {
         inode = dentry.inode;
     } else if (result == EEXIST) {

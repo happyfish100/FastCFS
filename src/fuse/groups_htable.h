@@ -13,26 +13,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef _FCFS_GROUPS_HTABLE_H
+#define _FCFS_GROUPS_HTABLE_H
 
-#ifndef _FCFS_FUSE_WRAPPER_H
-#define _FCFS_FUSE_WRAPPER_H
-
-#ifndef FUSE_USE_VERSION
-#define FUSE_USE_VERSION 312
-#endif
-
-#include "fastcommon/common_define.h"
-#include "fastcfs/api/fcfs_api.h"
-#include "fastcfs/api/fcfs_api_util.h"
-#include "fuse3/fuse_lowlevel.h"
+#include "sf/sf_sharding_htable.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern struct fuse_conn_info_opts *g_fuse_cinfo_opts;
+    int fcfs_groups_htable_init();
 
-	int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops);
+    int fcfs_groups_htable_insert(const pid_t pid, const uid_t uid,
+            const gid_t gid, const int count, const char *list);
+
+    int fcfs_groups_htable_find(const pid_t pid, const uid_t uid,
+            const gid_t gid, int *count, char *list);
 
 #ifdef __cplusplus
 }

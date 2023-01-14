@@ -795,8 +795,8 @@ int fcfs_lstat_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    if ((result=fcfs_api_lstat_ex(&ctx->api_ctx, path, ctx->api_ctx.
-                    owner.uid, ctx->api_ctx.owner.gid, buf)) != 0)
+    if ((result=fcfs_api_lstat_ex(&ctx->api_ctx, path,
+                    &ctx->api_ctx.owner.oper, buf)) != 0)
     {
         errno = result;
         return -1;
@@ -818,8 +818,8 @@ int fcfs_stat_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    if ((result=fcfs_api_stat_ex(&ctx->api_ctx, path, ctx->api_ctx.
-                    owner.uid, ctx->api_ctx.owner.gid, buf, flags)) != 0)
+    if ((result=fcfs_api_stat_ex(&ctx->api_ctx, path, &ctx->
+                    api_ctx.owner.oper, buf, flags)) != 0)
     {
         errno = result;
         return -1;
@@ -858,10 +858,9 @@ int fcfs_fstatat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    if ((result=fcfs_api_stat_ex(&ctx->api_ctx, path, ctx->api_ctx.
-                    owner.uid, ctx->api_ctx.owner.gid, buf,
-                    ((flags & AT_SYMLINK_NOFOLLOW) != 0 ? 0 :
-                     FDIR_FLAGS_FOLLOW_SYMLINK))) != 0)
+    if ((result=fcfs_api_stat_ex(&ctx->api_ctx, path, &ctx->api_ctx.owner.
+                    oper, buf, ((flags & AT_SYMLINK_NOFOLLOW) != 0 ? 0 :
+                        FDIR_FLAGS_FOLLOW_SYMLINK))) != 0)
     {
         errno = result;
         return -1;
@@ -959,7 +958,6 @@ int fcfs_symlink_ex(FCFSPosixAPIContext *ctx,
         const char *link, const char *path)
 {
     char full_fname[PATH_MAX];
-    FDIRClientOwnerModePair omp;
     int result;
 
     if (*link == '/') {
@@ -973,9 +971,8 @@ int fcfs_symlink_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
-    if ((result=fcfs_api_symlink_ex(&ctx->api_ctx,
-                    link, path, &omp)) != 0)
+    if ((result=fcfs_api_symlink_ex(&ctx->api_ctx, link, path,
+                    &ctx->api_ctx.owner.oper, ACCESSPERMS)) != 0)
     {
         errno = result;
         return -1;
@@ -988,7 +985,6 @@ int fcfs_symlinkat_ex(FCFSPosixAPIContext *ctx, const char *link,
         int fd, const char *path)
 {
     char full_fname[PATH_MAX];
-    FDIRClientOwnerModePair omp;
     int result;
 
     if (*link == '/') {
@@ -1002,9 +998,8 @@ int fcfs_symlinkat_ex(FCFSPosixAPIContext *ctx, const char *link,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
-    if ((result=fcfs_api_symlink_ex(&ctx->api_ctx,
-                    link, path, &omp)) != 0)
+    if ((result=fcfs_api_symlink_ex(&ctx->api_ctx, link, path,
+                    &ctx->api_ctx.owner.oper, ACCESSPERMS)) != 0)
     {
         errno = result;
         return -1;
@@ -1019,7 +1014,6 @@ int fcfs_link_ex(FCFSPosixAPIContext *ctx,
     const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
     char full_fname1[PATH_MAX];
     char full_fname2[PATH_MAX];
-    FDIRClientOwnerModePair omp;
     int result;
 
     if ((result=papi_resolve_path(ctx, "linkat", &path1,
@@ -1033,9 +1027,8 @@ int fcfs_link_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
-    if ((result=fcfs_api_link_ex(&ctx->api_ctx, path1,
-                    path2, &omp, flags)) != 0)
+    if ((result=fcfs_api_link_ex(&ctx->api_ctx, path1, path2, &ctx->
+                    api_ctx.owner.oper, ACCESSPERMS, flags)) != 0)
     {
         errno = result;
         return -1;
@@ -1049,7 +1042,6 @@ int fcfs_linkat_ex(FCFSPosixAPIContext *ctx, int fd1,
 {
     char full_fname1[PATH_MAX];
     char full_fname2[PATH_MAX];
-    FDIRClientOwnerModePair omp;
     int result;
 
     if ((result=papi_resolve_pathat(ctx, "linkat", fd1, &path1,
@@ -1064,9 +1056,9 @@ int fcfs_linkat_ex(FCFSPosixAPIContext *ctx, int fd1,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
     if ((result=fcfs_api_link_ex(&ctx->api_ctx, path1, path2,
-                    &omp, ((flags & AT_SYMLINK_FOLLOW) != 0) ?
+                    &ctx->api_ctx.owner.oper, ACCESSPERMS,
+                    ((flags & AT_SYMLINK_FOLLOW) != 0) ?
                     FDIR_FLAGS_FOLLOW_SYMLINK : 0)) != 0)
     {
         errno = result;
@@ -1088,8 +1080,8 @@ ssize_t fcfs_readlink_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    if ((result=fcfs_api_readlink(&ctx->api_ctx, path, ctx->api_ctx.
-                    owner.uid, ctx->api_ctx.owner.gid, buff, size)) != 0)
+    if ((result=fcfs_api_readlink(&ctx->api_ctx, path, &ctx->
+                    api_ctx.owner.oper, buff, size)) != 0)
     {
         errno = result;
         return -1;
@@ -1110,8 +1102,8 @@ ssize_t fcfs_readlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    if ((result=fcfs_api_readlink(&ctx->api_ctx, path, ctx->api_ctx.
-                    owner.uid, ctx->api_ctx.owner.gid, buff, size)) != 0)
+    if ((result=fcfs_api_readlink(&ctx->api_ctx, path, &ctx->
+                    api_ctx.owner.oper, buff, size)) != 0)
     {
         errno = result;
         return -1;
@@ -1123,7 +1115,6 @@ ssize_t fcfs_readlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
 int fcfs_mknod_ex(FCFSPosixAPIContext *ctx,
         const char *path, mode_t mode, dev_t dev)
 {
-    FDIRClientOwnerModePair omp;
     char full_fname[PATH_MAX];
     int result;
 
@@ -1133,9 +1124,8 @@ int fcfs_mknod_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, mode);
-    if ((result=fcfs_api_mknod_ex(&ctx->api_ctx,
-                    path, &omp, dev)) != 0)
+    if ((result=fcfs_api_mknod_ex(&ctx->api_ctx, path, &ctx->
+                    api_ctx.owner.oper, mode, dev)) != 0)
     {
         errno = result;
         return -1;
@@ -1147,7 +1137,6 @@ int fcfs_mknod_ex(FCFSPosixAPIContext *ctx,
 int fcfs_mknodat_ex(FCFSPosixAPIContext *ctx, int fd,
         const char *path, mode_t mode, dev_t dev)
 {
-    FDIRClientOwnerModePair omp;
     char full_fname[PATH_MAX];
     int result;
 
@@ -1157,9 +1146,8 @@ int fcfs_mknodat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, mode);
-    if ((result=fcfs_api_mknod_ex(&ctx->api_ctx,
-                    path, &omp, dev)) != 0)
+    if ((result=fcfs_api_mknod_ex(&ctx->api_ctx, path, &ctx->
+                    api_ctx.owner.oper, mode, dev)) != 0)
     {
         errno = result;
         return -1;
@@ -1171,7 +1159,6 @@ int fcfs_mknodat_ex(FCFSPosixAPIContext *ctx, int fd,
 int fcfs_mkfifo_ex(FCFSPosixAPIContext *ctx,
         const char *path, mode_t mode)
 {
-    FDIRClientOwnerModePair omp;
     char full_fname[PATH_MAX];
     int result;
 
@@ -1181,8 +1168,9 @@ int fcfs_mkfifo_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, mode);
-    if ((result=fcfs_api_mkfifo_ex(&ctx->api_ctx, path, &omp)) != 0) {
+    if ((result=fcfs_api_mkfifo_ex(&ctx->api_ctx, path,
+                    &ctx->api_ctx.owner.oper, mode)) != 0)
+    {
         errno = result;
         return -1;
     } else {
@@ -1193,7 +1181,6 @@ int fcfs_mkfifo_ex(FCFSPosixAPIContext *ctx,
 int fcfs_mkfifoat_ex(FCFSPosixAPIContext *ctx, int fd,
         const char *path, mode_t mode)
 {
-    FDIRClientOwnerModePair omp;
     char full_fname[PATH_MAX];
     int result;
 
@@ -1203,8 +1190,9 @@ int fcfs_mkfifoat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, mode);
-    if ((result=fcfs_api_mkfifo_ex(&ctx->api_ctx, path, &omp)) != 0) {
+    if ((result=fcfs_api_mkfifo_ex(&ctx->api_ctx, path,
+                    &ctx->api_ctx.owner.oper, mode)) != 0)
+    {
         errno = result;
         return -1;
     } else {
@@ -1216,7 +1204,6 @@ int fcfs_access_ex(FCFSPosixAPIContext *ctx,
         const char *path, int mode)
 {
     const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
-    FDIRClientOwnerModePair omp;
     char full_fname[PATH_MAX];
     int result;
 
@@ -1226,9 +1213,8 @@ int fcfs_access_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
-    if ((result=fcfs_api_access_ex(&ctx->api_ctx,
-                    path, mode, &omp, flags)) != 0)
+    if ((result=fcfs_api_access_ex(&ctx->api_ctx, path, mode,
+                    &ctx->api_ctx.owner.oper, flags)) != 0)
     {
         errno = result;
         return -1;
@@ -1240,7 +1226,6 @@ int fcfs_access_ex(FCFSPosixAPIContext *ctx,
 int fcfs_faccessat_ex(FCFSPosixAPIContext *ctx, int fd,
             const char *path, int mode, int flags)
 {
-    FDIRClientOwnerModePair omp;
     char full_fname[PATH_MAX];
     int result;
 
@@ -1250,8 +1235,8 @@ int fcfs_faccessat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
-    if ((result=fcfs_api_access_ex(&ctx->api_ctx, path, mode, &omp,
+    if ((result=fcfs_api_access_ex(&ctx->api_ctx, path,
+                    mode, &ctx->api_ctx.owner.oper,
                     (flags & AT_SYMLINK_NOFOLLOW) ? 0 :
                     FDIR_FLAGS_FOLLOW_SYMLINK)) != 0)
     {
@@ -1266,7 +1251,6 @@ int fcfs_euidaccess_ex(FCFSPosixAPIContext *ctx,
         const char *path, int mode)
 {
     const int flags = FDIR_FLAGS_FOLLOW_SYMLINK;
-    FDIRClientOwnerModePair omp;
     char full_fname[PATH_MAX];
     int result;
 
@@ -1276,9 +1260,8 @@ int fcfs_euidaccess_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, ACCESSPERMS);
-    if ((result=fcfs_api_euidaccess_ex(&ctx->api_ctx,
-                    path, mode, &omp, flags)) != 0)
+    if ((result=fcfs_api_euidaccess_ex(&ctx->api_ctx, path, mode,
+                    &ctx->api_ctx.owner.oper, flags)) != 0)
     {
         errno = result;
         return -1;
@@ -1300,8 +1283,8 @@ int fcfs_utime_ex(FCFSPosixAPIContext *ctx, const char *path,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_utime_ex(&ctx->api_ctx, &fname, times)) != 0) {
         errno = result;
         return -1;
@@ -1324,8 +1307,8 @@ int fcfs_utimes_ex(FCFSPosixAPIContext *ctx, const char *path,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_utimes_by_path_ex(&ctx->api_ctx,
                     &fname, times, flags)) != 0)
     {
@@ -1349,8 +1332,8 @@ int fcfs_futimes_ex(FCFSPosixAPIContext *ctx,
         return -1;
     }
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, ctx->api_ctx.owner.uid,
-            ctx->api_ctx.owner.gid, file->fi.dentry.inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, ctx->api_ctx.
+            owner.oper, file->fi.dentry.inode);
     if ((result=fcfs_api_utimes_by_inode_ex(&ctx->api_ctx,
                     &oino, times, flags)) != 0)
     {
@@ -1375,8 +1358,8 @@ int fcfs_futimesat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->api_ctx.
-            owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_utimes_by_path_ex(&ctx->api_ctx,
                     &fname, times, flags)) != 0)
     {
@@ -1400,8 +1383,8 @@ int fcfs_futimens_ex(FCFSPosixAPIContext *ctx, int fd,
         return -1;
     }
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, ctx->api_ctx.owner.uid,
-            ctx->api_ctx.owner.gid, file->fi.dentry.inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, ctx->api_ctx.
+            owner.oper, file->fi.dentry.inode);
     if ((result=fcfs_api_utimens_by_inode_ex(&ctx->api_ctx,
                     &oino, times, flags)) != 0)
     {
@@ -1425,8 +1408,8 @@ int fcfs_utimensat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->api_ctx.
-            owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_utimens_by_path_ex(&ctx->api_ctx, &fname,
                     times, (flags & AT_SYMLINK_NOFOLLOW) ?
                     0 : FDIR_FLAGS_FOLLOW_SYMLINK)) != 0)
@@ -1450,8 +1433,8 @@ int fcfs_unlink_ex(FCFSPosixAPIContext *ctx, const char *path)
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->api_ctx.
-            owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_unlink_ex(&ctx->api_ctx, &fname,
                     fcfs_posix_api_gettid(fcfs_papi_tpid_type_tid))) != 0)
     {
@@ -1475,8 +1458,8 @@ int fcfs_unlinkat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->api_ctx.
-            owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_remove_dentry_ex(&ctx->api_ctx, &fname,
                     ((flags & AT_REMOVEDIR) ? FDIR_UNLINK_FLAGS_MATCH_DIR :
                      FDIR_UNLINK_FLAGS_MATCH_FILE), fcfs_posix_api_gettid(
@@ -1496,7 +1479,6 @@ int fcfs_rename_ex(FCFSPosixAPIContext *ctx,
     int result;
     char full_fname1[PATH_MAX];
     char full_fname2[PATH_MAX];
-    FDIRDentryOperator oper;
 
     if ((result=papi_resolve_path(ctx, "rename", &path1,
                     full_fname1, sizeof(full_fname1))) != 0)
@@ -1510,10 +1492,9 @@ int fcfs_rename_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    FCFS_API_FILL_OPER(oper, ctx);
     if ((result=fcfs_api_rename_dentry_ex(&ctx->api_ctx, path1,
-                    path2, &oper, flags, fcfs_posix_api_gettid(
-                        fcfs_papi_tpid_type_tid))) != 0)
+                    path2, &ctx->api_ctx.owner.oper, flags,
+                    fcfs_posix_api_gettid(fcfs_papi_tpid_type_tid))) != 0)
     {
         errno = result;
         return -1;
@@ -1529,7 +1510,6 @@ static inline int do_renameat(FCFSPosixAPIContext *ctx,
     int result;
     char full_fname1[PATH_MAX];
     char full_fname2[PATH_MAX];
-    FDIRDentryOperator oper;
 
     if ((result=papi_resolve_pathat(ctx, func_name, fd1, &path1,
                     full_fname1, sizeof(full_fname1))) != 0)
@@ -1543,10 +1523,9 @@ static inline int do_renameat(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    FCFS_API_FILL_OPER(oper, ctx);
     if ((result=fcfs_api_rename_dentry_ex(&ctx->api_ctx, path1,
-                    path2, &oper, flags, fcfs_posix_api_gettid(
-                        fcfs_papi_tpid_type_tid))) != 0)
+                    path2, &ctx->api_ctx.owner.oper, flags,
+                    fcfs_posix_api_gettid(fcfs_papi_tpid_type_tid))) != 0)
     {
         errno = result;
         return -1;
@@ -1582,7 +1561,6 @@ int fcfs_renameat2_ex(FCFSPosixAPIContext *ctx, int fd1,
 int fcfs_mkdir_ex(FCFSPosixAPIContext *ctx,
         const char *path, mode_t mode)
 {
-    FDIRClientOwnerModePair omp;
     char full_fname[PATH_MAX];
     int result;
 
@@ -1592,8 +1570,9 @@ int fcfs_mkdir_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, mode);
-    if ((result=fcfs_api_mkdir_ex(&ctx->api_ctx, path, &omp)) != 0) {
+    if ((result=fcfs_api_mkdir_ex(&ctx->api_ctx, path,
+                    &ctx->api_ctx.owner.oper, mode)) != 0)
+    {
         errno = result;
         return -1;
     } else {
@@ -1604,7 +1583,6 @@ int fcfs_mkdir_ex(FCFSPosixAPIContext *ctx,
 int fcfs_mkdirat_ex(FCFSPosixAPIContext *ctx, int fd,
         const char *path, mode_t mode)
 {
-    FDIRClientOwnerModePair omp;
     char full_fname[PATH_MAX];
     int result;
 
@@ -1614,8 +1592,9 @@ int fcfs_mkdirat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    fcfs_posix_api_set_omp(&omp, ctx, mode);
-    if ((result=fcfs_api_mkdir_ex(&ctx->api_ctx, path, &omp)) != 0) {
+    if ((result=fcfs_api_mkdir_ex(&ctx->api_ctx, path,
+                    &ctx->api_ctx.owner.oper, mode)) != 0)
+    {
         errno = result;
         return -1;
     } else {
@@ -1636,8 +1615,8 @@ int fcfs_rmdir_ex(FCFSPosixAPIContext *ctx, const char *path)
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_remove_dentry_ex(&ctx->api_ctx, &fname, flags,
                     fcfs_posix_api_gettid(fcfs_papi_tpid_type_tid))) != 0)
     {
@@ -1662,8 +1641,8 @@ int fcfs_chown_ex(FCFSPosixAPIContext *ctx, const char *path,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_chown_ex(&ctx->api_ctx, &fname,
                     owner, group, flags)) != 0)
     {
@@ -1688,8 +1667,8 @@ int fcfs_lchown_ex(FCFSPosixAPIContext *ctx, const char *path,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_chown_ex(&ctx->api_ctx, &fname,
                     owner, group, flags)) != 0)
     {
@@ -1712,8 +1691,8 @@ int fcfs_fchown(int fd, uid_t owner, gid_t group)
         return -1;
     }
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, file->fi.ctx->owner.uid,
-            file->fi.ctx->owner.gid, file->fi.dentry.inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, file->fi.ctx->
+            owner.oper, file->fi.dentry.inode);
     if ((result=fcfs_api_chown_by_inode_ex(file->fi.ctx,
                     &oino, owner, group, flags)) != 0)
     {
@@ -1737,8 +1716,8 @@ int fcfs_fchownat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_chown_ex(&ctx->api_ctx, &fname, owner,
                     group, (flags & AT_SYMLINK_NOFOLLOW) ?
                     0 : FDIR_FLAGS_FOLLOW_SYMLINK)) != 0)
@@ -1764,8 +1743,8 @@ int fcfs_chmod_ex(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_chmod_ex(&ctx->api_ctx,
                     &fname, mode, flags)) != 0)
     {
@@ -1788,8 +1767,8 @@ int fcfs_fchmod(int fd, mode_t mode)
         return -1;
     }
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, file->fi.ctx->owner.uid,
-            file->fi.ctx->owner.gid, file->fi.dentry.inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, file->fi.ctx->
+            owner.oper, file->fi.dentry.inode);
     if ((result=fcfs_api_chmod_by_inode_ex(file->fi.ctx,
                     &oino, mode, flags)) != 0)
     {
@@ -1813,8 +1792,8 @@ int fcfs_fchmodat_ex(FCFSPosixAPIContext *ctx, int fd,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_chmod_ex(&ctx->api_ctx, &fname,
                     mode, (flags & AT_SYMLINK_NOFOLLOW) ?
                     0 : FDIR_FLAGS_FOLLOW_SYMLINK)) != 0)
@@ -1881,8 +1860,8 @@ static inline int do_setxattr(FCFSPosixAPIContext *ctx, const char *func,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     FC_SET_STRING(xattr.key, (char *)name);
     FC_SET_STRING_EX(xattr.value, (char *)value, size);
     if ((result=fcfs_api_set_xattr_by_path_ex(&ctx->api_ctx,
@@ -1922,8 +1901,8 @@ int fcfs_fsetxattr(int fd, const char *name, const void *value,
         return -1;
     }
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, file->fi.ctx->owner.uid,
-            file->fi.ctx->owner.gid, file->fi.dentry.inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, file->fi.ctx->
+            owner.oper, file->fi.dentry.inode);
     FC_SET_STRING(xattr.key, (char *)name);
     FC_SET_STRING_EX(xattr.value, (char *)value, size);
     if ((result=fcfs_api_set_xattr_by_inode_ex(file->fi.ctx, &oino,
@@ -1955,8 +1934,8 @@ static inline ssize_t do_getxattr(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     FC_SET_STRING(nm, (char *)name);
     FC_SET_STRING_EX(vl, (char *)value, 0);
     if ((result=fcfs_api_get_xattr_by_path_ex(&ctx->api_ctx,
@@ -1999,8 +1978,8 @@ ssize_t fcfs_fgetxattr(int fd, const char *name,
         return -1;
     }
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, file->fi.ctx->owner.uid,
-            file->fi.ctx->owner.gid, file->fi.dentry.inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, file->fi.ctx->
+            owner.oper, file->fi.dentry.inode);
     FC_SET_STRING(nm, (char *)name);
     FC_SET_STRING_EX(vl, (char *)value, 0);
     if ((result=fcfs_api_get_xattr_by_inode_ex(file->fi.ctx,
@@ -2029,8 +2008,8 @@ static inline ssize_t do_listxattr(FCFSPosixAPIContext *ctx,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     ls.str = list;
     if ((result=fcfs_api_list_xattr_by_path_ex(&ctx->api_ctx, &fname, &ls,
                     size, GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
@@ -2069,8 +2048,8 @@ ssize_t fcfs_flistxattr(int fd, char *list, size_t size)
         return -1;
     }
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, file->fi.ctx->owner.uid,
-            file->fi.ctx->owner.gid, file->fi.dentry.inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, file->fi.ctx->
+            owner.oper, file->fi.dentry.inode);
     ls.str = list;
     if ((result=fcfs_api_list_xattr_by_inode_ex(file->fi.ctx, &oino, &ls,
                     size, GET_XATTR_FLAGS_BY_VSIZE(size, flags))) != 0)
@@ -2096,8 +2075,8 @@ static inline int do_removexattr(FCFSPosixAPIContext *ctx, const char *func,
         return result;
     }
 
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     FC_SET_STRING(nm, (char *)name);
     if ((result=fcfs_api_remove_xattr_by_path_ex(&ctx->api_ctx,
                     &fname, &nm, flags)) != 0)
@@ -2136,8 +2115,8 @@ int fcfs_fremovexattr(int fd, const char *name)
         return -1;
     }
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, file->fi.ctx->owner.uid,
-            file->fi.ctx->owner.gid, file->fi.dentry.inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, file->fi.ctx->
+            owner.oper, file->fi.dentry.inode);
     FC_SET_STRING(nm, (char *)name);
     if ((result=fcfs_api_remove_xattr_by_inode_ex(file->fi.ctx,
                     &oino, &nm, flags)) != 0)
@@ -2162,8 +2141,8 @@ static FCFSPosixAPIDIR *do_opendir(FCFSPosixAPIContext *ctx,
         return NULL;
     }
 
-    FCFSAPI_SET_OPER_INODE_PAIR_EX(oino, file->fi.ctx->owner.uid,
-            file->fi.ctx->owner.gid, file->fi.dentry.inode);
+    FCFSAPI_SET_OPER_INODE_PAIR(oino, file->fi.ctx->
+            owner.oper, file->fi.dentry.inode);
     dir->file = file;
     dir->magic = FCFS_PAPI_MAGIC_NUMBER;
     dir->offset = 0;
@@ -2323,8 +2302,8 @@ static int do_scandir(FCFSPosixAPIContext *ctx, const char *path,
     int count;
 
     fdir_client_compact_dentry_array_init(&dir.darray);
-    FCFSAPI_SET_PATH_OPER_FNAME_EX(fname, &ctx->api_ctx, ctx->
-            api_ctx.owner.uid, ctx->api_ctx.owner.gid, path);
+    FCFSAPI_SET_PATH_OPER_FNAME(fname, &ctx->api_ctx,
+            ctx->api_ctx.owner.oper, path);
     if ((result=fcfs_api_list_compact_dentry_by_path_ex(&ctx->
                     api_ctx, &fname, &dir.darray)) != 0)
     {

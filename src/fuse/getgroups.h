@@ -14,25 +14,20 @@
  */
 
 
-#ifndef _FCFS_FUSE_WRAPPER_H
-#define _FCFS_FUSE_WRAPPER_H
-
-#ifndef FUSE_USE_VERSION
-#define FUSE_USE_VERSION 312
-#endif
+#ifndef _FCFS_GETGROUPS_H
+#define _FCFS_GETGROUPS_H
 
 #include "fastcommon/common_define.h"
-#include "fastcfs/api/fcfs_api.h"
-#include "fastcfs/api/fcfs_api_util.h"
-#include "fuse3/fuse_lowlevel.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern struct fuse_conn_info_opts *g_fuse_cinfo_opts;
+    int fcfs_getgroups(const pid_t pid, const uid_t fsuid,
+            const gid_t fsgid, const int size, gid_t *list);
 
-	int fs_fuse_wrapper_init(struct fuse_lowlevel_ops *ops);
+    int fcfs_get_groups(const pid_t pid, const uid_t fsuid,
+            const gid_t fsgid, char *buff);
 
 #ifdef __cplusplus
 }

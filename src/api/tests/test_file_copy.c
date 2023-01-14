@@ -101,9 +101,8 @@ static int copy_file()
     }
 
     fctx.tid = getpid();
-    fctx.omp.mode = 0755;
-    fctx.omp.uid = geteuid();
-    fctx.omp.gid = getegid();
+    fctx.mode = 0755;
+    FDIR_SET_OPERATOR(fctx.oper, geteuid(), getegid(), 0, NULL);
     if ((result=fcfs_api_open(&fi, new_fs_filename,
                     O_CREAT | O_WRONLY, &fctx)) != 0)
     {

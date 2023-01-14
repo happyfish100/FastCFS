@@ -29,9 +29,22 @@
 #include "global.h"
 
 #define INI_FUSE_SECTION_NAME             "FUSE"
+#define INI_GROUPS_CACHE_SECTION_NAME     "groups-cache"
 
 #define FUSE_ALLOW_ALL_STR   "all"
 #define FUSE_ALLOW_ROOT_STR  "root"
+
+#define FUSE_MIN_SHARED_ALLOCATOR_COUNT             1
+#define FUSE_MAX_SHARED_ALLOCATOR_COUNT           100
+#define FUSE_DEFAULT_SHARED_ALLOCATOR_COUNT         7
+
+#define FUSE_MIN_HASHTABLE_SHARDING_COUNT           1
+#define FUSE_MAX_HASHTABLE_SHARDING_COUNT        1000
+#define FUSE_DEFAULT_HASHTABLE_SHARDING_COUNT     163
+
+#define FUSE_MIN_HASHTABLE_TOTAL_CAPACITY       10949
+#define FUSE_MAX_HASHTABLE_TOTAL_CAPACITY     1000000
+#define FUSE_DEFAULT_HASHTABLE_TOTAL_CAPACITY  175447
 
 FUSEGlobalVars g_fuse_global_vars = {{NULL, NULL}};
 
@@ -128,7 +141,63 @@ static int load_fuse_config(IniFullContext *ini_ctx)
 
     g_fuse_global_vars.kernel_cache = iniGetBoolValue(ini_ctx->
             section_name, "kernel_cache", ini_ctx->context, true);
+    ADDITIONAL_GROUPS_ENABLED = iniGetBoolValue(ini_ctx->section_name,
+            "groups_enabled", ini_ctx->context, true);
     return 0;
+}
+
+static void load_additional_groups_config(IniFullContext *ini_ctx)
+{
+    ini_ctx->section_name = INI_GROUPS_CACHE_SECTION_NAME;
+    GROUPS_CACHE_ENABLED = iniGetBoolValue(ini_ctx->
+            section_name, "enabled", ini_ctx->context, true);
+
+    GROUPS_CACHE_TIMEOUT = iniGetIntCorrectValue(ini_ctx,
+            "timeout", 300, 1, 1e8);
+
+    GROUPS_CACHE_ALLOCATOR_COUNT = iniGetIntCorrectValueEx(
+            ini_ctx, "shared_allocator_count",
+            FUSE_DEFAULT_SHARED_ALLOCATOR_COUNT,
+            FUSE_MIN_SHARED_ALLOCATOR_COUNT,
+            FUSE_MAX_SHARED_ALLOCATOR_COUNT, true);
+
+    GROUPS_CACHE_SHARDING_COUNT = iniGetIntCorrectValue(
+            ini_ctx, "hashtable_sharding_count",
+            FUSE_DEFAULT_HASHTABLE_SHARDING_COUNT,
+            FUSE_MIN_HASHTABLE_SHARDING_COUNT,
+            FUSE_MAX_HASHTABLE_SHARDING_COUNT);
+
+    GROUPS_CACHE_HTABLE_CAPACITY = iniGetIntCorrectValue(
+            ini_ctx, "hashtable_total_capacity",
+            FUSE_DEFAULT_HASHTABLE_TOTAL_CAPACITY,
+            FUSE_MIN_HASHTABLE_TOTAL_CAPACITY,
+            FUSE_MAX_HASHTABLE_TOTAL_CAPACITY);
+
+    GROUPS_CACHE_ELEMENT_LIMIT = iniGetIntCorrectValue(ini_ctx,
+            "element_limit", 64 * 1024, 16 * 1024, 1024 * 1024);
+}
+
+static void additional_groups_config_to_string(char *buff, const int size)
+{
+    if (!ADDITIONAL_GROUPS_ENABLED) {
+        snprintf(buff, size, "groups_enabled: 0");
+        return;
+    }
+
+    if (GROUPS_CACHE_ENABLED) {
+        snprintf(buff, size, "groups_enabled: 1, "
+                "groups-cache {enabled: 1, timeout: %d, "
+                "shared_allocator_count: %d, "
+                "hashtable_sharding_count: %d, "
+                "hashtable_total_capacity: %d, "
+                "element_limit: %d}",
+                GROUPS_CACHE_TIMEOUT, GROUPS_CACHE_ALLOCATOR_COUNT,
+                GROUPS_CACHE_SHARDING_COUNT, GROUPS_CACHE_HTABLE_CAPACITY,
+                GROUPS_CACHE_ELEMENT_LIMIT);
+    } else {
+        snprintf(buff, size, "groups_enabled: 1, "
+                "groups-cache {enabled: 0}");
+    }
 }
 
 static const char *get_allow_others_caption(
@@ -153,6 +222,7 @@ int fcfs_fuse_global_init(const char *config_filename)
     BufferInfo sf_idempotency_config;
     char buff[256];
     char owner_config[2 * NAME_MAX + 64];
+    char additional_groups_config[256];
     char max_threads_buff[64];
     IniContext iniContext;
     IniFullContext ini_ctx;
@@ -181,6 +251,9 @@ int fcfs_fuse_global_init(const char *config_filename)
 
         if ((result=load_fuse_config(&ini_ctx)) != 0) {
             break;
+        }
+        if (ADDITIONAL_GROUPS_ENABLED) {
+            load_additional_groups_config(&ini_ctx);
         }
 
         if ((result=fcfs_api_pooled_init1_with_auth(
@@ -224,12 +297,15 @@ int fcfs_fuse_global_init(const char *config_filename)
             max_idle_threads);
 #endif
 
+    additional_groups_config_to_string(additional_groups_config,
+            sizeof(additional_groups_config));
+
     logInfo("FastCFS V%d.%d.%d, FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "%s, singlethread: %d, clone_fd: %d, "
             "%s, allow_others: %s, auto_unmount: %d, "
             "attribute_timeout: %.1fs, entry_timeout: %.1fs, "
-            "xattr_enabled: %d, writeback_cache: %d, kernel_cache: %d",
+            "xattr_enabled: %d, writeback_cache: %d, kernel_cache: %d, %s",
             g_fcfs_global_vars.version.major,
             g_fcfs_global_vars.version.minor,
             g_fcfs_global_vars.version.patch,
@@ -244,7 +320,8 @@ int fcfs_fuse_global_init(const char *config_filename)
             g_fuse_global_vars.entry_timeout,
             g_fuse_global_vars.xattr_enabled,
             g_fuse_global_vars.writeback_cache,
-            g_fuse_global_vars.kernel_cache);
+            g_fuse_global_vars.kernel_cache,
+            additional_groups_config);
 
     return 0;
 }

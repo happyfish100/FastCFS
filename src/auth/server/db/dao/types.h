@@ -82,12 +82,11 @@ typedef struct auth_full_path {
     } while (0)
 
 #define AUTH_SET_PATH_OPER_FNAME(path, fp) \
-    path.oper.uid = path.oper.gid = 0; \
+    FDIR_SET_OPERATOR(path.oper, 0, 0, 0, NULL); \
     path.fullname = fp.fullname
 
 #define AUTH_SET_OPER_INODE_PAIR(oino, _inode) \
-    oino.oper.uid = 0;  \
-    oino.oper.gid = 0;  \
+    FDIR_SET_OPERATOR(oino.oper, 0, 0, 0, NULL); \
     oino.inode = _inode
 
 #endif
