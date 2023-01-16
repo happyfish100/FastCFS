@@ -19,12 +19,12 @@ yum 安装方式支持intel的x86_64和ARM的aarch64架构，主要用于测试�
 
 CentOS 7、RHEL 7、Oracle Linux 7、Alibaba Cloud Linux 2、Anolis 7、AlmaLinux 7、Amazon Linux 2、Fedora 27及以下版本：
 ```
-rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.0-1.el7.centos.noarch.rpm
+rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
 ```
 
 CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis 8、AlmaLinux 8、Amazon Linux 3、Fedora 28及以上版本：
 ```
-rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.0-1.el8.noarch.rpm
+rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
 ```
 
 ### 2. fastDIR server安装
