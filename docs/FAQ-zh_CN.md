@@ -103,7 +103,9 @@ mount -t nfs -onolock 172.16.168.131:/opt/fastcfs/fuse /mnt/nfs
 mount -t nfs -onolock,nfsvers=4 172.16.168.131:/ /mnt/nfs
 ```
 
-友情提示：CentOS 6需要使用v3挂载。
+友情提示：
+   * CentOS 6需要使用NFS v3挂载
+   * /etc/exports中需要设置fsid=0，例如：/opt/fastcfs/fuse 172.16.168.130(fsid=0,rw,sync,no_root_squash,no_all_squash)
 
 ## 9. 为何删除了足够多的数据，df看到磁盘占用空间不见降低呢？
 
