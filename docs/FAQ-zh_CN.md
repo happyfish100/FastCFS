@@ -1,6 +1,10 @@
 # FAQ
 
-## 1. 网络连接异常
+## 1. 服务器最低配置要求
+
+2核CPU、4G内存、10G硬盘
+
+## 2. 网络连接异常
 
 当日志出现`Connection refused`或者`Transport endpoint is not connected`之类的异常记录。
 请检查防火墙设置。FastCFS 共有9个服务端口,这些对应的端口应该打开：
@@ -20,11 +24,11 @@
   * 默认服务端口 `21016`
 
 
-## 2. 服务有没有启动顺序？
+## 3. 服务有没有启动顺序？
 
 有。应按顺序启动`fvote`（可选），`fdir`， `fauth`（可选），`fstore`，`fuseclient`。
 
-## 3. FastCFS支持单盘数据恢复吗？
+## 4. FastCFS支持单盘数据恢复吗？
 
 ```
 支持。
@@ -34,7 +38,7 @@
 其中 store_path为要恢复数据硬盘对应的存储路径。
 ```
 
-## 4. FastCFS是如何防脑裂的？
+## 5. FastCFS是如何防脑裂的？
 
 ```
 leader/master选举时采用过半数机制，一个分组的节点数最好为奇数（比如3个）。
@@ -44,7 +48,7 @@ leader/master选举时采用过半数机制，一个分组的节点数最好为�
 v3.4引入公用选举节点，在偶数节点数（比如双副本）时也可以防脑裂，详情参见配置文档。
 ```
 
-## 5. fdir和fstore多副本（如3副本）情况下，停机后重启不能写入数据
+## 6. fdir和fstore多副本（如3副本）情况下，停机后重启不能写入数据
 
 ```
 为了保证数据一致性，当停机时间超过配置参数max_shutdown_duration（默认配置300秒），
@@ -55,7 +59,7 @@ v3.4引入公用选举节点，在偶数节点数（比如双副本）时也可�
 参数--force-master-election，启动fs_serverd需要加上命令行参数--force-leader-election
 ```
 
-## 6. 如何验证多个副本的数据一致性？
+## 7. 如何验证多个副本的数据一致性？
 
 ```
 faststore需要源码编译，修改make.sh，将
@@ -74,13 +78,13 @@ CFLAGS='-Wall -DFS_DUMP_SLICE_FOR_DEBUG=32'
 
 ```
 
-## 7. fuse客户端通过df看到的空间明显大于存储池配额
+## 8. fuse客户端通过df看到的空间明显大于存储池配额
 
 这是因为客户端没有启用auth，需要将配置文件/etc/fastcfs/auth/auth.conf中的auth_enabled设置为true，修改后重启fcfs_fused生效。
 
 友情提示：如何配置auth服务请参阅 [认证配置文档](AUTH-zh_CN.md)
 
-## 8. FastCFS作为NFS后端存储时NFS client mount失败
+## 9. FastCFS作为NFS后端存储时NFS client mount失败
 
 出错信息：reason given by server: No such file or directory
 
@@ -107,6 +111,6 @@ mount -t nfs -onolock,nfsvers=4 172.16.168.131:/ /mnt/nfs
    * CentOS 6需要使用NFS v3挂载
    * /etc/exports中需要设置fsid=0，例如：/opt/fastcfs/fuse 172.16.168.130(fsid=0,rw,sync,no_root_squash,no_all_squash)
 
-## 9. 为何删除了足够多的数据，df看到磁盘占用空间不见降低呢？
+## 10. 为何删除了足够多的数据，df看到磁盘占用空间不见降低呢？
 
 FastCFS基于trunk file进行空间分配，目前trunk file只会增加而不会释放。文件数据删除后空间会回收利用，通过fuse client上df命令可以看到FastCFS的可用空间将增加。
