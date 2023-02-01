@@ -172,8 +172,9 @@ void fs_do_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
 
     /*
     logInfo("=====file: "__FILE__", line: %d, func: %s, "
-            "ino: %"PRId64", to_set: %d, fi: %p ====",
-            __LINE__, __FUNCTION__, ino, to_set, fi);
+            "ino: %"PRId64", to_set: %d, fi: %p, size bit: %d====",
+            __LINE__, __FUNCTION__, ino, to_set, fi,
+            (to_set & FUSE_SET_ATTR_SIZE));
             */
 
     if (fs_convert_inode(req, ino, &new_inode) != 0) {

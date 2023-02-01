@@ -251,7 +251,15 @@ static int fcfs_api_file_report_size_and_time(
     }
 
     if (callback_arg->arg.inc_alloc != 0)  {
-        *flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
+        if (!(*flags & (FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE |
+                        FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END)))
+        {
+            *flags = FDIR_DENTRY_FIELD_MODIFIED_FLAG_FILE_SIZE |
+                FDIR_DENTRY_FIELD_MODIFIED_FLAG_SPACE_END |
+                FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
+        } else {
+            *flags |= FDIR_DENTRY_FIELD_MODIFIED_FLAG_INC_ALLOC;
+        }
     }
 
     if (*flags == 0) {
