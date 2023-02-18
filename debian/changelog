@@ -1,3 +1,9 @@
+fastcfs (3.7.2-1) unstable; urgency=medium
+
+  * upgrade to 3.7.2-1
+
+ -- YuQing <384681@qq.com>  Sat, 18 Feb 2023 05:50:44 +0000
+
 fastcfs (3.7.1-1) unstable; urgency=medium
 
   * upgrade to 3.7.1-1
