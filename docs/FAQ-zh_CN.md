@@ -125,13 +125,13 @@ rm -rf /opt/fastcfs/fstore /opt/faststore/data
 ## 12. 日志中报没有访问权限，如何进行排查？
 
 /opt/fastcfs/fcfs/logs/fcfs_fused.log 中的错误示例：
-```
+
 [2023-02-25 06:39:08] ERROR - file: client_proto.c, line: 607, fdir server 192.168.3.210:11012 response message: response status 1, error info: Operation not permitted
-```
 
 问题排查：
-查看fdir server上的日志文件 /opt/fastcfs/fdir/logs/fdir_serverd.log
-找到对应的出错信息，然后使用最新版本的fdir_stat 查看对应文件的完整路径（文件名），
+
+依次查看各台fdir server上的日志文件 /opt/fastcfs/fdir/logs/fdir_serverd.log，
+找到对应的出错信息，然后使用最新版本的fdir_stat 查看对应的完整路径（文件名），
 
 按文件或目录inode查询示例：
 
@@ -143,3 +143,5 @@ fdir_stat -Fn fs 9007199660325177
 ```
 fdir_stat -Fn fs 9007199667318991 test
 ```
+
+友情提示：如果采用的是装包方式，程序fdir_stat 所在的rpm包名为fastDIR-client，deb包名为fastdir-client
