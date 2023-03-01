@@ -121,3 +121,25 @@ FastCFS基于trunk file进行空间分配，目前trunk file只会增加而不�
 ```
 rm -rf /opt/fastcfs/fstore /opt/faststore/data
 ```
+
+## 12. 日志中报没有访问权限，如何进行排查？
+
+/opt/fastcfs/fcfs/logs/fcfs_fused.log 中的错误示例：
+```
+[2023-02-25 06:39:08] ERROR - file: client_proto.c, line: 607, fdir server 192.168.3.210:11012 response message: response status 1, error info: Operation not permitted
+```
+
+问题排查：
+查看fdir server上的日志文件 /opt/fastcfs/fdir/logs/fdir_serverd.log
+找到对应的出错信息，然后使用最新版本的fdir_stat 查看对应文件的完整路径（文件名），
+
+按文件或目录inode查询示例：
+
+```
+fdir_stat -Fn fs 9007199660325177
+```
+
+按父目录inode + 子目录名或者文件名查询示例：
+```
+fdir_stat -Fn fs 9007199667318991 test
+```
