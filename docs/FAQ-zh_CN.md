@@ -130,8 +130,7 @@ rm -rf /opt/fastcfs/fstore /opt/faststore/data
 
 问题排查：
 
-依次查看各台fdir server上的日志文件 /opt/fastcfs/fdir/logs/fdir_serverd.log，
-找到对应的出错信息，然后使用最新版本的fdir_stat 查看对应的完整路径（文件名），
+依次查看各台fdir server上的日志文件 /opt/fastcfs/fdir/logs/fdir_serverd.log，找到对应的出错信息，然后使用最新版本的fdir_stat 查看对应的完整路径（文件名），根据文件或目录owner、权限、访问用户及其用户组进行排查。
 
 按文件或目录inode查询示例：
 
