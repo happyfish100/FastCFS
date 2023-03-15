@@ -335,7 +335,7 @@ static int setup_server_env(const char *config_filename)
 static struct fuse_session *create_fuse_session(char *argv0,
         struct fuse_lowlevel_ops *ops)
 {
-	struct fuse_args args;
+    struct fuse_args args;
     char *argv[16];
     int argc;
 
@@ -365,6 +365,11 @@ static struct fuse_session *create_fuse_session(char *argv0,
 
         argv[argc++] = "-o";
         argv[argc++] = "time_gran=1000000000";
+    }
+
+    if (g_fuse_global_vars.read_only) {
+        argv[argc++] = "-o";
+        argv[argc++] = "ro";
     }
 
     args.argc = argc;

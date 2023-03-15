@@ -93,6 +93,8 @@ static int load_fuse_config(IniFullContext *ini_ctx)
 
     g_fuse_global_vars.auto_unmount = iniGetBoolValue(ini_ctx->
             section_name, "auto_unmount", ini_ctx->context, false);
+    g_fuse_global_vars.read_only = iniGetBoolValue(ini_ctx->
+            section_name, "read_only", ini_ctx->context, false);
 
     allow_others = iniGetStrValue(ini_ctx->section_name,
             "allow_others", ini_ctx->context);
@@ -303,7 +305,7 @@ int fcfs_fuse_global_init(const char *config_filename)
     logInfo("FastCFS V%d.%d.%d, FUSE library version %s, "
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "%s, singlethread: %d, clone_fd: %d, "
-            "%s, allow_others: %s, auto_unmount: %d, "
+            "%s, allow_others: %s, auto_unmount: %d, read_only: %d, "
             "attribute_timeout: %.1fs, entry_timeout: %.1fs, "
             "xattr_enabled: %d, writeback_cache: %d, kernel_cache: %d, %s",
             g_fcfs_global_vars.version.major,
@@ -316,6 +318,7 @@ int fcfs_fuse_global_init(const char *config_filename)
             g_fuse_global_vars.clone_fd, max_threads_buff,
             get_allow_others_caption(g_fuse_global_vars.allow_others),
             g_fuse_global_vars.auto_unmount,
+            g_fuse_global_vars.read_only,
             g_fuse_global_vars.attribute_timeout,
             g_fuse_global_vars.entry_timeout,
             g_fuse_global_vars.xattr_enabled,
