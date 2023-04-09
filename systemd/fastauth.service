@@ -6,6 +6,7 @@ After=network-online.target
 Type=forking
 PIDFile=/opt/fastcfs/auth/authd.pid
 ExecStart=/usr/bin/fcfs_authd /etc/fastcfs/auth/server.conf start
+ExecStartPost=/bin/sleep 0.1
 ExecStop=/usr/bin/fcfs_authd /etc/fastcfs/auth/server.conf stop
 
 # start/stop timeout

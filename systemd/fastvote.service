@@ -6,6 +6,7 @@ After=network-online.target
 Type=forking
 PIDFile=/opt/fastcfs/vote/voted.pid
 ExecStart=/usr/bin/fcfs_voted /etc/fastcfs/vote/server.conf start
+ExecStartPost=/bin/sleep 0.1
 ExecStop=/usr/bin/fcfs_voted /etc/fastcfs/vote/server.conf stop
 
 # start/stop timeout

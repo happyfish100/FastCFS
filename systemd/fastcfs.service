@@ -6,6 +6,7 @@ After=network-online.target
 Type=forking
 PIDFile=/opt/fastcfs/fcfs/fused.pid
 ExecStart=/usr/bin/fcfs_fused /etc/fastcfs/fcfs/fuse.conf start
+ExecStartPost=/bin/sleep 0.1
 ExecStop=/usr/bin/fcfs_fused /etc/fastcfs/fcfs/fuse.conf stop
 
 # start/stop timeout
