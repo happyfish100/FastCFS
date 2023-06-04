@@ -29,7 +29,7 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Or
 
 ## 2. Current Version
 
-V3.7.2
+V4.0.0
 
 ## 3. Supported Platforms
 
@@ -42,12 +42,12 @@ V3.7.2
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.66)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.25)
-* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.0.10)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V3.7.2)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V3.7.2)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V3.7.2)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.67)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.26)
+* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.1.0)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V4.0.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V4.0.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V4.0.0)
 
 ## 5. Installation
 
@@ -122,8 +122,8 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fdir & fstore] for two replicas, the data submission majority mechanism is intelligent (done)
 *  [fstore] file read & write performance optimization (done)
 *  [fdir & api] POSIX compatibility test and improvement (done)
+*  [fstore] slice storage engine plugin to support massive data with limited memory (done)
 *  [api] provide Java native API (doing)
-*  [fstore] slice storage engine plugin to support massive data with limited memory (doing)
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 *  [all] cluster online expansion
 
