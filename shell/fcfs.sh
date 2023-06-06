@@ -19,7 +19,8 @@ declare -ir MIN_VERSION_OF_AlmaLinux=7
 declare -ir MIN_VERSION_OF_Alibaba=2
 declare -ir MIN_VERSION_OF_Anolis=7
 declare -ir MIN_VERSION_OF_Amazon=2
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon)
+declare -ir MIN_VERSION_OF_openEuler=20
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler)
 APT_OS_ARRAY=(Ubuntu Debian)
 
 fcfs_settings_file="fcfs.settings"
@@ -840,6 +841,8 @@ check_remote_osname() {
       else
         os_major_version=8
       fi
+    elif [ $osname = 'openEuler' ]; then
+      os_major_version=8
     fi
   else
     echo "Error: Unsupport OS, $uname" 1>&2
