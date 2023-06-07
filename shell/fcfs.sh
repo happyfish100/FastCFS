@@ -887,8 +887,15 @@ execute_yum() {
         echo "INFO: Remove old version fuse."
         sudo yum remove fuse -y
         if [ $? -ne 0 ]; then
-          echo "ERROR: Remove old version fuse failed."
-          exit 1
+          echo "Warning: Remove old version fuse failed."
+          arch=$(uname -r | awk -F '.' '{print $NF;}')
+          ver='3.10.5-1'
+          if [ $os_major_ver -eq 7 ]; then
+              dist=el7
+          else
+              dist=el8
+          fi
+          rpm -ivh http://www.fastken.com/yumrepo/$dist/$arch/fuse3-libs-$ver.$dist.$arch.rpm http://www.fastken.com/yumrepo/$dist/$arch/fuse-common-$ver.$dist.$arch.rpm http://www.fastken.com/yumrepo/$dist/$arch/fuse3-$ver.$dist.$arch.rpm --force --nodeps
         fi
       fi
     fi
