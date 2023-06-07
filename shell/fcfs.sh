@@ -890,7 +890,7 @@ execute_yum() {
           echo "Warning: Remove old version fuse failed."
           arch=$(uname -r | awk -F '.' '{print $NF;}')
           ver='3.10.5-1'
-          if [ $os_major_ver -eq 7 ]; then
+          if [ $os_major_version -eq 7 ]; then
               dist=el7
           else
               dist=el8
