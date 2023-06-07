@@ -54,9 +54,9 @@ yum install FastCFS-fused -y
    * 第一次安装才需要卸载fuse包，以后就不用执行了。
 ```
 
-对于openEuler 20.03，因需安装的fus3和系统已有的fuse在依赖关系上存在冲突，需要用rpm命令强制安装fuse3，执行：
+对于openEuler 20.03，因需安装的fuse3和系统已有的fuse在依赖关系上存在冲突，需要用rpm命令强制安装fuse3，执行：
 ```
-arch=$(uname -r | awk -F '.' '{print $NF;}');
+arch=$(uname -r | awk -F '.' '{print $NF}');
 dist=el8;
 ver='3.10.5-1';
 rpm -ivh http://www.fastken.com/yumrepo/$dist/$arch/fuse3-libs-$ver.$dist.$arch.rpm  \
@@ -66,7 +66,7 @@ rpm -ivh http://www.fastken.com/yumrepo/$dist/$arch/fuse3-libs-$ver.$dist.$arch.
 yum install FastCFS-fused -y
 ```
 
-对于openEuler 22.03及更高版本执行：
+对于openEuler 22.03及更高版本，直接执行：
 ```
 yum install FastCFS-fused -y
 ```
