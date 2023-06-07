@@ -12,6 +12,7 @@ yum 安装方式支持intel的x86_64和ARM的aarch64架构，主要用于测试�
 * Oracle Linux
 * Amazon Linux
 * Alibaba Cloud Linux
+* openEuler
 
 ### 1. 安装FastOS.repo
 
@@ -22,7 +23,7 @@ CentOS 7、RHEL 7、Oracle Linux 7、Alibaba Cloud Linux 2、Anolis 7、AlmaLinu
 rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
 ```
 
-CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis 8、AlmaLinux 8、Amazon Linux 3、Fedora 28及以上版本：
+CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis 8、AlmaLinux 8、openEuler 20.03、Amazon Linux 3、Fedora 28及以上版本：
 ```
 rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
 ```
@@ -43,7 +44,7 @@ yum install faststore-server -y
 
 ### 4. FastCFS客户端安装
 
-在需要使用FastCFS存储服务的机器（即FastCFS客户端）上执行：
+在需要使用FastCFS存储服务的机器（即FastCFS客户端）上，除了openEuler之外的其他Linux发行版执行：
 ```
 yum remove fuse -y
 yum install FastCFS-fused -y
@@ -51,6 +52,21 @@ yum install FastCFS-fused -y
 注：
    * fuse为老版本的包（fuse2.x），需要卸载才可以成功安装FastCFS-fused依赖的fuse3；
    * 第一次安装才需要卸载fuse包，以后就不用执行了。
+```
+
+对于openEuler 20.03，因需安装的fus3和系统已有的fuse在依赖关系上存在冲突，需要用rpm命令强制安装fuse3，执行：
+```
+arch=$(uname -r | awk -F '.' '{print $NF;}');
+dist=el8;
+ver='3.10.5-1';
+rpm -ivh http://www.fastken.com/yumrepo/$dist/$arch/fuse3-libs-$ver.$dist.$arch.rpm http://www.fastken.com/yumrepo/$dist/$arch/fuse-common-$ver.$dist.$arch.rpm http://www.fastken.com/yumrepo/$dist/$arch/fuse3-$ver.$dist.$arch.rpm --force --nodeps;
+
+yum install FastCFS-fused -y
+```
+
+对于openEuler 22.03及更高版本执行：
+```
+yum install FastCFS-fused -y
 ```
 
 ### 5. Vote server安装（可选）
