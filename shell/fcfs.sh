@@ -20,7 +20,7 @@ declare -ir MIN_VERSION_OF_Alibaba=2
 declare -ir MIN_VERSION_OF_Anolis=7
 declare -ir MIN_VERSION_OF_Amazon=2
 declare -ir MIN_VERSION_OF_openEuler=20
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler Kylin)
 APT_OS_ARRAY=(Ubuntu Debian)
 
 fcfs_settings_file="fcfs.settings"
@@ -598,6 +598,7 @@ check_remote_os_and_version() {
             pkg_manage_tool="apt"
           fi
         fi
+
         local remote_osversion
         if [ $remote_osname = 'CentOS' ]; then
           remote_osversion=$(get_centos_version $server_ip)
@@ -610,7 +611,7 @@ check_remote_os_and_version() {
         declare -i remote_os_major_version=$(echo $remote_osversion | awk -F '.' '{print $1}')
         local min_version_name="MIN_VERSION_OF_$remote_osname"
         local min_version=${!min_version_name}
-        if [ $remote_os_major_version -lt $min_version ]; then
+        if [ ! -z $min_version ] && [ $remote_os_major_version -lt $min_version ]; then
           echo "$remote_osname's version must be great than or equal $min_version, but was $remote_os_major_version on server $server_ip"
           exit 1
         fi
@@ -841,7 +842,7 @@ check_remote_osname() {
       else
         os_major_version=8
       fi
-    elif [ $osname = 'openEuler' ]; then
+    elif [ $osname = 'openEuler' ] || [ $osname = 'Kylin' ]; then
       os_major_version=8
     fi
   else
