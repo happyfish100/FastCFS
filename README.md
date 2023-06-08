@@ -27,9 +27,7 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Or
 * **Video monitoring**: smooth writing for multi-channel videos with HDD such as SATA because FastCFS uses sequential writing approach
 
 
-## 2. Current Version
-
-V4.0.0
+## 2. Current Version: V4.0
 
 ## 3. Supported Platforms
 

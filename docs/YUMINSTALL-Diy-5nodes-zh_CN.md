@@ -4,18 +4,22 @@ FastCFS支持大规模的集群，下面以最为典型的最小化集群的部�
 2. 服务端集群：FastStore和FastDir公用，也可以分开独立部署，生产环境建议分开。本说明为了降低节点数量，采用了公用部署的方式。
 3. 客户端：为了说明支持多客户端，使用了2个客户端节点。生产环境中如果只需要1个客户端，也是没问题的。
 <img src="../images/demo-5-nodes-deploy.jpg" width="800" alt="5个节点的集群架构图">
+
 ### 前置依赖
 先安装FastOS.repo yum源，FastCFS所需要的pkg都在此源中，安装成功后就可以安装FastCFS相关软件包了。
 
-- CentOS 7
+- CentOS 7等el7系列的Linux发行版
 ```
-rpm -ivh http://www.fastken.com/yumrepo/el7/x86_64/FastOSrepo-1.0.0-1.el7.centos.x86_64.rpm
+rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
 ```
 
-- CentOS 8
+- CentOS 8等el8系列的Linux发行版
 ```
-rpm -ivh http://www.fastken.com/yumrepo/el8/x86_64/FastOSrepo-1.0.0-1.el8.x86_64.rpm
+rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
 ```
+
+友情提示：支持的Linux发行版以及与el7或el8的对应关系参见 [yum安装方式](YUMINSTALL-zh_CN.md)
+
 
 ### 服务端集群安装
 在192.168.126.[101,102,103]上分别安装FastStore、FastDIR 两个服务. 
@@ -54,6 +58,7 @@ total 16
 -rw-r--r--. 1 root root  753 May  9 13:49 cluster.conf
 -rw-r--r--. 1 root root 5242 May  9 13:49 server.conf
 ```
+
 #### 安装FastStore
 
 ```
