@@ -13,6 +13,7 @@ yum 安装方式支持intel的x86_64和ARM的aarch64架构，主要用于测试�
 * Amazon Linux
 * Alibaba Cloud Linux
 * openEuler
+* Kylin
 
 ### 1. 安装FastOS.repo
 
@@ -23,7 +24,7 @@ CentOS 7、RHEL 7、Oracle Linux 7、Alibaba Cloud Linux 2、Anolis 7、AlmaLinu
 rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
 ```
 
-CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis 8、AlmaLinux 8、openEuler 20.03、Amazon Linux 3、Fedora 28及以上版本：
+CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis 8、AlmaLinux 8、openEuler 20.03、Kylin V10及以上版本、Amazon Linux 3、Fedora 28及以上版本：
 ```
 rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
 ```
