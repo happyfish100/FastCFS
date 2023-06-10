@@ -69,6 +69,8 @@ FastCFS集群配置包含如下五部分：
               |    |__ migrate: 迁移出去的DG数据清理
               |    |__ rebuild: 单盘数据恢复
               |
+              |__ db: slice索引存储引擎默认数据目录
+              |
               |__ logs: 日志文件目录
                    |__ fs_serverd.log: 错误日志
                    |__ slow.log: 慢查询日志
@@ -110,8 +112,33 @@ host = 172.16.168.128
 ERROR - file: cluster_info.c, line: 119, cluster config file: /etc/fastcfs/fdir/cluster.conf,
       can't find myself by my local ip and listen port
 ```
-* V3.0支持的持久化特性默认是关闭的，在 [storage-engine] 中设置，详情参见配置示例
 
+* V3.0支持的持久化特性默认是关闭的，在 [storage-engine] 中设置，详情参见源码的conf目录下的配置示例。
+启用存储引擎配置示例：
+
+```
+[storage-engine]
+# if enable the storage engine
+### false: use binlog directly
+### true: use storage engine for massive files
+# default value is false
+enabled = true
+
+# the config filename for storage
+storage_config_filename = storage.conf
+
+# the path to store the data files
+# can be an absolute path or a relative path
+# the relative path for sub directory under the base_path
+# this path will be created auto when not exist
+# default value is db
+data_path = db
+
+# the memory limit ratio for dentry
+# the valid limit range is [1%, 99%]
+# default value is 80%
+memory_limit = 80%
+```
 
 ### 3.3 配置 storage.conf
 
@@ -174,6 +201,39 @@ path = /opt/faststore/data
 ERROR - file: server_group_info.c, line: 347, cluster config file: /etc/fastcfs/fstore/cluster.conf,
       can't find myself by my local ip and listen port
 ```
+
+* V4.0支持的slice索引持久化特性默认是关闭的，在 [storage-engine] 中设置，详情参见源码的conf目录下的配置示例。
+启用存储引擎配置示例：
+
+```
+[storage-engine]
+# if enable the storage engine
+### false: use binlog directly
+### true: use storage engine for huge storage
+# default value is false
+enabled = true
+
+# the config filename for storage
+storage_config_filename = dbstore.conf
+
+# the path to store the data files
+# can be an absolute path or a relative path
+# the relative path for sub directory under the base_path
+# this path will be created auto when not exist
+# default value is db
+data_path = db
+
+# the memory limit ratio for slice index
+# the valid limit range is [1%, 99%]
+# default value is 60%
+memory_limit = 60%
+```
+
+### 4.5 配置 dbstore.conf
+
+* slice索引开启持久化存储特性的情况下，才需要配置dbstore.conf
+* 通常采用默认设置即可
+
 
 faststore重启：
 
