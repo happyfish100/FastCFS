@@ -36,7 +36,7 @@ Requires: %{FastCFSFuseConfig} >= 1.0.0
 Summary: FastCFS fuse
 
 %package -n %{FastCFSUtils}
-Requires: libserverframe >= 1.1.26
+Requires: %{FastCFSAPI} = %{version}-%{release}
 Summary: FastCFS utils 
 
 %package -n %{FastCFSAPI}

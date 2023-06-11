@@ -57,7 +57,7 @@ AUTH_KEYS_PATH="/etc/fastcfs/auth/keys/"
 FUSE_CONF_FILES=(fuse.conf)
 FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
 
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler Kylin)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler Kylin UOS)
 
 BUILD_PATH="build"
 this_shell_name=$0
@@ -371,7 +371,7 @@ if [ $uname = 'Linux' ]; then
     else
       os_major_version=8
     fi
-  elif [ $osname = 'openEuler' ] || [ $osname = 'Kylin' ]; then
+  elif [ $osname = 'openEuler' ] || [ $osname = 'Kylin' ] || [ $osname = 'UOS' ]; then
       os_major_version=8
   fi
 else
