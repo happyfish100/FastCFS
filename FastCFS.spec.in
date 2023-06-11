@@ -129,6 +129,7 @@ mkdir -p /opt/fastcfs/fuse
 
 %files -n %{FastCFSUtils}
 /usr/bin/fcfs_active_test
+/usr/bin/fcfs_pool_stat
 
 %files -n %{FastCFSAPI}
 %defattr(-,root,root,-)

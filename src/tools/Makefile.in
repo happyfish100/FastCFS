@@ -1,13 +1,13 @@
 .SUFFIXES: .c .o .lo
 
 COMPILE = $(CC) $(CFLAGS)
-INC_PATH = -I/usr/local/include
-LIB_PATH = -L.. $(LIBS) -lfastcommon -lserverframe
+INC_PATH = -I../include -I/usr/local/include
+LIB_PATH = -L.. $(LIBS) -lfastcommon -lserverframe -lfcfsapi
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
 STATIC_OBJS =
 
-ALL_PRGS = fcfs_active_test
+ALL_PRGS = fcfs_active_test fcfs_pool_stat
 
 all: $(STATIC_OBJS) $(ALL_PRGS)
 

@@ -46,6 +46,7 @@ src/api/tests/test_papi_copy
 src/api/tests/test_read_ahead
 src/fuse/fcfs_fused
 src/tools/fcfs_active_test
+src/tools/fcfs_pool_stat
 src/auth/server/fcfs_authd
 src/auth/client/tools/fcfs_user
 src/auth/client/tools/fcfs_pool
