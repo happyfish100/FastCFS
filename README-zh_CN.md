@@ -119,8 +119,8 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fdir & api] POSIX兼容性测试及改进（已完成）
 *  [fstore] slice存储引擎插件，有限内存支持海量数据（已完成）
 *  [api] 提供Java Native API（进行中）
-*  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 *  [all] 支持集群在线扩容
+*  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 
 参见更多 [TODO List](docs/TODO-zh_CN.md)，欢迎大家参与。
 

@@ -143,6 +143,8 @@ fcfs_pool create fs unlimited
 
 * fcfs_pool：储存池管理，主要包括创建pool、删除pool、把pool读写权限授权给其他用户
 
+友情提示：直接执行上述命令可以查看使用帮助。
+
 ## 8. 注意事项
 
 * Auth server依赖FastDIR server，需要先启动FastDIR server，然后启动Auth server。
