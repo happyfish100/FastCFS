@@ -41,6 +41,9 @@ int main(int argc, char *argv[])
     char *ns_str;
     char ns_holder[NAME_MAX];
     IniContext ini_context;
+    int64_t total;
+    int64_t used;
+    int64_t avail;
     int ch;
 	int result;
 
@@ -91,9 +94,11 @@ int main(int argc, char *argv[])
     }
 
     if ((result=fcfs_api_statvfs("/", &stbuf)) == 0) {
-        printf("total: %"PRId64"\n", (int64_t)stbuf.f_blocks * stbuf.f_frsize);
-        printf("used: %"PRId64"\n", (int64_t)(stbuf.f_blocks -
-                    stbuf.f_bfree) * stbuf.f_frsize);
+        total = stbuf.f_blocks * stbuf.f_frsize;
+        used = (stbuf.f_blocks - stbuf.f_bfree) * stbuf.f_frsize;
+        avail = stbuf.f_bavail  * stbuf.f_frsize;
+        printf("{\"total\": %"PRId64", \"used\": %"PRId64", "
+                "\"avail\": %"PRId64"}\n", total, used, avail);
     }
 
     return result;
