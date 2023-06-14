@@ -10,6 +10,7 @@
 #---1. Config path section begin---#
 declare -ir MIN_VERSION_OF_Ubuntu=18
 declare -ir MIN_VERSION_OF_Debian=10
+declare -ir MIN_VERSION_OF_Deepin=20
 declare -ir MIN_VERSION_OF_CentOS=7
 declare -ir MIN_VERSION_OF_Red=8
 declare -ir MIN_VERSION_OF_Rocky=8
@@ -22,7 +23,7 @@ declare -ir MIN_VERSION_OF_Amazon=2
 declare -ir MIN_VERSION_OF_openEuler=20
 declare -ir MIN_VERSION_OF_UOS=20
 YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler Kylin UOS)
-APT_OS_ARRAY=(Ubuntu Debian)
+APT_OS_ARRAY=(Ubuntu Debian Deepin)
 
 fcfs_settings_file="fcfs.settings"
 fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"

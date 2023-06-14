@@ -380,7 +380,7 @@ else
 fi
 
 check_install_fastos_repo() {
-  if [ $osname = 'Ubuntu' ] || [ $osname = 'Debian' ]; then
+  if [ $osname = 'Ubuntu' ] || [ $osname = 'Debian' ] || [ $osname = 'Deepin' ]; then
     if [ ! -f /etc/apt/sources.list.d/fastos.list ]; then
       apt install curl gpg -y
       curl http://www.fastken.com/aptrepo/packages.fastos.pub | gpg --dearmor > /tmp/fastos-archive-keyring.gpg
@@ -402,7 +402,9 @@ check_install_fastos_repo() {
 }
 
 install_all_softwares() {
-  if [ $osname = 'Ubuntu' -a $os_major_version -ge 18 ] || [ $osname = 'Debian' -a $os_major_version -ge 10 ]; then
+  if [ $osname = 'Ubuntu' -a $os_major_version -ge 18 ] || \
+     [ $osname = 'Debian' -a $os_major_version -ge 10 ] || \
+     [ $osname = 'Deepin' -a $os_major_version -ge 20 ]; then
     check_install_fastos_repo
     apt update
     apt install fastcfs-auth-server fastcfs-vote-server fastdir-server faststore-server fastcfs-fused -y
