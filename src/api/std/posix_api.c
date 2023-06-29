@@ -47,6 +47,8 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
         const char *fdir_section_name, const char *fs_section_name,
         const bool publish)
 {
+    const bool need_lock = true;
+    const bool persist_additional_gids = false;
     int result;
     bool fdir_idempotency_enabled;
     bool fs_idempotency_enabled;
@@ -84,7 +86,8 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
 
         if ((result=fcfs_api_pooled_init_ex1(&ctx->api_ctx,
                         ns, &ini_ctx, fdir_section_name,
-                        fs_section_name)) != 0)
+                        fs_section_name, need_lock,
+                        persist_additional_gids)) != 0)
         {
             break;
         }

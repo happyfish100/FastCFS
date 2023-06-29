@@ -48,6 +48,8 @@ typedef struct fcfs_api_opendir_session {
 } FCFSAPIOpendirSession;
 
 typedef struct fcfs_api_context {
+    /* whether FCFSAPIFileInfo object persist additional gids */
+    bool persist_additional_gids;
     bool use_sys_lock_for_append;
     struct {
         bool enabled;
@@ -84,6 +86,7 @@ typedef struct fcfs_api_file_info {
         int last_modified_time;
     } write_notify;
     int64_t offset;  //current offset
+    char fixed_groups_buff[256];  //for additional gids
 } FCFSAPIFileInfo;
 
 typedef struct fcfs_api_file_context {

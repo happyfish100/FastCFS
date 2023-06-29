@@ -38,12 +38,14 @@
 #define fcfs_api_pooled_init(ns, config_filename)   \
     fcfs_api_pooled_init_ex(&g_fcfs_api_ctx, ns, config_filename, \
             FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,   \
-            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME)
+            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME, \
+            true, true)
 
 #define fcfs_api_pooled_init1(ns, ini_ctx) \
     fcfs_api_pooled_init_ex1(&g_fcfs_api_ctx, ns, ini_ctx, \
             FCFS_API_DEFAULT_FASTDIR_SECTION_NAME,   \
-            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME)
+            FCFS_API_DEFAULT_FASTSTORE_SECTION_NAME, \
+            true, true)
 
 #define fcfs_api_destroy()  fcfs_api_destroy_ex(&g_fcfs_api_ctx)
 
@@ -81,7 +83,7 @@ extern "C" {
             const char *fdir_section_name, const char *fs_section_name,
             const SFConnectionManager *fdir_conn_manager,
             const SFConnectionManager *fs_conn_manager,
-            const bool need_lock);
+            const bool need_lock, const bool persist_additional_gids);
 
     int fcfs_api_init_ex(FCFSAPIContext *ctx, const char *ns,
             const char *config_filename, const char *fdir_section_name,
@@ -92,21 +94,24 @@ extern "C" {
             const char *fdir_section_name, const char *fs_section_name,
             const FDIRClientConnManagerType conn_manager_type,
             const SFConnectionManager *fs_conn_manager,
-            const bool need_lock);
+            const bool need_lock, const bool persist_additional_gids);
 
     static inline int fcfs_api_pooled_init_ex1(FCFSAPIContext *ctx,
             const char *ns, IniFullContext *ini_ctx, const char *
-            fdir_section_name, const char *fs_section_name)
+            fdir_section_name, const char *fs_section_name,
+            const bool need_lock, const bool persist_additional_gids)
     {
         g_fs_api_ctx.fs = &g_fs_client_vars.client_ctx;
         return fcfs_api_init_ex2(ctx, &g_fdir_client_vars.client_ctx,
                 &g_fs_api_ctx, ns, ini_ctx, fdir_section_name,
-                fs_section_name, conn_manager_type_pooled, NULL, true);
+                fs_section_name, conn_manager_type_pooled,
+                NULL, need_lock, persist_additional_gids);
     }
 
     int fcfs_api_pooled_init_ex(FCFSAPIContext *ctx, const char *ns,
             const char *config_filename, const char *fdir_section_name,
-            const char *fs_section_name);
+            const char *fs_section_name, const bool need_lock,
+            const bool persist_additional_gids);
 
     void fcfs_api_destroy_ex(FCFSAPIContext *ctx);
 

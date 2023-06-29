@@ -92,13 +92,14 @@ int fcfs_api_client_session_create(FCFSAPIContext *ctx, const bool publish)
 static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         FSAPIContext *fsapi, const char *ns, IniFullContext *ini_ctx,
         const char *fdir_section_name, const char *fs_section_name,
-        const bool need_lock)
+        const bool need_lock, const bool persist_additional_gids)
 {
     int64_t element_limit = 1000 * 1000;
     const int64_t min_ttl_sec = 600;
     const int64_t max_ttl_sec = 86400;
     int result;
 
+    ctx->persist_additional_gids = persist_additional_gids;
     ctx->use_sys_lock_for_append = iniGetBoolValue(fdir_section_name,
             "use_sys_lock_for_append", ini_ctx->context, false);
     ctx->async_report.enabled = iniGetBoolValue(fdir_section_name,
@@ -166,7 +167,7 @@ int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         const char *fdir_section_name, const char *fs_section_name,
         const SFConnectionManager *fdir_conn_manager,
         const SFConnectionManager *fs_conn_manager,
-        const bool need_lock)
+        const bool need_lock, const bool persist_additional_gids)
 {
     const bool bg_thread_enabled = true;
     int result;
@@ -187,7 +188,8 @@ int fcfs_api_init_ex1(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     return fcfs_api_common_init(ctx, fdir, fsapi, ns, ini_ctx,
-            fdir_section_name, fs_section_name, need_lock);
+            fdir_section_name, fs_section_name, need_lock,
+            persist_additional_gids);
 }
 
 int fcfs_api_init_ex(FCFSAPIContext *ctx, const char *ns,
@@ -210,14 +212,15 @@ int fcfs_api_init_ex(FCFSAPIContext *ctx, const char *ns,
             fdir_section_name, &iniContext);
     result = fcfs_api_init_ex1(ctx, &g_fdir_client_vars.client_ctx,
             &g_fs_api_ctx, ns, &ini_ctx, fdir_section_name,
-            fs_section_name, NULL, NULL, false);
+            fs_section_name, NULL, NULL, false, true);
     iniFreeContext(&iniContext);
     return result;
 }
 
 int fcfs_api_pooled_init_ex(FCFSAPIContext *ctx, const char *ns,
         const char *config_filename, const char *fdir_section_name,
-        const char *fs_section_name)
+        const char *fs_section_name, const bool need_lock,
+        const bool persist_additional_gids)
 {
     int result;
     IniContext iniContext;
@@ -233,7 +236,8 @@ int fcfs_api_pooled_init_ex(FCFSAPIContext *ctx, const char *ns,
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename,
             fdir_section_name, &iniContext);
     result = fcfs_api_pooled_init_ex1(ctx, ns, &ini_ctx,
-            fdir_section_name, fs_section_name);
+            fdir_section_name, fs_section_name, need_lock,
+            persist_additional_gids);
     iniFreeContext(&iniContext);
     return result;
 }
@@ -243,7 +247,7 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         const char *fdir_section_name, const char *fs_section_name,
         const FDIRClientConnManagerType conn_manager_type,
         const SFConnectionManager *fs_conn_manager,
-        const bool need_lock)
+        const bool need_lock, const bool persist_additional_gids)
 {
     const bool bg_thread_enabled = true;
     const int max_count_per_entry = 0;
@@ -274,7 +278,8 @@ int fcfs_api_init_ex2(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     return fcfs_api_common_init(ctx, fdir, fsapi, ns, ini_ctx,
-            fdir_section_name, fs_section_name, need_lock);
+            fdir_section_name, fs_section_name, need_lock,
+            persist_additional_gids);
 }
 
 void fcfs_api_destroy_ex(FCFSAPIContext *ctx)

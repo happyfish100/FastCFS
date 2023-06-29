@@ -32,8 +32,29 @@ static int deal_open_flags(FCFSAPIFileInfo *fi, FDIRClientOperFnamePair *path,
         const FDIRDentryOperator *oper, const mode_t mode,
         const int64_t tid, int result)
 {
+    int bytes;
+
     fi->tid = tid;
     fi->oper = *oper;
+    if (fi->ctx->persist_additional_gids) {
+        /* persist fi->oper.additional_gids.list for future usage */
+        if (oper->additional_gids.count > 0) {
+            bytes = FDIR_ADDITIONAL_GROUP_BYTES(*oper);
+            if (bytes <= sizeof(fi->fixed_groups_buff)) {
+                fi->oper.additional_gids.list = fi->fixed_groups_buff;
+            } else {
+                fi->oper.additional_gids.list = fc_malloc(bytes);
+                if (fi->oper.additional_gids.list == NULL) {
+                    return ENOMEM;
+                }
+            }
+            memcpy((void *)fi->oper.additional_gids.list,
+                    oper->additional_gids.list, bytes);
+        } else {
+            fi->oper.additional_gids.list = fi->fixed_groups_buff;
+        }
+    }
+
     if (!((fi->flags & O_WRONLY) || (fi->flags & O_RDWR))) {
         fi->offset = 0;
         return (fi->flags & O_TRUNC) ? EACCES : result;
@@ -191,6 +212,13 @@ int fcfs_api_close(FCFSAPIFileInfo *fi)
     if (fi->sessions.flock.mconn != NULL) {
         /* force close connection to unlock */
         fdir_client_close_session(&fi->sessions.flock, true);
+    }
+
+    if (fi->ctx->persist_additional_gids) {
+        if (fi->oper.additional_gids.list != fi->fixed_groups_buff) {
+            free((void *)fi->oper.additional_gids.list);
+            fi->oper.additional_gids.list = NULL;
+        }
     }
 
     fi->ctx = NULL;
