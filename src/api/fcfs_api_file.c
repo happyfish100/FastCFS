@@ -1513,7 +1513,6 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
     FCFSAuthClientFullContext *auth;
     int64_t quota;
     int64_t total;
-    int64_t free;
     int64_t avail;
     FDIRClientNamespaceStat nstat;
 
@@ -1550,24 +1549,18 @@ int fcfs_api_statvfs_ex(FCFSAPIContext *ctx, const char *path,
         }
 
         total = sstat.total;
-        avail = sstat.avail;
-        free = total - sstat.used;
-        if (free < 0) {
-            free = 0;
-        }
+        avail = total - sstat.used;
     } else {
         total = quota;
         avail = total - nstat.space.used;
-        if (avail < 0) {
-            avail = 0;
-        }
-        free = avail;
+    }
+    if (avail < 0) {
+        avail = 0;
     }
 
     stbuf->f_bsize = stbuf->f_frsize = 512;
     stbuf->f_blocks = total / stbuf->f_frsize;
-    stbuf->f_bavail = avail / stbuf->f_frsize;
-    stbuf->f_bfree = free / stbuf->f_frsize;
+    stbuf->f_bavail = stbuf->f_bfree = avail / stbuf->f_frsize;
 
     stbuf->f_files = nstat.inode.total;
     stbuf->f_ffree = nstat.inode.total - nstat.inode.used;
