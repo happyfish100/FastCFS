@@ -65,14 +65,14 @@ fcfs.settings 包括两个字段 ***fastcfs_version*** 和 ***fuseclient_ips***�
 fcfs.settings 配置文件内容举例:
 
 ```
-# 要安装的集群版本号（例如：4.1.0）
-fastcfs_version=4.1.0
+# 要安装的集群版本号（例如：4.2.0）
+fastcfs_version=4.2.0
 
 # 要安装 fuseclient 客户端的IP列表，多个ip以英文逗号分隔
 fuseclient_ips=10.0.1.14
 ```
 
-***注：推荐使用 4.1.0 及更高版本用于集群部署。***
+***注：推荐使用 4.2.0 及更高版本用于集群部署。***
 
 #### 1.4.2. conf
 
@@ -367,8 +367,8 @@ fcfs_conf.settings 包括以下六种字段：
 fcfs_conf.settings 配置文件内容举例:
 
 ```
-# 要生成配置的集群版本号（例如：4.1.0）
-fastcfs_version=4.1.0
+# 要生成配置的集群版本号（例如：4.2.0）
+fastcfs_version=4.2.0
 
 # 集群主机列表和分组
 vote_ips=10.0.1.11,10.0.1.12,10.0.1.13
@@ -380,7 +380,7 @@ fstore_group_2=10.0.2.14,10.0.2.15,10.0.2.16
 data_group_count=256
 ```
 
-***注：推荐使用 4.1.0 及以后的版本用于生成集群配置文件，尤其是vote（投票）模块。***
+***注：推荐使用 4.2.0 及以后的版本用于生成集群配置文件，尤其是vote（投票）模块。***
 
 ### 2.3. fcfs_conf.sh工具命令介绍
 
@@ -422,6 +422,6 @@ conf_tpl_tar.sh <version> [update]
 
 举例:
 
-> ./conf_tpl_tar.sh 4.1.0 update
+> ./conf_tpl_tar.sh 4.2.0 update
 
-将在当前目录创建配置模版压缩包文件 **conf.4.1.0.tpl.tar.gz**。
+将在当前目录创建配置模版压缩包文件 **conf.4.2.0.tpl.tar.gz**。
