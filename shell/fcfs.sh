@@ -571,10 +571,12 @@ check_remote_os_and_version() {
   cluster_host_osname=""
   declare -a all_server_ips
   all_server_ips+=(${fdir_group[@]})
-  for (( i=1 ; i <= $fstore_group_count ; i++ )); do
-    local fstore_group="fstore_group_$i[@]"
-    all_server_ips+=(${!fstore_group})
-  done
+  if [ ! -z $fstore_group_count ]; then
+    for ((i=1; i <= $fstore_group_count; i++)); do
+      local fstore_group="fstore_group_$i[@]"
+      all_server_ips+=(${!fstore_group})
+    done
+  fi
   all_server_ips+=(${fauth_group[@]})
   all_server_ips+=(${fvote_group[@]})
   all_server_ips+=(${fuseclient_ip_array[@]})
@@ -644,14 +646,18 @@ check_if_client_share_servers() {
           fuseclient_share_fdir=1
         fi
       done
-      for (( i=1 ; i <= $fstore_group_count ; i++ )); do
-        local fstore_group="fstore_group_$i[@]"
-        for fstore_server_ip in ${!fstore_group}; do
-          if [ $fstore_server_ip = "$fuseclient_server_ip" ]; then
-            fuseclient_share_fstore=1
-          fi
+
+      if [ ! -z $fstore_group_count ]; then
+        for ((i=1; i <= $fstore_group_count; i++)); do
+          local fstore_group="fstore_group_$i[@]"
+          for fstore_server_ip in ${!fstore_group}; do
+            if [ $fstore_server_ip = "$fuseclient_server_ip" ]; then
+              fuseclient_share_fstore=1
+            fi
+          done
         done
-      done
+      fi
+
       for fauth_server_ip in ${fauth_group[@]}; do
         if [ $fauth_server_ip = "$fuseclient_server_ip" ]; then
           fuseclient_share_fauth=1
@@ -700,7 +706,7 @@ execute_command_on_fstore_servers() {
   local module_name=$3
   if [ $fstore_need_execute -eq 1 ]; then
     local fstore_node_match_setting=0
-    for (( i=1 ; i <= $fstore_group_count ; i++ )); do
+    for ((i=1; i <= $fstore_group_count; i++)); do
       local fstore_group="fstore_group_$i[@]"
       for fstore_server_ip in ${!fstore_group}; do
         if [ -z $node_host_need_execute ] || [ $fstore_server_ip = "$node_host_need_execute" ]; then
