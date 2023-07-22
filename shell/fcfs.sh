@@ -174,7 +174,7 @@ function version_le() { test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" 
 execute_remote_command() {
   local remote_host=$1
   local remote_command=$2
-  local result=$(ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host $remote_command)
+  local result=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host $remote_command)
   echo $result
 }
 
@@ -182,7 +182,7 @@ execute_remote_command() {
 execute_remote_command_no_return() {
   local remote_host=$1
   local remote_command=$2
-  ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host $remote_command
+  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T $remote_host $remote_command
 }
 
 # Get remote server's uname
