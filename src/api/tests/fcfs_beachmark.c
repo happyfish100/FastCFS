@@ -23,13 +23,32 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "fastcommon/logger.h"
+#include "fastcommon/fc_atomic.h"
 #include "fastcfs/api/std/posix_api.h"
 
-const char *config_filename = FCFS_FUSE_DEFAULT_CONFIG_FILENAME;
-static char *ns = "fs";
-static int buffer_size = 4 * 1024;
-static char *input_filename;
-static char *fs_filename;
+typedef struct {
+    int index;
+    volatile int64_t success_count;
+} BeachmarkThreadInfo;
+
+static struct {
+    const char *config_filename;
+    char *ns;
+    int buffer_size;
+    int thread_count;
+    int runtime;
+    string_t filename_prefix;
+    bool is_fcfs_input;
+} cfg = {FCFS_FUSE_DEFAULT_CONFIG_FILENAME,
+    "fs", 4 * 1024, 1, 60, {NULL, 0}, false};
+
+static struct {
+    volatile int running_count;
+    volatile bool continue_flag;
+    time_t start_time;
+    BeachmarkThreadInfo *threads;
+    BeachmarkThreadInfo *tend;
+} st = {0, true};
 
 static void usage(char *argv[])
 {
@@ -40,23 +59,158 @@ static void usage(char *argv[])
             FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
 }
 
+static int thread_run(BeachmarkThreadInfo *thread)
+{
+    int result;
+    int fd;
+    char *buff;
+    int read_bytes;
+    char *filename;
+
+    buff = (char *)fc_malloc(cfg.buffer_size);
+    if (buff == NULL) {
+        return ENOMEM;
+    }
+
+    filename = fc_malloc(cfg.filename_prefix.len + 8);
+    if (filename == NULL) {
+        return ENOMEM;
+    }
+    sprintf(filename, "%s.%d", cfg.filename_prefix.str, thread->index);
+
+    if (cfg.is_fcfs_input) {
+        fd = fcfs_open(filename, O_RDONLY);
+    } else {
+        fd = open(filename, O_RDONLY);
+    }
+    if (fd < 0) {
+        result = errno != 0 ? errno : ENOENT;
+        logError("file: "__FILE__", line: %d, "
+                "open file %s to read fail, "
+                "errno: %d, error info: %s",
+                __LINE__, filename,
+                result, strerror(result));
+        return result;
+    }
+
+    while (st.continue_flag) {
+        if (cfg.is_fcfs_input) {
+            read_bytes = fcfs_read(fd, buff, cfg.buffer_size);
+        } else {
+            read_bytes = read(fd, buff, cfg.buffer_size);
+        }
+        if (read_bytes < 0) {
+            result = errno != 0 ? errno : ENOENT;
+            logError("file: "__FILE__", line: %d, "
+                    "read from file %s fail, errno: %d, error info: %s",
+                    __LINE__, filename, result, strerror(result));
+            return result;
+        }
+
+        if (read_bytes == cfg.buffer_size) {
+            thread->success_count++;
+        } else {
+            if (cfg.is_fcfs_input) {
+               if (fcfs_lseek(fd, 0, SEEK_SET) < 0) {
+                   result = errno != 0 ? errno : ENOENT;
+               } else {
+                   result = 0;
+               }
+            } else {
+                if (lseek(fd, 0, SEEK_SET) < 0) {
+                    result = errno != 0 ? errno : ENOENT;
+                } else {
+                    result = 0;
+                }
+            }
+                
+            if (result != 0) {
+                logError("file: "__FILE__", line: %d, "
+                        "lseek file %s fail, errno: %d, error info: %s",
+                        __LINE__, filename, result, strerror(result));
+                return result;
+            }
+        }
+    }
+
+    if (cfg.is_fcfs_input) {
+        fcfs_close(fd);
+    } else {
+        close(fd);
+    }
+    return 0;
+}
+
+static void *thread_entrance(void *arg)
+{
+    BeachmarkThreadInfo *thread;
+
+    thread = arg;
+    __sync_add_and_fetch(&st.running_count, 1);
+    thread_run(thread);
+    __sync_sub_and_fetch(&st.running_count, 1);
+    return NULL;
+}
+
+static void output(const time_t current_time)
+{
+    BeachmarkThreadInfo *thread;
+    int64_t total_count;
+
+    total_count = 0;
+    for (thread=st.threads; thread<st.tend; thread++) {
+        total_count += thread->success_count;
+    }
+    printf("running threads: %d, IOPS: %d\n", FC_ATOMIC_GET(
+                st.running_count), (int)(total_count /
+                    (current_time - st.start_time)));
+}
+
+static void sigQuitHandler(int sig)
+{
+    if (st.continue_flag) {
+        st.continue_flag = false;
+        printf("file: "__FILE__", line: %d, "
+                "catch signal %d, program exiting...\n",
+                __LINE__, sig);
+    }
+}
+
+static int setup_signal_handler()
+{
+    struct sigaction act;
+
+    memset(&act, 0, sizeof(act));
+    sigemptyset(&act.sa_mask);
+    act.sa_handler = sigQuitHandler;
+    if(sigaction(SIGINT, &act, NULL) < 0 ||
+            sigaction(SIGTERM, &act, NULL) < 0 ||
+            sigaction(SIGQUIT, &act, NULL) < 0)
+    {
+        fprintf(stderr, "file: "__FILE__", line: %d, "
+                "call sigaction fail, errno: %d, error info: %s\n",
+                __LINE__, errno, strerror(errno));
+        return errno != 0 ? errno : EBUSY;
+    }
+
+    return 0;
+}
+
 static int beachmark()
 {
-#define FIXED_BUFFEER_SIZE  (128 * 1024)
     const char *log_prefix_name = NULL;
 	int result;
-    int src_fd;
-    int dst_fd;
-    bool is_fcfs_input;
-    char fixed_buff[FIXED_BUFFEER_SIZE];
-    char *buff;
-    char new_filename[PATH_MAX];
-    char new_fs_filename[PATH_MAX];
-    int filename_len;
-    int read_bytes;
+    int count;
+    int bytes;
+    long i;
+    time_t current_time;
+    time_t end_time;
+    pthread_t *tids;
+    void **args;
+    BeachmarkThreadInfo *thread;
 
     if ((result=fcfs_posix_api_init(log_prefix_name,
-                    ns, config_filename)) != 0)
+                    cfg.ns, cfg.config_filename)) != 0)
     {
         return result;
     }
@@ -64,96 +218,51 @@ static int beachmark()
         return result;
     }
 
+    if ((result=setup_signal_handler()) != 0) {
+        return result;
+    }
+
     fcfs_posix_api_log_configs();
+    cfg.is_fcfs_input = FCFS_API_IS_MY_MOUNTPOINT(cfg.filename_prefix.str);
 
-    is_fcfs_input = FCFS_API_IS_MY_MOUNTPOINT(input_filename);
-    if (is_fcfs_input) {
-        src_fd = fcfs_open(input_filename, O_RDONLY);
-    } else {
-        src_fd = open(input_filename, O_RDONLY);
+    bytes = sizeof(BeachmarkThreadInfo) * cfg.thread_count;
+    st.threads = fc_malloc(bytes);
+    if (st.threads == NULL) {
+        return ENOMEM;
     }
-    if (src_fd < 0) {
-        result = errno != 0 ? errno : ENOENT;
-        logError("file: "__FILE__", line: %d, "
-                "open file %s to read fail, "
-                "errno: %d, error info: %s",
-                __LINE__, input_filename,
-                result, strerror(result));
-        return result;
+    memset(st.threads, 0, bytes);
+    st.tend = st.threads + cfg.thread_count;
+
+    tids = fc_malloc(sizeof(pthread_t) * cfg.thread_count);
+    if (tids == NULL) {
+        return ENOMEM;
     }
 
-    if (fs_filename[strlen(fs_filename) - 1] == '/') {
-        const char *filename;
-        filename = strrchr(input_filename, '/');
-        if (filename != NULL) {
-            filename++;  //skip "/"
-        } else {
-            filename = input_filename;
-        }
-        filename_len = snprintf(new_filename, sizeof(new_filename),
-                "%s%s", fs_filename, filename);
-    } else {
-        filename_len = snprintf(new_filename, sizeof(new_filename),
-                "%s%s", (*fs_filename != '/' ? "/" : ""), fs_filename);
+    args = fc_malloc(sizeof(void *) * cfg.thread_count);
+    if (args == NULL) {
+        return ENOMEM;
     }
 
-    if (!(filename_len > g_fcfs_papi_global_vars.ctx.mountpoint.len &&
-                memcmp(new_filename, g_fcfs_papi_global_vars.ctx.mountpoint.str,
-                    g_fcfs_papi_global_vars.ctx.mountpoint.len) == 0))
+    for (i=0, thread=st.threads; i<cfg.thread_count; i++, thread++) {
+        thread->index = i;
+        args[i] = thread;
+    }
+
+    count = cfg.thread_count;
+    if ((result=create_work_threads(&count, thread_entrance,
+                    args, tids, 256 * 1024)) != 0)
     {
-        snprintf(new_fs_filename, sizeof(new_fs_filename), "%s%s",
-                g_fcfs_papi_global_vars.ctx.mountpoint.str, new_filename);
-    } else {
-        snprintf(new_fs_filename, sizeof(new_fs_filename), "%s", new_filename);
-    }
-
-    if ((dst_fd=fcfs_open(new_fs_filename, O_CREAT | O_WRONLY, 0755)) < 0) {
-        result = errno != 0 ? errno : EIO;
-        logError("file: "__FILE__", line: %d, "
-                "open file %s fail, errno: %d, error info: %s",
-                __LINE__, fs_filename, result, STRERROR(result));
         return result;
     }
 
-    logInfo("is_fcfs_input: %d, input fd: %d, output fd: %d",
-            is_fcfs_input, src_fd, dst_fd);
-
-    if (buffer_size <= FIXED_BUFFEER_SIZE) {
-        buff = fixed_buff;
-    } else {
-        buff = (char *)fc_malloc(buffer_size);
-        if (buff == NULL) {
-            return ENOMEM;
-        }
-    }
-
-    while (1) {
-        if (is_fcfs_input) {
-            read_bytes = fcfs_read(src_fd, buff, buffer_size);
-        } else {
-            read_bytes = read(src_fd, buff, buffer_size);
-        }
-        if (read_bytes == 0) {
-            break;
-        } else if (read_bytes < 0) {
-            result = errno != 0 ? errno : ENOENT;
-            logError("file: "__FILE__", line: %d, "
-                    "read from file %s fail, "
-                    "errno: %d, error info: %s",
-                    __LINE__, input_filename,
-                    result, strerror(result));
-            return result;
-        }
-    }
-
-    if (is_fcfs_input) {
-        fcfs_close(src_fd);
-    } else {
-        close(src_fd);
-    }
-
-    fcfs_fsync(dst_fd);
-    fcfs_close(dst_fd);
+    st.start_time = time(NULL);
+    end_time = st.start_time + cfg.runtime;
+    do {
+        sleep(1);
+        current_time = time(NULL);
+        output(current_time);
+    } while (st.continue_flag && FC_ATOMIC_GET(st.running_count) > 0 &&
+            current_time < end_time);
 
     fcfs_posix_api_stop();
     return 0;
@@ -170,35 +279,51 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    while ((ch=getopt(argc, argv, "hc:n:b:s:V")) != -1) {
+    log_try_init();
+    while ((ch=getopt(argc, argv, "hc:n:b:T:t:f:")) != -1) {
         switch (ch) {
             case 'h':
                 usage(argv);
                 return 0;
             case 'c':
-                config_filename = optarg;
+                cfg.config_filename = optarg;
                 break;
             case 'n':
-                ns = optarg;
+                cfg.ns = optarg;
+                break;
+            case 'T':
+                cfg.thread_count = strtol(optarg, NULL, 10);
+                if (cfg.thread_count <= 0) {
+                    logError("file: "__FILE__", line: %d, "
+                            "invalid thread count: %d which <= 0",
+                            __LINE__, cfg.thread_count);
+                    return EINVAL;
+                }
+                break;
+            case 't':
+                cfg.runtime = strtol(optarg, NULL, 10);
+                if (cfg.runtime <= 0) {
+                    logError("file: "__FILE__", line: %d, "
+                            "invalid runtime: %d which <= 0",
+                            __LINE__, cfg.runtime);
+                    return EINVAL;
+                }
                 break;
             case 'b':
                 if ((result=parse_bytes(optarg, 1, &bytes)) != 0) {
                     usage(argv);
                     return result;
                 }
-                if (bytes < 4 * 1024) {
-                    buffer_size = 4 * 1024;
-                } else {
-                    buffer_size = bytes;
+                if (bytes <= 0) {
+                    logError("file: "__FILE__", line: %d, "
+                            "invalid buffer size: %"PRId64" which <= 0",
+                            __LINE__, bytes);
+                    return EINVAL;
                 }
+                cfg.buffer_size = bytes;
                 break;
-            case 's':
-                if ((result=parse_bytes(optarg, 1, &bytes)) != 0) {
-                    usage(argv);
-                    return result;
-                }
-                break;
-            case 'V':
+            case 'f':
+                FC_SET_STRING(cfg.filename_prefix, optarg);
                 break;
             default:
                 usage(argv);
@@ -206,17 +331,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (optind + 1 >= argc) {
-        usage(argv);
-        return 1;
-    }
-
-    log_try_init();
-    //g_log_context.log_level = LOG_DEBUG;
-
-    input_filename = argv[optind];
-    fs_filename = argv[optind + 1];
-    if (strlen(fs_filename) == 0) {
+    if (cfg.filename_prefix.str == NULL) {
+        fprintf(stderr, "expect parameter -f filename_prefix\n\n");
         usage(argv);
         return EINVAL;
     }
