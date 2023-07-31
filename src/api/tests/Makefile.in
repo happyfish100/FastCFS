@@ -7,7 +7,7 @@ TARGET_PATH = $(TARGET_PREFIX)/bin
 
 STATIC_OBJS =
 
-ALL_PRGS = test_file_op test_file_copy test_papi_copy test_read_ahead
+ALL_PRGS = test_file_op test_file_copy test_papi_copy test_read_ahead fcfs_beachmark
 
 all: $(STATIC_OBJS) $(ALL_PRGS)
 
