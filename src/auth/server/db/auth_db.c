@@ -153,7 +153,8 @@ static void destroy_allocators()
     fast_mblock_destroy(&adb_ctx.pool.allocators.granted);
 }
 
-static void free_storage_pool_func(void *ptr, const int delay_seconds)
+static void free_storage_pool_func(UniqSkiplist *sl,
+        void *ptr, const int delay_seconds)
 {
     DBStoragePoolInfo *dbspool;
 
@@ -165,7 +166,8 @@ static void free_storage_pool_func(void *ptr, const int delay_seconds)
     fast_mblock_free_object(&adb_ctx.pool.allocators.created, dbspool);
 }
 
-static void free_granted_pool_func(void *ptr, const int delay_seconds)
+static void free_granted_pool_func(UniqSkiplist *sl,
+        void *ptr, const int delay_seconds)
 {
     DBGrantedPoolInfo *dbgranted;
 
@@ -192,7 +194,7 @@ static int init_skiplists()
     if ((result=uniq_skiplist_init_ex(&adb_ctx.pool.factories.created,
                     max_level_count, (skiplist_compare_func)pool_name_cmp,
                     free_storage_pool_func, alloc_skiplist_once,
-                    min_alloc_elements_once, delay_free_seconds)) != 0)
+                    min_alloc_elements_once, delay_free_seconds, NULL)) != 0)
     {
         return result;
     }
@@ -200,7 +202,7 @@ static int init_skiplists()
     if ((result=uniq_skiplist_init_ex(&adb_ctx.pool.factories.granted,
                     max_level_count, (skiplist_compare_func)granted_pool_cmp,
                     free_granted_pool_func, alloc_skiplist_once,
-                    min_alloc_elements_once, delay_free_seconds)) != 0)
+                    min_alloc_elements_once, delay_free_seconds, NULL)) != 0)
     {
         return result;
     }
