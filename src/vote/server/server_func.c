@@ -152,6 +152,9 @@ int server_load_config(const char *filename)
         return result;
     }
 
+    //TODO
+    CLUSTER_SF_CTX.handlers[SF_SOCKET_NETWORK_HANDLER_INDEX].enabled = true;
+
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, filename, NULL, &ini_context);
     if ((result=load_cluster_config(&ini_ctx,
                     full_cluster_filename)) != 0)
