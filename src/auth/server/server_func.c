@@ -307,23 +307,22 @@ int server_load_config(const char *filename)
         return result;
     }
 
-    if ((result=sf_load_config("fcfs_authd", filename, &ini_context,
-                    "service", FCFS_AUTH_DEFAULT_SERVICE_PORT,
+    if ((result=sf_load_config("fcfs_authd", fc_comm_type_sock,
+                    filename, &ini_context, "service",
+                    FCFS_AUTH_DEFAULT_SERVICE_PORT,
                     FCFS_AUTH_DEFAULT_SERVICE_PORT,
                     task_buffer_extra_size)) != 0)
     {
         return result;
     }
     if ((result=sf_load_context_from_config(&CLUSTER_SF_CTX,
-                    filename, &ini_context, "cluster",
+                    fc_comm_type_sock, filename,
+                    &ini_context, "cluster",
                     FCFS_AUTH_DEFAULT_CLUSTER_PORT,
                     FCFS_AUTH_DEFAULT_CLUSTER_PORT)) != 0)
     {
         return result;
     }
-
-    //TODO
-    CLUSTER_SF_CTX.handlers[SF_SOCKET_NETWORK_HANDLER_INDEX].enabled = true;
 
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, filename, NULL, &ini_context);
     if ((result=load_cluster_config(&ini_ctx,
