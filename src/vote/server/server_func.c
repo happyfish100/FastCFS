@@ -124,6 +124,7 @@ static int load_cluster_config(IniFullContext *ini_ctx,
 
 int server_load_config(const char *filename)
 {
+    const int fixed_buffer_size = 0;
     const int task_buffer_extra_size = 0;
     IniContext ini_context;
     IniFullContext ini_ctx;
@@ -141,6 +142,7 @@ int server_load_config(const char *filename)
                     filename, &ini_context, "service",
                     FCFS_VOTE_DEFAULT_SERVICE_PORT,
                     FCFS_VOTE_DEFAULT_SERVICE_PORT,
+                    fixed_buffer_size,
                     task_buffer_extra_size)) != 0)
     {
         return result;
