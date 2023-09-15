@@ -351,7 +351,38 @@ int fcfs_api_start_ex(FCFSAPIContext *ctx)
     if (ctx->contexts.fdir->idempotency_enabled ||
             ctx->contexts.fsapi->fs->idempotency_enabled)
     {
-        if ((result=receipt_handler_init()) != 0) {
+        FCServerGroupInfo *server_group;
+        FCAddressPtrArray *address_array;
+        FCServerInfo *first_server;
+
+        address_array = NULL;
+        if (ctx->contexts.fdir->idempotency_enabled) {
+            server_group = fc_server_get_group_by_index(
+                    &ctx->contexts.fdir->cluster.server_cfg,
+                    ctx->contexts.fdir->cluster.service_group_index);
+            if (server_group->comm_type != fc_comm_type_sock) {
+                first_server = FC_SID_SERVERS(ctx->contexts.
+                        fdir->cluster.server_cfg);
+                address_array = &first_server->group_addrs[ctx->contexts.
+                    fdir->cluster.service_group_index].address_array;
+            }
+        }
+        if (ctx->contexts.fsapi->fs->idempotency_enabled &&
+                address_array == NULL)
+        {
+            server_group = fc_server_get_group_by_index(
+                    &FS_CLUSTER_SERVER_CFG(ctx->contexts.fsapi->fs),
+                    FS_CFG_SERVICE_INDEX(ctx->contexts.fsapi->fs));
+            if (server_group->comm_type != fc_comm_type_sock) {
+                first_server = FC_SID_SERVERS(FS_CLUSTER_SERVER_CFG(
+                            ctx->contexts.fsapi->fs));
+                address_array = &first_server->group_addrs[
+                    FS_CFG_SERVICE_INDEX(ctx->contexts.fsapi->fs)].
+                        address_array;
+            }
+        }
+
+        if ((result=receipt_handler_init(address_array)) != 0) {
             return result;
         }
     }
@@ -594,14 +625,46 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
     const bool need_set_run_by = true;
     int result;
     SFContextIniConfig config;
+    FCServerGroupInfo *server_group;
+    FCCommunicationType comm_type;
 
     ini_ctx->section_name = FCFS_API_INI_IDEMPOTENCY_SECTION_NAME;
     if ((result=client_channel_init(ini_ctx)) != 0) {
         return result;
     }
 
-    //TODO
-    SF_SET_CONTEXT_INI_CONFIG(config, fc_comm_type_sock, ini_ctx->filename,
+    g_fdir_client_vars.client_ctx.idempotency_enabled =
+        iniGetBoolValue(fdir_section_name, "idempotency_enabled",
+                ini_ctx->context, g_idempotency_client_cfg.enabled);
+    g_fs_client_vars.client_ctx.idempotency_enabled =
+        iniGetBoolValue(fs_section_name, "idempotency_enabled",
+                ini_ctx->context, g_idempotency_client_cfg.enabled);
+    if (!(g_fdir_client_vars.client_ctx.idempotency_enabled ||
+                g_fs_client_vars.client_ctx.idempotency_enabled))
+    {
+        return 0;
+    }
+
+    comm_type = fc_comm_type_sock;
+    if (g_fdir_client_vars.client_ctx.idempotency_enabled) {
+        server_group = fc_server_get_group_by_index(
+                &g_fdir_client_vars.client_ctx.cluster.server_cfg,
+                g_fdir_client_vars.client_ctx.cluster.service_group_index);
+        if (comm_type != server_group->comm_type) {
+            comm_type = server_group->comm_type;
+        }
+    }
+    if (g_fs_client_vars.client_ctx.idempotency_enabled) {
+        server_group = fc_server_get_group_by_index(
+                &FS_CLUSTER_SERVER_CFG(&g_fs_client_vars.client_ctx),
+                FS_CFG_SERVICE_INDEX(&g_fs_client_vars.client_ctx));
+        if (comm_type != server_group->comm_type) {
+            comm_type = g_fdir_client_vars.client_ctx.idempotency_enabled ?
+                fc_comm_type_both : server_group->comm_type;
+        }
+    }
+
+    SF_SET_CONTEXT_INI_CONFIG(config, comm_type, ini_ctx->filename,
             ini_ctx->context, FCFS_API_INI_IDEMPOTENCY_SECTION_NAME,
             0, 0, FCFS_API_IDEMPOTENCY_DEFAULT_WORK_THREADS);
     if ((result=sf_load_config_ex(log_prefix_name, &config,
@@ -617,13 +680,6 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
                 SF_G_THREAD_STACK_SIZE, MIN_THREAD_STACK_SIZE);
         SF_G_THREAD_STACK_SIZE = MIN_THREAD_STACK_SIZE;
     }
-
-    g_fdir_client_vars.client_ctx.idempotency_enabled =
-        iniGetBoolValue(fdir_section_name, "idempotency_enabled",
-                ini_ctx->context, g_idempotency_client_cfg.enabled);
-    g_fs_client_vars.client_ctx.idempotency_enabled =
-        iniGetBoolValue(fs_section_name, "idempotency_enabled",
-                ini_ctx->context, g_idempotency_client_cfg.enabled);
 
     return 0;
 }
