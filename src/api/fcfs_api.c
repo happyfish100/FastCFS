@@ -620,9 +620,9 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
         const char *fs_section_name)
 {
 #define MIN_THREAD_STACK_SIZE  (320 * 1024)
-    const int fixed_buffer_size = 0;
     const int task_buffer_extra_size = 0;
     const bool need_set_run_by = true;
+    int fixed_buffer_size;
     int result;
     SFContextIniConfig config;
     FCServerGroupInfo *server_group;
@@ -645,6 +645,7 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
         return 0;
     }
 
+    fixed_buffer_size = 0;
     comm_type = fc_comm_type_sock;
     if (g_fdir_client_vars.client_ctx.idempotency_enabled) {
         server_group = fc_server_get_group_by_index(
@@ -652,6 +653,7 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
                 g_fdir_client_vars.client_ctx.cluster.service_group_index);
         if (comm_type != server_group->comm_type) {
             comm_type = server_group->comm_type;
+            fixed_buffer_size = server_group->buffer_size;
         }
     }
     if (g_fs_client_vars.client_ctx.idempotency_enabled) {
@@ -661,6 +663,12 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
         if (comm_type != server_group->comm_type) {
             comm_type = g_fdir_client_vars.client_ctx.idempotency_enabled ?
                 fc_comm_type_both : server_group->comm_type;
+            if (fixed_buffer_size == 0) {
+                fixed_buffer_size = server_group->buffer_size;
+            } else {
+                fixed_buffer_size = FC_MIN(fixed_buffer_size,
+                        server_group->buffer_size);
+            }
         }
     }
 
