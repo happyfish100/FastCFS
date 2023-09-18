@@ -653,7 +653,8 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
                 g_fdir_client_vars.client_ctx.cluster.service_group_index);
         if (comm_type != server_group->comm_type) {
             comm_type = server_group->comm_type;
-            fixed_buffer_size = server_group->buffer_size;
+            fixed_buffer_size = g_fdir_client_vars.client_ctx.
+                cluster.server_cfg.buffer_size;
         }
     }
     if (g_fs_client_vars.client_ctx.idempotency_enabled) {
@@ -664,10 +665,12 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
             comm_type = g_fdir_client_vars.client_ctx.idempotency_enabled ?
                 fc_comm_type_both : server_group->comm_type;
             if (fixed_buffer_size == 0) {
-                fixed_buffer_size = server_group->buffer_size;
+                fixed_buffer_size = FS_CLUSTER_SERVER_CFG(&g_fs_client_vars.
+                        client_ctx).buffer_size;
             } else {
                 fixed_buffer_size = FC_MIN(fixed_buffer_size,
-                        server_group->buffer_size);
+                        FS_CLUSTER_SERVER_CFG(&g_fs_client_vars.
+                            client_ctx).buffer_size);
             }
         }
     }
