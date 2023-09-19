@@ -305,6 +305,11 @@ static int beachmark()
             (int)(current_time - st.start_time),
             st.iops_buff.avg, st.iops_buff.max);
 
+    st.continue_flag = false;
+    while (FC_ATOMIC_GET(st.running_count) > 0) {
+        sleep(1);
+    }
+
     fcfs_posix_api_stop();
     return 0;
 }
