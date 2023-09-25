@@ -310,7 +310,7 @@ static int cluster_deal_session_validate(struct fast_task_info *task)
         return result;
     }
 
-    resp = (FCFSAuthProtoSessionValidateResp *)REQUEST.body;
+    resp = (FCFSAuthProtoSessionValidateResp *)SF_PROTO_SEND_BODY(task);
     int2buff(result, resp->result);
     RESPONSE.header.body_len = sizeof(*resp);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SESSION_VALIDATE_RESP;
@@ -361,7 +361,7 @@ static int cluster_deal_get_server_status(struct fast_task_info *task)
         return result;
     }
 
-    resp = (FCFSAuthProtoGetServerStatusResp *)REQUEST.body;
+    resp = (FCFSAuthProtoGetServerStatusResp *)SF_PROTO_SEND_BODY(task);
     resp->is_master = MYSELF_IS_MASTER;
     int2buff(CLUSTER_MY_SERVER_ID, resp->server_id);
 
@@ -619,11 +619,11 @@ static int cluster_deal_queue(AuthServerContext *server_context,
 
     previous = NULL;
     entry = (ServerSessionSubscribeEntry *)qinfo.head;
-    proto_header = (FCFSAuthProtoHeader *)task->data;
+    proto_header = (FCFSAuthProtoHeader *)task->send.ptr->data;
     body_header = (FCFSAuthProtoSessionPushRespBodyHeader *)
         (proto_header + 1);
     p = (char *)(body_header + 1);
-    end = task->data + task->size;
+    end = SF_SEND_BUFF_END(task);
     count = 0;
     while (entry != NULL) {
         body_part = (FCFSAuthProtoSessionPushRespBodyPart *)p;
@@ -671,9 +671,9 @@ static int cluster_deal_queue(AuthServerContext *server_context,
     session_subscribe_free_entries(qinfo.head);
 
     int2buff(count, body_header->count);
-    task->length = p - task->data;
+    task->send.ptr->length = p - task->send.ptr->data;
     SF_PROTO_SET_HEADER(proto_header, FCFS_AUTH_SERVICE_PROTO_SESSION_PUSH_REQ,
-            task->length - sizeof(FCFSAuthProtoHeader));
+            task->send.ptr->length - sizeof(FCFSAuthProtoHeader));
     sf_send_add_event(task);
     return result;
 }

@@ -64,8 +64,8 @@ static int file_parray_realloc()
                 sizeof(FCFSPosixAPIFileInfo *));
     }
 
-    __sync_bool_compare_and_swap(&FILE_PARRAY.files,
-            old_files, new_files);
+    __sync_bool_compare_and_swap(&FILE_PARRAY.files, old_files,
+            (volatile FCFSPosixAPIFileInfo **)new_files);
     __sync_bool_compare_and_swap(&FILE_PARRAY.count,
             old_count, new_count);
     FC_ATOMIC_INC(PARRAY_GENERATION);

@@ -134,7 +134,7 @@ static int cluster_deal_get_server_status(struct fast_task_info *task)
         return result;
     }
 
-    resp = (FCFSVoteProtoGetServerStatusResp *)REQUEST.body;
+    resp = (FCFSVoteProtoGetServerStatusResp *)SF_PROTO_SEND_BODY(task);
     resp->is_master = MYSELF_IS_MASTER;
     int2buff(CLUSTER_MY_SERVER_ID, resp->server_id);
 
