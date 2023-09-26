@@ -606,7 +606,7 @@ static int cluster_deal_queue(AuthServerContext *server_context,
     int result;
 
     task = subscriber->nio.task;
-    if (ioevent_is_canceled(task) || !sf_nio_task_is_idle(
+    if (ioevent_is_canceled(task) || !sf_nio_task_send_done(
                 subscriber->nio.task))
     {
         return EAGAIN;
