@@ -65,19 +65,23 @@ static int find_myself_in_cluster_config(const char *filename)
     } found;
     FCServerInfo *server;
     FCFSAuthClusterServerInfo *myself;
+    SFNetworkHandler *service_handler;
+    SFNetworkHandler *cluster_handler;
     int ports[4];
     int count;
     int i;
 
+    service_handler = g_sf_context.handlers + SF_SOCKET_NETWORK_HANDLER_INDEX;
+    cluster_handler = CLUSTER_SF_CTX.handlers + SF_SOCKET_NETWORK_HANDLER_INDEX;
     count = 0;
-    ports[count++] = g_sf_context.inner_port;
-    if (g_sf_context.outer_port != g_sf_context.inner_port) {
-        ports[count++] = g_sf_context.outer_port;
+    ports[count++] = service_handler->inner.port;
+    if (service_handler->outer.port != service_handler->inner.port) {
+        ports[count++] = service_handler->outer.port;
     }
 
-    ports[count++] = CLUSTER_SF_CTX.inner_port;
-    if (CLUSTER_SF_CTX.outer_port != CLUSTER_SF_CTX.inner_port) {
-        ports[count++] = CLUSTER_SF_CTX.outer_port;
+    ports[count++] = cluster_handler->inner.port;
+    if (cluster_handler->outer.port != cluster_handler->inner.port) {
+        ports[count++] = cluster_handler->outer.port;
     }
 
     found.ip_addr = NULL;

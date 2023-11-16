@@ -86,7 +86,7 @@ int fcfs_auth_deal_get_master(struct fast_task_info *task,
         return SF_RETRIABLE_ERROR_NO_SERVER;
     }
 
-    resp = (FCFSAuthProtoGetServerResp *)SF_PROTO_RESP_BODY(task);
+    resp = (FCFSAuthProtoGetServerResp *)SF_PROTO_SEND_BODY(task);
     if (group_index == SERVICE_GROUP_INDEX) {
         addr = fc_server_get_address_by_peer(&SERVICE_GROUP_ADDRESS_ARRAY(
                     master->server), task->client_ip);

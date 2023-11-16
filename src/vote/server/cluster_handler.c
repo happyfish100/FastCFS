@@ -134,7 +134,7 @@ static int cluster_deal_get_server_status(struct fast_task_info *task)
         return result;
     }
 
-    resp = (FCFSVoteProtoGetServerStatusResp *)REQUEST.body;
+    resp = (FCFSVoteProtoGetServerStatusResp *)SF_PROTO_SEND_BODY(task);
     resp->is_master = MYSELF_IS_MASTER;
     int2buff(CLUSTER_MY_SERVER_ID, resp->server_id);
 
@@ -342,6 +342,6 @@ int cluster_deal_task(struct fast_task_info *task, const int stage)
         return 0;
     } else {
         RESPONSE_STATUS = result;
-        return sf_proto_deal_task_done(task, &TASK_CTX.common);
+        return sf_proto_deal_task_done(task, "cluster", &TASK_CTX.common);
     }
 }

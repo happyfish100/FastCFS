@@ -113,7 +113,7 @@ static int service_deal_cluster_stat(struct fast_task_info *task)
     }
 
     body_header = (FCFSVoteProtoClusterStatRespBodyHeader *)
-        SF_PROTO_RESP_BODY(task);
+        SF_PROTO_SEND_BODY(task);
     body_part = (FCFSVoteProtoClusterStatRespBodyPart *)(body_header + 1);
     int2buff(CLUSTER_SERVER_ARRAY.count, body_header->count);
 
@@ -129,7 +129,7 @@ static int service_deal_cluster_stat(struct fast_task_info *task)
                 body_part->port);
     }
 
-    RESPONSE.header.body_len = (char *)body_part - SF_PROTO_RESP_BODY(task);
+    RESPONSE.header.body_len = (char *)body_part - SF_PROTO_SEND_BODY(task);
     RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_CLUSTER_STAT_RESP;
     TASK_CTX.common.response_done = true;
     return 0;
@@ -200,7 +200,7 @@ static int service_deal_client_join(struct fast_task_info *task)
                 server_id);
         return -EINVAL;
     }
-    if (response_size <= 0 || response_size > (task->size -
+    if (response_size <= 0 || response_size > (task->send.ptr->size -
                 sizeof(FCFSVoteProtoHeader)))
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
@@ -286,7 +286,7 @@ static int service_deal_get_vote(struct fast_task_info *task)
         return result;
     }
 
-    memset(REQUEST.body, 0, SERVICE_PEER.group->response_size);
+    memset(SF_PROTO_SEND_BODY(task), 0, SERVICE_PEER.group->response_size);
     RESPONSE.header.body_len = SERVICE_PEER.group->response_size;
     RESPONSE.header.cmd = FCFS_VOTE_SERVICE_PROTO_GET_VOTE_RESP;
     TASK_CTX.common.response_done = true;
@@ -446,8 +446,9 @@ int service_deal_task(struct fast_task_info *task, const int stage)
             "task: %p, sock: %d, nio stage: %d, continue: %d, "
             "cmd: %d (%s)", __LINE__, task, task->event.fd, stage,
             stage == SF_NIO_STAGE_CONTINUE,
-            ((FCFSVoteProtoHeader *)task->data)->cmd,
-            fdir_get_cmd_caption(((FCFSVoteProtoHeader *)task->data)->cmd));
+            ((FCFSVoteProtoHeader *)task->recv.ptr->data)->cmd,
+            fdir_get_cmd_caption(((FCFSVoteProtoHeader *)
+            task->recv.ptr->data)->cmd));
             */
 
     if (stage == SF_NIO_STAGE_CONTINUE) {
@@ -470,6 +471,6 @@ int service_deal_task(struct fast_task_info *task, const int stage)
         return 0;
     } else {
         RESPONSE_STATUS = result;
-        return sf_proto_deal_task_done(task, &TASK_CTX.common);
+        return sf_proto_deal_task_done(task, "service", &TASK_CTX.common);
     }
 }

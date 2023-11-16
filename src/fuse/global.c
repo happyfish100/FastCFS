@@ -218,8 +218,6 @@ static const char *get_allow_others_caption(
 int fcfs_fuse_global_init(const char *config_filename)
 {
     const bool publish = true;
-    bool fdir_idempotency_enabled;
-    bool fs_idempotency_enabled;
     int result;
     BufferInfo sf_idempotency_config;
     char buff[256];
@@ -239,18 +237,6 @@ int fcfs_fuse_global_init(const char *config_filename)
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename,
             FCFS_API_DEFAULT_FASTDIR_SECTION_NAME, &iniContext);
     do {
-        if ((result=fcfs_api_load_idempotency_config(
-                        "fcfs_fused", &ini_ctx)) != 0)
-        {
-            break;
-        }
-
-        //save
-        fdir_idempotency_enabled = g_fdir_client_vars.
-            client_ctx.idempotency_enabled;
-        fs_idempotency_enabled = g_fs_client_vars.
-            client_ctx.idempotency_enabled;
-
         if ((result=load_fuse_config(&ini_ctx)) != 0) {
             break;
         }
@@ -271,11 +257,11 @@ int fcfs_fuse_global_init(const char *config_filename)
             break;
         }
 
-        //restore
-        g_fdir_client_vars.client_ctx.idempotency_enabled =
-            fdir_idempotency_enabled;
-        g_fs_client_vars.client_ctx.idempotency_enabled =
-            fs_idempotency_enabled;
+        if ((result=fcfs_api_load_idempotency_config(
+                        "fcfs_fused", &ini_ctx)) != 0)
+        {
+            break;
+        }
     } while (0);
 
     iniFreeContext(&iniContext);

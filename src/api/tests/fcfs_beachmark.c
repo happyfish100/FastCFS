@@ -46,6 +46,18 @@ static struct {
     volatile int running_count;
     volatile bool continue_flag;
     time_t start_time;
+    struct {
+        int cur;
+        int avg;
+        int max;
+    } iops;
+
+    struct {
+        char cur[32];
+        char avg[32];
+        char max[32];
+    } iops_buff;
+
     BeachmarkThreadInfo *threads;
     BeachmarkThreadInfo *tend;
 } st = {0, true};
@@ -107,8 +119,8 @@ static int thread_run(BeachmarkThreadInfo *thread)
             return result;
         }
 
-        if (read_bytes == cfg.buffer_size) {
-            thread->success_count++;
+        if (read_bytes > 0) {
+            FC_ATOMIC_INC(thread->success_count);
         } else {
             if (cfg.is_fcfs_input) {
                if (fcfs_lseek(fd, 0, SEEK_SET) < 0) {
@@ -155,15 +167,35 @@ static void *thread_entrance(void *arg)
 static void output(const time_t current_time)
 {
     BeachmarkThreadInfo *thread;
+    static time_t last_time = 0;
+    static int64_t last_count = 0;
     int64_t total_count;
+    int time_distance;
+
+    if (last_time == 0) {
+        last_time = st.start_time;
+    }
 
     total_count = 0;
     for (thread=st.threads; thread<st.tend; thread++) {
-        total_count += thread->success_count;
+        total_count += FC_ATOMIC_GET(thread->success_count);
     }
-    printf("running threads: %d, IOPS: %d\n", FC_ATOMIC_GET(
-                st.running_count), (int)(total_count /
-                    (current_time - st.start_time)));
+
+    time_distance = current_time - last_time;
+    if (time_distance > 0) {
+        st.iops.cur = (total_count - last_count) / time_distance;
+        if (st.iops.cur > st.iops.max) {
+            st.iops.max = st.iops.cur;
+        }
+        st.iops.avg = total_count / (current_time - st.start_time);
+        long_to_comma_str(st.iops.cur, st.iops_buff.cur);
+        long_to_comma_str(st.iops.avg, st.iops_buff.avg);
+        printf("running time: %4d seconds, IOPS {current: %s, avg: %s}\n",
+                (int)(current_time - st.start_time), st.iops_buff.cur,
+                st.iops_buff.avg);
+        last_time = current_time;
+        last_count = total_count;
+    }
 }
 
 static void sigQuitHandler(int sig)
@@ -257,12 +289,26 @@ static int beachmark()
 
     st.start_time = time(NULL);
     end_time = st.start_time + cfg.runtime;
+
+    printf("threads: %d, buffer_size: %d\n",
+            cfg.thread_count, cfg.buffer_size);
     do {
         sleep(1);
         current_time = time(NULL);
         output(current_time);
     } while (st.continue_flag && FC_ATOMIC_GET(st.running_count) > 0 &&
             current_time < end_time);
+
+    long_to_comma_str(st.iops.avg, st.iops_buff.avg);
+    long_to_comma_str(st.iops.max, st.iops_buff.max);
+    printf("\nrunning time: %4d seconds, IOPS {avg: %s, max: %s}\n",
+            (int)(current_time - st.start_time),
+            st.iops_buff.avg, st.iops_buff.max);
+
+    st.continue_flag = false;
+    while (FC_ATOMIC_GET(st.running_count) > 0) {
+        sleep(1);
+    }
 
     fcfs_posix_api_stop();
     return 0;

@@ -50,8 +50,6 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
     const bool need_lock = true;
     const bool persist_additional_gids = false;
     int result;
-    bool fdir_idempotency_enabled;
-    bool fs_idempotency_enabled;
     IniContext iniContext;
     IniFullContext ini_ctx;
 
@@ -66,18 +64,6 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
     FAST_INI_SET_FULL_CTX_EX(ini_ctx, config_filename,
             NULL, &iniContext);
     do {
-        if ((result=fcfs_api_load_idempotency_config_ex(log_prefix_name,
-                        &ini_ctx, fdir_section_name, fs_section_name)) != 0)
-        {
-            break;
-        }
-
-        //save
-        fdir_idempotency_enabled = g_fdir_client_vars.
-            client_ctx.idempotency_enabled;
-        fs_idempotency_enabled = g_fs_client_vars.
-            client_ctx.idempotency_enabled;
-
         if ((result=load_posix_api_config(ctx, ns, &ini_ctx,
                         fdir_section_name)) != 0)
         {
@@ -98,11 +84,11 @@ int fcfs_posix_api_init_ex1(FCFSPosixAPIContext *ctx, const char
             break;
         }
 
-        //restore
-        g_fdir_client_vars.client_ctx.idempotency_enabled =
-            fdir_idempotency_enabled;
-        g_fs_client_vars.client_ctx.idempotency_enabled =
-            fs_idempotency_enabled;
+        if ((result=fcfs_api_load_idempotency_config_ex(log_prefix_name,
+                        &ini_ctx, fdir_section_name, fs_section_name)) != 0)
+        {
+            break;
+        }
     } while (0);
 
     iniFreeContext(&iniContext);

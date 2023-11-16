@@ -51,8 +51,8 @@ typedef struct fcfs_posix_api_file_info {
 } FCFSPosixAPIFileInfo;
 
 typedef struct fcfs_posix_file_ptr_array {
-    FCFSPosixAPIFileInfo **files;
-    int count;
+    volatile FCFSPosixAPIFileInfo **files;
+    volatile int count;
 } FCFSPosixFilePtrArray;
 
 typedef struct fcfs_posix_api_dir {

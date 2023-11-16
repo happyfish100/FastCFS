@@ -221,7 +221,7 @@ static int service_deal_user_login(struct fast_task_info *task)
             fields->pool_privs.fstore);
             */
 
-    resp = (FCFSAuthProtoUserLoginResp *)REQUEST.body;
+    resp = (FCFSAuthProtoUserLoginResp *)SF_PROTO_SEND_BODY(task);
     long2buff(SESSION_ENTRY->id_info.id, resp->session_id);
     RESPONSE.header.body_len = sizeof(FCFSAuthProtoUserLoginResp);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP;
@@ -357,9 +357,9 @@ static int service_deal_user_list(struct fast_task_info *task)
         }
     }
 
-    resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
+    resp_header = (FCFSAuthProtoListRespHeader *)SF_PROTO_SEND_BODY(task);
     p = (char *)(resp_header + 1);
-    buff_end = task->data + task->size;
+    buff_end = SF_SEND_BUFF_END(task);
     end = array.users + array.count;
     truncated = false;
     for (user=array.users; user<end; user++) {
@@ -377,7 +377,7 @@ static int service_deal_user_list(struct fast_task_info *task)
     }
     resp_header->is_last = (array.count < limit.count) && !truncated;
     int2buff(user - array.users, resp_header->count);
-    RESPONSE.header.body_len = p - REQUEST.body;
+    RESPONSE.header.body_len = p - SF_PROTO_SEND_BODY(task);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LIST_RESP;
     TASK_ARG->context.common.response_done = true;
 
@@ -551,7 +551,7 @@ static int service_deal_spool_create(struct fast_task_info *task)
     }
 
     if (result == 0) {
-        resp = (FCFSAuthProtoSPoolCreateResp *)REQUEST.body;
+        resp = (FCFSAuthProtoSPoolCreateResp *)SF_PROTO_SEND_BODY(task);
         resp->poolname.len = spool.name.len;
         memcpy(resp->poolname.str, spool.name.str, spool.name.len);
         RESPONSE.header.body_len = sizeof(*resp) + spool.name.len;
@@ -652,10 +652,10 @@ static int service_deal_spool_list(struct fast_task_info *task)
         }
     }
 
-    resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
+    resp_header = (FCFSAuthProtoListRespHeader *)SF_PROTO_SEND_BODY(task);
     p = (char *)(resp_header + 1);
     end = array.spools + array.count;
-    buff_end = task->data + task->size;
+    buff_end = SF_SEND_BUFF_END(task);
     truncated = false;
     for (spool=array.spools; spool<end; spool++) {
         len = sizeof(FCFSAuthProtoSPoolListRespBodyPart) +
@@ -673,7 +673,7 @@ static int service_deal_spool_list(struct fast_task_info *task)
     }
     resp_header->is_last = (array.count < limit.count) && !truncated;
     int2buff(spool - array.spools, resp_header->count);
-    RESPONSE.header.body_len = p - REQUEST.body;
+    RESPONSE.header.body_len = p - SF_PROTO_SEND_BODY(task);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SPOOL_LIST_RESP;
     TASK_ARG->context.common.response_done = true;
 
@@ -761,7 +761,7 @@ static int service_deal_spool_get_quota(struct fast_task_info *task)
     }
 
     if ((result=adb_spool_get_quota(SERVER_CTX, &poolname, &quota)) == 0) {
-        resp = (FCFSAuthProtoSPoolGetQuotaResp *)REQUEST.body;
+        resp = (FCFSAuthProtoSPoolGetQuotaResp *)SF_PROTO_SEND_BODY(task);
         long2buff(quota, resp->quota);
         RESPONSE.header.body_len = sizeof(*resp);
         TASK_ARG->context.common.response_done = true;
@@ -930,9 +930,9 @@ static int service_deal_gpool_list(struct fast_task_info *task)
     }
 
     count = 0;
-    resp_header = (FCFSAuthProtoListRespHeader *)REQUEST.body;
+    resp_header = (FCFSAuthProtoListRespHeader *)SF_PROTO_SEND_BODY(task);
     p = (char *)(resp_header + 1);
-    buff_end = task->data + task->size;
+    buff_end = SF_SEND_BUFF_END(task);
     end = array.gpools + array.count;
     truncated = false;
     for (gpool=array.gpools; gpool<end; gpool++) {
@@ -958,7 +958,7 @@ static int service_deal_gpool_list(struct fast_task_info *task)
 
     resp_header->is_last = (array.count < limit.count) && !truncated;
     int2buff(count, resp_header->count);
-    RESPONSE.header.body_len = p - REQUEST.body;
+    RESPONSE.header.body_len = p - SF_PROTO_SEND_BODY(task);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_GPOOL_LIST_RESP;
     TASK_ARG->context.common.response_done = true;
 
@@ -979,7 +979,7 @@ static int service_deal_cluster_stat(struct fast_task_info *task)
     }
 
     body_header = (FCFSAuthProtoClusterStatRespBodyHeader *)
-        SF_PROTO_RESP_BODY(task);
+        SF_PROTO_SEND_BODY(task);
     body_part = (FCFSAuthProtoClusterStatRespBodyPart *)(body_header + 1);
     int2buff(CLUSTER_SERVER_ARRAY.count, body_header->count);
 
@@ -995,7 +995,7 @@ static int service_deal_cluster_stat(struct fast_task_info *task)
                 body_part->port);
     }
 
-    RESPONSE.header.body_len = (char *)body_part - SF_PROTO_RESP_BODY(task);
+    RESPONSE.header.body_len = (char *)body_part - SF_PROTO_SEND_BODY(task);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_RESP;
     TASK_CTX.common.response_done = true;
     return 0;
@@ -1091,8 +1091,9 @@ int service_deal_task(struct fast_task_info *task, const int stage)
             "task: %p, sock: %d, nio stage: %d, continue: %d, "
             "cmd: %d (%s)", __LINE__, task, task->event.fd, stage,
             stage == SF_NIO_STAGE_CONTINUE,
-            ((FCFSAuthProtoHeader *)task->data)->cmd,
-            fdir_get_cmd_caption(((FCFSAuthProtoHeader *)task->data)->cmd));
+            ((FCFSAuthProtoHeader *)task->recv.ptr->data)->cmd,
+            fdir_get_cmd_caption(((FCFSAuthProtoHeader *)
+            task->recv.ptr->data)->cmd));
             */
 
     if (stage == SF_NIO_STAGE_CONTINUE) {
@@ -1117,7 +1118,7 @@ int service_deal_task(struct fast_task_info *task, const int stage)
         return 0;
     } else {
         RESPONSE_STATUS = result;
-        return sf_proto_deal_task_done(task, &TASK_CTX.common);
+        return sf_proto_deal_task_done(task, "service", &TASK_CTX.common);
     }
 }
 

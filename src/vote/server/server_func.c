@@ -124,6 +124,7 @@ static int load_cluster_config(IniFullContext *ini_ctx,
 
 int server_load_config(const char *filename)
 {
+    const int fixed_buffer_size = 0;
     const int task_buffer_extra_size = 0;
     IniContext ini_context;
     IniFullContext ini_ctx;
@@ -137,15 +138,18 @@ int server_load_config(const char *filename)
         return result;
     }
 
-    if ((result=sf_load_config("fcfs_voted", filename, &ini_context,
-                    "service", FCFS_VOTE_DEFAULT_SERVICE_PORT,
+    if ((result=sf_load_config("fcfs_voted", fc_comm_type_sock,
+                    filename, &ini_context, "service",
                     FCFS_VOTE_DEFAULT_SERVICE_PORT,
+                    FCFS_VOTE_DEFAULT_SERVICE_PORT,
+                    fixed_buffer_size,
                     task_buffer_extra_size)) != 0)
     {
         return result;
     }
     if ((result=sf_load_context_from_config(&CLUSTER_SF_CTX,
-                    filename, &ini_context, "cluster",
+                    fc_comm_type_sock, filename,
+                    &ini_context, "cluster",
                     FCFS_VOTE_DEFAULT_CLUSTER_PORT,
                     FCFS_VOTE_DEFAULT_CLUSTER_PORT)) != 0)
     {

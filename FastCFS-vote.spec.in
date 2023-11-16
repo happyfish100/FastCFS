@@ -4,7 +4,7 @@
 %define CommitVersion %(echo $COMMIT_VERSION)
 
 Name: FastCFS-vote
-Version: 4.3.0
+Version: 5.0.0
 Release: 1%{?dist}
 Summary: the vote client library and config files of FastCFS. FastCFS is a high performance cloud native distributed file system for databases, KVM and K8s
 License: AGPL v3.0
@@ -14,9 +14,9 @@ Source: http://github.com/happyfish100/FastCFS/%{name}-%{version}.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n) 
 
-BuildRequires: libserverframe-devel >= 1.1.29
+BuildRequires: libserverframe-devel >= 1.2.0
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
-Requires: libserverframe >= 1.1.29
+Requires: libserverframe >= 1.2.0
 Requires: FastCFS-vote-server = %{version}-%{release}
 Requires: %{FastCFSVoteClient} = %{version}-%{release}
 Requires: %{FastCFSVoteConfig} >= 3.5.0
@@ -31,7 +31,7 @@ Requires: %{FastCFSVoteClient} = %{version}-%{release}
 Summary: header files of FastCFS vote client
 
 %package -n %{FastCFSVoteClient}
-Requires: libserverframe >= 1.1.29
+Requires: libserverframe >= 1.2.0
 Summary: FastCFS vote client
 
 %package -n %{FastCFSVoteConfig}

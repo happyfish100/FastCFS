@@ -275,7 +275,7 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
                     connect_timeout, max_count_per_entry, max_idle_time,
                     socket_domain, htable_init_capacity, NULL, client_ctx,
                     sf_cm_validate_connection_callback, cm,
-                    sizeof(SFConnectionParameters))) != 0)
+                    sizeof(SFConnectionParameters), NULL)) != 0)
     {
         return result;
     }
