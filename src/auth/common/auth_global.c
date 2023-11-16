@@ -16,5 +16,5 @@
 #include "auth_global.h"
 
 FCFSAuthGlobalVars g_fcfs_auth_global_vars = {
-    {4, 3, 0}
+    {5, 0, 0}
 };
