@@ -53,6 +53,11 @@ typedef struct fcfs_api_context {
     bool use_sys_lock_for_append;
     struct {
         bool enabled;
+        bool busy_polling;  //for RDMA
+    } rdma;
+
+    struct {
+        bool enabled;
         int interval_ms;
         int shared_allocator_count;
         int hashtable_sharding_count;

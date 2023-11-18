@@ -109,6 +109,7 @@ void fcfs_posix_api_log_configs_ex(FCFSPosixAPIContext *ctx,
 {
     BufferInfo sf_idempotency_config;
     char buff[256];
+    char rdma_busy_polling[128];
     char owner_config[2 * NAME_MAX + 64];
 
     sf_idempotency_config.buff = buff;
@@ -117,8 +118,16 @@ void fcfs_posix_api_log_configs_ex(FCFSPosixAPIContext *ctx,
             fdir_section_name, fs_section_name,
             &sf_idempotency_config, owner_config);
 
-    logInfo("FastDIR namespace: %s, %smountpoint: %s, "
-            "%s", ctx->nsmp.ns, sf_idempotency_config.buff,
+    if (ctx->api_ctx.rdma.enabled) {
+        sprintf(rdma_busy_polling, "rdma busy polling: %s, ",
+                ctx->api_ctx.rdma.busy_polling ? "true" : "false");
+    } else {
+        *rdma_busy_polling = '\0';
+    }
+
+    logInfo("%sFastDIR namespace: %s, %smountpoint: %s, %s",
+            rdma_busy_polling, ctx->nsmp.ns,
+            sf_idempotency_config.buff,
             ctx->nsmp.mountpoint, owner_config);
 }
 

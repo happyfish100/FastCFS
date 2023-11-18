@@ -221,6 +221,7 @@ int fcfs_fuse_global_init(const char *config_filename)
     int result;
     BufferInfo sf_idempotency_config;
     char buff[256];
+    char rdma_busy_polling[128];
     char owner_config[2 * NAME_MAX + 64];
     char additional_groups_config[256];
     char max_threads_buff[64];
@@ -288,7 +289,14 @@ int fcfs_fuse_global_init(const char *config_filename)
     additional_groups_config_to_string(additional_groups_config,
             sizeof(additional_groups_config));
 
-    logInfo("FastCFS V%d.%d.%d, FUSE library version %s, "
+    if (ctx->rdma.enabled) {
+        sprintf(rdma_busy_polling, "rdma busy polling: %s, ",
+                ctx->rdma.busy_polling ? "true" : "false");
+    } else {
+        *rdma_busy_polling = '\0';
+    }
+
+    logInfo("FastCFS V%d.%d.%d, FUSE library version %s, %s"
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "%s, singlethread: %d, clone_fd: %d, "
             "%s, allow_others: %s, auto_unmount: %d, read_only: %d, "
@@ -297,7 +305,8 @@ int fcfs_fuse_global_init(const char *config_filename)
             g_fcfs_global_vars.version.major,
             g_fcfs_global_vars.version.minor,
             g_fcfs_global_vars.version.patch,
-            fuse_pkgversion(), g_fuse_global_vars.nsmp.ns,
+            fuse_pkgversion(), rdma_busy_polling,
+            g_fuse_global_vars.nsmp.ns,
             sf_idempotency_config.buff,
             g_fuse_global_vars.nsmp.mountpoint,
             owner_config, g_fuse_global_vars.singlethread,

@@ -6,7 +6,7 @@ LIB_PATH = -L../api $(LIBS) -lfuse3 -lfcfsapi -lfdirclient -lfsapi  \
 		   -lfsclient -lfcfsauthclient -lfastcommon -lserverframe
 TARGET_PATH = $(TARGET_PREFIX)/bin
 
-STATIC_OBJS = fuse_wrapper.o global.o getgroups.o groups_htable.o
+STATIC_OBJS = global.o getgroups.o groups_htable.o fuse_wrapper.o
 
 ALL_PRGS = fcfs_fused
 

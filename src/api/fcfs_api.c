@@ -89,6 +89,23 @@ int fcfs_api_client_session_create(FCFSAPIContext *ctx, const bool publish)
     return fcfs_auth_client_session_create_ex(auth, &ctx->ns, publish);
 }
 
+static inline bool fcfs_api_rdma_enabled(FCFSAPIContext *ctx)
+{
+    FCServerGroupInfo *server_group;
+
+    server_group = fc_server_get_group_by_index(
+            &ctx->contexts.fdir->cluster.server_cfg,
+            ctx->contexts.fdir->cluster.service_group_index);
+    if (server_group->comm_type != fc_comm_type_sock) {
+        return true;
+    }
+
+    server_group = fc_server_get_group_by_index(
+            &FS_CLUSTER_SERVER_CFG(ctx->contexts.fsapi->fs),
+            FS_CFG_SERVICE_INDEX(ctx->contexts.fsapi->fs));
+    return (server_group->comm_type != fc_comm_type_sock);
+}
+
 static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
         FSAPIContext *fsapi, const char *ns, IniFullContext *ini_ctx,
         const char *fdir_section_name, const char *fs_section_name,
@@ -157,6 +174,14 @@ static int fcfs_api_common_init(FCFSAPIContext *ctx, FDIRClientContext *fdir,
     }
 
     fcfs_api_set_contexts_ex1(ctx, fdir, fsapi, ns);
+
+    if ((ctx->rdma.enabled=fcfs_api_rdma_enabled(ctx))) {
+        ctx->rdma.busy_polling = iniGetBoolValue(NULL,
+                "busy_polling", ini_ctx->context, false);
+        G_RDMA_CONNECTION_CALLBACKS.set_busy_polling(ctx->rdma.busy_polling);
+    } else {
+        ctx->rdma.busy_polling = false;
+    }
 
     ini_ctx->section_name = fdir_section_name;
     return fcfs_api_load_owner_config(ini_ctx, ctx);
