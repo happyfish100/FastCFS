@@ -289,9 +289,9 @@ int fcfs_fuse_global_init(const char *config_filename)
     additional_groups_config_to_string(additional_groups_config,
             sizeof(additional_groups_config));
 
-    if (ctx->rdma.enabled) {
+    if (g_fcfs_api_ctx.rdma.enabled) {
         sprintf(rdma_busy_polling, "rdma busy polling: %s, ",
-                ctx->rdma.busy_polling ? "true" : "false");
+                g_fcfs_api_ctx.rdma.busy_polling ? "true" : "false");
     } else {
         *rdma_busy_polling = '\0';
     }
