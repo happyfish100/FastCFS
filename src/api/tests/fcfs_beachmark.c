@@ -42,15 +42,18 @@ static struct {
     const char *config_filename;
     char *ns;
     int64_t file_size;
-    BeachmarkMode mode;
+    struct {
+        BeachmarkMode val;
+        const char *str;
+    } mode;
     int buffer_size;
     int thread_count;
     int runtime;
     string_t filename_prefix;
     bool is_fcfs_input;
 } cfg = {FCFS_FUSE_DEFAULT_CONFIG_FILENAME,
-    "fs", 1 * 1024 * 1024 * 1024, fcfs_beachmark_mode_read,
-    4 * 1024, 1, 60, {NULL, 0}, false};
+    "fs", 1 * 1024 * 1024 * 1024, {fcfs_beachmark_mode_read,
+        "read"}, 4 * 1024, 1, 60, {NULL, 0}, false};
 
 static struct {
     volatile int ready_count;
@@ -74,21 +77,13 @@ static struct {
     BeachmarkThreadInfo *tend;
 } st = {0, 0, 0, 1};
 
-static void usage(char *argv[])
+static inline void usage(char *argv[])
 {
-    /*
     fprintf(stderr, "Usage: %s [-c config_filename=%s] "
             "[-n namespace=fs] [-b buffer_size=4KB] "
             "[-s file_size=1G] [-m mode=read] "
             "[-T threads=1] [-t runtime=60] <-f filename_prefix>\n"
             "\t mode value list: read, write, randrand, randwrite\n\n",
-            argv[0], FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
-            */
-
-    fprintf(stderr, "Usage: %s [-c config_filename=%s] "
-            "[-n namespace=fs] [-b buffer_size=4KB] "
-            "[-s file_size=1G] [-T threads=1] "
-            "[-t runtime=60] <-f filename_prefix>\n\n",
             argv[0], FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
 }
 
@@ -232,9 +227,15 @@ static int check_create_file(const char *filename)
 static int thread_run(BeachmarkThreadInfo *thread)
 {
     int result;
+    int flags;
     int fd;
+    bool is_read;
+    bool is_sequence;
     char *buff;
-    int read_bytes;
+    int64_t blocks;
+    int64_t offset;
+    int size;
+    int bytes;
     char *filename;
 
     buff = (char *)fc_malloc(cfg.buffer_size);
@@ -251,7 +252,24 @@ static int thread_run(BeachmarkThreadInfo *thread)
         return result;
     }
 
-    if ((fd=open_file(filename, O_RDONLY)) < 0) {
+    switch (cfg.mode.val) {
+        case fcfs_beachmark_mode_read:
+        case fcfs_beachmark_mode_randread:
+            is_read = true;
+            flags = O_RDONLY;
+            break;
+        case fcfs_beachmark_mode_write:
+        case fcfs_beachmark_mode_randwrite:
+            is_read = false;
+            flags = O_WRONLY;
+            break;
+        default:
+            return EINVAL;
+    }
+
+    is_sequence = (cfg.mode.val == fcfs_beachmark_mode_read ||
+            cfg.mode.val == fcfs_beachmark_mode_write);
+    if ((fd=open_file(filename, flags)) < 0) {
         result = errno != 0 ? errno : ENOENT;
         logError("file: "__FILE__", line: %d, "
                 "open file %s to read fail, errno: %d, error info: %s",
@@ -266,43 +284,54 @@ static int thread_run(BeachmarkThreadInfo *thread)
         fc_sleep_ms(10);
     }
 
+    offset = 0;
+    size = cfg.buffer_size;
+    blocks = cfg.file_size / cfg.buffer_size;
     while (FC_ATOMIC_GET(st.continue_flag)) {
-        if (cfg.is_fcfs_input) {
-            read_bytes = fcfs_read(fd, buff, cfg.buffer_size);
-        } else {
-            read_bytes = read(fd, buff, cfg.buffer_size);
+        switch (cfg.mode.val) {
+            case fcfs_beachmark_mode_read:
+            case fcfs_beachmark_mode_write:
+                size = cfg.file_size - offset;
+                if (size <= 0) {
+                    offset = 0;
+                    size = cfg.buffer_size;
+                } else if (size > cfg.buffer_size) {
+                    size = cfg.buffer_size;
+                }
+                break;
+            case fcfs_beachmark_mode_randread:
+            case fcfs_beachmark_mode_randwrite:
+                offset = (((int64_t)rand() * blocks) / (int64_t)RAND_MAX)
+                    * cfg.buffer_size;
+                break;
+            default:
+                break;
         }
-        if (read_bytes < 0) {
-            result = errno != 0 ? errno : ENOENT;
+
+        if (is_read) {
+            if (cfg.is_fcfs_input) {
+                bytes = fcfs_pread(fd, buff, size, offset);
+            } else {
+                bytes = pread(fd, buff, size, offset);
+            }
+        } else {
+            if (cfg.is_fcfs_input) {
+                bytes = fcfs_pwrite(fd, buff, size, offset);
+            } else {
+                bytes = pwrite(fd, buff, size, offset);
+            }
+        }
+        if (bytes != size) {
+            result = errno != 0 ? errno : EIO;
             logError("file: "__FILE__", line: %d, "
                     "read from file %s fail, errno: %d, error info: %s",
                     __LINE__, filename, result, strerror(result));
             return result;
         }
 
-        if (read_bytes > 0) {
-            FC_ATOMIC_INC(thread->success_count);
-        } else {
-            if (cfg.is_fcfs_input) {
-               if (fcfs_lseek(fd, 0, SEEK_SET) < 0) {
-                   result = errno != 0 ? errno : ENOENT;
-               } else {
-                   result = 0;
-               }
-            } else {
-                if (lseek(fd, 0, SEEK_SET) < 0) {
-                    result = errno != 0 ? errno : ENOENT;
-                } else {
-                    result = 0;
-                }
-            }
-                
-            if (result != 0) {
-                logError("file: "__FILE__", line: %d, "
-                        "lseek file %s fail, errno: %d, error info: %s",
-                        __LINE__, filename, result, strerror(result));
-                return result;
-            }
+        FC_ATOMIC_INC(thread->success_count);
+        if (is_sequence) {
+            offset += bytes;
         }
     }
 
@@ -348,9 +377,9 @@ static void output(const time_t current_time)
         st.iops.avg = total_count / (current_time - st.start_time);
         long_to_comma_str(st.iops.cur, st.iops_buff.cur);
         long_to_comma_str(st.iops.avg, st.iops_buff.avg);
-        printf("running time: %4d seconds, IOPS {current: %s, avg: %s}\n",
-                (int)(current_time - st.start_time), st.iops_buff.cur,
-                st.iops_buff.avg);
+        printf("running time: %4d seconds, %s IOPS {current: %s, avg: %s}\n",
+                (int)(current_time - st.start_time), cfg.mode.str,
+                st.iops_buff.cur, st.iops_buff.avg);
         last_time = current_time;
         last_count = total_count;
     }
@@ -397,6 +426,7 @@ static int beachmark()
     time_t end_time;
     pthread_t *tids;
     void **args;
+    char buffer_size_prompt[32];
     BeachmarkThreadInfo *thread;
 
     if ((result=fcfs_posix_api_init(log_prefix_name,
@@ -445,8 +475,14 @@ static int beachmark()
         return result;
     }
 
-    printf("\nthreads: %d, buffer_size: %d\n\n",
-            cfg.thread_count, cfg.buffer_size);
+    if (cfg.buffer_size % 1024 != 0) {
+        long_to_comma_str(cfg.buffer_size, buffer_size_prompt);
+    } else {
+        sprintf(buffer_size_prompt, "%d KB", cfg.buffer_size / 1024);
+    }
+    printf("\nthreads: %d, mode: %s, file size: %"PRId64" MB, "
+            "buffer size: %s\n\n", cfg.thread_count, cfg.mode.str,
+            cfg.file_size / (1024 * 1024), buffer_size_prompt);
 
     fc_sleep_ms(100);
     while (FC_ATOMIC_GET(st.continue_flag) &&
@@ -469,8 +505,8 @@ static int beachmark()
 
     long_to_comma_str(st.iops.avg, st.iops_buff.avg);
     long_to_comma_str(st.iops.max, st.iops_buff.max);
-    printf("\nrunning time: %4d seconds, IOPS {avg: %s, max: %s}\n",
-            (int)(current_time - st.start_time),
+    printf("\nrunning time: %4d seconds, %s IOPS {avg: %s, max: %s}\n",
+            (int)(current_time - st.start_time), cfg.mode.str,
             st.iops_buff.avg, st.iops_buff.max);
 
     FC_ATOMIC_SET(st.continue_flag, 0);
@@ -504,13 +540,17 @@ int main(int argc, char *argv[])
                 break;
             case 'm':
                 if (strcasecmp(optarg, "read") == 0) {
-                    cfg.mode = fcfs_beachmark_mode_read;
+                    cfg.mode.val = fcfs_beachmark_mode_read;
+                    cfg.mode.str = "read";
                 } else if (strcasecmp(optarg, "write") == 0) {
-                    cfg.mode = fcfs_beachmark_mode_write;
+                    cfg.mode.val = fcfs_beachmark_mode_write;
+                    cfg.mode.str = "write";
                 } else if (strcasecmp(optarg, "randread") == 0) {
-                    cfg.mode = fcfs_beachmark_mode_randread;
+                    cfg.mode.val = fcfs_beachmark_mode_randread;
+                    cfg.mode.str = "randread";
                 } else if (strcasecmp(optarg, "randwrite") == 0) {
-                    cfg.mode = fcfs_beachmark_mode_randwrite;
+                    cfg.mode.val = fcfs_beachmark_mode_randwrite;
+                    cfg.mode.str = "randwrite";
                 } else {
                     logError("file: "__FILE__", line: %d, "
                             "invalid mode: %s!", __LINE__, optarg);
