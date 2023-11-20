@@ -26,6 +26,13 @@
 #include "fastcommon/fc_atomic.h"
 #include "fastcfs/api/std/posix_api.h"
 
+typedef enum {
+    fcfs_beachmark_mode_read,
+    fcfs_beachmark_mode_write,
+    fcfs_beachmark_mode_randread,
+    fcfs_beachmark_mode_randwrite
+} BeachmarkMode;
+
 typedef struct {
     int index;
     volatile int64_t success_count;
@@ -34,13 +41,16 @@ typedef struct {
 static struct {
     const char *config_filename;
     char *ns;
+    int64_t file_size;
+    BeachmarkMode mode;
     int buffer_size;
     int thread_count;
     int runtime;
     string_t filename_prefix;
     bool is_fcfs_input;
 } cfg = {FCFS_FUSE_DEFAULT_CONFIG_FILENAME,
-    "fs", 4 * 1024, 1, 60, {NULL, 0}, false};
+    "fs", 1 * 1024 * 1024 * 1024, fcfs_beachmark_mode_read,
+    4 * 1024, 1, 60, {NULL, 0}, false};
 
 static struct {
     volatile int running_count;
@@ -66,9 +76,129 @@ static void usage(char *argv[])
 {
     fprintf(stderr, "Usage: %s [-c config_filename=%s] "
             "[-n namespace=fs] [-b buffer_size=4KB] "
-            "[-T threads=1] [-t runtime=60] "
-            "<-f filename_prefix>\n\n", argv[0],
-            FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
+            "[-s file_size=1G] [-m mode=read] "
+            "[-T threads=1] [-t runtime=60] <-f filename_prefix>\n"
+            "\t mode value list: read, write, randrand, randwrite\n\n",
+            argv[0], FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
+}
+
+static inline int open_file(const char *filename, int flags)
+{
+    if (cfg.is_fcfs_input) {
+        return fcfs_open(filename, flags);
+    } else {
+        return open(filename, flags);
+    }
+}
+
+static inline void close_file(int fd)
+{
+    if (cfg.is_fcfs_input) {
+        fcfs_close(fd);
+    } else {
+        close(fd);
+    }
+}
+
+static int create_file(const char *filename, const int64_t start_offset)
+{
+#define BUFFER_SIZE  (4 * 1024 * 1024)
+    int result;
+    int bytes;
+    int fd;
+    int len;
+    char *buff;
+    unsigned char *p;
+    unsigned char *end;
+    int64_t remain;
+
+    if ((fd=open_file(filename, O_WRONLY)) < 0) {
+        result = errno != 0 ? errno : ENOENT;
+        logError("file: "__FILE__", line: %d, "
+                "open file %s to write fail, errno: %d, error info: %s",
+                __LINE__, filename, result, strerror(result));
+        return result;
+    }
+
+    if ((buff=fc_malloc(BUFFER_SIZE)) == NULL) {
+        close_file(fd);
+        return ENOMEM;
+    }
+    end = (unsigned char *)buff + BUFFER_SIZE;
+    for (p=(unsigned char *)buff; p<end; p++) {
+        *p = ((int64_t)rand() * 255) / (int64_t)RAND_MAX;
+    }
+
+    result = 0;
+    remain = cfg.file_size - start_offset;
+    while (remain > 0) {
+        len = remain > BUFFER_SIZE ? BUFFER_SIZE : remain;
+        if (cfg.is_fcfs_input) {
+            bytes = fcfs_write(fd, buff, len);
+        } else {
+            bytes = write(fd, buff, len);
+        }
+        if (bytes != len) {
+            result = errno != 0 ? errno : EIO;
+            logError("file: "__FILE__", line: %d, "
+                    "write to file %s fail, errno: %d, error info: %s",
+                    __LINE__, filename, result, strerror(result));
+            break;
+        }
+
+        remain -= len;
+    }
+
+    free(buff);
+    close_file(fd);
+    return result;
+}
+
+static int check_create_file(const char *filename)
+{
+    struct stat stbuf;
+    int ret;
+    int result;
+
+    if (cfg.is_fcfs_input) {
+        ret = fcfs_stat(filename, &stbuf);
+    } else {
+        ret = stat(filename, &stbuf);
+    }
+
+    if (ret != 0) {
+        result = errno != 0 ? errno : EIO;
+        if (result == ENOENT) {
+            stbuf.st_size = 0;
+        } else {
+            logError("file: "__FILE__", line: %d, "
+                    "stat file %s fail, errno: %d, error info: %s",
+                    __LINE__, filename, result, strerror(result));
+            return result;
+        }
+    }
+
+    if (stbuf.st_size == cfg.file_size) {
+        return 0;
+    } else if (stbuf.st_size > cfg.file_size) {
+        if (cfg.is_fcfs_input) {
+            ret = fcfs_truncate(filename, cfg.file_size);
+        } else {
+            ret = truncate(filename, cfg.file_size);
+        }
+
+        if (ret == 0) {
+            return 0;
+        } else {
+            result = errno != 0 ? errno : EIO;
+            logError("file: "__FILE__", line: %d, "
+                    "truncate file %s fail, errno: %d, error info: %s",
+                    __LINE__, filename, result, strerror(result));
+            return result;
+        }
+    }
+
+    return create_file(filename, stbuf.st_size);
 }
 
 static int thread_run(BeachmarkThreadInfo *thread)
@@ -89,19 +219,15 @@ static int thread_run(BeachmarkThreadInfo *thread)
         return ENOMEM;
     }
     sprintf(filename, "%s.%d", cfg.filename_prefix.str, thread->index);
-
-    if (cfg.is_fcfs_input) {
-        fd = fcfs_open(filename, O_RDONLY);
-    } else {
-        fd = open(filename, O_RDONLY);
+    if ((result=check_create_file(filename)) != 0) {
+        return result;
     }
-    if (fd < 0) {
+
+    if ((fd=open_file(filename, O_RDONLY)) < 0) {
         result = errno != 0 ? errno : ENOENT;
         logError("file: "__FILE__", line: %d, "
-                "open file %s to read fail, "
-                "errno: %d, error info: %s",
-                __LINE__, filename,
-                result, strerror(result));
+                "open file %s to read fail, errno: %d, error info: %s",
+                __LINE__, filename, result, strerror(result));
         return result;
     }
 
@@ -145,11 +271,7 @@ static int thread_run(BeachmarkThreadInfo *thread)
         }
     }
 
-    if (cfg.is_fcfs_input) {
-        fcfs_close(fd);
-    } else {
-        close(fd);
-    }
+    close_file(fd);
     return 0;
 }
 
@@ -290,7 +412,7 @@ static int beachmark()
     st.start_time = time(NULL);
     end_time = st.start_time + cfg.runtime;
 
-    printf("threads: %d, buffer_size: %d\n",
+    printf("\nthreads: %d, buffer_size: %d\n",
             cfg.thread_count, cfg.buffer_size);
     do {
         sleep(1);
@@ -326,7 +448,7 @@ int main(int argc, char *argv[])
     }
 
     log_try_init();
-    while ((ch=getopt(argc, argv, "hc:n:b:T:t:f:")) != -1) {
+    while ((ch=getopt(argc, argv, "hc:m:n:b:T:t:f:s:")) != -1) {
         switch (ch) {
             case 'h':
                 usage(argv);
@@ -334,8 +456,30 @@ int main(int argc, char *argv[])
             case 'c':
                 cfg.config_filename = optarg;
                 break;
+            case 'm':
+                if (strcasecmp(optarg, "read") == 0) {
+                    cfg.mode = fcfs_beachmark_mode_read;
+                } else if (strcasecmp(optarg, "write") == 0) {
+                    cfg.mode = fcfs_beachmark_mode_write;
+                } else if (strcasecmp(optarg, "randread") == 0) {
+                    cfg.mode = fcfs_beachmark_mode_randread;
+                } else if (strcasecmp(optarg, "randwrite") == 0) {
+                    cfg.mode = fcfs_beachmark_mode_randwrite;
+                } else {
+                    logError("file: "__FILE__", line: %d, "
+                            "invalid mode: %s!", __LINE__, optarg);
+                    usage(argv);
+                    return EINVAL;
+                }
+                break;
             case 'n':
                 cfg.ns = optarg;
+                break;
+            case 's':
+                if ((result=parse_bytes(optarg, 1, &cfg.file_size)) != 0) {
+                    usage(argv);
+                    return result;
+                }
                 break;
             case 'T':
                 cfg.thread_count = strtol(optarg, NULL, 10);
@@ -383,5 +527,13 @@ int main(int argc, char *argv[])
         return EINVAL;
     }
 
+    if (cfg.file_size < cfg.buffer_size) {
+        logError("file: "__FILE__", line: %d, "
+                "invalid file size: %"PRId64" which < buffer size: %d",
+                __LINE__, cfg.file_size, cfg.buffer_size);
+        return EINVAL;
+    }
+
+    srand(time(NULL));
     return beachmark();
 }
