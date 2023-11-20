@@ -53,8 +53,10 @@ static struct {
     4 * 1024, 1, 60, {NULL, 0}, false};
 
 static struct {
+    volatile int ready_count;
     volatile int running_count;
-    volatile bool continue_flag;
+    volatile char ready_flag;
+    volatile char continue_flag;
     time_t start_time;
     struct {
         int cur;
@@ -70,15 +72,23 @@ static struct {
 
     BeachmarkThreadInfo *threads;
     BeachmarkThreadInfo *tend;
-} st = {0, true};
+} st = {0, 0, 0, 1};
 
 static void usage(char *argv[])
 {
+    /*
     fprintf(stderr, "Usage: %s [-c config_filename=%s] "
             "[-n namespace=fs] [-b buffer_size=4KB] "
             "[-s file_size=1G] [-m mode=read] "
             "[-T threads=1] [-t runtime=60] <-f filename_prefix>\n"
             "\t mode value list: read, write, randrand, randwrite\n\n",
+            argv[0], FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
+            */
+
+    fprintf(stderr, "Usage: %s [-c config_filename=%s] "
+            "[-n namespace=fs] [-b buffer_size=4KB] "
+            "[-s file_size=1G] [-T threads=1] "
+            "[-t runtime=60] <-f filename_prefix>\n\n",
             argv[0], FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
 }
 
@@ -103,16 +113,24 @@ static inline void close_file(int fd)
 static int create_file(const char *filename, const int64_t start_offset)
 {
 #define BUFFER_SIZE  (4 * 1024 * 1024)
+    const int flags = O_WRONLY | O_CREAT;
     int result;
     int bytes;
     int fd;
     int len;
+    int64_t start_time_us;
     char *buff;
+    char time_buff[32];
     unsigned char *p;
     unsigned char *end;
     int64_t remain;
 
-    if ((fd=open_file(filename, O_WRONLY)) < 0) {
+    if (cfg.is_fcfs_input) {
+        fd = fcfs_open(filename, flags, 0755);
+    } else {
+        fd = open(filename, flags, 0755);
+    }
+    if (fd < 0) {
         result = errno != 0 ? errno : ENOENT;
         logError("file: "__FILE__", line: %d, "
                 "open file %s to write fail, errno: %d, error info: %s",
@@ -120,10 +138,13 @@ static int create_file(const char *filename, const int64_t start_offset)
         return result;
     }
 
+    start_time_us = get_current_time_us();
+    printf("creating file: %s ...\n", filename);
     if ((buff=fc_malloc(BUFFER_SIZE)) == NULL) {
         close_file(fd);
         return ENOMEM;
     }
+
     end = (unsigned char *)buff + BUFFER_SIZE;
     for (p=(unsigned char *)buff; p<end; p++) {
         *p = ((int64_t)rand() * 255) / (int64_t)RAND_MAX;
@@ -147,6 +168,13 @@ static int create_file(const char *filename, const int64_t start_offset)
         }
 
         remain -= len;
+    }
+
+    if (result == 0) {
+        long_to_comma_str((get_current_time_us() -
+                    start_time_us) / 1000, time_buff);
+        printf("create file: %s successfully, time used: %s ms\n",
+                filename, time_buff);
     }
 
     free(buff);
@@ -231,7 +259,14 @@ static int thread_run(BeachmarkThreadInfo *thread)
         return result;
     }
 
-    while (st.continue_flag) {
+    __sync_add_and_fetch(&st.ready_count, 1);
+    while (FC_ATOMIC_GET(st.continue_flag) &&
+            !FC_ATOMIC_GET(st.ready_flag))
+    {
+        fc_sleep_ms(10);
+    }
+
+    while (FC_ATOMIC_GET(st.continue_flag)) {
         if (cfg.is_fcfs_input) {
             read_bytes = fcfs_read(fd, buff, cfg.buffer_size);
         } else {
@@ -296,6 +331,7 @@ static void output(const time_t current_time)
 
     if (last_time == 0) {
         last_time = st.start_time;
+        printf("\n");
     }
 
     total_count = 0;
@@ -322,8 +358,8 @@ static void output(const time_t current_time)
 
 static void sigQuitHandler(int sig)
 {
-    if (st.continue_flag) {
-        st.continue_flag = false;
+    if (FC_ATOMIC_GET(st.continue_flag)) {
+        FC_ATOMIC_SET(st.continue_flag, 0);
         printf("file: "__FILE__", line: %d, "
                 "catch signal %d, program exiting...\n",
                 __LINE__, sig);
@@ -409,16 +445,26 @@ static int beachmark()
         return result;
     }
 
+    printf("\nthreads: %d, buffer_size: %d\n\n",
+            cfg.thread_count, cfg.buffer_size);
+
+    fc_sleep_ms(100);
+    while (FC_ATOMIC_GET(st.continue_flag) &&
+            FC_ATOMIC_GET(st.ready_count) <
+            FC_ATOMIC_GET(st.running_count))
+    {
+        fc_sleep_ms(10);
+    }
+    FC_ATOMIC_SET(st.ready_flag, 1);
+
     st.start_time = time(NULL);
     end_time = st.start_time + cfg.runtime;
-
-    printf("\nthreads: %d, buffer_size: %d\n",
-            cfg.thread_count, cfg.buffer_size);
     do {
         sleep(1);
         current_time = time(NULL);
         output(current_time);
-    } while (st.continue_flag && FC_ATOMIC_GET(st.running_count) > 0 &&
+    } while (FC_ATOMIC_GET(st.continue_flag) &&
+            FC_ATOMIC_GET(st.running_count) > 0 &&
             current_time < end_time);
 
     long_to_comma_str(st.iops.avg, st.iops_buff.avg);
@@ -427,7 +473,7 @@ static int beachmark()
             (int)(current_time - st.start_time),
             st.iops_buff.avg, st.iops_buff.max);
 
-    st.continue_flag = false;
+    FC_ATOMIC_SET(st.continue_flag, 0);
     while (FC_ATOMIC_GET(st.running_count) > 0) {
         sleep(1);
     }
