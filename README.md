@@ -27,7 +27,7 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Or
 * **Video monitoring**: smooth writing for multi-channel videos with HDD such as SATA because FastCFS uses sequential writing approach
 
 
-## 2. Current Version: V4.3
+## 2. Current Version: V5.0
 
 ## 3. Supported Platforms
 
@@ -40,12 +40,12 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgresSQL, Or
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.69)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.1.29)
-* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.1.3)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V4.3.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V4.3.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V4.3.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.70)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.2.0)
+* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.1.4)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V5.0.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V5.0.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V5.0.0)
 
 ## 5. Installation
 
@@ -121,7 +121,7 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fstore] file read & write performance optimization (done)
 *  [fdir & api] POSIX compatibility test and improvement (done)
 *  [fstore] slice storage engine plugin to support massive data with limited memory (done)
-*  [all] adapt to RDMA network to break through network bottlenecks (doing)
+*  [all] adapt to RDMA network to break through network bottlenecks (done)
 *  [api] provide Java native API (doing)
 *  [all] cluster online expansion
 *  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
