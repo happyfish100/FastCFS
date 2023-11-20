@@ -133,6 +133,22 @@ static int create_file(const char *filename, const int64_t start_offset)
         return result;
     }
 
+    if (start_offset > 0) {
+        if (cfg.is_fcfs_input) {
+            bytes = fcfs_lseek(fd, start_offset, SEEK_SET);
+        } else {
+            bytes = lseek(fd, start_offset, SEEK_SET);
+        }
+
+        if (bytes < 0) {
+            result = errno != 0 ? errno : ENOENT;
+            logError("file: "__FILE__", line: %d, "
+                    "lseek file %s fail, errno: %d, error info: %s",
+                    __LINE__, filename, result, strerror(result));
+            return result;
+        }
+    }
+
     start_time_us = get_current_time_us();
     printf("creating file: %s ...\n", filename);
     if ((buff=fc_malloc(BUFFER_SIZE)) == NULL) {
