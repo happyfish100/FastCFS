@@ -1,0 +1,5 @@
+usr/bin/fcfs_beachmark
+usr/bin/fcfs_test_file_op
+usr/bin/fcfs_test_file_copy
+usr/bin/fcfs_test_papi_copy
+usr/bin/fcfs_test_read_ahead

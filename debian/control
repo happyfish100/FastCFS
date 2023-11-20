@@ -52,6 +52,14 @@ Depends: fastdir-client (>= ${fastdir-client:Version}),
          ${misc:Depends}, ${shlibs:Depends}
 Description: FastCFS api library
 
+Package: fastcfs-api-tests
+Architecture: any
+Multi-Arch: foreign
+Build-Profiles: <pkg.fastcfs.core>
+Depends: fastcfs-fuse-config (>= ${fastcfs-fuse-config:Version}),
+         ${misc:Depends}, ${shlibs:Depends}
+Description: FastCFS api tests
+
 Package: fastcfs-api-dev
 Architecture: any
 Multi-Arch: foreign
