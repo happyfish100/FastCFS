@@ -40,10 +40,10 @@ src/java/jni/Makefile
 
 # Executables
 *.out
-src/api/tests/test_file_op
-src/api/tests/test_file_copy
-src/api/tests/test_papi_copy
-src/api/tests/test_read_ahead
+src/api/tests/fcfs_test_file_op
+src/api/tests/fcfs_test_file_copy
+src/api/tests/fcfs_test_papi_copy
+src/api/tests/fcfs_test_read_ahead
 src/api/tests/fcfs_beachmark
 src/fuse/fcfs_fused
 src/tools/fcfs_active_test
