@@ -235,11 +235,9 @@ if [ -z $module ] || [ "$module" = 'api' ]; then
     replace_makefile
     make $param1 $param2
 
-    if [ -z $DESTDIR ]; then
-      cd tests || exit
-      replace_makefile
-      make $param1 $param2
-    fi
+    cd tests || exit
+    replace_makefile
+    make $param1 $param2
   fi
 fi
 
