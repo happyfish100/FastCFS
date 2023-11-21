@@ -299,13 +299,15 @@ static int setup_server_env(const char *config_filename)
 {
     int result;
 
-    sf_set_current_time();
-    if ((result=fcfs_fuse_global_init(config_filename)) != 0) {
+    if ((result=sf_global_init("fcfs_fused")) != 0) {
         return result;
     }
-
     if (daemon_mode) {
         daemon_init(false);
+    }
+
+    if ((result=fcfs_fuse_global_init(config_filename)) != 0) {
+        return result;
     }
     umask(0);
 

@@ -259,7 +259,7 @@ int fcfs_fuse_global_init(const char *config_filename)
         }
 
         if ((result=fcfs_api_load_idempotency_config(
-                        "fcfs_fused", &ini_ctx)) != 0)
+                        NULL, &ini_ctx)) != 0)
         {
             break;
         }
