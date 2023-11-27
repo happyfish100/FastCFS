@@ -94,6 +94,8 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 
 * 详情参见 [完整PDF文档](docs/benchmark-20210621.pdf)
 
+* 如何进行性能测试参见(docs/benchmark-step-by-step.md)
+
 ## 7. K8s CSI驱动
 
 参见项目 [fastcfs-csi](https://gitee.com/fastdfs100/fastcfs-csi)
