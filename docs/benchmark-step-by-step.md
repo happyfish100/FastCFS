@@ -46,6 +46,17 @@ auth_config_filename = ../auth/auth.conf
 ##  rdma: RDMA network only
 # default value by the global config with same name
 communication = socket
+
+# smart polling mode for RDMA network
+# auto detect to poll by Linux epoll or RDMA busy polling
+# default value is true
+smart_polling = true
+
+# switch the polling approach between Linux epoll and RDMA busy polling
+# switch to RDMA busy polling when IOPS >= this parameter,
+# otherwise switch to Linux epoll
+# default value is 10240
+polling_switch_on_iops = 1024
 ```
 
 修改conf/fcfs/fuse.conf的配置项，配置示例如下：
