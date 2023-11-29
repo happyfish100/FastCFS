@@ -238,7 +238,6 @@ static void copy_to_server_group_array(FCFSAuthClientContext *client_ctx,
 int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
         SFConnectionManager *cm, const int server_group_index)
 {
-    const int socket_domain = AF_INET;
     const int max_count_per_entry = 0;
     const int max_idle_time = 3600;
     FCFSAuthCMSimpleExtra *extra;
@@ -273,7 +272,7 @@ int fcfs_auth_simple_connection_manager_init(FCFSAuthClientContext *client_ctx,
     }
     if ((result=conn_pool_init_ex1(&extra->cpool, client_ctx->common_cfg.
                     connect_timeout, max_count_per_entry, max_idle_time,
-                    socket_domain, htable_init_capacity, NULL, client_ctx,
+                    htable_init_capacity, NULL, client_ctx,
                     sf_cm_validate_connection_callback, cm,
                     sizeof(SFConnectionParameters), NULL)) != 0)
     {

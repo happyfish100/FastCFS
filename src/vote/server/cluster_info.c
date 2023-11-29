@@ -63,8 +63,10 @@ static int find_myself_in_cluster_config(const char *filename)
     int count;
     int i;
 
-    service_handler = g_sf_context.handlers + SF_SOCKET_NETWORK_HANDLER_INDEX;
-    cluster_handler = CLUSTER_SF_CTX.handlers + SF_SOCKET_NETWORK_HANDLER_INDEX;
+    service_handler = g_sf_context.handlers[SF_IPV4_ADDRESS_FAMILY_INDEX].
+        handlers + SF_SOCKET_NETWORK_HANDLER_INDEX;
+    cluster_handler = CLUSTER_SF_CTX.handlers[SF_IPV4_ADDRESS_FAMILY_INDEX].
+        handlers + SF_SOCKET_NETWORK_HANDLER_INDEX;
     count = 0;
     ports[count++] = service_handler->inner.port;
     if (service_handler->outer.port != service_handler->inner.port) {
