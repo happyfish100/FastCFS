@@ -54,7 +54,7 @@ static void server_log_configs()
     sf_global_config_to_string(sz_global_config, sizeof(sz_global_config));
     sf_slow_log_config_to_string(&SLOW_LOG_CFG, "slow-log",
             sz_slowlog_config, sizeof(sz_slowlog_config));
-    sf_context_config_to_string(&g_sf_context,
+    sf_context_config_to_string(&SERVICE_SF_CTX,
             sz_service_config, sizeof(sz_service_config));
 
     snprintf(sz_server_config, sizeof(sz_server_config),
@@ -119,7 +119,15 @@ static int load_cluster_config(IniFullContext *ini_ctx,
         return result;
     }
 
-    return cluster_info_init(full_cluster_filename);
+    if ((result=cluster_info_init(full_cluster_filename)) != 0) {
+        return result;
+    }
+
+    sf_set_address_family_by_ip(&SERVICE_SF_CTX, &SERVICE_GROUP_ADDRESS_ARRAY(
+                CLUSTER_MYSELF_PTR->server));
+    sf_set_address_family_by_ip(&CLUSTER_SF_CTX, &CLUSTER_GROUP_ADDRESS_ARRAY(
+                CLUSTER_MYSELF_PTR->server));
+    return 0;
 }
 
 int server_load_config(const char *filename)

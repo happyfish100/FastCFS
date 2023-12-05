@@ -63,6 +63,7 @@ typedef struct server_global_vars {
 #define CLUSTER_SERVER_ARRAY    g_server_global_vars.cluster.server_array
 #define CLUSTER_MY_SERVER_ID    CLUSTER_MYSELF_PTR->server->id
 
+#define SERVICE_SF_CTX          g_sf_context
 #define CLUSTER_SF_CTX          g_server_global_vars.cluster.sf_context
 
 #define SLOW_LOG                g_server_global_vars.slow_log
