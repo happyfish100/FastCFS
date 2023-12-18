@@ -229,7 +229,7 @@ if [ -z $module ] || [ "$module" = 'vote_client' ]; then
   fi
 fi
 
-if [ -z $module ] || [ "$module" = 'api' ]; then
+if [ -z $module ] || [ "$module" = 'api' ] || [ "$module" = 'fuseclient' ]; then
   if [ "x$exclude" != 'xapi' ]; then
     cd $base_path/src/api
     replace_makefile
@@ -260,8 +260,8 @@ if [ -z $module ] || [ "$module" = 'tools' ]; then
 fi
 
 if [ "$uname" = "Linux" ]; then
-if [ -z $module ] || [ "$module" = 'fuse' ]; then
-  if [ "x$exclude" != 'xfuse' ]; then
+if [ -z $module ] || [ "$module" = 'fuseclient' ]; then
+  if [ "x$exclude" != 'xfuseclient' ]; then
     cd $base_path/src/fuse
     replace_makefile
     make $param1 $param2

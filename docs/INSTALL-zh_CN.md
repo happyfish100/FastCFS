@@ -177,7 +177,7 @@ sed -i "s#prefix=.*#prefix=/usr#g" /usr/lib64/pkgconfig/fuse3.pc
 
 进入之前clone下来的FastCFS目录，然后执行：
 ```
-./make.sh --exclude=client clean && ./make.sh --exclude=client && ./make.sh --exclude=client install
+./make.sh --module=fuseclient clean && ./make.sh --module=fuseclient && ./make.sh --module=fuseclient install
 mkdir -p /etc/fastcfs/fcfs/
 mkdir -p /etc/fastcfs/vote/
 mkdir -p /etc/fastcfs/auth/
