@@ -54,11 +54,11 @@ commit version: %{CommitVersion}
 %setup -q
 
 %build
-./make.sh --module=auth_client clean && ./make.sh --module=auth_client
+./make.sh --module=authclient clean && ./make.sh --module=authclient
 
 %install
 rm -rf %{buildroot}
-DESTDIR=$RPM_BUILD_ROOT ./make.sh --module=auth_client install
+DESTDIR=$RPM_BUILD_ROOT ./make.sh --module=authclient install
 AUTH_CONFDIR=%{buildroot}/etc/fastcfs/auth/
 mkdir -p $AUTH_CONFDIR
 cp src/auth/conf/*.conf $AUTH_CONFDIR

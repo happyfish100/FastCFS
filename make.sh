@@ -189,16 +189,16 @@ for subdir in api vote; do
 done
 cd $base_path
 
-if [ -z $module ] || [ "$module" = 'auth_server' ]; then
-  if [ "x$exclude" != 'xauth_server' ]; then
+if [ -z $module ] || [ "$module" = 'auth_server' -o "$module" = 'authserver' ]; then
+  if [ "x$exclude" != 'xauth_server' -a "x$exclude" != 'xauthserver' ]; then
     cd $base_path/src/auth/server
     replace_makefile
     make $param1 $param2
   fi
 fi
 
-if [ -z $module ] || [ "$module" = 'auth_client' ]; then
-  if [ "x$exclude" != 'xauth_client' ] && [ "x$exclude" != 'xclient' ]; then
+if [ -z $module ] || [ "$module" = 'auth_client' -o "$module" = 'authclient' ]; then
+  if [ "x$exclude" != 'xauth_client' -a "x$exclude" != 'xauthclient' ] && [ "x$exclude" != 'xclient' ]; then
     cd $base_path/src/auth/client
     replace_makefile
     make $param1 $param2
@@ -209,16 +209,16 @@ if [ -z $module ] || [ "$module" = 'auth_client' ]; then
   fi
 fi
 
-if [ -z $module ] || [ "$module" = 'vote_server' ]; then
-  if [ "x$exclude" != 'xvote_server' ]; then
+if [ -z $module ] || [ "$module" = 'vote_server' -o "$module" = 'voteserver' ]; then
+  if [ "x$exclude" != 'xvote_server' -a "x$exclude" != 'xvoteserver' ]; then
     cd $base_path/src/vote/server
     replace_makefile
     make $param1 $param2
   fi
 fi
 
-if [ -z $module ] || [ "$module" = 'vote_client' ]; then
-  if [ "x$exclude" != 'xvote_client' ] && [ "x$exclude" != 'xclient' ]; then
+if [ -z $module ] || [ "$module" = 'vote_client' -o "$module" = 'voteclient' ]; then
+  if [ "x$exclude" != 'xvote_client' -a "x$exclude" != 'xvoteclient' ] && [ "x$exclude" != 'xclient' ]; then
     cd $base_path/src/vote/client
     replace_makefile
     make $param1 $param2
@@ -229,7 +229,7 @@ if [ -z $module ] || [ "$module" = 'vote_client' ]; then
   fi
 fi
 
-if [ -z $module ] || [ "$module" = 'api' ] || [ "$module" = 'fuseclient' ]; then
+if [ -z $module ] || [ "$module" = 'api' ] || [ "$module" = 'fuseclient' -o "$module" = 'fuse_client' ]; then
   if [ "x$exclude" != 'xapi' ]; then
     cd $base_path/src/api
     replace_makefile
@@ -260,8 +260,8 @@ if [ -z $module ] || [ "$module" = 'tools' ]; then
 fi
 
 if [ "$uname" = "Linux" ]; then
-if [ -z $module ] || [ "$module" = 'fuseclient' ]; then
-  if [ "x$exclude" != 'xfuseclient' ]; then
+if [ -z $module ] || [ "$module" = 'fuse_client' -o "$module" = 'fuseclient' ]; then
+  if [ "x$exclude" != 'xfuse_client' -a "x$exclude" != 'xfuseclient' ]; then
     cd $base_path/src/fuse
     replace_makefile
     make $param1 $param2

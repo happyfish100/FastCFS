@@ -54,11 +54,11 @@ commit version: %{CommitVersion}
 %setup -q
 
 %build
-./make.sh --module=vote_client clean && ./make.sh --module=vote_client
+./make.sh --module=voteclient clean && ./make.sh --module=voteclient
 
 %install
 rm -rf %{buildroot}
-DESTDIR=$RPM_BUILD_ROOT ./make.sh --module=vote_client install
+DESTDIR=$RPM_BUILD_ROOT ./make.sh --module=voteclient install
 VOTE_CONFDIR=%{buildroot}/etc/fastcfs/vote/
 mkdir -p $VOTE_CONFDIR
 cp src/vote/conf/*.conf $VOTE_CONFDIR

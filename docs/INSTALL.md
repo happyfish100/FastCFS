@@ -47,7 +47,7 @@ cd libdiskallocator/
 ```
 git clone git@github.com:happyfish100/FastCFS.git || git clone https://github.com/happyfish100/FastCFS.git
 cd FastCFS/
-./make.sh clean && ./make.sh --module=vote_client && ./make.sh --module=vote_client install
+./make.sh clean && ./make.sh --module=voteclient && ./make.sh --module=voteclient install
 ```
 
 ### 6. Auth client
@@ -55,7 +55,7 @@ cd FastCFS/
 ```
 git clone git@github.com:happyfish100/FastCFS.git || git clone https://github.com/happyfish100/FastCFS.git
 cd FastCFS/
-./make.sh clean && ./make.sh --module=auth_client && ./make.sh --module=auth_client install
+./make.sh clean && ./make.sh --module=authclient && ./make.sh --module=authclient install
 ```
 
 ### 7. fastDIR
