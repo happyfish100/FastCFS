@@ -46,7 +46,22 @@ apt install libaio-dev -y
 
 其他Linux系统，需要编译安装 **libaio** 库。
 
-### 2.2 libfastcommon 编译安装
+### 2.2 安装存储插件包和RDMA通信包【可选】
+
+fastDIR 和faststore 的存储插件以及RDMA通信库都是闭源的，可以通过 yum 或 apt 安装使用。
+
+配置我们的yum源和apt源：
+** yum安装方式（针对CentOS、Rocky、Fedora、RHEL等），参阅 [YUM安装文档](docs/YUMINSTALL-zh_CN.md)
+** apt安装方式（针对Ubuntu、Debian 和 Deepin），参阅 [apt 安装文档](docs/APT-INSTALL-zh_CN.md)
+
+如果使用存储插件特性，需要通过 yum 或 apt 安装相应的存储插件。
+** fastDIR 存储插件包名：libfdirstorage
+** faststore 存储插件包名：libfsstorage
+
+具备RDMA网络环境，要启动 RDMA 通信方式，需要安装RDMA通信包：libfastrdma
+
+
+### 2.3 libfastcommon 编译安装
 
 ```
 git clone https://gitee.com/fastdfs100/libfastcommon.git; cd libfastcommon/
@@ -61,35 +76,35 @@ git checkout master
 /usr/include/fastcommon
 ```
 
-### 2.3 libserverframe 编译安装
+### 2.4 libserverframe 编译安装
 
 ```
 git clone https://gitee.com/fastdfs100/libserverframe.git; cd libserverframe/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-### 2.4 libdiskallocator 编译安装
+### 2.5 libdiskallocator 编译安装
 
 ```
 git clone https://gitee.com/fastdfs100/libdiskallocator.git; cd libdiskallocator/
 ./make.sh clean && ./make.sh && ./make.sh install
 ```
 
-### 2.5 Vote Node client 编译安装
+### 2.6 Vote Node client 编译安装
 
 ```
 git clone https://gitee.com/fastdfs100/FastCFS.git; cd FastCFS/
 ./make.sh clean && ./make.sh --module=voteclient && ./make.sh --module=voteclient install
 ```
 
-### 2.6 Auth client 编译安装
+### 2.7 Auth client 编译安装
 
 ```
 git clone https://gitee.com/fastdfs100/FastCFS.git; cd FastCFS/
 ./make.sh clean && ./make.sh --module=authclient && ./make.sh --module=authclient install
 ```
 
-### 2.7 fastDIR 编译安装
+### 2.8 fastDIR 编译安装
 
 ```
 git clone https://gitee.com/fastdfs100/fastDIR.git; cd fastDIR/
@@ -98,7 +113,7 @@ mkdir -p /etc/fastcfs/fdir/
 cp conf/*.conf /etc/fastcfs/fdir/
 ```
 
-### 2.8 faststore 编译安装
+### 2.9 faststore 编译安装
 
 ```
 git clone https://gitee.com/fastdfs100/faststore.git; cd faststore/
@@ -107,15 +122,15 @@ mkdir -p /etc/fastcfs/fstore/
 cp conf/*.conf /etc/fastcfs/fstore/
 ```
 
-### 2.9 fuse客户端编译安装
+### 2.10 fuse客户端编译安装
 
-#### 2.9.1 libfuse 编译安装
+#### 2.10.1 libfuse 编译安装
 
 libfuse 编译依赖比较复杂，建议使用脚本libfuse_setup.sh一键编译和安装。或者执行如下步骤DIY：
 
 构建libfuse需要先安装meson和ninja。安装meson和ninja需要python3.5及更高版本。
 
-##### 2.9.1.1 gcc 安装
+##### 2.10.1.1 gcc 安装
 
 友情提示：gcc版本必须 >= 4.7.0
 
@@ -131,7 +146,7 @@ CentOS下安装命令：
 yum install gcc gcc-c++ -y
 ```
 
-##### 2.9.1.2 pkg-config 和 python安装
+##### 2.10.1.2 pkg-config 和 python安装
 
 需要安装的包名：
 * pkg-config
@@ -150,7 +165,7 @@ CentOS下安装命令：
 yum install pkgconfig python3 python3-pip -y
 ```
 
-##### 2.9.1.3 meson 和 ninja 安装
+##### 2.10.1.3 meson 和 ninja 安装
 
 友情提示： ninja 版本必须 >= 1.7
 
@@ -159,7 +174,7 @@ pip3 install meson
 pip3 install ninja
 ```
 
-##### 2.9.1.4 libfuse 安装
+##### 2.10.1.4 libfuse 安装
 
 ```
 git clone https://gitee.com/mirrors/libfuse.git; cd libfuse/
@@ -173,12 +188,12 @@ sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 sed -i "s#prefix=.*#prefix=/usr#g" /usr/lib64/pkgconfig/fuse3.pc
 ```
 
-#### 2.9.2 依赖的项目编译和安装
+#### 2.10.2 依赖的项目编译和安装
 
-参见上面的2.1 ～2.8，按照步骤逐一编译和安装
+参见上面的2.3 ～2.8，按照步骤逐一编译和安装
 
 
-#### 2.9.3 fcfs_fused 编译安装
+#### 2.10.3 fcfs_fused 编译安装
 
 进入之前clone下来的FastCFS目录，然后执行：
 ```
