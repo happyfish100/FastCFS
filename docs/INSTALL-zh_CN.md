@@ -51,12 +51,14 @@ apt install libaio-dev -y
 fastDIR 和faststore 的存储插件以及RDMA通信库都是闭源的，可以通过 yum 或 apt 安装使用。
 
 配置我们的yum源和apt源：
-** yum安装方式（针对CentOS、Rocky、Fedora、RHEL等），参阅 [YUM安装文档](docs/YUMINSTALL-zh_CN.md)
-** apt安装方式（针对Ubuntu、Debian 和 Deepin），参阅 [apt 安装文档](docs/APT-INSTALL-zh_CN.md)
+
+* yum安装方式（针对CentOS、Rocky、Fedora、RHEL等），参阅 [YUM安装文档](docs/YUMINSTALL-zh_CN.md)
+* apt安装方式（针对Ubuntu、Debian 和 Deepin），参阅 [apt 安装文档](docs/APT-INSTALL-zh_CN.md)
 
 如果使用存储插件特性，需要通过 yum 或 apt 安装相应的存储插件。
-** fastDIR 存储插件包名：libfdirstorage
-** faststore 存储插件包名：libfsstorage
+
+* fastDIR 存储插件包名：libfdirstorage
+* faststore 存储插件包名：libfsstorage
 
 具备RDMA网络环境，要启动 RDMA 通信方式，需要安装RDMA通信包：libfastrdma
 
