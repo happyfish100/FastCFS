@@ -111,4 +111,4 @@ systemctl restart fastvote
 systemctl restart fastauth
 ```
 ### 6. 一个包含5个节点的安装过程的详细文档
-请参与[5节点安装文档](YUMINSTALL-Diy-5nodes-zh_CN.md)
+请参与[5节点安装文档](YUM-INSTALL-Diy-5nodes-zh_CN.md)

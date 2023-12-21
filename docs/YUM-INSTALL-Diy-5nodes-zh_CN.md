@@ -18,7 +18,7 @@ rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch
 rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
 ```
 
-友情提示：支持的Linux发行版以及与el7或el8的对应关系参见 [yum安装方式](YUMINSTALL-zh_CN.md)
+友情提示：支持的Linux发行版以及与el7或el8的对应关系参见 [yum安装方式](YUM-INSTALL-zh_CN.md)
 
 
 ### 服务端集群安装
