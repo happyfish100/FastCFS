@@ -16,5 +16,5 @@
 #include "vote_global.h"
 
 FCFSVoteGlobalVars g_fcfs_vote_global_vars = {
-    {5, 0, 0}
+    {5, 1, 0}
 };
