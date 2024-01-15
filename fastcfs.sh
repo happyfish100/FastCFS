@@ -43,10 +43,10 @@ FASTCFS_LIB=".."
 VOTECLIENT_LIB=".."
 AUTHCLIENT_LIB=".."
 
-STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf)
+STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf dbstore.conf)
 STORE_CONF_PATH="/etc/fastcfs/fstore/"
 
-FDIR_CONF_FILES=(client.conf cluster.conf server.conf storage.conf)
+FDIR_CONF_FILES=(client.conf cluster.conf server.conf dbstore.conf)
 FDIR_CONF_PATH="/etc/fastcfs/fdir/"
 
 AUTH_CONF_FILES=(auth.conf client.conf cluster.conf server.conf session.conf)
@@ -57,7 +57,7 @@ AUTH_KEYS_PATH="/etc/fastcfs/auth/keys/"
 FUSE_CONF_FILES=(fuse.conf)
 FUSE_CONF_PATH="/etc/fastcfs/fcfs/"
 
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler Kylin UOS)
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler Kylin UOS BigCLoud)
 
 BUILD_PATH="build"
 this_shell_name=$0
@@ -371,7 +371,7 @@ if [ $uname = 'Linux' ]; then
     else
       os_major_version=8
     fi
-  elif [ $osname = 'openEuler' ] || [ $osname = 'Kylin' ] || [ $osname = 'UOS' ]; then
+  elif [ $osname = 'openEuler' ] || [ $osname = 'Kylin' ] || [ $osname = 'UOS' ] || [ $osname = 'BigCLoud' ]; then
       os_major_version=8
   fi
 else

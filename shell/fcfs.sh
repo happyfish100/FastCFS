@@ -22,7 +22,8 @@ declare -ir MIN_VERSION_OF_Anolis=7
 declare -ir MIN_VERSION_OF_Amazon=2
 declare -ir MIN_VERSION_OF_openEuler=20
 declare -ir MIN_VERSION_OF_UOS=20
-YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler Kylin UOS)
+declare -ir MIN_VERSION_OF_BigCLoud=21
+YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler Kylin UOS BigCLoud)
 APT_OS_ARRAY=(Ubuntu Debian Deepin)
 
 fcfs_settings_file="fcfs.settings"
@@ -850,7 +851,7 @@ check_remote_osname() {
       else
         os_major_version=8
       fi
-    elif [ $osname = 'openEuler' ] || [ $osname = 'Kylin' ] || [ $osname = 'UOS' ]; then
+    elif [ $osname = 'openEuler' ] || [ $osname = 'Kylin' ] || [ $osname = 'UOS' ] || [ $osname = 'BigCLoud' ]; then
       os_major_version=8
     fi
   else

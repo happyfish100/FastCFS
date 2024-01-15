@@ -51,6 +51,9 @@ FastCFS集群配置包含如下五部分：
         |    |    |__ binlog: 存放binlog文件
         |    |
         |    |__ db: 存储引擎默认数据目录
+        |    |    |__ trunk: trunk binlog
+        |    |    |__ inode: segment索引（一个segment包含多个inode，最多65536个，segment id顺序递增）
+        |    |    |__ ####(如0001、0002等等): 以trunk file方式存放inode数据
         |    |
         |    |__ logs: 日志文件目录
         |         |__ fdir_serverd.log: 错误日志
@@ -70,6 +73,9 @@ FastCFS集群配置包含如下五部分：
               |    |__ rebuild: 单盘数据恢复
               |
               |__ db: slice索引存储引擎默认数据目录
+              |    |__ trunk: trunk binlog
+              |    |__ block: segment索引（一个segment包含多个block，segment id哈希分布）
+              |    |__ ####(如0001、0002等等): 以trunk file方式存放block索引数据
               |
               |__ logs: 日志文件目录
                    |__ fs_serverd.log: 错误日志
