@@ -124,7 +124,6 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [all] adapt to RDMA network to break through network bottlenecks (done)
 *  [api] provide Java native API (doing)
 *  [all] cluster online expansion
-*  [fstore] hierarchical storage & slice merging: supporting two-level storage, such as SSD + HDD
 
 ## 10. Business Support
 

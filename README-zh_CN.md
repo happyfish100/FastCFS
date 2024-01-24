@@ -123,7 +123,6 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [all] 适配RDMA网络，突破网络瓶颈（已完成）
 *  [api] 提供Java Native API（进行中）
 *  [all] 支持集群在线扩容
-*  [fstore] 分级存储 & slice数据合并：支持两级存储（如SSD + HDD）
 
 参见更多 [TODO List](docs/TODO-zh_CN.md)，欢迎大家参与。
 
