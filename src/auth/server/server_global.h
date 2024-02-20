@@ -86,6 +86,9 @@ typedef struct server_global_vars {
 #define SERVICE_SF_CTX          g_sf_context
 #define CLUSTER_SF_CTX          g_server_global_vars.cluster.sf_context
 
+#define CLUSTER_CONNECT_TIMEOUT   CLUSTER_SF_CTX.net_buffer_cfg.connect_timeout
+#define CLUSTER_NETWORK_TIMEOUT   CLUSTER_SF_CTX.net_buffer_cfg.network_timeout
+
 #define ADMIN_GENERATE               g_server_global_vars.admin_generate
 #define ADMIN_GENERATE_MODE          ADMIN_GENERATE.mode
 #define ADMIN_GENERATE_BUFF          ADMIN_GENERATE.buff

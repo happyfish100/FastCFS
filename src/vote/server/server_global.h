@@ -66,6 +66,9 @@ typedef struct server_global_vars {
 #define SERVICE_SF_CTX          g_sf_context
 #define CLUSTER_SF_CTX          g_server_global_vars.cluster.sf_context
 
+#define CLUSTER_CONNECT_TIMEOUT   CLUSTER_SF_CTX.net_buffer_cfg.connect_timeout
+#define CLUSTER_NETWORK_TIMEOUT   CLUSTER_SF_CTX.net_buffer_cfg.network_timeout
+
 #define SLOW_LOG                g_server_global_vars.slow_log
 #define SLOW_LOG_CFG            SLOW_LOG.cfg
 #define SLOW_LOG_CTX            SLOW_LOG.ctx

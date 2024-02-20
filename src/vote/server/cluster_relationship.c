@@ -398,7 +398,7 @@ static int do_notify_master_changed(FCFSVoteClusterServerInfo *cs,
     SFResponseInfo response;
     int result;
 
-    connect_timeout = FC_MIN(SF_G_CONNECT_TIMEOUT, 2);
+    connect_timeout = FC_MIN(CLUSTER_CONNECT_TIMEOUT, 2);
     if ((result=fc_server_make_connection(&CLUSTER_GROUP_ADDRESS_ARRAY(
                         cs->server), &conn, "fvote", connect_timeout)) != 0)
     {
@@ -413,7 +413,7 @@ static int do_notify_master_changed(FCFSVoteClusterServerInfo *cs,
     int2buff(master->server->id, out_buff + sizeof(FCFSVoteProtoHeader));
     response.error.length = 0;
     if ((result=sf_send_and_recv_none_body_response(&conn, out_buff,
-                    sizeof(out_buff), &response, SF_G_NETWORK_TIMEOUT,
+                    sizeof(out_buff), &response, CLUSTER_NETWORK_TIMEOUT,
                     SF_PROTO_ACK)) != 0)
     {
         vote_log_network_error(&response, &conn, result);
@@ -749,10 +749,10 @@ static int cluster_ping_master(FCFSVoteClusterServerInfo *master,
         return master_check();
     }
 
-    network_timeout = FC_MIN(SF_G_NETWORK_TIMEOUT, timeout);
+    network_timeout = FC_MIN(CLUSTER_NETWORK_TIMEOUT, timeout);
     *is_ping = true;
     if (conn->sock < 0) {
-        connect_timeout = FC_MIN(SF_G_CONNECT_TIMEOUT, timeout);
+        connect_timeout = FC_MIN(CLUSTER_CONNECT_TIMEOUT, timeout);
         if ((result=fc_server_make_connection(&CLUSTER_GROUP_ADDRESS_ARRAY(
                             master->server), conn, "fvote",
                         connect_timeout)) != 0)

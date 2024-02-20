@@ -159,7 +159,9 @@ int server_load_config(const char *filename)
                     fc_comm_type_sock, filename,
                     &ini_context, "cluster",
                     FCFS_VOTE_DEFAULT_CLUSTER_PORT,
-                    FCFS_VOTE_DEFAULT_CLUSTER_PORT)) != 0)
+                    FCFS_VOTE_DEFAULT_CLUSTER_PORT,
+                    fixed_buffer_size,
+                    task_buffer_extra_size)) != 0)
     {
         return result;
     }
