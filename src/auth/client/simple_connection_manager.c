@@ -225,11 +225,13 @@ static void copy_to_server_group_array(FCFSAuthClientContext *client_ctx,
 
     /*
     {
-        printf("dir_server count: %d\n", server_group->count);
+        char formatted_ip[FORMATTED_IP_SIZE];
+        printf("auth_server count: %d\n", server_group->count);
         for (conn=server_group->servers; conn<server_group->servers+
                 server_group->count; conn++)
         {
-            printf("dir_server=%s:%u\n", conn->ip_addr, conn->port);
+            format_ip_address(conn->ip_addr, formatted_ip);
+            printf("auth_server=%s:%u\n", formatted_ip, conn->port);
         }
     }
     */

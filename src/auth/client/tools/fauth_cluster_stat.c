@@ -34,12 +34,14 @@ static void output(FCFSAuthClientClusterStatEntry *stats, const int count)
 {
     FCFSAuthClientClusterStatEntry *stat;
     FCFSAuthClientClusterStatEntry *end;
+    char formatted_ip[FORMATTED_IP_SIZE];
 
     end = stats + count;
     for (stat=stats; stat<end; stat++) {
+        format_ip_address(stat->ip_addr, formatted_ip);
         printf( "server_id: %d, host: %s:%u, "
                 "is_online: %d, is_master: %d\n",
-                stat->server_id, stat->ip_addr, stat->port,
+                stat->server_id, formatted_ip, stat->port,
                 stat->is_online, stat->is_master);
     }
     printf("\nserver count: %d\n\n", count);

@@ -67,6 +67,8 @@ static int find_myself_in_cluster_config(const char *filename)
     FCFSAuthClusterServerInfo *myself;
     SFNetworkHandler *service_handler;
     SFNetworkHandler *cluster_handler;
+    char formatted_found_ip[FORMATTED_IP_SIZE];
+    char formatted_local_ip[FORMATTED_IP_SIZE];
     int ports[4];
     int count;
     int i;
@@ -99,12 +101,14 @@ static int find_myself_in_cluster_config(const char *filename)
                 if (CLUSTER_MYSELF_PTR == NULL) {
                     CLUSTER_MYSELF_PTR = myself;
                 } else if (myself != CLUSTER_MYSELF_PTR) {
+                    format_ip_address(found.ip_addr, formatted_found_ip);
+                    format_ip_address(local_ip, formatted_local_ip);
                     logError("file: "__FILE__", line: %d, "
                             "cluster config file: %s, my ip and port "
                             "in more than one instances, %s:%u in "
                             "server id %d, and %s:%u in server id %d",
-                            __LINE__, filename, found.ip_addr, found.port,
-                            CLUSTER_MY_SERVER_ID, local_ip,
+                            __LINE__, filename, formatted_found_ip, found.port,
+                            CLUSTER_MY_SERVER_ID, formatted_local_ip,
                             ports[i], myself->server->id);
                     return EEXIST;
                 }

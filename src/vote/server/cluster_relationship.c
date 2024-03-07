@@ -72,6 +72,7 @@ static int proto_get_server_status(ConnectionInfo *conn,
 	char out_buff[sizeof(FCFSVoteProtoHeader) +
         sizeof(FCFSVoteProtoGetServerStatusReq)];
 	char in_body[sizeof(FCFSVoteProtoGetServerStatusResp)];
+    char formatted_ip[FORMATTED_IP_SIZE];
 
     header = (FCFSVoteProtoHeader *)out_buff;
     SF_PROTO_SET_HEADER(header, FCFS_VOTE_CLUSTER_PROTO_GET_SERVER_STATUS_REQ,
@@ -93,9 +94,10 @@ static int proto_get_server_status(ConnectionInfo *conn,
     }
 
     if (response.header.body_len != sizeof(FCFSVoteProtoGetServerStatusResp)) {
+        format_ip_address(conn->ip_addr, formatted_ip);
         logError("file: "__FILE__", line: %d, "
                 "server %s:%u, recv body length: %d != %d",
-                __LINE__, conn->ip_addr, conn->port,
+                __LINE__, formatted_ip, conn->port,
                 response.header.body_len, (int)
                 sizeof(FCFSVoteProtoGetServerStatusResp));
         return EINVAL;
@@ -104,10 +106,11 @@ static int proto_get_server_status(ConnectionInfo *conn,
     if ((result=tcprecvdata_nb(conn->sock, in_body, response.
                     header.body_len, network_timeout)) != 0)
     {
+        format_ip_address(conn->ip_addr, formatted_ip);
         logError("file: "__FILE__", line: %d, "
                 "recv from server %s:%u fail, "
                 "errno: %d, error info: %s",
-                __LINE__, conn->ip_addr, conn->port,
+                __LINE__, formatted_ip, conn->port,
                 result, STRERROR(result));
         return result;
     }
@@ -239,6 +242,7 @@ static int do_check_brainsplit(FCFSVoteClusterServerInfo *cs)
     int result;
     const bool log_connect_error = false;
     FCFSVoteClusterServerStatus server_status;
+    char formatted_ip[FORMATTED_IP_SIZE];
 
     server_status.cs = cs;
     if ((result=cluster_get_server_status_ex(&server_status,
@@ -248,11 +252,12 @@ static int do_check_brainsplit(FCFSVoteClusterServerInfo *cs)
     }
 
     if (server_status.is_master) {
+        format_ip_address(CLUSTER_GROUP_ADDRESS_FIRST_IP(
+                    cs->server), formatted_ip);
         logWarning("file: "__FILE__", line: %d, "
-                "two masters occurs, anonther master id: %d, ip %s:%u, "
+                "two masters occurs, anonther master id: %d, %s:%u, "
                 "trigger re-select master ...", __LINE__, cs->server->id,
-                CLUSTER_GROUP_ADDRESS_FIRST_IP(cs->server),
-                CLUSTER_GROUP_ADDRESS_FIRST_PORT(cs->server));
+                formatted_ip, CLUSTER_GROUP_ADDRESS_FIRST_PORT(cs->server));
         cluster_relationship_trigger_reselect_master();
         return EEXIST;
     }
@@ -329,6 +334,7 @@ static int cluster_get_master(FCFSVoteClusterServerStatus *server_status,
 	FCFSVoteClusterServerStatus *current_status;
 	FCFSVoteClusterServerStatus *cs_status;
 	FCFSVoteClusterServerStatus status_array[STATUS_ARRAY_FIXED_COUNT];
+    char formatted_ip[FORMATTED_IP_SIZE];
 	int result;
 	int r;
 	int i;
@@ -370,13 +376,16 @@ static int cluster_get_master(FCFSVoteClusterServerStatus *server_status,
 	qsort(cs_status, *active_count, sizeof(FCFSVoteClusterServerStatus),
 		cluster_cmp_server_status);
 
-	for (i=0; i<*active_count; i++) {
-        logDebug("file: "__FILE__", line: %d, "
-                "server_id: %d, ip addr %s:%u, is_master: %d",
-                __LINE__, cs_status[i].server_id,
-                CLUSTER_GROUP_ADDRESS_FIRST_IP(cs_status[i].cs->server),
-                CLUSTER_GROUP_ADDRESS_FIRST_PORT(cs_status[i].cs->server),
-                cs_status[i].is_master);
+    if (FC_LOG_BY_LEVEL(LOG_DEBUG)) {
+        for (i=0; i<*active_count; i++) {
+            format_ip_address(CLUSTER_GROUP_ADDRESS_FIRST_IP(
+                        cs_status[i].cs->server), formatted_ip);
+            logDebug("file: "__FILE__", line: %d, "
+                    "server_id: %d, ip and port %s:%u, is_master: %d",
+                    __LINE__, cs_status[i].server_id, formatted_ip,
+                    CLUSTER_GROUP_ADDRESS_FIRST_PORT(cs_status[i].cs->server),
+                    cs_status[i].is_master);
+        }
     }
 
 	memcpy(server_status, cs_status + (*active_count - 1),
@@ -446,13 +455,15 @@ static int cluster_relationship_set_master(FCFSVoteClusterServerInfo
         *new_master, const time_t start_time)
 {
     FCFSVoteClusterServerInfo *old_master;
+    char formatted_ip[FORMATTED_IP_SIZE];
 
     old_master = CLUSTER_MASTER_ATOM_PTR;
     if (new_master == old_master) {
+        format_ip_address(CLUSTER_GROUP_ADDRESS_FIRST_IP(
+                    new_master->server), formatted_ip);
         logDebug("file: "__FILE__", line: %d, "
-                "the server id: %d, ip %s:%u already is master",
-                __LINE__, new_master->server->id,
-                CLUSTER_GROUP_ADDRESS_FIRST_IP(new_master->server),
+                "the server id: %d, %s:%u already is master",
+                __LINE__, new_master->server->id, formatted_ip,
                 CLUSTER_GROUP_ADDRESS_FIRST_PORT(new_master->server));
         return 0;
     }
@@ -467,10 +478,11 @@ static int cluster_relationship_set_master(FCFSVoteClusterServerInfo
             *time_used = '\0';
         }
 
+        format_ip_address(CLUSTER_GROUP_ADDRESS_FIRST_IP(
+                    new_master->server), formatted_ip);
         logInfo("file: "__FILE__", line: %d, "
-                "the master server id: %d, ip %s:%u%s",
-                __LINE__, new_master->server->id,
-                CLUSTER_GROUP_ADDRESS_FIRST_IP(new_master->server),
+                "the master server id: %d, %s:%u%s", __LINE__,
+                new_master->server->id, formatted_ip,
                 CLUSTER_GROUP_ADDRESS_FIRST_PORT(new_master->server),
                 time_used);
     }
@@ -625,6 +637,7 @@ static int cluster_select_master()
     time_t last_log_time;
 	FCFSVoteClusterServerStatus server_status;
     FCFSVoteClusterServerInfo *next_master;
+    char formatted_ip[FORMATTED_IP_SIZE];
 
 	logInfo("file: "__FILE__", line: %d, "
 		"selecting master...", __LINE__);
@@ -696,11 +709,12 @@ static int cluster_select_master()
 
     next_master = CLUSTER_MASTER_ATOM_PTR;
     if (next_master != NULL) {
+        format_ip_address(CLUSTER_GROUP_ADDRESS_FIRST_IP(
+                    next_master->server), formatted_ip);
         logInfo("file: "__FILE__", line: %d, "
                 "abort election because the master exists, "
-                "master id: %d, ip %s:%u, election time used: %ds",
-                __LINE__, next_master->server->id,
-                CLUSTER_GROUP_ADDRESS_FIRST_IP(next_master->server),
+                "master id: %d, %s:%u, election time used: %ds",
+                __LINE__, next_master->server->id, formatted_ip,
                 CLUSTER_GROUP_ADDRESS_FIRST_PORT(next_master->server),
                 (int)(g_current_time - start_time));
         return 0;
@@ -714,22 +728,25 @@ static int cluster_select_master()
             return result;
         }
 
+        format_ip_address(CLUSTER_GROUP_ADDRESS_FIRST_IP(
+                    next_master->server), formatted_ip);
 		logInfo("file: "__FILE__", line: %d, "
-			"I am the new master, id: %d, ip %s:%u, election "
-            "time used: %ds", __LINE__, next_master->server->id,
-            CLUSTER_GROUP_ADDRESS_FIRST_IP(next_master->server),
+			"I am the new master, id: %d, %s:%u, election time used: "
+            "%ds", __LINE__, next_master->server->id, formatted_ip,
             CLUSTER_GROUP_ADDRESS_FIRST_PORT(next_master->server),
             (int)(g_current_time - start_time));
     } else {
         if (server_status.is_master) {
             cluster_relationship_set_master(next_master, start_time);
         } else if (CLUSTER_MASTER_ATOM_PTR == NULL) {
+            format_ip_address(CLUSTER_GROUP_ADDRESS_FIRST_IP(
+                        next_master->server), formatted_ip);
             logInfo("file: "__FILE__", line: %d, "
                     "election time used: %ds, waiting for the candidate "
-                    "master server id: %d, ip %s:%u notify ...", __LINE__,
+                    "master server id: %d, %s:%u notify ...", __LINE__,
                     (int)(g_current_time - start_time), next_master->server->id,
-                    CLUSTER_GROUP_ADDRESS_FIRST_IP(next_master->server),
-                    CLUSTER_GROUP_ADDRESS_FIRST_PORT(next_master->server));
+                    formatted_ip, CLUSTER_GROUP_ADDRESS_FIRST_PORT(
+                        next_master->server));
             return ENOENT;
         }
     }
@@ -785,6 +802,7 @@ static void *cluster_thread_entrance(void* arg)
     bool is_ping;
     FCFSVoteClusterServerInfo *master;
     ConnectionInfo mconn;  //master connection
+    char formatted_ip[FORMATTED_IP_SIZE];
 
 #ifdef OS_LINUX
     prctl(PR_SET_NAME, "relationship");
@@ -823,10 +841,11 @@ static void *cluster_thread_entrance(void* arg)
                 sleep_seconds = 1;
             } else if (is_ping) {
                 ++fail_count;
+                format_ip_address(CLUSTER_GROUP_ADDRESS_FIRST_IP(
+                            master->server), formatted_ip);
                 logError("file: "__FILE__", line: %d, "
-                        "%dth ping master id: %d, ip %s:%u fail",
-                        __LINE__, fail_count, master->server->id,
-                        CLUSTER_GROUP_ADDRESS_FIRST_IP(master->server),
+                        "%dth ping master id: %d, %s:%u fail", __LINE__,
+                        fail_count, master->server->id, formatted_ip,
                         CLUSTER_GROUP_ADDRESS_FIRST_PORT(master->server));
                 if (result == SF_RETRIABLE_ERROR_NOT_MASTER) {
                     cluster_unset_master(master);

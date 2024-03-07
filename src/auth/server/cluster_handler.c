@@ -92,6 +92,7 @@ static void session_subscriber_cleanup(AuthServerContext *server_ctx,
 
 void cluster_task_finish_cleanup(struct fast_task_info *task)
 {
+    char formatted_ip[FORMATTED_IP_SIZE];
     switch (SERVER_TASK_TYPE) {
         case AUTH_SERVER_TASK_TYPE_RELATIONSHIP:
             if (CLUSTER_PEER != NULL) {
@@ -112,9 +113,10 @@ void cluster_task_finish_cleanup(struct fast_task_info *task)
                 SESSION_SUBSCRIBER = NULL;
             }
 
+            format_ip_address(task->client_ip, formatted_ip);
             logInfo("file: "__FILE__", line: %d, "
                     "session subscriber %s:%u offline", __LINE__,
-                    task->client_ip, task->port);
+                    formatted_ip, task->port);
             SERVER_TASK_TYPE = SF_SERVER_TASK_TYPE_NONE;
             break;
         default:
@@ -161,6 +163,7 @@ static int cluster_deal_session_subscribe(struct fast_task_info *task)
 {
     FCFSAuthProtoSessionSubscribeReq *req;
     const DBUserInfo *dbuser;
+    char formatted_ip[FORMATTED_IP_SIZE];
     string_t username;
     string_t passwd;
     int result;
@@ -218,9 +221,10 @@ static int cluster_deal_session_subscribe(struct fast_task_info *task)
         cluster_subscriber_queue_push_ex(SESSION_SUBSCRIBER, false);
     }
 
+    format_ip_address(task->client_ip, formatted_ip);
     logInfo("file: "__FILE__", line: %d, "
             "session subscriber %s:%u joined", __LINE__,
-            task->client_ip, task->port);
+            formatted_ip, task->port);
 
     SERVER_TASK_TYPE = AUTH_SERVER_TASK_TYPE_SUBSCRIBE;
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_SESSION_SUBSCRIBE_RESP;
