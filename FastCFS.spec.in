@@ -9,7 +9,7 @@
 %define CommitVersion %(echo $COMMIT_VERSION)
 
 Name: FastCFS
-Version: 5.2.0
+Version: 5.3.0
 Release: 1%{?dist}
 Summary: a high performance cloud native distributed file system for databases, KVM and K8s
 License: AGPL v3.0
@@ -19,8 +19,8 @@ Source: http://github.com/happyfish100/FastCFS/%{name}-%{version}.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires: fastDIR-devel >= 5.2.0
-BuildRequires: faststore-devel >= 5.2.0
+BuildRequires: fastDIR-devel >= 5.3.0
+BuildRequires: faststore-devel >= 5.3.0
 BuildRequires: fuse3-devel >= 3.10.5
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
 Requires: %{FastCFSFused} = %{version}-%{release}
@@ -42,8 +42,8 @@ Requires: %{FastCFSAPI} = %{version}-%{release}
 Summary: FastCFS utils 
 
 %package -n %{FastCFSAPI}
-Requires: fastDIR-client >= 5.2.0
-Requires: faststore-client >= 5.2.0
+Requires: fastDIR-client >= 5.3.0
+Requires: faststore-client >= 5.3.0
 Summary: FastCFS api library
 
 %package -n %{FastCFSAPITests}
@@ -56,12 +56,12 @@ Requires: %{FastCFSAPI} = %{version}-%{release}
 Summary: header files of FastCFS api library
 
 %package -n %{FastCFSAuthServer}
-Requires: fastDIR-client >= 5.2.0
+Requires: fastDIR-client >= 5.3.0
 Requires: FastCFS-auth-config >= 2.0.0
 Summary: FastCFS auth server
 
 %package -n %{FastCFSVoteServer}
-Requires: libserverframe >= 1.2.2
+Requires: libserverframe >= 1.2.3
 Requires: FastCFS-vote-config >= 3.5.0
 Summary: FastCFS vote server
 
