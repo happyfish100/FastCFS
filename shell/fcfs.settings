@@ -2,8 +2,8 @@
 # This settings file must be placed at same path with fcfs.sh
 # You can edit it, or download it from http://www.fastcfs.com/ops.
 
-# 要安装的集群版本号（例如：3.5.0）
-fastcfs_version=3.6.0
+fastcfs_version=5.3.0
 
-# 要安装 fuseclient 客户端的IP列表，多个ip以英文逗号分隔
 fuseclient_ips=192.168.142.9
+
+repo_affix=-ev
