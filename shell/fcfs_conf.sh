@@ -14,8 +14,8 @@ fcfs_tpl_file_server="http://fastcfs.cn/fastcfs/ops/config"
 fcfs_cache_path=".fcfs"
 
 LOCAL_CONF_PATH="conf"
-STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf)
-FDIR_CONF_FILES=(client.conf cluster.conf server.conf storage.conf)
+STORE_CONF_FILES=(client.conf server.conf cluster.conf storage.conf dbstore.conf)
+FDIR_CONF_FILES=(client.conf cluster.conf server.conf dbstore.conf)
 AUTH_CONF_FILES=(auth.conf client.conf cluster.conf server.conf session.conf)
 AUTH_KEYS_FILES=(session_validate.key)
 VOTE_CONF_FILES=(cluster.conf server.conf client.conf)
