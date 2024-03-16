@@ -26,6 +26,7 @@ declare -ir MIN_VERSION_OF_BigCLoud=21
 YUM_OS_ARRAY=(Red Rocky Oracle Fedora CentOS AlmaLinux Alibaba Anolis Amazon openEuler Kylin UOS BigCLoud)
 APT_OS_ARRAY=(Ubuntu Debian Deepin)
 
+repo_affix=""
 fcfs_settings_file="fcfs.settings"
 fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
 fcfs_cache_path=".fcfs"
@@ -891,6 +892,7 @@ check_apt_install_fastos_repo() {
 execute_yum() {
   local yum_command=$1
   local program_name=$2
+  repo_affix=$3
   if [ $os_major_version -ge 7 ]; then
     check_yum_install_fastos_repo
     if [ $yum_command = 'install' ] && [[ $program_name == *"FastCFS-fused"* ]]; then
@@ -927,6 +929,7 @@ execute_yum() {
 execute_apt() {
   local apt_command=$1
   local program_name=$2
+  repo_affix=$3
   if [ $apt_command = 'install' ]; then
     check_apt_install_fastos_repo
     sudo apt-get update
@@ -948,7 +951,7 @@ $(declare -f check_remote_osname);
 check_remote_osname;
 $(declare -f check_yum_install_fastos_repo);
 $(declare -f execute_yum);
-execute_yum $yum_command \"$program_name\""
+execute_yum $yum_command \"$program_name\" \"$repo_affix\""
   if [ $? -ne 0 ]; then
     exit 1
   fi
@@ -961,7 +964,7 @@ execute_apt_on_remote() {
   execute_remote_command_no_return $remote_host "
 $(declare -f check_apt_install_fastos_repo);
 $(declare -f execute_apt);
-execute_apt $apt_command \"$program_name\""
+execute_apt $apt_command \"$program_name\" \"$repo_affix\""
   if [ $? -ne 0 ]; then
     exit 1
   fi
@@ -1084,15 +1087,15 @@ erase_packages_by_yum() {
     fi
     break;
   done
-  fdir_programs="fastDIR-server libfastcommon libserverframe FastCFS-auth-client"
+  fdir_programs="fastDIR-server libfastcommon libserverframe FastCFS-auth-client FastOSrepo"
   execute_command_on_fdir_servers erase execute_yum_on_remote "$fdir_programs"
-  fstore_programs="faststore-server libfastcommon libserverframe FastCFS-auth-client"
+  fstore_programs="faststore-server libfastcommon libserverframe FastCFS-auth-client FastOSrepo"
   execute_command_on_fstore_servers erase execute_yum_on_remote "$fstore_programs"
-  fauth_programs="FastCFS-auth-server libfastcommon libserverframe FastCFS-auth-client fastDIR-client"
+  fauth_programs="FastCFS-auth-server libfastcommon libserverframe FastCFS-auth-client fastDIR-client FastOSrepo"
   execute_command_on_fauth_servers erase execute_yum_on_remote "$fauth_programs"
-  fvote_programs="FastCFS-vote-server libfastcommon libserverframe FastCFS-vote-client"
+  fvote_programs="FastCFS-vote-server libfastcommon libserverframe FastCFS-vote-client FastOSrepo"
   execute_command_on_fvote_servers erase execute_yum_on_remote "$fvote_programs"
-  fuseclient_programs="FastCFS-fused libfastcommon libserverframe FastCFS-auth-client FastCFS-api-libs faststore-client fastDIR-client"
+  fuseclient_programs="FastCFS-fused libfastcommon libserverframe FastCFS-auth-client FastCFS-api-libs faststore-client fastDIR-client FastOSrepo"
   execute_command_on_fuseclient_servers erase execute_yum_on_remote "$fuseclient_programs"
   remove_installed_mark
 }
