@@ -28,7 +28,7 @@ APT_OS_ARRAY=(Ubuntu Debian Deepin)
 
 repo_affix=""
 fcfs_settings_file="fcfs.settings"
-fcfs_dependency_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
+fcfs_dependency_file_server="http://www.fastken.com/fastcfs/ops/dependency"
 fcfs_cache_path=".fcfs"
 fcfs_installed_file="installed.settings"
 
