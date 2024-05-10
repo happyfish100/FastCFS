@@ -11,13 +11,15 @@ If you set up and tear down FastCFS clusters a lot, and want minimal extra repea
 
 ***Tip： This shell support for the following operating systems:***
 
-* CentOS 7, CentOS 8;
-* Red Hat Linux 8 or higher;
-* Rocky Linux 8 or higher;
-* Fedora Linux 20 or higher;
-* Oracle Linux 8 or higher;
-* Debian 10 or higher;
-* Ubuntu 18 or higher;
+* CentOS 7, CentOS 8 or higher
+* Red Hat Linux 8 or higher
+* Rocky Linux 8 or higher
+* Fedora Linux 20 or higher
+* Oracle Linux 8 or higher
+* Amazon Linux
+* Alibaba Cloud Linux
+* Debian 10 or higher
+* Ubuntu 18.04 or higher
 
 <a name="fcfs.sh"></a>
 ### 1.1. What this tool can do?

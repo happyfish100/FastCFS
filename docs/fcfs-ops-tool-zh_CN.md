@@ -11,7 +11,7 @@ fcfs.sh 是一个用于快速部署和管理 FastCFS 集群的脚本工具。它
 
 ***注： 该脚本工具目前适用于以下操作系统：***
 
-* CentOS 7 和 CentOS 8
+* CentOS 7 和 CentOS 8 及以上版本
 * Red Hat Linux 8 及以上版本
 * Rocky Linux 8 及以上版本
 * Anolis 7及以上版本
@@ -20,10 +20,12 @@ fcfs.sh 是一个用于快速部署和管理 FastCFS 集群的脚本工具。它
 * Oracle Linux 8 及以上版本
 * Amazon Linux
 * Alibaba Cloud Linux
-* openEuler
+* BigCLoud 21及以上版本
+* openEuler 20及以上版本
 * Kylin V10及以上版本
+* UOS 20及以上版本
 * Debian 10 及以上版本
-* Ubuntu 18 及以上版本
+* Ubuntu 18.04 及以上版本
 
 <a name="fcfs.sh"></a>
 ### 1.1. 这个工具能做什么？
