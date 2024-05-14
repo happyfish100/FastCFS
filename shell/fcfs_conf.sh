@@ -8,9 +8,9 @@
 # this is for you.
 #
 fcfs_settings_file="fcfs_conf.settings"
-# fcfs_tpl_file_server="http://fastcfs.cn/fastcfs/ops/dependency"
+# fcfs_tpl_file_server="http://www.fastken.com/fastcfs/ops/dependency"
 #conf.2.3.0.tpl.tar.gz
-fcfs_tpl_file_server="http://fastcfs.cn/fastcfs/ops/config"
+fcfs_tpl_file_server="http://www.fastken.com/fastcfs/ops/config"
 fcfs_cache_path=".fcfs"
 
 LOCAL_CONF_PATH="conf"
