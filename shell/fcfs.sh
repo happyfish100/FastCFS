@@ -898,10 +898,23 @@ execute_yum() {
     if [ $yum_command = 'install' ] && [[ $program_name == *"FastCFS-fused"* ]]; then
       sudo rpm -q fuse >/dev/null
       if [ $? -eq 0 ]; then
-        echo "INFO: Remove old version fuse."
+        echo "INFO: Remove old version fuse ..."
         sudo yum remove fuse -y
         if [ $? -ne 0 ]; then
-          echo "Warning: Remove old version fuse failed."
+          echo "Warning: Remove old version fuse fail. trigger force install fuse3"
+          force_install_fuse3=1
+        else
+          echo "INFO: Remove old version fuse success."
+          sudo rpm -q fuse-common >/dev/null
+          if [ $? -eq 0 ]; then
+            echo "Warning: old version fuse-common still exist. trigger force install fuse3"
+            force_install_fuse3=1
+          else
+            force_install_fuse3=0
+          fi
+        fi
+
+        if [ $force_install_fuse3 -eq 1 ]; then
           arch=$(uname -r | awk -F '.' '{print $NF;}')
           ver='3.10.5-1'
           if [ $os_major_version -eq 7 ]; then
