@@ -133,6 +133,7 @@ rm -rf %{buildroot}
 %post -n %{FastCFSFused}
 mkdir -p /opt/fastcfs/fcfs
 mkdir -p /opt/fastcfs/fuse
+systemctl enable fastcfs
 
 %files -n %{FastCFSFused}
 /usr/bin/fcfs_fused
@@ -160,9 +161,11 @@ mkdir -p /opt/fastcfs/fuse
 
 %post -n %{FastCFSAuthServer}
 mkdir -p /opt/fastcfs/auth
+systemctl enable fastauth
 
 %post -n %{FastCFSVoteServer}
 mkdir -p /opt/fastcfs/vote
+systemctl enable fastvote
 
 %files -n %{FastCFSAuthServer}
 /usr/bin/fcfs_authd
