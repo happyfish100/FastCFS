@@ -437,6 +437,15 @@ create_fuseclient_conf_files() {
 }
 
 create_config_files() {
+  if [ -d $LOCAL_CONF_PATH/fdir -a -d $LOCAL_CONF_PATH/fstore ]; then
+      printf 'config files already exist, make sure to overwrite [y/N]: '
+      read var
+      if ! [ "$var" = "y" -o "$var" = "Y" -o "$var" = "yes" -o "$var" = "YES" ]; then
+        echo -e '\ncreating config files aborted!\n'
+        exit 1
+      fi
+  fi
+
   create_path_not_exist $LOCAL_CONF_PATH
 
   if [ $fdir_need_execute -eq 1 ]; then
