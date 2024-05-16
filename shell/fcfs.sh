@@ -1046,8 +1046,10 @@ check_installed_version() {
         break;
       done
     else
-      echo "ERROR: FastCFS $fastcfs_version have installed."
-      exit 1
+      if ! [ $has_module_param = 1 -a $has_node_param = 1 ]; then
+        echo "ERROR: FastCFS $fastcfs_version have installed."
+        exit 1
+      fi
     fi
   elif ! [ -z $fastcfs_version_installed ] && ! [ $fastcfs_version_installed = $fastcfs_version ]; then
     if version_le $fastcfs_version_installed $fastcfs_version; then
