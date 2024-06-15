@@ -43,9 +43,9 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgreSQL, Ora
 * [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.74)
 * [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.2.4)
 * [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.1.8)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V5.3.1.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V5.3.1.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V5.3.1.0)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V5.3.1)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V5.3.1)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V5.3.1)
 
 ## 5. Installation
 

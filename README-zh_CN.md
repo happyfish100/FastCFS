@@ -40,9 +40,9 @@ FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文
 * [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.74)
 * [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.2.4)
 * [libdiskallocator](https://gitee.com/fastdfs100/libdiskallocator) (tag: V1.1.8)
-* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V5.3.1.0)
-* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V5.3.1.0)
-* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V5.3.1.0)
+* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V5.3.1)
+* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V5.3.1)
+* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V5.3.1)
 
 ## 5. 部署 & 运维
 
