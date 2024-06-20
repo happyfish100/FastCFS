@@ -975,6 +975,7 @@ int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,
         memcpy(master->conn.ip_addr, server_resp.ip_addr, IP_ADDRESS_SIZE);
         *(master->conn.ip_addr + IP_ADDRESS_SIZE - 1) = '\0';
         master->conn.port = buff2short(server_resp.port);
+        master->conn.comm_type = conn->comm_type;
     }
 
     SF_CLIENT_RELEASE_CONNECTION(&client_ctx->cm, conn, result);

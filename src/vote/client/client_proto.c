@@ -103,6 +103,7 @@ int vote_client_proto_get_master_connection_ex(FCFSVoteClientContext
     memcpy(master.conn.ip_addr, server_resp.ip_addr, IP_ADDRESS_SIZE);
     *(master.conn.ip_addr + IP_ADDRESS_SIZE - 1) = '\0';
     master.conn.port = buff2short(server_resp.port);
+    master.conn.comm_type = conn->comm_type;
     if (FC_CONNECTION_SERVER_EQUAL1(*conn, master.conn)) {
         return 0;
     }
