@@ -703,6 +703,7 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
     SF_SET_CONTEXT_INI_CONFIG(config, comm_type, ini_ctx->filename,
             ini_ctx->context, FCFS_API_INI_IDEMPOTENCY_SECTION_NAME,
             0, 0, FCFS_API_IDEMPOTENCY_DEFAULT_WORK_THREADS);
+    g_sf_context.is_client = true;
     if ((result=sf_load_config_ex(log_prefix_name, &config,
                     fixed_buffer_size, task_buffer_extra_size,
                     need_set_run_by)) != 0)
