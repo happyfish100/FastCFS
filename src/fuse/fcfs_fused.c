@@ -179,6 +179,69 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
     return result;
 }
 
+static void sig_usr1_handler(int sig)
+{
+    ConnectionPoolStat fdir_stat;
+    ConnectionPoolStat fs_stat;
+    double fdir_avg_servers;
+    double fs_avg_servers;
+
+    conn_pool_stat(&g_fdir_client_vars.client_ctx.cm.cpool, &fdir_stat);
+    if (fdir_stat.bucket_used > 0) {
+        fdir_avg_servers = (double)fdir_stat.server_count /
+            (double)fdir_stat.bucket_used;
+    } else {
+        fdir_avg_servers = 1.00;
+    }
+    logInfo("fdir connection pool stat {htable capacity: %d, "
+            "server count: %d, used-buckets: %d, "
+            "servers / used-buckets: %.2f, "
+            "connections {total: %d, used: %d, free: %d}",
+            fdir_stat.htable_capacity, fdir_stat.server_count,
+            fdir_stat.bucket_used, fdir_avg_servers,
+            fdir_stat.connection.total_count,
+            (fdir_stat.connection.total_count -
+             fdir_stat.connection.free_count),
+            fdir_stat.connection.free_count);
+
+    conn_pool_stat(&g_fs_client_vars.client_ctx.cm.cpool, &fs_stat);
+    if (fs_stat.bucket_used > 0) {
+        fs_avg_servers = (double)fs_stat.server_count /
+            (double)fs_stat.bucket_used;
+    } else {
+        fs_avg_servers = 1.00;
+    }
+    logInfo("fstore connection pool stat {htable capacity: %d, "
+            "server count: %d, used-buckets: %d, "
+            "servers / used-buckets: %.2f, "
+            "connections {total: %d, used: %d, free: %d}",
+            fs_stat.htable_capacity, fs_stat.server_count,
+            fs_stat.bucket_used, fs_avg_servers,
+            fs_stat.connection.total_count,
+            (fs_stat.connection.total_count -
+             fs_stat.connection.free_count),
+            fs_stat.connection.free_count);
+}
+
+static int setup_user_signal_handler()
+{
+    struct sigaction act;
+    memset(&act, 0, sizeof(act));
+    sigemptyset(&act.sa_mask);
+
+    act.sa_handler = sig_usr1_handler;
+    if (sigaction(SIGUSR1, &act, NULL) < 0 ||
+        sigaction(SIGUSR2, &act, NULL) < 0)
+    {
+        logCrit("file: "__FILE__", line: %d, "
+                "call sigaction fail, errno: %d, error info: %s",
+                __LINE__, errno, strerror(errno));
+        return errno;
+    }
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     int result;
@@ -218,6 +281,7 @@ int main(int argc, char *argv[])
 
         fuse_instance = se;
         sf_set_sig_quit_handler(fuse_exit_handler);
+        setup_user_signal_handler();
 
 #ifdef FDIR_MBLOCK_CHECK
     setup_mblock_stat_task();
