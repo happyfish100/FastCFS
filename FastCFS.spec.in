@@ -21,7 +21,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: fastDIR-devel >= 5.3.2
 BuildRequires: faststore-devel >= 5.3.2
-BuildRequires: fuse3-devel >= 3.16.2
+BuildRequires: fuse3-devel >= 3.10.5
 Requires: %__cp %__mv %__chmod %__grep %__mkdir %__install %__id
 Requires: %{FastCFSFused} = %{version}-%{release}
 Requires: %{FastCFSUtils} = %{version}-%{release}
@@ -32,7 +32,7 @@ a high performance distributed file system which can be used as the back-end sto
 commit version: %{CommitVersion}
 
 %package -n %{FastCFSFused}
-Requires: fuse3 >= 3.16.2
+Requires: fuse3 >= 3.10.5
 Requires: %{FastCFSAPI} = %{version}-%{release}
 Requires: %{FastCFSFuseConfig} >= 1.0.0
 Summary: FastCFS fuse
