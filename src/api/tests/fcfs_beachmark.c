@@ -83,7 +83,10 @@ static inline void usage(char *argv[])
             "[-n namespace=fs] [-b buffer_size=4KB] "
             "[-s file_size=1G] [-m mode=read] "
             "[-T threads=1] [-t runtime=60] <-f filename_prefix>\n"
-            "\t mode value list: read, write, randrand, randwrite\n\n",
+            "\t mode value list: read, write, randrand, randwrite\n\n"
+            "for example: \n"
+            "\tfcfs_beachmark -m randread -s 256M -T 4 -t 300 "
+            "-f /opt/fastcfs/fuse/test_file\n\n",
             argv[0], FCFS_FUSE_DEFAULT_CONFIG_FILENAME);
 }
 
