@@ -296,7 +296,8 @@ int fcfs_fuse_global_init(const char *config_filename)
         *rdma_busy_polling = '\0';
     }
 
-    logInfo("FastCFS V%d.%d.%d, FUSE library version %s, %s"
+    logInfo("FastCFS V%d.%d.%d, FUSE library version "
+            "{compile: %d.%d, runtime: %s}, %s"
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "%s, singlethread: %d, clone_fd: %d, "
             "%s, allow_others: %s, auto_unmount: %d, read_only: %d, "
@@ -305,6 +306,7 @@ int fcfs_fuse_global_init(const char *config_filename)
             g_fcfs_global_vars.version.major,
             g_fcfs_global_vars.version.minor,
             g_fcfs_global_vars.version.patch,
+            FUSE_MAJOR_VERSION, FUSE_MINOR_VERSION,
             fuse_pkgversion(), rdma_busy_polling,
             g_fuse_global_vars.nsmp.ns,
             sf_idempotency_config.buff,
