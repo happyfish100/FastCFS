@@ -103,6 +103,7 @@ static int pool_usage_refresh(ConnectionInfo *conn)
 
 static void *pool_usage_refresh_thread_func(void *arg)
 {
+    const bool shared = false;
     SFConnectionManager *cm;
     ConnectionInfo *conn;
     int result;
@@ -114,7 +115,9 @@ static void *pool_usage_refresh_thread_func(void *arg)
     FC_ATOMIC_SET(updater_ctx.running, 1);
     cm = &g_fdir_client_vars.client_ctx.cm;
     while (SF_G_CONTINUE_FLAG) {
-        if ((conn=cm->ops.get_master_connection(cm, 0, &result)) == NULL) {
+        if ((conn=cm->ops.get_master_connection(cm, 0,
+                        shared, &result)) == NULL)
+        {
             sleep(1);
             continue;
         }

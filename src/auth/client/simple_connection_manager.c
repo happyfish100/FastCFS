@@ -68,7 +68,7 @@ static int check_realloc_group_servers(FCFSAuthServerGroup *server_group)
 }
 
 static ConnectionInfo *get_spec_connection(SFConnectionManager *cm,
-        const ConnectionInfo *target, int *err_no)
+        const ConnectionInfo *target, const bool shared, int *err_no)
 {
     FCFSAuthCMSimpleExtra *extra;
     FCFSAuthServerGroup *cluster_sarray;
@@ -95,11 +95,11 @@ static ConnectionInfo *get_spec_connection(SFConnectionManager *cm,
     }
 
     return conn_pool_get_connection_ex(&extra->cpool,
-            target, "fauth", err_no);
+            target, "fauth", shared, err_no);
 }
 
 static ConnectionInfo *get_connection(SFConnectionManager *cm,
-        const int group_index, int *err_no)
+        const int group_index, const bool shared, int *err_no)
 {
     int index;
     int i;
@@ -110,14 +110,14 @@ static ConnectionInfo *get_connection(SFConnectionManager *cm,
     cluster_sarray = ((FCFSAuthCMSimpleExtra *)cm->extra)->cluster_sarray;
     index = rand() % cluster_sarray->count;
     server = cluster_sarray->servers + index;
-    if ((conn=get_spec_connection(cm, server, err_no)) != NULL) {
+    if ((conn=get_spec_connection(cm, server, shared, err_no)) != NULL) {
         return conn;
     }
 
     i = (index + 1) % cluster_sarray->count;
     while (i != index) {
         server = cluster_sarray->servers + i;
-        if ((conn=get_spec_connection(cm, server, err_no)) != NULL) {
+        if ((conn=get_spec_connection(cm, server, shared, err_no)) != NULL) {
             return conn;
         }
 
@@ -131,7 +131,7 @@ static ConnectionInfo *get_connection(SFConnectionManager *cm,
 }
 
 static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
-        const int group_index, int *err_no)
+        const int group_index, const bool shared, int *err_no)
 {
     FCFSAuthCMSimpleExtra *extra;
     ConnectionInfo *conn;
@@ -142,7 +142,7 @@ static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
     extra = (FCFSAuthCMSimpleExtra *)cm->extra;
     if (extra->master_cache.valid) {
         if ((conn=conn_pool_get_connection_ex(&extra->cpool, &extra->
-                        master_cache.conn, "fauth", err_no)) != NULL)
+                        master_cache.conn, "fauth", shared, err_no)) != NULL)
         {
             return conn;
         } else {
@@ -165,7 +165,7 @@ static ConnectionInfo *get_master_connection(SFConnectionManager *cm,
         }
 
         if ((conn=get_spec_connection(cm, &master.conn,
-                        err_no)) == NULL)
+                        shared, err_no)) == NULL)
         {
             break;
         }

@@ -18,7 +18,7 @@
 #include "fcfs_auth_client.h"
 
 #define GET_MASTER_CONNECTION(cm, arg1, result)   \
-    (cm)->ops.get_master_connection(cm, arg1, result)
+    (cm)->ops.get_master_connection(cm, arg1, true, result)
 
 static int load_auth_user_passwd(FCFSAuthClientCommonCfg *auth_cfg,
         IniContext *ini_context, const char *auth_config_filename)

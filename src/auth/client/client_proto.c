@@ -948,6 +948,7 @@ int fcfs_auth_client_proto_gpool_list(FCFSAuthClientContext
 int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,
         FCFSAuthClientServerEntry *master)
 {
+    const bool shared = false;
     int result;
     ConnectionInfo *conn;
     FCFSAuthProtoHeader *header;
@@ -955,7 +956,8 @@ int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,
     FCFSAuthProtoGetServerResp server_resp;
     char out_buff[sizeof(FCFSAuthProtoHeader)];
 
-    conn = client_ctx->cm.ops.get_connection(&client_ctx->cm, 0, &result);
+    conn = client_ctx->cm.ops.get_connection(
+            &client_ctx->cm, 0, shared, &result);
     if (conn == NULL) {
         return result;
     }
@@ -985,6 +987,7 @@ int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,
 int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
         FCFSAuthClientClusterStatEntry *stats, const int size, int *count)
 {
+    const bool shared = false;
     FCFSAuthProtoHeader *header;
     FCFSAuthProtoClusterStatRespBodyHeader *body_header;
     FCFSAuthProtoClusterStatRespBodyPart *body_part;
@@ -998,8 +1001,8 @@ int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
     int result;
     int calc_size;
 
-    if ((conn=client_ctx->cm.ops.get_master_connection(
-                    &client_ctx->cm, 0, &result)) == NULL)
+    if ((conn=client_ctx->cm.ops.get_master_connection(&client_ctx->cm,
+                    0, shared, &result)) == NULL)
     {
         return result;
     }

@@ -237,6 +237,7 @@ static int session_sync(ConnectionInfo *conn)
 
 static void *session_sync_thread_func(void *arg)
 {
+    const bool shared = false;
     SFConnectionManager *cm;
     ConnectionInfo *conn;
     int result;
@@ -247,7 +248,9 @@ static void *session_sync_thread_func(void *arg)
 
     cm = &g_fcfs_auth_client_vars.client_ctx.cm;
     while (SF_G_CONTINUE_FLAG) {
-        if ((conn=cm->ops.get_master_connection(cm, 0, &result)) == NULL) {
+        if ((conn=cm->ops.get_master_connection(cm, 0,
+                        shared, &result)) == NULL)
+        {
             sleep(1);
             continue;
         }
