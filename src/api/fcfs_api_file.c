@@ -1416,7 +1416,9 @@ int fcfs_api_rename_ex(FCFSAPIContext *ctx, const char *old_path,
         return result;
     }
 
-    if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0) {
+    if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0
+            && !ctx->contexts.fdir->trash_bin_enabled)
+    {
         fs_api_unlink_file(ctx->contexts.fsapi, pe->inode,
                 pe->stat.space_end, fctx->tid);
     }

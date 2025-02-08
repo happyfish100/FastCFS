@@ -35,7 +35,9 @@ int fcfs_api_remove_dentry_by_pname_ex(FCFSAPIContext *ctx,
         return result;
     }
 
-    if (S_ISREG(dentry.stat.mode) && dentry.stat.nlink == 0) {
+    if (S_ISREG(dentry.stat.mode) && dentry.stat.nlink == 0
+            && !ctx->contexts.fdir->trash_bin_enabled)
+    {
         result = fs_api_unlink_file(ctx->contexts.fsapi,
                 dentry.inode, dentry.stat.space_end, tid);
     }
@@ -55,7 +57,9 @@ int fcfs_api_remove_dentry_ex(FCFSAPIContext *ctx,
         return result;
     }
 
-    if (S_ISREG(dentry.stat.mode) && dentry.stat.nlink == 0) {
+    if (S_ISREG(dentry.stat.mode) && dentry.stat.nlink == 0
+            && !ctx->contexts.fdir->trash_bin_enabled)
+    {
         result = fs_api_unlink_file(ctx->contexts.fsapi,
                 dentry.inode, dentry.stat.space_end, tid);
     }
@@ -83,7 +87,9 @@ int fcfs_api_rename_dentry_by_pname_ex(FCFSAPIContext *ctx,
         return result;
     }
 
-    if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0) {
+    if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0
+            && !ctx->contexts.fdir->trash_bin_enabled)
+    {
         fs_api_unlink_file(ctx->contexts.fsapi, pe->inode,
                 pe->stat.space_end, tid);
     }
@@ -109,7 +115,9 @@ int fcfs_api_rename_dentry_ex(FCFSAPIContext *ctx, const char *path1,
         return result;
     }
 
-    if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0) {
+    if (pe != NULL && S_ISREG(pe->stat.mode) && pe->stat.nlink == 0
+            && !ctx->contexts.fdir->trash_bin_enabled)
+    {
         fs_api_unlink_file(ctx->contexts.fsapi, pe->inode,
                 pe->stat.space_end, tid);
     }
