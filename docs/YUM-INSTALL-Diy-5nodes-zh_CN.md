@@ -95,10 +95,8 @@ total 20
 ### 安装客户端
 在192.168.126.[201,202]上安装Client包, 包名为FastCFS-fused. 
 ```
-yum remove fuse -y // 仅第一次安装时执行
 yum install FastCFS-fused -y 
 ```
-原CentOS中fuse为老版本的包（fuse2.x），需要卸载才可以成功安装FastCFS-fused依赖的fuse3。第一次安装才需要卸载fuse包，以后就不用执行了。
 
 安装完毕后，在/etc/fastcfs 下可看到以下目录，存储是对应服务的配置文件.  
 ```

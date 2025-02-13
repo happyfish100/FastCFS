@@ -48,12 +48,7 @@ yum install faststore-server -y
 
 在需要使用FastCFS存储服务的机器（即FastCFS客户端）上，除了openEuler之外的其他Linux发行版执行：
 ```
-yum remove fuse -y
 yum install FastCFS-fused -y
-
-注：
-   * fuse为老版本的包（fuse2.x），需要卸载才可以成功安装FastCFS-fused依赖的fuse3；
-   * 第一次安装才需要卸载fuse包，以后就不用执行了。
 ```
 
 对于openEuler 20.03和Kylin V10，因需安装的fuse3和系统已有的fuse在依赖关系上存在冲突，需要用rpm命令强制安装fuse3，执行：
