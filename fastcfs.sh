@@ -410,7 +410,6 @@ install_all_softwares() {
     apt install fastcfs-auth-server fastcfs-vote-server fastdir-server faststore-server fastcfs-fused -y
   elif [[ " ${YUM_OS_ARRAY[@]} " =~ " ${osname} " ]] && [ $os_major_version -ge 7 ]; then
     check_install_fastos_repo
-    rpm -q fuse >/dev/null && yum remove fuse -y
     yum install FastCFS-auth-server FastCFS-vote-server fastDIR-server faststore-server FastCFS-fused -y
   else
     ./libfuse_setup.sh

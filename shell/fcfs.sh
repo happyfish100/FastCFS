@@ -895,25 +895,6 @@ execute_yum() {
   repo_affix=$3
   if [ $os_major_version -ge 7 ]; then
     check_yum_install_fastos_repo
-    if [ $yum_command = 'install' ] && [[ $program_name == *"FastCFS-fused"* ]]; then
-      sudo rpm -q fuse >/dev/null
-      if [ $? -eq 0 ]; then
-        echo "INFO: Remove old version fuse ..."
-        sudo yum remove fuse -y
-        if [ $? -ne 0 ]; then
-          echo "Warning: Remove old version fuse fail. trigger force install fuse3"
-          arch=$(uname -r | awk -F '.' '{print $NF;}')
-          ver='3.10.5-1'
-          if [ $os_major_version -eq 7 ]; then
-              dist=el7
-          else
-              dist=el8
-          fi
-          sudo rpm -ivh http://www.fastken.com/yumrepo${repo_affix}/$dist/$arch/fuse3-libs-$ver.$dist.$arch.rpm http://www.fastken.com/yumrepo${repo_affix}/$dist/$arch/fuse-common-$ver.$dist.$arch.rpm http://www.fastken.com/yumrepo${repo_affix}/$dist/$arch/fuse3-$ver.$dist.$arch.rpm --force --nodeps
-        fi
-      fi
-    fi
-
     echo "INFO: yum $yum_command $program_name -y."
     sudo yum $yum_command $program_name -y
     if [ $? -ne 0 ]; then
