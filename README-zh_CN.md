@@ -121,7 +121,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fdir & api] POSIX兼容性测试及改进（已完成）
 *  [fstore] slice存储引擎插件，有限内存支持海量数据（已完成）
 *  [all] 适配RDMA网络，突破网络瓶颈（已完成）
-*  [api] 提供Java Native API（进行中）
+*  [fdir] 支持回收站功能，不用担心误删除文件（进行中）
 *  [all] 支持集群在线扩容
 
 参见更多 [TODO List](docs/TODO-zh_CN.md)，欢迎大家参与。

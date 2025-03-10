@@ -10,12 +10,12 @@ FastCFS支持大规模的集群，下面以最为典型的最小化集群的部�
 
 - CentOS 7等el7系列的Linux发行版
 ```
-rpm -ivh http://www.fastken.com/yumrepo/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
+rpm -ivh http://www.fastken.cn/yumrepo/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
 ```
 
 - CentOS 8等el8系列的Linux发行版
 ```
-rpm -ivh http://www.fastken.com/yumrepo/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
+rpm -ivh http://www.fastken.cn/yumrepo/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
 ```
 
 友情提示：支持的Linux发行版以及与el7或el8的对应关系参见 [yum安装方式](YUM-INSTALL-zh_CN.md)

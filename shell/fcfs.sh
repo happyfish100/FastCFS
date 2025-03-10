@@ -28,7 +28,7 @@ APT_OS_ARRAY=(Ubuntu Debian Deepin)
 
 repo_affix=""
 fcfs_settings_file="fcfs.settings"
-fcfs_dependency_file_server="http://www.fastken.com/fastcfs/ops/dependency"
+fcfs_dependency_file_server="http://www.fastken.cn/fastcfs/ops/dependency"
 fcfs_cache_path=".fcfs"
 fcfs_installed_file="installed.settings"
 
@@ -867,9 +867,9 @@ check_yum_install_fastos_repo() {
   repo=$(rpm -q FastOSrepo 2>/dev/null)
   if [ $? -ne 0 ]; then
     if [ $os_major_version -eq 7 ]; then
-      sudo rpm -ivh http://www.fastken.com/yumrepo${repo_affix}/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
+      sudo rpm -ivh http://www.fastken.cn/yumrepo${repo_affix}/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
     else
-      sudo rpm -ivh http://www.fastken.com/yumrepo${repo_affix}/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
+      sudo rpm -ivh http://www.fastken.cn/yumrepo${repo_affix}/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
     fi
     if [ $? -ne 0 ]; then
       echo "ERROR: FastOSrepo rpm install failed."
@@ -881,10 +881,10 @@ check_yum_install_fastos_repo() {
 check_apt_install_fastos_repo() {
   if [ ! -f /etc/apt/sources.list.d/fastos.list ]; then
     sudo apt-get install curl gpg -y
-    sudo curl http://www.fastken.com/aptrepo${repo_affix}/packages.fastos.pub | sudo gpg --dearmor > /tmp/fastos-archive-keyring.gpg
+    sudo curl http://www.fastken.cn/aptrepo${repo_affix}/packages.fastos.pub | sudo gpg --dearmor > /tmp/fastos-archive-keyring.gpg
     sudo install -D -o root -g root -m 644 /tmp/fastos-archive-keyring.gpg /usr/share/keyrings/fastos-archive-keyring.gpg
-    sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo${repo_affix}/fastos/ fastos main" > /etc/apt/sources.list.d/fastos.list'
-    sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo${repo_affix}/fastos-debug/ fastos-debug main" > /etc/apt/sources.list.d/fastos-debug.list'
+    sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.cn/aptrepo${repo_affix}/fastos/ fastos main" > /etc/apt/sources.list.d/fastos.list'
+    sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.cn/aptrepo${repo_affix}/fastos-debug/ fastos-debug main" > /etc/apt/sources.list.d/fastos-debug.list'
     sudo rm -f /tmp/fastos-archive-keyring.gpg
   fi
 }

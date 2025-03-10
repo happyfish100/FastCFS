@@ -8,15 +8,15 @@
 
 ```shell
 sudo apt-get install curl gpg
-curl http://www.fastken.com/aptrepo/packages.fastos.pub | gpg --dearmor > fastos-archive-keyring.gpg
+curl http://www.fastken.cn/aptrepo/packages.fastos.pub | gpg --dearmor > fastos-archive-keyring.gpg
 sudo install -D -o root -g root -m 644 fastos-archive-keyring.gpg /usr/share/keyrings/fastos-archive-keyring.gpg
-sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo/fastos/ fastos main" > /etc/apt/sources.list.d/fastos.list'
+sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.cn/aptrepo/fastos/ fastos main" > /etc/apt/sources.list.d/fastos.list'
 rm -f fastos-archive-keyring.gpg
 ```
 
 如果需要安装调试包，执行：
 ```shell
-sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.com/aptrepo/fastos-debug/ fastos-debug main" > /etc/apt/sources.list.d/fastos-debug.list'
+sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.cn/aptrepo/fastos-debug/ fastos-debug main" > /etc/apt/sources.list.d/fastos-debug.list'
 ```
 
 

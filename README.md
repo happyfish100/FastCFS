@@ -122,7 +122,7 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fdir & api] POSIX compatibility test and improvement (done)
 *  [fstore] slice storage engine plugin to support massive data with limited memory (done)
 *  [all] adapt to RDMA network to break through network bottlenecks (done)
-*  [api] provide Java native API (doing)
+*  [fdir] support recycle bin, don't worry accidentally deleting files (doing)
 *  [all] cluster online expansion
 
 ## 10. Business Support
