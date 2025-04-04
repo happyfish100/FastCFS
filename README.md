@@ -27,7 +27,7 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgreSQL, Ora
 * **Video monitoring**: smooth writing for multi-channel videos with HDD such as SATA because FastCFS uses sequential writing approach
 
 
-## 2. Current Version: V5.3.3
+## 2. Current Version: V5.4.0
 
 ## 3. Supported Platforms
 
@@ -40,12 +40,12 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgreSQL, Ora
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.76)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.2.6)
-* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.1.10)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V5.3.3)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V5.3.3)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V5.3.3)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.77)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.2.7)
+* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.1.11)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V5.4.0)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V5.4.0)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V5.4.0)
 
 ## 5. Installation
 
@@ -122,7 +122,7 @@ FastCFS has huge better performance than Ceph: the IOPS ratio of sequential writ
 *  [fdir & api] POSIX compatibility test and improvement (done)
 *  [fstore] slice storage engine plugin to support massive data with limited memory (done)
 *  [all] adapt to RDMA network to break through network bottlenecks (done)
-*  [fdir] support recycle bin, don't worry accidentally deleting files (doing)
+*  [fdir] support recycle bin, don't worry accidentally deleting files (done)
 *  [all] cluster online expansion
 
 ## 10. Business Support

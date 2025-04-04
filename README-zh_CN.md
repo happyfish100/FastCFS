@@ -22,7 +22,7 @@ FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文
 * **高性能计算**：高可靠和高性能的FastCFS，支持RDMA，天然适合高性能计算场景；
 * **视频监控**：FastCFS采用顺序写盘方式，使用SATA硬盘也可保证多路视频流畅写入。
 
-## 2. 当前版本：V5.3.3
+## 2. 当前版本：V5.4.0
 
 [FastCFS重大版本一览](docs/version-history-zh_CN.md)
 
@@ -37,12 +37,12 @@ FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
-* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.76)
-* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.2.6)
-* [libdiskallocator](https://gitee.com/fastdfs100/libdiskallocator) (tag: V1.1.10)
-* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V5.3.3)
-* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V5.3.3)
-* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V5.3.3)
+* [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.77)
+* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.2.7)
+* [libdiskallocator](https://gitee.com/fastdfs100/libdiskallocator) (tag: V1.1.11)
+* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V5.4.0)
+* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V5.4.0)
+* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V5.4.0)
 
 ## 5. 部署 & 运维
 
@@ -121,7 +121,7 @@ FastCFS性能明显优于Ceph：顺序写是Ceph的6.x倍，顺序读是Ceph的2
 *  [fdir & api] POSIX兼容性测试及改进（已完成）
 *  [fstore] slice存储引擎插件，有限内存支持海量数据（已完成）
 *  [all] 适配RDMA网络，突破网络瓶颈（已完成）
-*  [fdir] 支持回收站功能，不用担心误删除文件（进行中）
+*  [fdir] 支持回收站功能，不用担心误删除文件（已完成）
 *  [all] 支持集群在线扩容
 
 参见更多 [TODO List](docs/TODO-zh_CN.md)，欢迎大家参与。
