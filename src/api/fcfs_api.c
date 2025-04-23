@@ -912,7 +912,6 @@ void fcfs_api_log_client_common_configs(FCFSAPIContext *ctx,
         *sf_idempotency_config->buff = '\0';
         sf_idempotency_config->length = 0;
     }
-    sf_log_config();
 
     len = sprintf(owner_config, "owner_type: %s",
             fcfs_api_get_owner_type_caption(ctx->owner.type));
