@@ -665,11 +665,6 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
     g_fs_client_vars.client_ctx.idempotency_enabled =
         iniGetBoolValue(fs_section_name, "idempotency_enabled",
                 ini_ctx->context, g_idempotency_client_cfg.enabled);
-    if (!(g_fdir_client_vars.client_ctx.idempotency_enabled ||
-                g_fs_client_vars.client_ctx.idempotency_enabled))
-    {
-        return 0;
-    }
 
     fixed_buffer_size = 0;
     comm_type = fc_comm_type_sock;
@@ -690,14 +685,16 @@ int fcfs_api_load_idempotency_config_ex(const char *log_prefix_name,
         if (comm_type != server_group->comm_type) {
             comm_type = g_fdir_client_vars.client_ctx.idempotency_enabled ?
                 fc_comm_type_both : server_group->comm_type;
-            if (fixed_buffer_size == 0) {
-                fixed_buffer_size = FS_CLUSTER_SERVER_CFG(&g_fs_client_vars.
-                        client_ctx).buffer_size;
-            } else {
-                fixed_buffer_size = FC_MIN(fixed_buffer_size,
-                        FS_CLUSTER_SERVER_CFG(&g_fs_client_vars.
-                            client_ctx).buffer_size);
-            }
+        }
+        if (fixed_buffer_size == 0) {
+            fixed_buffer_size = FS_CLUSTER_SERVER_CFG(&g_fs_client_vars.
+                    client_ctx).buffer_size;
+        } else if (FS_CLUSTER_SERVER_CFG(&g_fs_client_vars.
+                    client_ctx).buffer_size > 0)
+        {
+            fixed_buffer_size = FC_MIN(fixed_buffer_size,
+                    FS_CLUSTER_SERVER_CFG(&g_fs_client_vars.
+                        client_ctx).buffer_size);
         }
     }
 
