@@ -114,6 +114,7 @@ mount -t nfs -onolock,nfsvers=4 172.16.168.131:/ /mnt/nfs
 ## 10. 为何删除了足够多的数据，df看到磁盘占用空间不见降低呢？
 
 FastCFS基于trunk file进行空间分配，目前trunk file只会增加而不会释放。文件数据删除后空间会回收利用，通过fuse client上df命令可以看到FastCFS的可用空间将增加。
+磁盘空间使用率达到阈值后才会启动空间回收，默认阈值为50%，可以根据实际需要调整。配置示例参见faststore源码目录下的conf/full/storage.conf。
 
 ## 11. 如何将fastore的数据清除干净？
 
