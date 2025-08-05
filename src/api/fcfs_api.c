@@ -68,7 +68,7 @@ static int opendir_session_alloc_init(void *element, void *args)
         return result;
     }
 
-    if ((result=fast_buffer_init_ex(&session->buffer, 64 * 1024)) != 0) {
+    if ((result=fast_buffer_init1(&session->buffer, 64 * 1024)) != 0) {
         return result;
     }
     return 0;

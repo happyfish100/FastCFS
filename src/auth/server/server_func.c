@@ -188,7 +188,7 @@ static void log_cluster_server_config()
 {
     FastBuffer buffer;
 
-    if (fast_buffer_init_ex(&buffer, 1024) != 0) {
+    if (fast_buffer_init1(&buffer, 1024) != 0) {
         return;
     }
     fc_server_to_config_string(&CLUSTER_SERVER_CONFIG, &buffer);
