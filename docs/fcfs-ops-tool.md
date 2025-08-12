@@ -36,9 +36,9 @@ It is not a generic deployment tool, it is only for FastCFS. It does not handle 
 
 ### 1.3. Fetch fcfs.sh
 
-Get it from http://fastcfs.net/fastcfs/ops/fcfs.sh and put it in workstation's bin path.
+Get it from http://fastken.cn/fastcfs/ops/fcfs.sh and put it in workstation's bin path.
 
-> sudo curl -o /usr/bin/fcfs.sh  http://fastcfs.net/fastcfs/ops/fcfs.sh && sudo chmod +x /usr/bin/fcfs.sh
+> sudo curl -o /usr/bin/fcfs.sh  http://fastken.cn/fastcfs/ops/fcfs.sh && sudo chmod +x /usr/bin/fcfs.sh
 
 ### 1.4. Use preconditions
 
@@ -79,7 +79,7 @@ All config files of FastCFS cluster must be put into working directory beforehan
 ```
 mkdir fastcfs-ops
 cd fastcfs-ops/
-curl -o fcfs-config-sample.tar.gz http://fastcfs.net/fastcfs/ops/fcfs-config-sample.tar.gz
+curl -o fcfs-config-sample.tar.gz http://fastken.cn/fastcfs/ops/fcfs-config-sample.tar.gz
 tar -xzvf fcfs-config-sample.tar.gz
 ```
 
@@ -322,9 +322,9 @@ If you want to generate cluster config files with specify server ips quickly, th
 
 ### 2.1. Fetch fcfs_conf.sh
 
-Get it from http://fastcfs.net/fastcfs/ops/fcfs_conf.sh and put it in workstation's bin path.
+Get it from http://fastken.cn/fastcfs/ops/fcfs_conf.sh and put it in workstation's bin path.
 
-> sudo curl -o /usr/bin/fcfs_conf.sh  http://fastcfs.net/fastcfs/ops/fcfs_conf.sh && sudo chmod +x /usr/bin/fcfs_conf.sh
+> sudo curl -o /usr/bin/fcfs_conf.sh  http://fastken.cn/fastcfs/ops/fcfs_conf.sh && sudo chmod +x /usr/bin/fcfs_conf.sh
 
 ### 2.2. Use preconditions of fcfs_conf.sh
 

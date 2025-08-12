@@ -44,11 +44,11 @@ fcfs.sh 是一个用于快速部署和管理 FastCFS 集群的脚本工具。它
 
 从以下地址下载 fcfs.sh，并将其放置在工作站机器的bin目录下，以便命令行能够找到：
 
-> http://fastcfs.net/fastcfs/ops/fcfs.sh
+> http://fastken.cn/fastcfs/ops/fcfs.sh
 
 获取命令：
 
-> sudo curl -o /usr/bin/fcfs.sh  http://fastcfs.net/fastcfs/ops/fcfs.sh && sudo chmod +x /usr/bin/fcfs.sh
+> sudo curl -o /usr/bin/fcfs.sh  http://fastken.cn/fastcfs/ops/fcfs.sh && sudo chmod +x /usr/bin/fcfs.sh
 
 下载完成后可通过命令 ***which fcfs.sh*** 测试工具是否生效。
 
@@ -91,7 +91,7 @@ FastCFS集群的所有配置文件必须提前放置在工作目录中的 ***con
 ```
 mkdir fastcfs-ops
 cd fastcfs-ops/
-curl -o fcfs-config-sample.tar.gz http://fastcfs.net/fastcfs/ops/fcfs-config-sample.tar.gz
+curl -o fcfs-config-sample.tar.gz http://fastken.cn/fastcfs/ops/fcfs-config-sample.tar.gz
 tar -xzvf fcfs-config-sample.tar.gz
 ```
 
@@ -338,11 +338,11 @@ fcfs_conf.sh 是一个快速创建 FastCFS集群配置文件的运维工具。�
 
 从以下地址下载 fcfs_conf.sh，并将其放置在工作站机器的bin目录下，以便命令行能够找到：
 
-> http://fastcfs.net/fastcfs/ops/fcfs_conf.sh
+> http://fastken.cn/fastcfs/ops/fcfs_conf.sh
 
 获取命令：
 
-> sudo curl -o /usr/bin/fcfs_conf.sh  http://fastcfs.net/fastcfs/ops/fcfs_conf.sh && sudo chmod +x /usr/bin/fcfs_conf.sh
+> sudo curl -o /usr/bin/fcfs_conf.sh  http://fastken.cn/fastcfs/ops/fcfs_conf.sh && sudo chmod +x /usr/bin/fcfs_conf.sh
 
 下载完成后可通过命令 ***which fcfs_conf.sh*** 测试工具是否生效。
 

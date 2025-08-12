@@ -8,8 +8,8 @@
 在施压服务器（即client机器）上执行如下命令：
 
 ```
-curl -o /usr/bin/fcfs.sh http://fastcfs.net/fastcfs/ops/fcfs.sh && sudo chmod +x /usr/bin/fcfs.sh;
-curl -o /usr/bin/fcfs_conf.sh http://fastcfs.net/fastcfs/ops/fcfs_conf.sh && sudo chmod +x /usr/bin/fcfs_conf.sh;
+curl -o /usr/bin/fcfs.sh http://fastken.cn/fastcfs/ops/fcfs.sh && sudo chmod +x /usr/bin/fcfs.sh;
+curl -o /usr/bin/fcfs_conf.sh http://fastken.cn/fastcfs/ops/fcfs_conf.sh && sudo chmod +x /usr/bin/fcfs_conf.sh;
 
 mkdir -p fastcfs-ops && cd fastcfs-ops;
 server_ips='请替换为西文逗号分隔的服务器IP列表';
