@@ -33,43 +33,80 @@ typedef struct auth_full_path {
 
 #define AUTH_SET_GRANTED_POOL_PATH(fp, username, granted_id)  \
     do {  \
+        char *p;  \
         FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
                 AUTH_NAMESPACE_LEN); \
         fp.fullname.path.str = fp.buff;  \
-        fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                AUTH_BASE_PATH_STR"/%.*s/%s/%"PRId64,        \
-                (username)->len, (username)->str, \
-                AUTH_DIR_NAME_GRANTED_STR, granted_id); \
+        p = fp.buff; \
+        memcpy(p, AUTH_BASE_PATH_STR, AUTH_BASE_PATH_LEN);  \
+        p += AUTH_BASE_PATH_LEN;  \
+        *p++ = '/';  \
+        memcpy(p, (username)->str, (username)->len);  \
+        p += (username)->len;  \
+        *p++ = '/';  \
+        memcpy(p, AUTH_DIR_NAME_GRANTED_STR, AUTH_DIR_NAME_GRANTED_LEN);  \
+        p += AUTH_DIR_NAME_GRANTED_LEN;  \
+        *p++ = '/';  \
+        p += fc_itoa(granted_id, p); \
+        *p = '\0';  \
+        fp.fullname.path.len = p - fp.buff;  \
     } while (0)
 
-#define AUTH_SET_USER_PATH2(fp, username, subdir1, subdir2)  \
+#define AUTH_SET_USER_PATH2(fp, username, subdir1_str, subdir1_len, subdir2)  \
     do {  \
+        char *p;  \
         FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
                 AUTH_NAMESPACE_LEN); \
         fp.fullname.path.str = fp.buff;  \
-        fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                AUTH_BASE_PATH_STR"/%.*s/%s/%.*s", (username)->len, \
-                (username)->str, subdir1, (subdir2).len, (subdir2).str); \
+        p = fp.buff; \
+        memcpy(p, AUTH_BASE_PATH_STR, AUTH_BASE_PATH_LEN);  \
+        p += AUTH_BASE_PATH_LEN;  \
+        *p++ = '/';  \
+        memcpy(p, (username)->str, (username)->len);  \
+        p += (username)->len;  \
+        *p++ = '/';  \
+        memcpy(p, subdir1_str, subdir1_len);  \
+        p += subdir1_len;  \
+        *p++ = '/';  \
+        memcpy(p, (subdir2).str, (subdir2).len);  \
+        p += (subdir2).len;  \
+        *p = '\0';  \
+        fp.fullname.path.len = p - fp.buff;  \
     } while (0)
 
-#define AUTH_SET_USER_PATH1(fp, username, subdir1)  \
+#define AUTH_SET_USER_PATH1(fp, username, subdir1_str, subdir1_len)  \
     do {  \
+        char *p;  \
         FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR,  \
                 AUTH_NAMESPACE_LEN); \
         fp.fullname.path.str = fp.buff;  \
-        fp.fullname.path.len = sprintf(fp.fullname.path.str,   \
-                AUTH_BASE_PATH_STR"/%.*s/%s", (username)->len, \
-                (username)->str, subdir1); \
+        p = fp.buff; \
+        memcpy(p, AUTH_BASE_PATH_STR, AUTH_BASE_PATH_LEN);  \
+        p += AUTH_BASE_PATH_LEN;  \
+        *p++ = '/';  \
+        memcpy(p, (username)->str, (username)->len);  \
+        p += (username)->len;  \
+        *p++ = '/';  \
+        memcpy(p, subdir1_str, subdir1_len);  \
+        p += subdir1_len;  \
+        *p = '\0';  \
+        fp.fullname.path.len = p - fp.buff;  \
     } while (0)
 
 #define AUTH_SET_USER_HOME(fp, username)  \
     do {  \
+        char *p;  \
         FC_SET_STRING_EX(fp.fullname.ns, AUTH_NAMESPACE_STR, \
                 AUTH_NAMESPACE_LEN); \
         fp.fullname.path.str = fp.buff;  \
-        fp.fullname.path.len = sprintf(fp.fullname.path.str, \
-                AUTH_BASE_PATH_STR"/%.*s", (username)->len,  \
-                (username)->str);   \
+        p = fp.buff; \
+        memcpy(p, AUTH_BASE_PATH_STR, AUTH_BASE_PATH_LEN);  \
+        p += AUTH_BASE_PATH_LEN;  \
+        *p++ = '/';  \
+        memcpy(p, (username)->str, (username)->len);  \
+        p += (username)->len;  \
+        *p = '\0';  \
+        fp.fullname.path.len = p - fp.buff;  \
     } while (0)
 
 

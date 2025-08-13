@@ -76,8 +76,9 @@ static inline char *do_getcwd(FCFSPosixAPIContext *ctx,
             return NULL;
         }
 
-        cwd->len = sprintf(cwd->str, "%.*s", ctx->mountpoint.len,
-                ctx->mountpoint.str);
+        cwd->len = ctx->mountpoint.len;
+        memcpy(cwd->str, ctx->mountpoint.str, ctx->mountpoint.len);
+        *(cwd->str + cwd->len) = '\0';
         return cwd->str;
     }
 
@@ -87,9 +88,11 @@ static inline char *do_getcwd(FCFSPosixAPIContext *ctx,
         return NULL;
     }
 
-    cwd->len = sprintf(cwd->str, "%.*s%.*s", ctx->mountpoint.len,
-            ctx->mountpoint.str, G_FCFS_PAPI_CWD->len,
-            G_FCFS_PAPI_CWD->str);
+    cwd->len = ctx->mountpoint.len + G_FCFS_PAPI_CWD->len;
+    memcpy(cwd->str, ctx->mountpoint.str, ctx->mountpoint.len);
+    memcpy(cwd->str + ctx->mountpoint.len, G_FCFS_PAPI_CWD->str,
+            G_FCFS_PAPI_CWD->len);
+    *(cwd->str + cwd->len) = '\0';
     return cwd->str;
 }
 
@@ -2451,8 +2454,13 @@ int fcfs_fchdir(int fd)
     }
 
     len = (p - file->filename.str) + 1;
-    snprintf(full_path, sizeof(full_path), "%.*s",
-            len, file->filename.str);
+    if (len >= sizeof(full_path)) {
+        snprintf(full_path, sizeof(full_path), "%.*s",
+                len, file->filename.str);
+    } else {
+        memcpy(full_path, file->filename.str, len);
+        *(full_path + len) = '\0';
+    }
     FC_SET_STRING_EX(cwd, full_path, len);
     return do_chdir(&cwd);
 }

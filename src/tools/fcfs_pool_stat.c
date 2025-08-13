@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
             return ENOENT;
         }
 
-        snprintf(ns_holder, sizeof(ns_holder), "%s", ns_str);
+        fc_safe_strcpy(ns_holder, ns_str);
         poolname = ns_holder;
         iniFreeContext(&ini_context);
     }

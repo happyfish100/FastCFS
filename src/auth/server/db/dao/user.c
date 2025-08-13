@@ -21,15 +21,15 @@
 #include "user.h"
 
 static int user_make_subdir(FDIRClientContext *client_ctx,
-        const string_t *username, const char *subdir,
-        const bool check_exist)
+        const string_t *username, const char *subdir_str,
+        const int subdir_len, const bool check_exist)
 {
     AuthFullPath fp;
     FDIRClientOperFnamePair path;
     FDIRDEntryInfo dentry;
     int result;
 
-    AUTH_SET_USER_PATH1(fp, username, subdir);
+    AUTH_SET_USER_PATH1(fp, username, subdir_str, subdir_len);
     AUTH_SET_PATH_OPER_FNAME(path, fp);
     if (check_exist) {
         result = fdir_client_lookup_inode_by_path_ex(client_ctx,
@@ -74,12 +74,16 @@ int dao_user_create(FDIRClientContext *client_ctx, FCFSAuthUserInfo *user)
     }
 
     if ((result=user_make_subdir(client_ctx, &user->name,
-                    AUTH_DIR_NAME_CREATED_STR, check_exist)) != 0)
+                    AUTH_DIR_NAME_CREATED_STR,
+                    AUTH_DIR_NAME_CREATED_LEN,
+                    check_exist)) != 0)
     {
         return result;
     }
     if ((result=user_make_subdir(client_ctx, &user->name,
-                    AUTH_DIR_NAME_GRANTED_STR, check_exist)) != 0)
+                    AUTH_DIR_NAME_GRANTED_STR,
+                    AUTH_DIR_NAME_GRANTED_LEN,
+                    check_exist)) != 0)
     {
         return result;
     }

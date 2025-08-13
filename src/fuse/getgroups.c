@@ -72,7 +72,14 @@ int fcfs_getgroups(const pid_t pid, const uid_t fsuid,
     gid_t val;
     int count;
 
-    sprintf(filename, "/proc/%d/status", pid);
+    p = filename;
+    memcpy(p, "/proc/", 6);
+    p += 6;
+    p += fc_itoa(pid, p);
+    *p++ = '/';
+    memcpy(p, "status", 6);
+    p += 6;
+    *p = '\0';
     fd = open(filename, O_RDONLY);
     if (fd < 0) {
         return 0;

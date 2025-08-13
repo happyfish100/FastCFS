@@ -256,6 +256,7 @@ static int thread_run(BeachmarkThreadInfo *thread)
     int size;
     int bytes;
     char *filename;
+    char *p;
 
     buff = (char *)fc_malloc(cfg.buffer_size);
     if (buff == NULL) {
@@ -266,7 +267,13 @@ static int thread_run(BeachmarkThreadInfo *thread)
     if (filename == NULL) {
         return ENOMEM;
     }
-    sprintf(filename, "%s.%d", cfg.filename_prefix.str, thread->index);
+
+    p = filename;
+    memcpy(p, cfg.filename_prefix.str, cfg.filename_prefix.len);
+    p += cfg.filename_prefix.len;
+    *p++ = '.';
+    p += fc_itoa(thread->index, p);
+    *p = '\0';
     if ((result=check_create_file(filename)) != 0) {
         return result;
     }

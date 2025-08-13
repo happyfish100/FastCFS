@@ -338,8 +338,13 @@ static int dentry_list_to_buff(fuse_req_t req, FCFSAPIOpendirSession *session)
 
     end = session->array.entries + session->array.count;
     for (cd=session->array.entries; cd<end; cd++) {
-        snprintf(name, sizeof(name), "%.*s",
-                cd->name.len, cd->name.str);
+        if (cd->name.len >= sizeof(name)) {
+            snprintf(name, sizeof(name), "%.*s",
+                    cd->name.len, cd->name.str);
+        } else {
+            memcpy(name, cd->name.str, cd->name.len);
+            *(name + cd->name.len) = '\0';
+        }
         if (session->btype == FS_READDIR_BUFFER_INIT_NORMAL) {
             len = fuse_add_direntry(req, NULL, 0, name, NULL, 0);
         } else {

@@ -29,8 +29,8 @@ int dao_spool_create(FDIRClientContext *client_ctx,
     FDIRClientOperFnamePair path;
     FDIRDEntryInfo dentry;
 
-    AUTH_SET_USER_PATH2(fp, username,
-            AUTH_DIR_NAME_CREATED_STR, spool->name);
+    AUTH_SET_USER_PATH2(fp, username, AUTH_DIR_NAME_CREATED_STR,
+            AUTH_DIR_NAME_CREATED_LEN, spool->name);
     AUTH_SET_PATH_OPER_FNAME(path, fp);
     if ((result=fdir_client_create_dentry(client_ctx, &path,
                     DAO_MODE_FILE, &dentry)) == 0)
@@ -136,7 +136,9 @@ int dao_spool_list(FDIRClientContext *client_ctx, const string_t *username,
         return result;
     }
 
-    AUTH_SET_USER_PATH1(fp, username, AUTH_DIR_NAME_CREATED_STR);
+    AUTH_SET_USER_PATH1(fp, username,
+            AUTH_DIR_NAME_CREATED_STR,
+            AUTH_DIR_NAME_CREATED_LEN);
     AUTH_SET_PATH_OPER_FNAME(path, fp);
     if ((result=fdir_client_list_dentry_by_path(client_ctx,
                     &path, &dentry_array, flags)) != 0)

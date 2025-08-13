@@ -145,7 +145,9 @@ int dao_granted_list(FDIRClientContext *client_ctx, const string_t *username,
         return result;
     }
 
-    AUTH_SET_USER_PATH1(fp, username, AUTH_DIR_NAME_GRANTED_STR);
+    AUTH_SET_USER_PATH1(fp, username,
+            AUTH_DIR_NAME_GRANTED_STR,
+            AUTH_DIR_NAME_GRANTED_LEN);
     AUTH_SET_PATH_OPER_FNAME(path, fp);
     if ((result=fdir_client_list_dentry_by_path(client_ctx,
                     &path, &dentry_array, flags)) != 0)

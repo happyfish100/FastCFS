@@ -456,8 +456,7 @@ static int spool_create_by_template(struct fast_task_info *task,
     auto_id.value.n = adb_spool_get_auto_id(SERVER_CTX);
     auto_id.value.s.str = auto_id.buff;
     do {
-        auto_id.value.s.len = sprintf(auto_id.value.s.str,
-                "%"PRId64, auto_id.value.n);
+        auto_id.value.s.len = fc_itoa(auto_id.value.n, auto_id.value.s.str);
         if ((result=str_replace(pool_name, &auto_id.tag, &auto_id.value.s,
                         &spool->name, name_size)) != 0)
         {
@@ -989,8 +988,8 @@ static int service_deal_cluster_stat(struct fast_task_info *task)
         body_part->is_online = ((cs == CLUSTER_MASTER_ATOM_PTR ||
                     cs->is_online) ? 1 : 0);
         body_part->is_master = (cs == CLUSTER_MASTER_ATOM_PTR ? 1 : 0);
-        snprintf(body_part->ip_addr, sizeof(body_part->ip_addr), "%s",
-                SERVICE_GROUP_ADDRESS_FIRST_IP(cs->server));
+        fc_safe_strcpy(body_part->ip_addr, SERVICE_GROUP_ADDRESS_FIRST_IP(
+                    cs->server));
         short2buff(SERVICE_GROUP_ADDRESS_FIRST_PORT(cs->server),
                 body_part->port);
     }

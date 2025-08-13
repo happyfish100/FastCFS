@@ -102,7 +102,7 @@ static inline int dao_set_xattr_integer(FDIRClientContext *client_ctx,
     string_t value;
 
     value.str = buff;
-    value.len = sprintf(buff, "%"PRId64, nv);
+    value.len = fc_itoa(nv, buff);
     return dao_set_xattr_string(client_ctx, inode, name, &value);
 }
 

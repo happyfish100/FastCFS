@@ -66,8 +66,7 @@ extern "C" {
         ctx->contexts.fsapi = fsapi;
 
         ctx->ns.str = ctx->ns_holder;
-        ctx->ns.len = snprintf(ctx->ns_holder,
-                sizeof(ctx->ns_holder), "%s", ns);
+        ctx->ns.len = fc_safe_strcpy(ctx->ns_holder, ns);
     }
 
     static inline void fcfs_api_set_contexts_ex(FCFSAPIContext *ctx,

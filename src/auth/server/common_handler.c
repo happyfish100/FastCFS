@@ -96,8 +96,7 @@ int fcfs_auth_deal_get_master(struct fast_task_info *task,
     }
 
     int2buff(master->server->id, resp->server_id);
-    snprintf(resp->ip_addr, sizeof(resp->ip_addr), "%s",
-            addr->conn.ip_addr);
+    fc_safe_strcpy(resp->ip_addr, addr->conn.ip_addr);
     short2buff(addr->conn.port, resp->port);
 
     RESPONSE.header.body_len = sizeof(FCFSAuthProtoGetServerResp);
