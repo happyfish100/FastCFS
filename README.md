@@ -27,7 +27,7 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgreSQL, Ora
 * **Video monitoring**: smooth writing for multi-channel videos with HDD such as SATA because FastCFS uses sequential writing approach
 
 
-## 2. Current Version: V5.4.0
+## 2. Current Version: V5.4.1
 
 ## 3. Supported Platforms
 
@@ -40,12 +40,12 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgreSQL, Ora
     * [Python](https://python.org/) (version 3.5 or newer)
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
-* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.77)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.2.7)
-* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.1.11)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V5.4.0)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V5.4.0)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V5.4.0)
+* [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.78)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.2.8)
+* [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.1.12)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V5.4.1)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V5.4.1)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V5.4.1)
 
 ## 5. Installation
 
