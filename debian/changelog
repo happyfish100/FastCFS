@@ -1,3 +1,9 @@
+fastcfs (5.4.1-1) unstable; urgency=medium
+
+  * upgrade to 5.4.1-1
+
+ -- YuQing <384681@qq.com>  Sat, 16 Aug 2025 16:37:13 +0000
+
 fastcfs (5.4.0-1) unstable; urgency=medium
 
   * upgrade to 5.4.0-1
