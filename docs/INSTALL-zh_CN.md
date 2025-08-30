@@ -180,7 +180,7 @@ pip3 install ninja
 
 ```
 git clone https://gitee.com/mirrors/libfuse.git; cd libfuse/
-git checkout fuse-3.10.5
+git checkout fuse-3.16.2
 mkdir build/; cd build/
 meson ..
 meson configure -D prefix=/usr

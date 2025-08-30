@@ -33,7 +33,7 @@ FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文
 
 ## 4. 依赖
 
-* [libfuse](https://gitee.com/mirrors/libfuse) (版本 3.9.4 或更高版本，推荐3.10.5)
+* [libfuse](https://gitee.com/mirrors/libfuse) (版本 3.9.4 或更高版本，推荐3.16.2)
     * [Python](https://python.org/) (版本 3.5 或更高版本)
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)

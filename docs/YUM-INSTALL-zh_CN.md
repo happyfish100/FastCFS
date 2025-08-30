@@ -55,7 +55,7 @@ yum install FastCFS-fused -y
 ```
 arch=$(uname -r | awk -F '.' '{print $NF}');
 dist=el8;
-ver='3.10.5-1';
+ver='3.16.2-2';
 rpm -ivh http://www.fastken.cn/yumrepo/$dist/$arch/fuse3-libs-$ver.$dist.$arch.rpm  \
          http://www.fastken.cn/yumrepo/$dist/$arch/fuse-common-$ver.$dist.$arch.rpm \
          http://www.fastken.cn/yumrepo/$dist/$arch/fuse3-$ver.$dist.$arch.rpm --force --nodeps;
