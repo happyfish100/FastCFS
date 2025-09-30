@@ -25,7 +25,7 @@
 #include "sf/sf_global.h"
 #include "fastcfs/api/fcfs_api.h"
 
-#define BLOCK_SIZE  512
+#define FCFS_BLOCK_SIZE  512
 
 typedef struct {
     int count;
@@ -94,7 +94,7 @@ static int init()
         barray.count *= 2;
     }
 
-    bytes = BLOCK_SIZE * barray.count;
+    bytes = FCFS_BLOCK_SIZE * barray.count;
     buff = (char *)fc_malloc(bytes);
     if (buff == NULL) {
         return ENOMEM;
@@ -108,9 +108,9 @@ static int init()
     p = buff;
     end = barray.blocks + barray.count;
     for (pp=barray.blocks; pp<end; pp++) {
-        memset(p, pp - barray.blocks, BLOCK_SIZE);
+        memset(p, pp - barray.blocks, FCFS_BLOCK_SIZE);
         *pp = p;
-        p += BLOCK_SIZE;
+        p += FCFS_BLOCK_SIZE;
     }
     
     printf("pid: %d, block count: %d\n", (int)getpid(), barray.count);
@@ -126,13 +126,13 @@ static void fill_buffer(char *buff, const int length,
     char *block;
     char *p;
 
-    block_index = offset / BLOCK_SIZE;
-    count = length / BLOCK_SIZE;
+    block_index = offset / FCFS_BLOCK_SIZE;
+    count = length / FCFS_BLOCK_SIZE;
     p = buff;
     for (i=0; i<count; i++) {
         block = barray.blocks[(block_index + i) % barray.count];
-        memcpy(p, block, BLOCK_SIZE);
-        p += BLOCK_SIZE;
+        memcpy(p, block, FCFS_BLOCK_SIZE);
+        p += FCFS_BLOCK_SIZE;
     }
 }
 
