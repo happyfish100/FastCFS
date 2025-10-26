@@ -162,7 +162,6 @@ int main(int argc, char *argv[])
             break;
         }
         sf_enable_thread_notify_ex(&CLUSTER_SF_CTX, true);
-        sf_set_remove_from_ready_list_ex(&CLUSTER_SF_CTX, false);
         sf_accept_loop_ex(&CLUSTER_SF_CTX, false);
 
         result = sf_service_init_ex(&SERVICE_SF_CTX, "service", NULL, NULL,
@@ -173,7 +172,6 @@ int main(int argc, char *argv[])
             break;
         }
         sf_enable_thread_notify(true);
-        sf_set_remove_from_ready_list(false);
 
         if ((result=cluster_relationship_init()) != 0) {
             break;
