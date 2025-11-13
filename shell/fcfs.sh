@@ -837,7 +837,7 @@ check_remote_osname() {
         os_major_version=6
       elif [ $os_major_version -lt 28 ]; then
         os_major_version=7
-      elif [ $os_major_version -lt 34 ]; then
+      elif [ $os_major_version -lt 38 ]; then
         os_major_version=8
       else
         os_major_version=9
@@ -845,16 +845,33 @@ check_remote_osname() {
     elif [ $osname = 'Alibaba' ]; then
       if [ $os_major_version -lt 3 ]; then
         os_major_version=7
-      else
+      elif [ $os_major_version -lt 4 ]; then
         os_major_version=8
+      else
+        os_major_version=9
       fi
     elif [ $osname = 'Amazon' ]; then
-      if [ $os_major_version -le 2 ]; then
+      if [ $os_major_version -lt 3 ]; then
         os_major_version=7
-      else
+      elif [ $os_major_version -lt 2023 ]; then
         os_major_version=8
+      else
+        os_major_version=9
       fi
-    elif [ $osname = 'openEuler' ] || [ $osname = 'Kylin' ] || [ $osname = 'UOS' ] || [ $osname = 'BigCLoud' ]; then
+    elif [ $osname = 'openEuler' ]; then
+      if [ $os_major_version -lt 24 ]; then
+        os_major_version=8
+      else
+        os_major_version=9
+      fi
+    elif [ $osname = 'Kylin' ]; then
+      os_major_version=$(echo $os_major_version | awk '{print $1}')
+      if [ $os_major_version = 'V10' ]; then
+        os_major_version=8
+      else
+        os_major_version=9
+      fi
+    elif [ $osname = 'UOS' ] || [ $osname = 'BigCLoud' ]; then
       os_major_version=8
     fi
   else
@@ -866,11 +883,7 @@ check_remote_osname() {
 check_yum_install_fastos_repo() {
   repo=$(rpm -q FastOSrepo 2>/dev/null)
   if [ $? -ne 0 ]; then
-    if [ $os_major_version -eq 7 ]; then
-      sudo rpm -ivh http://www.fastken.cn/yumrepo${repo_affix}/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
-    else
-      sudo rpm -ivh http://www.fastken.cn/yumrepo${repo_affix}/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
-    fi
+    sudo rpm -ivh http://www.fastken.cn/yumrepo${repo_affix}/el${os_major_version}/noarch/FastOSrepo-1.0.1-1.el${os_major_version}.noarch.rpm
     if [ $? -ne 0 ]; then
       echo "ERROR: FastOSrepo rpm install failed."
       exit 1

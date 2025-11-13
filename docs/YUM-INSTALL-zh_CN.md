@@ -20,15 +20,21 @@ yum 安装方式支持intel的x86_64和ARM的aarch64架构，主要用于测试�
 
 先安装FastOS.repo yum源，然后就可以安装FastCFS相关软件包了。
 
-CentOS 7、RHEL 7、Oracle Linux 7、Alibaba Cloud Linux 2、Anolis 7、AlmaLinux 7、Amazon Linux 2、Fedora 27及以下版本：
+CentOS 7、RHEL 7、Oracle Linux 7、Alibaba Cloud Linux 2、Anolis OS 7、AlmaLinux 7、Amazon Linux 2、Fedora 27及以下版本：
 ```
 rpm -ivh http://www.fastken.cn/yumrepo/el7/noarch/FastOSrepo-1.0.1-1.el7.noarch.rpm
 ```
 
-CentOS 8、Rocky 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis 8、AlmaLinux 8、openEuler 20.03、Kylin V10、UOS 20、Amazon Linux 3、Fedora 28及以上版本：
+CentOS 8、Rocky Linux 8、RHEL 8、Oracle Linux 8、Alibaba Cloud Linux 3、Anolis OS 8、AlmaLinux 8、openEuler [20, 23]、Kylin V10、UOS 20、Amazon Linux 3、Fedora [28, 37]：
 ```
 rpm -ivh http://www.fastken.cn/yumrepo/el8/noarch/FastOSrepo-1.0.1-1.el8.noarch.rpm
 ```
+
+CentOS Stream 9、Rocky Linux 9、RHEL 9、Oracle Linux 9、Alibaba Cloud Linux 4、Anolis OS 23、AlmaLinux 9、openEuler 24.03、Kylin V11、Amazon Linux 2023、Fedora 38及以上版本：
+```
+rpm -ivh http://www.fastken.cn/yumrepo/el9/noarch/FastOSrepo-1.0.1-1.el9.noarch.rpm
+```
+
 
 ### 2. fastDIR server安装
 
