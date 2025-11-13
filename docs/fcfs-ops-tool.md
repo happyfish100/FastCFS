@@ -56,13 +56,13 @@ fcfs.settings content Example:
 
 ```
 # Version of FastCFS cluster
-fastcfs_version=5.4.1
+fastcfs_version=5.5.0
 
 # Hosts which fuseclient will install，multiple hosts separated by comma
 fuseclient_ips=10.0.1.14
 ```
 
-***Tip：Use version 5.4.1 and later for deploy.***
+***Tip：Use version 5.5.0 and later for deploy.***
 
 #### 1.4.2. conf
 
@@ -350,7 +350,7 @@ fcfs_conf.settings content Example:
 
 ```
 # Version of FastCFS cluster
-fastcfs_version=5.4.1
+fastcfs_version=5.5.0
 
 # Cluster hosts list and group count
 vote_ips=10.0.1.11,10.0.1.12,10.0.1.13
@@ -362,7 +362,7 @@ fstore_group_2=10.0.2.14,10.0.2.15,10.0.2.16
 data_group_count=128
 ```
 
-***Tip：Use version 5.4.1 and later for create config files, especially for vote server.***
+***Tip：Use version 5.5.0 and later for create config files, especially for vote server.***
 
 ### 2.3. fcfs_conf.sh Tool commands introduction
 
@@ -404,6 +404,6 @@ conf_tpl_tar.sh <version> [update]
 
 Exmaple:
 
-> ./conf_tpl_tar.sh 5.4.1 update
+> ./conf_tpl_tar.sh 5.5.0 update
 
-It will create tar file **conf.5.4.1.tpl.tar.gz** in current dir.
+It will create tar file **conf.5.5.0.tpl.tar.gz** in current dir.
