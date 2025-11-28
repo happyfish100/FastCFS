@@ -265,6 +265,8 @@ static int do_check_brainsplit(FCFSAuthClusterServerInfo *cs)
     char formatted_ip[FORMATTED_IP_SIZE];
 
     server_status.cs = cs;
+    server_status.is_master = false;
+    server_status.server_id = 0;
     if ((result=cluster_get_server_status_ex(&server_status,
                     log_connect_error)) != 0)
     {
