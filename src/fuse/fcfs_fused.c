@@ -32,6 +32,25 @@
 #include "global.h"
 #include "fuse_wrapper.h"
 
+#define OPTION_NAME_USER_STR "user"
+#define OPTION_NAME_USER_LEN (sizeof(OPTION_NAME_USER_STR) - 1)
+
+#define OPTION_NAME_KEY_STR  "key"
+#define OPTION_NAME_KEY_LEN  (sizeof(OPTION_NAME_KEY_STR) - 1)
+
+#define OPTION_NAME_NAMESPACE_STR  "namespace"
+#define OPTION_NAME_NAMESPACE_LEN  (sizeof(OPTION_NAME_NAMESPACE_STR) - 1)
+
+#define OPTION_NAME_MOUNTPOINT_STR "mountpoint"
+#define OPTION_NAME_MOUNTPOINT_LEN (sizeof(OPTION_NAME_MOUNTPOINT_STR) - 1)
+
+#define OPTION_NAME_BASE_PATH_STR "base-path"
+#define OPTION_NAME_BASE_PATH_LEN (sizeof(OPTION_NAME_BASE_PATH_STR) - 1)
+
+#define OPTION_NAME_FD_STR  "fd"
+#define OPTION_NAME_FD_LEN  (sizeof(OPTION_NAME_FD_STR) - 1)
+
+
 //#define FDIR_MBLOCK_CHECK  1
 
 #ifdef FDIR_MBLOCK_CHECK
@@ -39,6 +58,7 @@ static int setup_mblock_stat_task();
 #endif
 
 static struct fuse_session *fuse_instance;
+static int fuse_fd = -1;
 
 static int setup_server_env(const char *config_filename);
 static struct fuse_session *create_fuse_session(char *argv0,
@@ -53,17 +73,19 @@ static char g_pid_filename[MAX_PATH_SIZE];
 static int parse_cmd_options(int argc, char *argv[])
 {
     int ch;
+    char *endptr = NULL;
     const struct option longopts[] = {
-        {"user", required_argument, NULL, 'u'},
-        {"key",  required_argument, NULL, 'k'},
-        {"namespace",  required_argument, NULL, 'n'},
-        {"mountpoint", required_argument, NULL, 'm'},
-        {"base-path",  required_argument, NULL, 'b'},
+        {OPTION_NAME_USER_STR, required_argument, NULL, 'u'},
+        {OPTION_NAME_KEY_STR,  required_argument, NULL, 'k'},
+        {OPTION_NAME_NAMESPACE_STR,  required_argument, NULL, 'n'},
+        {OPTION_NAME_MOUNTPOINT_STR, required_argument, NULL, 'm'},
+        {OPTION_NAME_BASE_PATH_STR,  required_argument, NULL, 'b'},
+        {OPTION_NAME_FD_STR,  required_argument, NULL, 'f'},
         SF_COMMON_LONG_OPTIONS,
         {NULL, 0, NULL, 0}
     };
 
-    while ((ch = getopt_long(argc, argv, SF_COMMON_OPT_STRING"u:k:n:m:b:",
+    while ((ch = getopt_long(argc, argv, SF_COMMON_OPT_STRING"u:k:n:m:b:f:",
                     longopts, NULL)) != -1)
     {
         switch (ch) {
@@ -84,7 +106,15 @@ static int parse_cmd_options(int argc, char *argv[])
             case 'b':
                 sf_set_global_base_path(optarg);
                 break;
+            case 'f':
+                fuse_fd = strtol(optarg, &endptr, 10);
+                if ((endptr != NULL && *endptr != '\0') || fuse_fd < 0) {
+                    fprintf(stderr, "invalid fd: %s\n", optarg);
+                    return EINVAL;
+                }
+                break;
             case '?':
+                fprintf(stderr, "unkown option %c\n", ch);
                 return EINVAL;
             default:
                 break;
@@ -94,34 +124,22 @@ static int parse_cmd_options(int argc, char *argv[])
     return 0;
 }
 
-#define OPTION_NAME_USER_STR "user"
-#define OPTION_NAME_USER_LEN (sizeof(OPTION_NAME_USER_STR) - 1)
-
-#define OPTION_NAME_KEY_STR  "key"
-#define OPTION_NAME_KEY_LEN  (sizeof(OPTION_NAME_KEY_STR) - 1)
-
-#define OPTION_NAME_NAMESPACE_STR  "namespace"
-#define OPTION_NAME_NAMESPACE_LEN  (sizeof(OPTION_NAME_NAMESPACE_STR) - 1)
-
-#define OPTION_NAME_MOUNTPOINT_STR "mountpoint"
-#define OPTION_NAME_MOUNTPOINT_LEN (sizeof(OPTION_NAME_MOUNTPOINT_STR) - 1)
-
-#define OPTION_NAME_BASE_PATH_STR "base-path"
-#define OPTION_NAME_BASE_PATH_LEN (sizeof(OPTION_NAME_BASE_PATH_STR) - 1)
 
 static int process_cmdline(int argc, char *argv[], bool *continue_flag)
 {
     const SFCMDOption other_options[] = {
-        {{OPTION_NAME_USER_STR, OPTION_NAME_USER_LEN},
-            'u', true, "-u | --user: the username"},
-        {{OPTION_NAME_KEY_STR, OPTION_NAME_KEY_LEN},
-            'k', true, "-k | --key: the secret key filename"},
-        {{OPTION_NAME_NAMESPACE_STR, OPTION_NAME_NAMESPACE_LEN},
-            'n', true, "-n | --namespace: the FastDIR namespace"},
-        {{OPTION_NAME_MOUNTPOINT_STR, OPTION_NAME_MOUNTPOINT_LEN},
-            'm', true, "-m | --mountpoint: the mountpoint"},
-        {{OPTION_NAME_BASE_PATH_STR, OPTION_NAME_BASE_PATH_LEN},
-            'b', true, "-b | --base-path: the base path"},
+        {{OPTION_NAME_USER_STR, OPTION_NAME_USER_LEN}, 'u', true,
+            "-u | --"OPTION_NAME_USER_STR": the username"},
+        {{OPTION_NAME_KEY_STR, OPTION_NAME_KEY_LEN}, 'k', true,
+            "-k | --"OPTION_NAME_KEY_STR": the secret key filename"},
+        {{OPTION_NAME_NAMESPACE_STR, OPTION_NAME_NAMESPACE_LEN}, 'n', true,
+            "-n | --"OPTION_NAME_NAMESPACE_STR": the FastDIR namespace"},
+        {{OPTION_NAME_MOUNTPOINT_STR, OPTION_NAME_MOUNTPOINT_LEN}, 'm', true,
+            "-m | --"OPTION_NAME_MOUNTPOINT_STR": the mountpoint"},
+        {{OPTION_NAME_BASE_PATH_STR, OPTION_NAME_BASE_PATH_LEN}, 'b', true,
+            "-b | --"OPTION_NAME_BASE_PATH_STR": the base path"},
+        {{OPTION_NAME_FD_STR, OPTION_NAME_FD_LEN}, 'f', true,
+            "-f | --"OPTION_NAME_FD_STR": pass fd for container such as K8s"},
         {{NULL, 0}, 0, false, NULL}
     };
     char *action;
@@ -401,6 +419,7 @@ static struct fuse_session *create_fuse_session(char *argv0,
         struct fuse_lowlevel_ops *ops)
 {
     struct fuse_args args;
+    char fd_buff[32];
     char *argv[16];
     int argc;
 
@@ -435,6 +454,12 @@ static struct fuse_session *create_fuse_session(char *argv0,
     if (g_fuse_global_vars.read_only) {
         argv[argc++] = "-o";
         argv[argc++] = "ro";
+    }
+
+    if (fuse_fd >= 0) {
+        sprintf(fd_buff, "fd=%d", fuse_fd);
+        argv[argc++] = "-o";
+        argv[argc++] = fd_buff;
     }
 
     args.argc = argc;
