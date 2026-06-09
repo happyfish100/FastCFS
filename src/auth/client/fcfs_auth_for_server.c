@@ -32,26 +32,27 @@ int fcfs_auth_for_server_check_priv(FCFSAuthClientContext *client_ctx,
     {
         return result;
     }
-    session.id = buff2long(request->body);
+    session.part1.id = buff2long(request->body);
+    session.part2.id = buff2long(request->body + 8);
 
-    if (session.fields.publish) {
+    if (session.part1.fields.publish) {
         switch (priv_type) {
             case fcfs_auth_validate_priv_type_user:
                 result = server_session_user_priv_granted(
-                        session.id, the_priv);
+                        &session, the_priv);
                 break;
             case fcfs_auth_validate_priv_type_pool_fdir:
                 result = server_session_fdir_priv_granted(
-                        session.id, the_priv);
+                        &session, the_priv);
                 break;
             default:
                 result = server_session_fstore_priv_granted(
-                        session.id, the_priv);
+                        &session, the_priv);
                 break;
         }
 
         if (result == SF_SESSION_ERROR_NOT_EXIST) {
-            validate = (g_current_time - session.fields.ts <=
+            validate = (g_current_time - session.part1.fields.ts <=
                     g_server_session_cfg.validate_within_fresh_seconds);
         } else {
             validate = false;
@@ -69,8 +70,9 @@ int fcfs_auth_for_server_check_priv(FCFSAuthClientContext *client_ctx,
     }
 
     /*
-    logInfo("check priv cmd: %d, session: %"PRId64", validate: %d, "
-            "error no: %d", request->header.cmd, session.id, validate, result);
+    logInfo("check priv cmd: %d, session: {%"PRId64", %"PRId64"} validate: %d, "
+            "error no: %d", request->header.cmd, session.part1.id,
+            session.part2.id, validate, result);
             */
     if (result != 0) {
         return result;

@@ -109,7 +109,13 @@ typedef struct fcfs_auth_proto_session_subscribe_req {
 } FCFSAuthProtoSessionSubscribeReq;
 
 typedef struct fcfs_auth_proto_session_validate_req {
-    char session_id[FCFS_AUTH_SESSION_ID_LEN];
+    union {
+        char session_id[FCFS_AUTH_SESSION_ID_LEN];
+        struct {
+            char id1[8];
+            char id2[8];
+        } session;
+    };
     char validate_key[FCFS_AUTH_PASSWD_LEN];
     char priv_type;
     char padding[7];
@@ -139,7 +145,10 @@ typedef struct fcfs_auth_proto_session_push_entry {
 } FCFSAuthProtoSessionPushEntry;
 
 typedef struct fcfs_auth_proto_session_push_resp_body_part {
-    char session_id[FCFS_AUTH_SESSION_ID_LEN];
+    struct {
+        char id1[8];
+        char id2[8];
+    } session;
     char operation;
     FCFSAuthProtoSessionPushEntry entry[0];
 } FCFSAuthProtoSessionPushRespBodyPart;

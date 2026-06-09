@@ -646,6 +646,6 @@ int main(int argc, char *argv[])
         return EINVAL;
     }
 
-    srand(time(NULL));
+    set_rand_seed();
     return beachmark();
 }

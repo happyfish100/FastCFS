@@ -312,31 +312,48 @@ int server_session_init_ex(IniFullContext *ini_ctx, const int fields_size,
         session_ctx.callbacks.del_func = NULL;
     }
 
-    srand(time(NULL));
+    set_rand_seed();
     return 0;
 }
 
+static inline int compare_session_id(const ServerSessionIdInfo *s1,
+        const ServerSessionIdInfo *s2)
+{
+    if (s1->part1.id < s2->part1.id) {
+        return -1;
+    } else if (s1->part1.id == s2->part1.id) {
+        return fc_compare_int64(s1->part2.id, s2->part2.id);
+    } else {
+        return 1;
+    }
+}
+
 static inline ServerSessionHashEntry *session_htable_find(ServerSessionHashEntry
-        **bucket, const uint64_t session_id, ServerSessionHashEntry **prev)
+        **bucket, const ServerSessionIdInfo *session, ServerSessionHashEntry **prev)
 {
     ServerSessionHashEntry *current;
+    int sub;
 
     if (*bucket == NULL) {
         *prev = NULL;
         return NULL;
-    } else if ((*bucket)->entry.id_info.id == session_id) {
-        *prev = NULL;
-        return *bucket;
-    } else if ((*bucket)->entry.id_info.id > session_id) {
-        *prev = NULL;
-        return NULL;
+    } else {
+        sub = compare_session_id(&(*bucket)->entry.id_info, session);
+        if (sub == 0) {
+            *prev = NULL;
+            return *bucket;
+        } else if (sub > 0) {
+            *prev = NULL;
+            return NULL;
+        }
     }
 
     *prev = *bucket;
     while ((current=(*prev)->next) != NULL) {
-        if (current->entry.id_info.id == session_id) {
+        sub = compare_session_id(&current->entry.id_info, session);
+        if (sub == 0) {
             return current;
-        } else if (current->entry.id_info.id > session_id) {
+        } else if (sub > 0) {
             return NULL;
         }
 
@@ -352,10 +369,11 @@ static int session_htable_insert(ServerSessionHashEntry *se, const bool replace)
     ServerSessionHashEntry *previous;
     ServerSessionHashEntry *found;
 
-    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, se->entry.id_info.id);
+    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable,
+            se->entry.id_info.part1.id);
     PTHREAD_MUTEX_LOCK(lock);
-    if ((found=session_htable_find(bucket, se->entry.
-                    id_info.id, &previous)) == NULL)
+    if ((found=session_htable_find(bucket, &se->entry.id_info,
+                    &previous)) == NULL)
     {
         if (previous == NULL) {
             se->next = *bucket;
@@ -396,28 +414,36 @@ ServerSessionEntry *server_session_add_ex(const ServerSessionEntry *entry,
     }
 
     memcpy(se->entry.fields, entry->fields, session_ctx.fields_size);
-    if (entry->id_info.id == 0) {
+    if (entry->id_info.part1.id == 0) {
         replace = false;
         do {
-            se->entry.id_info.fields.ts = g_current_time;
-            se->entry.id_info.fields.publish = (publish ? 1 : 0);
-            se->entry.id_info.fields.persistent = (persistent ? 1 : 0);
-            se->entry.id_info.fields.rn = (int64_t)rand() * 16384LL / RAND_MAX;
-            se->entry.id_info.fields.sn = __sync_add_and_fetch(
+            se->entry.id_info.part1.fields.ts = g_current_time;
+            se->entry.id_info.part1.fields.publish = (publish ? 1 : 0);
+            se->entry.id_info.part1.fields.persistent = (persistent ? 1 : 0);
+            se->entry.id_info.part1.fields.rn = rand() * 16384LL / RAND_MAX;
+            se->entry.id_info.part1.fields.sn = __sync_add_and_fetch(
                     &session_ctx.sn, 1);
+            se->entry.id_info.part2.fields.ns = (get_current_time_ns() & 0xFFFFFFFF);
+            se->entry.id_info.part2.fields.rn = fc_safe_rand();
 
             /*
-            logInfo("session_id: %"PRId64", ts: %d, publish: %d, "
-                    "rand: %u, sn: %u", se->entry.id_info.id,
-                    se->entry.id_info.fields.ts, publish,
-                    se->entry.id_info.fields.rn,
-                    se->entry.id_info.fields.sn);
+            logInfo("create session id1: %"PRId64", ts: %d, publish: %d, "
+                    "rand1: %u, sn: %u, id2: %"PRId64", ns: %u, rand2: %u",
+                    se->entry.id_info.part1.id,
+                    se->entry.id_info.part1.fields.ts, publish,
+                    se->entry.id_info.part1.fields.rn,
+                    se->entry.id_info.part1.fields.sn,
+                    se->entry.id_info.part2.id,
+                    se->entry.id_info.part2.fields.ns,
+                    se->entry.id_info.part2.fields.rn);
                     */
+
             result = session_htable_insert(se, replace);
         } while (result == EEXIST);
     } else {
         replace = true;
-        se->entry.id_info.id = entry->id_info.id;
+        se->entry.id_info.part1.id = entry->id_info.part1.id;
+        se->entry.id_info.part2.id = entry->id_info.part2.id;
         session_htable_insert(se, replace);
     }
 
@@ -427,17 +453,15 @@ ServerSessionEntry *server_session_add_ex(const ServerSessionEntry *entry,
     return &se->entry;
 }
 
-int server_session_get_fields(const uint64_t session_id, void *fields)
+int server_session_get_fields(const ServerSessionIdInfo *session, void *fields)
 {
     int result;
     ServerSessionHashEntry *previous;
     ServerSessionHashEntry *found;
 
-    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session_id);
+    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session->part1.id);
     PTHREAD_MUTEX_LOCK(lock);
-    if ((found=session_htable_find(bucket, session_id,
-                    &previous)) != NULL)
-    {
+    if ((found=session_htable_find(bucket, session, &previous)) != NULL) {
         memcpy(fields, found->entry.fields, session_ctx.fields_size);
         result = 0;
     } else {
@@ -448,7 +472,7 @@ int server_session_get_fields(const uint64_t session_id, void *fields)
     return result;
 }
 
-int server_session_user_priv_granted(const uint64_t session_id,
+int server_session_user_priv_granted(const ServerSessionIdInfo *session,
         const int64_t the_priv)
 {
     int result;
@@ -456,11 +480,9 @@ int server_session_user_priv_granted(const uint64_t session_id,
     ServerSessionHashEntry *found;
     SessionSyncedFields *fields;
 
-    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session_id);
+    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session->part1.id);
     PTHREAD_MUTEX_LOCK(lock);
-    if ((found=session_htable_find(bucket, session_id,
-                    &previous)) != NULL)
-    {
+    if ((found=session_htable_find(bucket, session, &previous)) != NULL) {
         fields = (SessionSyncedFields *)found->entry.fields;
         if ((fields->user.priv & the_priv) == the_priv) {
             result = 0;
@@ -475,7 +497,7 @@ int server_session_user_priv_granted(const uint64_t session_id,
     return result;
 }
 
-int server_session_fstore_priv_granted(const uint64_t session_id,
+int server_session_fstore_priv_granted(const ServerSessionIdInfo *session,
         const int the_priv)
 {
     int result;
@@ -483,11 +505,9 @@ int server_session_fstore_priv_granted(const uint64_t session_id,
     ServerSessionHashEntry *found;
     SessionSyncedFields *fields;
 
-    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session_id);
+    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session->part1.id);
     PTHREAD_MUTEX_LOCK(lock);
-    if ((found=session_htable_find(bucket, session_id,
-                    &previous)) != NULL)
-    {
+    if ((found=session_htable_find(bucket, session, &previous)) != NULL) {
         fields = (SessionSyncedFields *)found->entry.fields;
         if ((fields->pool.privs.fstore & the_priv) == the_priv) {
             result = 0;
@@ -502,7 +522,7 @@ int server_session_fstore_priv_granted(const uint64_t session_id,
     return result;
 }
 
-int server_session_fdir_priv_granted(const uint64_t session_id,
+int server_session_fdir_priv_granted(const ServerSessionIdInfo *session,
         const int the_priv)
 {
     int result;
@@ -510,11 +530,9 @@ int server_session_fdir_priv_granted(const uint64_t session_id,
     ServerSessionHashEntry *found;
     SessionSyncedFields *fields;
 
-    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session_id);
+    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session->part1.id);
     PTHREAD_MUTEX_LOCK(lock);
-    if ((found=session_htable_find(bucket, session_id,
-                    &previous)) != NULL)
-    {
+    if ((found=session_htable_find(bucket, session, &previous)) != NULL) {
         fields = (SessionSyncedFields *)found->entry.fields;
         if ((fields->pool.privs.fdir & the_priv) == the_priv) {
             result = 0;
@@ -538,16 +556,14 @@ static inline void free_hash_entry(ServerSessionHashEntry *entry)
     fast_mblock_free_object(entry->allocator, entry);
 }
 
-int server_session_delete(const uint64_t session_id)
+int server_session_delete(const ServerSessionIdInfo *session)
 {
     ServerSessionHashEntry *previous;
     ServerSessionHashEntry *found;
 
-    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session_id);
+    SESSION_SET_BUCKET_AND_LOCK(session_ctx.htable, session->part1.id);
     PTHREAD_MUTEX_LOCK(lock);
-    if ((found=session_htable_find(bucket, session_id,
-                    &previous)) != NULL)
-    {
+    if ((found=session_htable_find(bucket, session, &previous)) != NULL) {
         if (previous == NULL) {
             *bucket = (*bucket)->next;
         } else {
@@ -601,7 +617,7 @@ void server_session_clear()
             remove.head = remove.tail = NULL;
             current = *bucket;
             do {
-                if (current->entry.id_info.fields.persistent) {
+                if (current->entry.id_info.part1.fields.persistent) {
                     SERVER_SESSION_ADD_TO_CHAIN(keep, current);
                     keep_count++;
                 } else {

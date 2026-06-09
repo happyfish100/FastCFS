@@ -231,7 +231,7 @@ static int cluster_deal_session_subscribe(struct fast_task_info *task)
     return 0;
 }
 
-static int session_validate(const int64_t session_id,
+static int session_validate(const ServerSessionIdInfo *session,
         const FCFSAuthValidatePriviledgeType priv_type,
         const int64_t pool_id, const int64_t priv_required)
 {
@@ -239,7 +239,7 @@ static int session_validate(const int64_t session_id,
     int64_t session_priv;
     ServerSessionFields fields;
 
-    if ((result=server_session_get_fields(session_id, &fields)) != 0) {
+    if ((result=server_session_get_fields(session, &fields)) != 0) {
         return result;
     }
 
@@ -269,9 +269,9 @@ static int session_validate(const int64_t session_id,
     }
 
     /*
-    logInfo("session_id: %"PRId64", session_priv: %"PRId64", "
-            "priv_required: %"PRId64", check result: %d",
-            session_id, session_priv, priv_required,
+    logInfo("session id1: %"PRId64", id2: %"PRId64", session_priv: %"PRId64", "
+            "priv_required: %"PRId64", check result: %d", session->part1.id,
+            session->part2.id, session_priv, priv_required,
             ((session_priv & priv_required) == priv_required) ? 0 : EPERM);
             */
 
@@ -282,7 +282,7 @@ static int cluster_deal_session_validate(struct fast_task_info *task)
 {
     FCFSAuthProtoSessionValidateReq *req;
     FCFSAuthProtoSessionValidateResp *resp;
-    int64_t session_id;
+    ServerSessionIdInfo session;
     int64_t pool_id;
     string_t validate_key;
     int64_t priv_required;
@@ -294,7 +294,8 @@ static int cluster_deal_session_validate(struct fast_task_info *task)
     }
 
     req = (FCFSAuthProtoSessionValidateReq *)REQUEST.body;
-    session_id = buff2long(req->session_id);
+    session.part1.id = buff2long(req->session.id1);
+    session.part2.id = buff2long(req->session.id2);
     FC_SET_STRING_EX(validate_key, req->validate_key, FCFS_AUTH_PASSWD_LEN);
     priv_type = req->priv_type;
     pool_id = buff2long(req->pool_id);
@@ -305,11 +306,12 @@ static int cluster_deal_session_validate(struct fast_task_info *task)
         return EACCES;
     }
 
-    if ((result=session_validate(session_id, priv_type, pool_id,
+    if ((result=session_validate(&session, priv_type, pool_id,
                     priv_required)) == SF_SESSION_ERROR_NOT_EXIST)
     {
         RESPONSE.error.length = sprintf(RESPONSE.error.message,
-                "session id: %"PRId64" not exist", session_id);
+                "session {%"PRId64", %"PRId64"} not exist",
+                session.part1.id, session.part2.id);
         TASK_CTX.common.log_level = LOG_WARNING;
         return result;
     }
@@ -637,7 +639,8 @@ static int cluster_deal_queue(AuthServerContext *server_context,
             break;
         }
 
-        long2buff(entry->session_id, body_part->session_id);
+        long2buff(entry->session.id1, body_part->session.id1);
+        long2buff(entry->session.id2, body_part->session.id2);
         body_part->operation = entry->operation;
         if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
             long2buff(entry->fields.user.id, body_part->entry->user.id);

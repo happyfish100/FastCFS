@@ -62,7 +62,7 @@ void service_task_finish_cleanup(struct fast_task_info *task)
     switch (SERVER_TASK_TYPE) {
         case AUTH_SERVER_TASK_TYPE_SESSION:
             if (SESSION_ENTRY != NULL) {
-                server_session_delete(SESSION_ENTRY->id_info.id);
+                server_session_delete(&SESSION_ENTRY->id_info);
                 SESSION_ENTRY = NULL;
             }
             SERVER_TASK_TYPE = SF_SERVER_TASK_TYPE_NONE;
@@ -206,7 +206,7 @@ static int service_deal_user_login(struct fast_task_info *task)
 
     flags = req->flags;
     fields->publish = (flags & FCFS_AUTH_SESSION_FLAGS_PUBLISH) != 0;
-    SESSION_HOLDER->id_info.id = 0;
+    SESSION_HOLDER->id_info.part1.id = SESSION_HOLDER->id_info.part2.id = 0;
     if ((SESSION_ENTRY=server_session_add(SESSION_HOLDER,
                     fields->publish)) == NULL)
     {
@@ -222,7 +222,8 @@ static int service_deal_user_login(struct fast_task_info *task)
             */
 
     resp = (FCFSAuthProtoUserLoginResp *)SF_PROTO_SEND_BODY(task);
-    long2buff(SESSION_ENTRY->id_info.id, resp->session_id);
+    long2buff(SESSION_ENTRY->id_info.part1.id, resp->session_id);
+    long2buff(SESSION_ENTRY->id_info.part2.id, resp->session_id + 8);
     RESPONSE.header.body_len = sizeof(FCFSAuthProtoUserLoginResp);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_USER_LOGIN_RESP;
     TASK_ARG->context.common.response_done = true;
@@ -1132,14 +1133,15 @@ static int create_session_for_access_fdir(ServerSessionEntry
     fields->publish = false;
     fields->pool_privs.fdir = FCFS_AUTH_POOL_ACCESS_ALL;
     fields->pool_privs.fstore = FCFS_AUTH_POOL_ACCESS_ALL;
-    session_holder->id_info.id = 0;
+    session_holder->id_info.part1.id = session_holder->id_info.part2.id = 0;
     if ((session=server_session_add_ex(session_holder,
                     fields->publish, persistent)) == NULL)
     {
         return ENOMEM;
     }
 
-    long2buff(session->id_info.id, session_id);
+    long2buff(session->id_info.part1.id, session_id);
+    long2buff(session->id_info.part2.id, session_id + 8);
     return 0;
 }
 

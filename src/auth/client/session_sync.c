@@ -29,7 +29,10 @@
 
 typedef struct synced_session_entry {
     char operation;
-    uint64_t session_id;
+    struct {
+        uint64_t id1;
+        uint64_t id2;
+    } session;
     SessionSyncedFields fields;
 } SyncedSessionEntry;
 
@@ -126,7 +129,8 @@ static int parse_session_push(SFResponseInfo *response)
 
         body_part = (FCFSAuthProtoSessionPushRespBodyPart *)p;
         entry->operation = body_part->operation;
-        entry->session_id = buff2long(body_part->session_id);
+        entry->session.id1 = buff2long(body_part->session.id1);
+        entry->session.id2 = buff2long(body_part->session.id2);
         if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
             entry->fields.user.id = buff2long(body_part->entry->user.id);
             entry->fields.user.priv = buff2long(body_part->entry->user.priv);
@@ -168,9 +172,9 @@ static void deal_session_array()
         if (0) {
             char buff[512];
             int len;
-            len = sprintf(buff, "%d. session id: %"PRId64", operation: %c",
-                    (int)(entry - session_array.entries + 1),
-                    entry->session_id, entry->operation);
+            len = sprintf(buff, "%d. session {%"PRId64", %"PRId64"}, "
+                    "operation: %c", (int)(entry - session_array.entries + 1),
+                    entry->session.id1, entry->session.id2, entry->operation);
             if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
                 len += sprintf(buff + len, ", user {id: %"PRId64
                         ", priv: %"PRId64"}", entry->fields.user.id,
@@ -186,12 +190,13 @@ static void deal_session_array()
             logInfo("%s", buff);
         }
 
+        session.id_info.part1.id = entry->session.id1;
+        session.id_info.part2.id = entry->session.id2;
         if (entry->operation == FCFS_AUTH_SESSION_OP_TYPE_CREATE) {
-            session.id_info.id = entry->session_id;
             session.fields = &entry->fields;
             server_session_add(&session, publish);
         } else {
-            server_session_delete(entry->session_id);
+            server_session_delete(&session.id_info);
         }
     }
 }

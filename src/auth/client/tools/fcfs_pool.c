@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    srand(time(NULL));
+    set_rand_seed();
     log_init();
     //g_log_context.log_level = LOG_DEBUG;
 

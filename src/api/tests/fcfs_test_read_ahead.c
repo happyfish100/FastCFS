@@ -87,7 +87,7 @@ static int init()
     int count;
     int bytes;
 
-    srand(time(NULL));
+    set_rand_seed();
     count = (int64_t)rand() * 256LL / RAND_MAX;
     barray.count = 2;
     while (barray.count < count) {

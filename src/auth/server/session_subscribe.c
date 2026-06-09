@@ -47,7 +47,8 @@ static void set_session_subscribe_entry(const ServerSessionEntry *session,
     ServerSessionFields *fields;
 
     subs_entry->operation = FCFS_AUTH_SESSION_OP_TYPE_CREATE;
-    subs_entry->session_id = session->id_info.id;
+    subs_entry->session.id1 = session->id_info.part1.id;
+    subs_entry->session.id2 = session->id_info.part2.id;
 
     fields = (ServerSessionFields *)(session->fields);
     subs_entry->fields.user.id = fields->dbuser->user.id;
@@ -128,7 +129,8 @@ static void server_session_del_callback(ServerSessionEntry *session)
 
         memset(&subs_entry, 0, sizeof(subs_entry));
         subs_entry.operation = FCFS_AUTH_SESSION_OP_TYPE_REMOVE;
-        subs_entry.session_id = session->id_info.id;
+        subs_entry.session.id1 = session->id_info.part1.id;
+        subs_entry.session.id2 = session->id_info.part2.id;
         publish_entry_to_all_subscribers(&subs_entry);
     }
 }
@@ -238,7 +240,7 @@ static int push_all_sessions_to_queue(ServerSessionSubscriber *subscriber)
     PTHREAD_MUTEX_LOCK(&subscribe_ctx.sessions.lock);
     fc_list_for_each_entry(fields, &subscribe_ctx.sessions.head, dlink) {
         session = FCFS_AUTH_SERVER_SESSION_BY_FIELDS(fields);
-        if (!session->id_info.fields.publish) {
+        if (!session->id_info.part1.fields.publish) {
             continue;
         }
 

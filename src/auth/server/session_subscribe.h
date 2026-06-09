@@ -22,7 +22,10 @@
 
 typedef struct auth_session_subscribe_entry {
     char operation;
-    uint64_t session_id;
+    struct {
+        uint64_t id1;
+        uint64_t id2;
+    } session;
     SessionSyncedFields fields;
     struct auth_session_subscribe_entry *next;  //for fc_queue
 } ServerSessionSubscribeEntry;

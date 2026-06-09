@@ -33,15 +33,25 @@ typedef struct server_session_config {
     unsigned char validate_key_buff[FCFS_AUTH_PASSWD_LEN];
 } ServerSessionConfig;
 
-typedef union server_session_id_info {
-    uint64_t id;
-    struct {
-        unsigned int ts;
-        bool publish : 1;
-        bool persistent : 1;
-        unsigned int rn : 14;
-        unsigned int sn : 16;
-    } fields;
+typedef struct server_session_id_info {
+    union {
+        uint64_t id;
+        struct {
+            unsigned int ts;   //timestamp in second
+            bool publish : 1;
+            bool persistent : 1;
+            unsigned int rn : 14;  //rand number
+            unsigned int sn : 16;  //serial number
+        } fields;
+    } part1;
+
+    union {
+        uint64_t id;
+        struct {
+            unsigned int ns; //nanosecond by clock_gettime
+            unsigned int rn; //rand number
+        } fields;
+    } part2;
 } ServerSessionIdInfo;
 
 typedef struct session_synced_fields {
@@ -101,18 +111,18 @@ void server_session_cfg_to_string_ex(char *buff,
 ServerSessionEntry *server_session_add_ex(const ServerSessionEntry *entry,
         const bool publish, const bool persistent);
 
-int server_session_get_fields(const uint64_t session_id, void *fields);
+int server_session_get_fields(const ServerSessionIdInfo *session, void *fields);
 
-int server_session_user_priv_granted(const uint64_t session_id,
+int server_session_user_priv_granted(const ServerSessionIdInfo *session,
         const int64_t the_priv);
 
-int server_session_fstore_priv_granted(const uint64_t session_id,
+int server_session_fstore_priv_granted(const ServerSessionIdInfo *session,
         const int the_priv);
 
-int server_session_fdir_priv_granted(const uint64_t session_id,
+int server_session_fdir_priv_granted(const ServerSessionIdInfo *session,
         const int the_priv);
 
-int server_session_delete(const uint64_t session_id);
+int server_session_delete(const ServerSessionIdInfo *session);
 
 void server_session_clear();
 
