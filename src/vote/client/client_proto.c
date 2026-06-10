@@ -28,7 +28,7 @@ static inline int get_spec_connection(FCFSVoteClientContext *client_ctx,
 {
     *conn = *target;
     conn->sock = -1;
-    return conn_pool_connect_server(conn, client_ctx->connect_timeout);
+    return conn_pool_connect_server(conn, client_ctx->connect_timeout * 1000);
 }
 
 static inline int make_connection(FCFSVoteClientContext *client_ctx,

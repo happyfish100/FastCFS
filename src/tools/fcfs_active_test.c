@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
         return result;
     }
 
-    if ((result=conn_pool_connect_server(&conn, connect_timeout)) != 0) {
+    if ((result=conn_pool_connect_server(&conn, connect_timeout * 1000)) != 0) {
         return result;
     }
 
