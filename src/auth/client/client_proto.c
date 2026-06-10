@@ -985,7 +985,9 @@ int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,
 }
 
 int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
-        FCFSAuthClientClusterStatEntry *stats, const int size, int *count)
+        const FCFSAuthClusterStatFilter *filter,
+        FCFSAuthClientClusterStatEntry *stats,
+        const int size, int *count)
 {
     const bool shared = false;
     FCFSAuthProtoHeader *header;
@@ -994,12 +996,14 @@ int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
     FCFSAuthProtoClusterStatRespBodyPart *body_end;
     FCFSAuthClientClusterStatEntry *stat;
     ConnectionInfo *conn;
-    char out_buff[sizeof(FCFSAuthProtoHeader)];
+    FCFSAuthProtoClusterStatReq *req;
+    char out_buff[sizeof(FCFSAuthProtoHeader) +
+        sizeof(FCFSAuthProtoClusterStatReq)];
     char fixed_buff[8 * 1024];
     char *in_buff;
     SFResponseInfo response;
-    int result;
     int calc_size;
+    int result;
 
     if ((conn=client_ctx->cm.ops.get_master_connection(&client_ctx->cm,
                     0, shared, &result)) == NULL)
@@ -1008,6 +1012,10 @@ int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
     }
 
     header = (FCFSAuthProtoHeader *)out_buff;
+    req = (FCFSAuthProtoClusterStatReq *)(header + 1);
+    req->filter_by = filter->filter_by;
+    req->is_online = filter->is_online;
+    req->is_master = filter->is_master;
     SF_PROTO_SET_HEADER(header, FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_REQ,
             sizeof(out_buff) - sizeof(FCFSAuthProtoHeader));
 

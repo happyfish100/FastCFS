@@ -969,32 +969,60 @@ static int service_deal_gpool_list(struct fast_task_info *task)
 static int service_deal_cluster_stat(struct fast_task_info *task)
 {
     int result;
+    char is_online;
+    char is_master;
+    FCFSAuthClusterStatFilter filter;
+    FCFSAuthProtoClusterStatReq *req;
     FCFSAuthProtoClusterStatRespBodyHeader *body_header;
     FCFSAuthProtoClusterStatRespBodyPart *body_part;
+    FCFSAuthProtoClusterStatRespBodyPart *part_start;
     FCFSAuthClusterServerInfo *cs;
     FCFSAuthClusterServerInfo *send;
 
-    if ((result=server_expect_body_length(0)) != 0) {
+    if ((result=server_expect_body_length(sizeof(*req))) != 0) {
         return result;
     }
+
+    req = (FCFSAuthProtoClusterStatReq *)REQUEST.body;
+    filter.filter_by = req->filter_by;
+    filter.is_online = req->is_online;
+    filter.is_master = req->is_master;
 
     body_header = (FCFSAuthProtoClusterStatRespBodyHeader *)
         SF_PROTO_SEND_BODY(task);
     body_part = (FCFSAuthProtoClusterStatRespBodyPart *)(body_header + 1);
-    int2buff(CLUSTER_SERVER_ARRAY.count, body_header->count);
+    part_start = body_part;
 
     send = CLUSTER_SERVER_ARRAY.servers + CLUSTER_SERVER_ARRAY.count;
-    for (cs=CLUSTER_SERVER_ARRAY.servers; cs<send; cs++, body_part++) {
-        int2buff(cs->server->id, body_part->server_id);
-        body_part->is_online = ((cs == CLUSTER_MASTER_ATOM_PTR ||
+    for (cs=CLUSTER_SERVER_ARRAY.servers; cs<send; cs++) {
+        is_online = ((cs == CLUSTER_MASTER_ATOM_PTR ||
                     cs->is_online) ? 1 : 0);
-        body_part->is_master = (cs == CLUSTER_MASTER_ATOM_PTR ? 1 : 0);
+        is_master = (cs == CLUSTER_MASTER_ATOM_PTR ? 1 : 0);
+        if (filter.filter_by > 0) {
+            if ((filter.filter_by & FCFS_AUTH_CLUSTER_STAT_FILTER_BY_IS_ONLINE)) {
+                if (is_online != filter.is_online) {
+                    continue;
+                }
+            }
+
+            if ((filter.filter_by & FCFS_AUTH_CLUSTER_STAT_FILTER_BY_IS_MASTER)) {
+                if (is_master != filter.is_master) {
+                    continue;
+                }
+            }
+        }
+
+        int2buff(cs->server->id, body_part->server_id);
+        body_part->is_online = is_online;
+        body_part->is_master = is_master;
         fc_safe_strcpy(body_part->ip_addr, SERVICE_GROUP_ADDRESS_FIRST_IP(
                     cs->server));
         short2buff(SERVICE_GROUP_ADDRESS_FIRST_PORT(cs->server),
                 body_part->port);
+        body_part++;
     }
 
+    int2buff(body_part - part_start, body_header->count);
     RESPONSE.header.body_len = (char *)body_part - SF_PROTO_SEND_BODY(task);
     RESPONSE.header.cmd = FCFS_AUTH_SERVICE_PROTO_CLUSTER_STAT_RESP;
     TASK_CTX.common.response_done = true;

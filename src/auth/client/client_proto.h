@@ -37,7 +37,9 @@ int fcfs_auth_client_get_master(FCFSAuthClientContext *client_ctx,
         FCFSAuthClientServerEntry *master);
 
 int fcfs_auth_client_cluster_stat(FCFSAuthClientContext *client_ctx,
-        FCFSAuthClientClusterStatEntry *stats, const int size, int *count);
+        const FCFSAuthClusterStatFilter *filter,
+        FCFSAuthClientClusterStatEntry *stats,
+        const int size, int *count);
 
 int fcfs_auth_client_proto_session_subscribe(
         FCFSAuthClientContext *client_ctx, ConnectionInfo *conn);

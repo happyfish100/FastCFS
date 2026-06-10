@@ -68,6 +68,9 @@
 #define FCFS_AUTH_PUSH_OPERATION_UPDATE_SESSION   'U'
 #define FCFS_AUTH_PUSH_OPERATION_REMOVE_SESSION   'R'
 
+#define FCFS_AUTH_CLUSTER_STAT_FILTER_BY_IS_ONLINE 1
+#define FCFS_AUTH_CLUSTER_STAT_FILTER_BY_IS_MASTER 2
+
 #define FCFS_AUTH_POOL_AVAILABLE(pool)  \
     ((pool.quota == FCFS_AUTH_UNLIMITED_QUOTA_VAL) || \
      (pool.used < pool.quota))
@@ -131,5 +134,11 @@ typedef struct fcfs_auth_user_array {
     int count;
     int alloc;
 } FCFSAuthUserArray;
+
+typedef struct {
+    char filter_by;
+    char is_online;
+    char is_master;
+} FCFSAuthClusterStatFilter;
 
 #endif

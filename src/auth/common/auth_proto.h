@@ -265,6 +265,13 @@ typedef struct fcfs_auth_proto_join_master_req {
     char config_sign[SF_CLUSTER_CONFIG_SIGN_LEN];
 } FCFSAuthProtoJoinMasterReq;
 
+typedef struct fcfs_auth_proto_cluster_stat_req {
+    char filter_by;
+    char is_online;
+    char is_master;
+    char padding[5];
+} FCFSAuthProtoClusterStatReq;
+
 typedef struct fcfs_auth_proto_cluster_stat_resp_body_header {
     char count[4];
     char padding[4];

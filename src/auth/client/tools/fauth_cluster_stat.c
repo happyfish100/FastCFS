@@ -26,7 +26,11 @@
 
 static void usage(char *argv[])
 {
-    fprintf(stderr, "Usage: %s [-c config_filename=%s]\n",
+    fprintf(stderr, "Usage: %s [-c config_filename=%s]\n"
+            "\t[-A | -O] list ACTIVE / ONLINE servers\n"
+            "\t[-N] list None ACTIVE / ONLINE servers\n"
+            "\t[-M] list master server\n"
+            "\t[-S] list slave servers\n\n",
             argv[0], FCFS_AUTH_CLIENT_DEFAULT_CONFIG_FILENAME);
 }
 
@@ -44,7 +48,10 @@ static void output(FCFSAuthClientClusterStatEntry *stats, const int count)
                 stat->server_id, formatted_ip, stat->port,
                 stat->is_online, stat->is_master);
     }
-    printf("\nserver count: %d\n\n", count);
+
+    if (count > 0) {
+        printf("\nserver count: %d\n\n", count);
+    }
 }
 
 int main(int argc, char *argv[])
@@ -52,17 +59,30 @@ int main(int argc, char *argv[])
 #define CLUSTER_MAX_SERVER_COUNT  16
 	int ch;
     const char *config_filename = FCFS_AUTH_CLIENT_DEFAULT_CONFIG_FILENAME;
+    FCFSAuthClusterStatFilter filter;
     int count;
     FCFSAuthClientClusterStatEntry stats[CLUSTER_MAX_SERVER_COUNT];
 	int result;
 
-    while ((ch=getopt(argc, argv, "hc:")) != -1) {
+    memset(&filter, 0, sizeof(filter));
+    while ((ch=getopt(argc, argv, "hc:AONMS")) != -1) {
         switch (ch) {
             case 'h':
                 usage(argv);
-                break;
+                return 0;
             case 'c':
                 config_filename = optarg;
+                break;
+            case 'A':
+            case 'O':
+            case 'N':
+                filter.filter_by |= FCFS_AUTH_CLUSTER_STAT_FILTER_BY_IS_ONLINE;
+                filter.is_online = (ch == 'A' || ch == 'O') ? 1 : 0;
+                break;
+            case 'M':
+            case 'S':
+                filter.filter_by |= FCFS_AUTH_CLUSTER_STAT_FILTER_BY_IS_MASTER;
+                filter.is_master = (ch == 'M') ? 1 : 0;
                 break;
             default:
                 usage(argv);
@@ -78,7 +98,7 @@ int main(int argc, char *argv[])
     }
 
     if ((result=fcfs_auth_client_cluster_stat(&g_fcfs_auth_client_vars.client_ctx,
-                    stats, CLUSTER_MAX_SERVER_COUNT, &count)) != 0)
+                    &filter, stats, CLUSTER_MAX_SERVER_COUNT, &count)) != 0)
     {
         fprintf(stderr, "fcfs_auth_client_cluster_stat fail, "
                 "errno: %d, error info: %s\n", result, STRERROR(result));
