@@ -225,6 +225,9 @@ int fcfs_fuse_global_init(const char *config_filename)
     char owner_config[2 * NAME_MAX + 64];
     char additional_groups_config[256];
     char max_threads_buff[64];
+    char ver_opt_str[8];
+    char cpl_version[64];
+    const char *pkg_version;
     IniContext iniContext;
     IniFullContext ini_ctx;
 
@@ -296,8 +299,28 @@ int fcfs_fuse_global_init(const char *config_filename)
         *rdma_busy_polling = '\0';
     }
 
+    pkg_version = fuse_pkgversion();
+#ifdef FUSE_HOTFIX_VERSION
+    {
+        Version version;
+        int compile_ver;
+        int runtime_ver;
+
+        sprintf(cpl_version, "%d.%d.%d", FUSE_MAJOR_VERSION,
+                FUSE_MINOR_VERSION, FUSE_HOTFIX_VERSION);
+        runtime_ver = fc_parse_version(pkg_version, &version);
+        compile_ver = FC_VERSION_TO_INT(FUSE_MAJOR_VERSION,
+                FUSE_MINOR_VERSION, FUSE_HOTFIX_VERSION);
+        sprintf(ver_opt_str, " %s ", FC_COMPARE_INT_VERSIONS_TO_OPERATOR_STR(
+                    compile_ver, runtime_ver));
+    }
+#else
+    sprintf(cpl_version, "%d.%d", FUSE_MAJOR_VERSION, FUSE_MINOR_VERSION);
+    strcpy(ver_opt_str, ", ");
+#endif
+
     logInfo("FastCFS V%d.%d.%d, FUSE library version "
-            "{compile: %d.%d, runtime: %s}, %s"
+            "{compile: %s%sruntime: %s}, %s"
             "FastDIR namespace: %s, %sFUSE mountpoint: %s, "
             "%s, singlethread: %d, clone_fd: %d, "
             "%s, allow_others: %s, auto_unmount: %d, read_only: %d, "
@@ -306,11 +329,9 @@ int fcfs_fuse_global_init(const char *config_filename)
             g_fcfs_global_vars.version.major,
             g_fcfs_global_vars.version.minor,
             g_fcfs_global_vars.version.patch,
-            FUSE_MAJOR_VERSION, FUSE_MINOR_VERSION,
-            fuse_pkgversion(), rdma_busy_polling,
-            g_fuse_global_vars.nsmp.ns,
-            sf_idempotency_config.buff,
-            g_fuse_global_vars.nsmp.mountpoint,
+            cpl_version, ver_opt_str, pkg_version,
+            rdma_busy_polling, g_fuse_global_vars.nsmp.ns,
+            sf_idempotency_config.buff, g_fuse_global_vars.nsmp.mountpoint,
             owner_config, g_fuse_global_vars.singlethread,
             g_fuse_global_vars.clone_fd, max_threads_buff,
             get_allow_others_caption(g_fuse_global_vars.allow_others),
