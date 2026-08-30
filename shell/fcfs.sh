@@ -873,6 +873,10 @@ check_remote_osname() {
       fi
     elif [ $osname = 'UOS' ] || [ $osname = 'BigCLoud' ]; then
       os_major_version=8
+    else
+        if [ $os_major_version -gt 9 ]; then
+            os_major_version=9
+        fi
     fi
   else
     echo "Error: Unsupport OS, $uname" 1>&2

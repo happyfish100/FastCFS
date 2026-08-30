@@ -7,7 +7,7 @@
 配置 apt 存储库和签名密钥，以使系统的包管理器启用自动更新。
 
 ```shell
-sudo apt-get install curl gpg
+sudo apt install curl gpg -y
 curl http://www.fastken.cn/aptrepo/packages.fastos.pub | gpg --dearmor > fastos-archive-keyring.gpg
 sudo install -D -o root -g root -m 644 fastos-archive-keyring.gpg /usr/share/keyrings/fastos-archive-keyring.gpg
 sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/fastos-archive-keyring.gpg] http://www.fastken.cn/aptrepo/fastos/ fastos main" > /etc/apt/sources.list.d/fastos.list'
