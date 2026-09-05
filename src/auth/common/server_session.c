@@ -89,6 +89,9 @@ void server_session_cfg_to_string_ex(char *buff,
             g_server_session_cfg.shared_lock_count,
             g_server_session_cfg.hashtable_capacity,
             g_server_session_cfg.validate_key_filename.str);
+    if (len >= size) {
+        return;
+    }
     if (output_all) {
         snprintf(buff + len, size - len,
                 ", validate_within_fresh_seconds: %d}",

@@ -130,6 +130,9 @@ static int copy_file()
         filename_len = snprintf(new_filename, sizeof(new_filename),
                 "%s%s", (*fs_filename != '/' ? "/" : ""), fs_filename);
     }
+    if (filename_len >= sizeof(new_filename)) {
+        filename_len = sizeof(new_filename) - 1;
+    }
 
     if (!(filename_len > g_fcfs_papi_global_vars.ctx.mountpoint.len &&
                 memcmp(new_filename, g_fcfs_papi_global_vars.ctx.mountpoint.str,

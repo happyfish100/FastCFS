@@ -443,6 +443,9 @@ void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
     len = snprintf(output, size, "use_sys_lock_for_append: %d, "
             "async_report { enabled: %d", ctx->use_sys_lock_for_append,
             ctx->async_report.enabled);
+    if (len >= size) {
+        return;
+    }
     if (ctx->async_report.enabled) {
         len += snprintf(output + len, size - len, ", "
                 "async_report_interval_ms: %d, "
@@ -453,8 +456,8 @@ void fcfs_api_async_report_config_to_string_ex(FCFSAPIContext *ctx,
                 ctx->async_report.shared_allocator_count,
                 ctx->async_report.hashtable_sharding_count,
                 ctx->async_report.hashtable_total_capacity);
-        if (len > size) {
-            len = size;
+        if (len >= size) {
+            return;
         }
     }
     snprintf(output + len, size - len, " } ");
@@ -900,10 +903,11 @@ void fcfs_api_log_client_common_configs(FCFSAPIContext *ctx,
                 fdir->idempotency_enabled,
                 fs_section_name, ctx->contexts.
                 fsapi->fs->idempotency_enabled);
-
-        idempotency_client_channel_config_to_string_ex(
-                sf_idempotency_config->buff + len,
-                sf_idempotency_config->alloc_size - len, true);
+        if (len < sf_idempotency_config->alloc_size) {
+            idempotency_client_channel_config_to_string_ex(
+                    sf_idempotency_config->buff + len,
+                    sf_idempotency_config->alloc_size - len, true);
+        }
         sf_idempotency_config->length = strlen(sf_idempotency_config->buff);
     } else {
         *sf_idempotency_config->buff = '\0';
