@@ -140,8 +140,9 @@ jobject fcfs_jni_convert_to_list(JNIEnv *env,
     name = buff;
     end = buff + length;
     do {
-        (*env)->CallBooleanMethod(env, lobj, ladd,
-                (*env)->NewStringUTF(env, name));
+        jstring jname = (*env)->NewStringUTF(env, name);
+        (*env)->CallBooleanMethod(env, lobj, ladd, jname);
+        (*env)->DeleteLocalRef(env, jname);
         name += strlen(name) + 1;
     } while (name < end);
 
