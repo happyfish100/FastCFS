@@ -67,7 +67,6 @@ static void fuse_exit_handler(int sig);
 
 static bool daemon_mode = true;
 static bool need_delete_pid_file = false;
-static const char *config_filename;
 static char g_pid_filename[MAX_PATH_SIZE];
 
 static int parse_cmd_options(int argc, char *argv[])
@@ -152,10 +151,10 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
         return 1;
     }
 
-    config_filename = sf_parse_daemon_mode_and_action_ex(
+    SF_G_CONFIG_FILENAME = sf_parse_daemon_mode_and_action_ex(
             argc, argv, &g_fcfs_global_vars.version,
             &daemon_mode, &action, "start", other_options);
-    if (config_filename == NULL) {
+    if (SF_G_CONFIG_FILENAME == NULL) {
         return 0;
     }
 
@@ -167,7 +166,7 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
     }
 
     if (!SF_G_BASE_PATH_INITED) {
-        result = sf_get_base_path_from_conf_file(config_filename);
+        result = sf_get_base_path_from_conf_file(SF_G_CONFIG_FILENAME);
         if (result != 0) {
             log_destroy();
             return result;
@@ -279,7 +278,7 @@ int main(int argc, char *argv[])
     sf_enable_exit_on_oom();
 
     do {
-        if ((result=setup_server_env(config_filename)) != 0) {
+        if ((result=setup_server_env(SF_G_CONFIG_FILENAME)) != 0) {
             break;
         }
 

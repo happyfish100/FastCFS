@@ -50,7 +50,6 @@
 static int setup_server_env(const char *config_filename);
 
 static bool daemon_mode = true;
-static const char *config_filename;
 static char g_pid_filename[MAX_PATH_SIZE];
 
 static int process_cmdline(int argc, char *argv[], bool *continue_flag)
@@ -65,16 +64,16 @@ static int process_cmdline(int argc, char *argv[], bool *continue_flag)
         return 1;
     }
 
-    config_filename = sf_parse_daemon_mode_and_action(argc, argv,
+    SF_G_CONFIG_FILENAME = sf_parse_daemon_mode_and_action(argc, argv,
             &g_fcfs_auth_global_vars.version, &daemon_mode, &action);
-    if (config_filename == NULL) {
+    if (SF_G_CONFIG_FILENAME == NULL) {
         return 0;
     }
 
     log_init2();
     //log_set_time_precision(&g_log_context, LOG_TIME_PRECISION_USECOND);
 
-    result = sf_get_base_path_from_conf_file(config_filename);
+    result = sf_get_base_path_from_conf_file(SF_G_CONFIG_FILENAME);
     if (result != 0) {
         log_destroy();
         return result;
@@ -119,7 +118,7 @@ int main(int argc, char *argv[])
 
     //sched_set_delay_params(300, 1024);
     do {
-        if ((result=setup_server_env(config_filename)) != 0) {
+        if ((result=setup_server_env(SF_G_CONFIG_FILENAME)) != 0) {
             break;
         }
 
