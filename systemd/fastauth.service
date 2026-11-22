@@ -8,6 +8,7 @@ PIDFile=/opt/fastcfs/auth/authd.pid
 ExecStart=/usr/bin/fcfs_authd /etc/fastcfs/auth/server.conf start
 ExecStartPost=/bin/sleep 0.1
 ExecStop=/usr/bin/fcfs_authd /etc/fastcfs/auth/server.conf stop
+ExecReload=/usr/bin/fcfs_authd /etc/fastcfs/auth/server.conf reload
 
 # start/stop timeout
 TimeoutSec=0
