@@ -4,7 +4,7 @@
 %define CommitVersion %(echo $COMMIT_VERSION)
 
 Name: FastCFS-auth
-Version: 5.5.4
+Version: 5.5.5
 Release: 1%{?dist}
 Summary: the auth client library and config files of FastCFS. FastCFS is a high performance cloud native distributed file system for databases, KVM and K8s
 License: AGPL v3.0
