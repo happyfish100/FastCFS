@@ -22,7 +22,7 @@ FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文
 * **高性能计算**：高可靠和高性能的FastCFS，支持RDMA，天然适合高性能计算场景；
 * **视频监控**：FastCFS采用顺序写盘方式，使用SATA硬盘也可保证多路视频流畅写入。
 
-## 2. 当前版本：V5.5.4
+## 2. 当前版本：V5.5.5
 
 [FastCFS重大版本一览](docs/version-history-zh_CN.md)
 
@@ -38,11 +38,11 @@ FastCFS 是一款强一致性、高性能、高可用、支持百亿级海量文
     * [Ninja](https://ninja-build.org/) (版本 1.7 或更高版本)
     * [gcc](https://www.gnu.org/software/gcc/) (版本 4.7.0 或更高版本)
 * [libfastcommon](https://gitee.com/fastdfs100/libfastcommon) (tag: V1.0.89)
-* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.2.16)
+* [libserverframe](https://gitee.com/fastdfs100/libserverframe) (tag: V1.2.17)
 * [libdiskallocator](https://gitee.com/fastdfs100/libdiskallocator) (tag: V1.1.15)
-* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V5.5.4)
-* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V5.5.4)
-* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V5.5.4)
+* [fastDIR](https://gitee.com/fastdfs100/fastDIR) (tag: V5.5.5)
+* [faststore](https://gitee.com/fastdfs100/faststore) (tag: V5.5.5)
+* [FastCFS](https://gitee.com/fastdfs100/FastCFS) (tag: V5.5.5)
 
 ## 5. 部署 & 运维
 

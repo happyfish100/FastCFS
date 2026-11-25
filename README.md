@@ -27,7 +27,7 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgreSQL, Ora
 * **Video monitoring**: smooth writing for multi-channel videos with HDD such as SATA because FastCFS uses sequential writing approach
 
 
-## 2. Current Version: V5.5.4
+## 2. Current Version: V5.5.5
 
 ## 3. Supported Platforms
 
@@ -41,11 +41,11 @@ FastCFS can be used as the back-end storage of databases (MySQL, PostgreSQL, Ora
     * [Ninja](https://ninja-build.org/) (version 1.7 or newer)
     * [gcc](https://www.gnu.org/software/gcc/) (version 4.7.0 or newer)
 * [libfastcommon](https://github.com/happyfish100/libfastcommon) (tag: V1.0.89)
-* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.2.16)
+* [libserverframe](https://github.com/happyfish100/libserverframe) (tag: V1.2.17)
 * [libdiskallocator](https://github.com/happyfish100/libdiskallocator) (tag: V1.1.15)
-* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V5.5.4)
-* [faststore](https://github.com/happyfish100/faststore) (tag: V5.5.4)
-* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V5.5.4)
+* [fastDIR](https://github.com/happyfish100/fastDIR) (tag: V5.5.5)
+* [faststore](https://github.com/happyfish100/faststore) (tag: V5.5.5)
+* [FastCFS](https://github.com/happyfish100/FastCFS) (tag: V5.5.5)
 
 ## 5. Installation
 
